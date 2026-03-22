@@ -60,13 +60,15 @@ See [architecture documentation](docs/architecture.md) for detailed system desig
 
 ```
 scoutbox/
-├── backend/          # .NET Web API
-│   ├── Controllers/
-│   ├── Models/
-│   ├── Services/
-│   ├── Data/
-│   └── Middleware/
-├── frontend/         # Flutter application
+├── backend/               # .NET Web API
+│   ├── ScoutBoxApi.slnx  # Solution file
+│   └── ScoutBoxApi/      # Project folder
+│       ├── Controllers/
+│       ├── Models/
+│       ├── Services/
+│       ├── Data/
+│       └── Middleware/
+├── frontend/              # Flutter application
 │   ├── lib/
 │   │   ├── models/
 │   │   ├── providers/
@@ -75,8 +77,8 @@ scoutbox/
 │   │   ├── repositories/
 │   │   └── utils/
 │   └── test/
-├── docs/            # Documentation
-└── infrastructure/  # Deployment configs
+├── docs/                 # Documentation
+└── infrastructure/       # Deployment configs
 ```
 
 ## Naming Conventions
