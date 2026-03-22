@@ -13,7 +13,17 @@ class DeepLinkService {
   }
 
   static InviteLinkData? parseInviteLink(Uri uri) {
-    if (uri.scheme != 'scoutbox' || uri.path != '/register') {
+    if (uri.scheme != 'scoutbox') {
+      return null;
+    }
+
+    // Support both formats:
+    // - scoutbox://register?server=... (host='register')
+    // - scoutbox:///register?server=... (path='/register')
+    final isRegisterHost = uri.host == 'register';
+    final isRegisterPath = uri.path == '/register' || uri.path == 'register';
+    
+    if (!isRegisterHost && !isRegisterPath) {
       return null;
     }
 
