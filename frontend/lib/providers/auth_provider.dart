@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../services/auth_service.dart';
 
@@ -7,13 +6,13 @@ part 'auth_provider.g.dart';
 @riverpod
 class AuthNotifier extends _$AuthNotifier {
   late final AuthService _authService;
-  
+
   @override
   AuthState build() {
     _authService = AuthService();
     return const AuthState();
   }
-  
+
   Future<void> register({
     required String serverUrl,
     required String inviteCode,
@@ -21,7 +20,7 @@ class AuthNotifier extends _$AuthNotifier {
     required String password,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       // First validate server is reachable
       final isReachable = await _authService.validateServer(serverUrl);
@@ -32,19 +31,22 @@ class AuthNotifier extends _$AuthNotifier {
         );
         return;
       }
-      
+
       final result = await _authService.register(
         serverUrl: serverUrl,
         inviteCode: inviteCode,
         username: username,
         password: password,
       );
-      
+
       if (result.success) {
         // Save tokens and server URL
-        await _authService.saveTokens(result.accessToken!, result.refreshToken!);
+        await _authService.saveTokens(
+          result.accessToken!,
+          result.refreshToken!,
+        );
         await _authService.saveServerUrl(serverUrl);
-        
+
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: true,
@@ -52,10 +54,7 @@ class AuthNotifier extends _$AuthNotifier {
           error: null,
         );
       } else {
-        state = state.copyWith(
-          isLoading: false,
-          error: result.error,
-        );
+        state = state.copyWith(isLoading: false, error: result.error);
       }
     } catch (e) {
       state = state.copyWith(
@@ -64,12 +63,12 @@ class AuthNotifier extends _$AuthNotifier {
       );
     }
   }
-  
+
   Future<void> logout() async {
     await _authService.logout();
     state = const AuthState();
   }
-  
+
   Future<void> checkAuthStatus() async {
     final token = await _authService.getAccessToken();
     if (token != null) {
@@ -83,14 +82,14 @@ class AuthState {
   final bool isAuthenticated;
   final String? error;
   final String? accessToken;
-  
+
   const AuthState({
     this.isLoading = false,
     this.isAuthenticated = false,
     this.error,
     this.accessToken,
   });
-  
+
   AuthState copyWith({
     bool? isLoading,
     bool? isAuthenticated,

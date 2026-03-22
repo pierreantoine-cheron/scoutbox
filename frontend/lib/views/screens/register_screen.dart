@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/auth_provider.dart';
-import '../services/deep_link_service.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/deep_link_service.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   final InviteLinkData? prefilledData;
-  
+
   const RegisterScreen({this.prefilledData, super.key});
-  
+
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
@@ -19,14 +19,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   @override
   void initState() {
     super.initState();
-    _serverController = TextEditingController(text: widget.prefilledData?.serverUrl ?? '');
-    _inviteController = TextEditingController(text: widget.prefilledData?.inviteCode ?? '');
+    _serverController = TextEditingController(
+      text: widget.prefilledData?.serverUrl ?? '',
+    );
+    _inviteController = TextEditingController(
+      text: widget.prefilledData?.inviteCode ?? '',
+    );
   }
-  
+
   @override
   void dispose() {
     _serverController.dispose();
@@ -36,15 +40,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _confirmPasswordController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
-    
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inscription'),
-      ),
+      appBar: AppBar(title: const Text('Inscription')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -82,7 +84,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 if (value == null || value.isEmpty) {
                   return "L'URL du serveur est requise";
                 }
-                if (!value.startsWith('http://') && !value.startsWith('https://')) {
+                if (!value.startsWith('http://') &&
+                    !value.startsWith('https://')) {
                   return "L'URL doit commencer par http:// ou https://";
                 }
                 return null;
@@ -162,12 +165,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               child: ElevatedButton(
                 onPressed: authState.isLoading ? null : _submit,
                 child: authState.isLoading
-                  ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text("S'inscrire", style: TextStyle(fontSize: 16)),
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text("S'inscrire", style: TextStyle(fontSize: 16)),
               ),
             ),
             if (authState.error != null)
@@ -184,15 +187,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
     );
   }
-  
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    await ref.read(authNotifierProvider.notifier).register(
-      serverUrl: _serverController.text.trim(),
-      inviteCode: _inviteController.text.trim(),
-      username: _usernameController.text.trim(),
-      password: _passwordController.text,
-    );
+
+    await ref
+        .read(authProvider.notifier)
+        .register(
+          serverUrl: _serverController.text.trim(),
+          inviteCode: _inviteController.text.trim(),
+          username: _usernameController.text.trim(),
+          password: _passwordController.text,
+        );
   }
 }

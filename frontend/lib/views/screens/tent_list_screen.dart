@@ -4,7 +4,7 @@ import '../../providers/auth_provider.dart';
 
 class TentListScreen extends ConsumerWidget {
   const TentListScreen({super.key});
-  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
@@ -14,7 +14,7 @@ class TentListScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await ref.read(authNotifierProvider.notifier).logout();
+              await ref.read(authProvider.notifier).logout();
             },
           ),
         ],

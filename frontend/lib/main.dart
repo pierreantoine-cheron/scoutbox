@@ -12,7 +12,7 @@ void main() {
 
 class ScoutBoxApp extends ConsumerStatefulWidget {
   const ScoutBoxApp({super.key});
-  
+
   @override
   ConsumerState<ScoutBoxApp> createState() => _ScoutBoxAppState();
 }
@@ -20,13 +20,13 @@ class ScoutBoxApp extends ConsumerStatefulWidget {
 class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
   InviteLinkData? _initialInviteData;
   bool _isInitializing = true;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeApp();
   }
-  
+
   Future<void> _initializeApp() async {
     // Check for initial deep link
     final deepLinkService = DeepLinkService();
@@ -36,14 +36,14 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
         _initialInviteData = DeepLinkService.parseInviteLink(initialLink);
       });
     }
-    
+
     // Check authentication status
-    await ref.read(authNotifierProvider.notifier).checkAuthStatus();
-    
+    await ref.read(authProvider.notifier).checkAuthStatus();
+
     setState(() {
       _isInitializing = false;
     });
-    
+
     // Listen for deep links while app is running
     deepLinkService.deepLinkStream.listen((uri) {
       final inviteData = DeepLinkService.parseInviteLink(uri);
@@ -57,11 +57,11 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
       }
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
-    
+    final authState = ref.watch(authProvider);
+
     if (_isInitializing) {
       return MaterialApp(
         title: 'ScoutBox',
@@ -69,24 +69,17 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
           useMaterial3: true,
         ),
-        home: const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
-    
+
     return MaterialApp(
       title: 'ScoutBox',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 2,
-        ),
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
@@ -96,15 +89,16 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
       ),
       home: authState.isAuthenticated
-        ? const TentListScreen()
-        : RegisterScreen(prefilledData: _initialInviteData),
+          ? const TentListScreen()
+          : RegisterScreen(prefilledData: _initialInviteData),
     );
   }
 }
