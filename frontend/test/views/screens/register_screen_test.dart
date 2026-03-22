@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/views/screens/register_screen.dart';
 import 'package:frontend/services/deep_link_service.dart';
@@ -6,7 +7,11 @@ import 'package:frontend/services/deep_link_service.dart';
 void main() {
   group('RegisterScreen', () {
     testWidgets('displays all form fields', (WidgetTester tester) async {
-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: RegisterScreen()),
+        ),
+      );
 
       expect(find.text('URL du serveur'), findsOneWidget);
       expect(find.text("Code d'invitation"), findsOneWidget);
@@ -16,46 +21,53 @@ void main() {
       expect(find.text("S'inscrire"), findsOneWidget);
     });
 
-    testWidgets('displays confirmation card when prefilled data provided', (
-      WidgetTester tester,
-    ) async {
+    testWidgets(
+      'displays confirmation card when prefilled data provided',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: RegisterScreen(
+                prefilledData: InviteLinkData(
+                  serverUrl: 'https://example.com',
+                  inviteCode: 'TEST123',
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text("Données d'invitation chargées"), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'does not display confirmation card without prefilled data',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(home: RegisterScreen()),
+          ),
+        );
+
+        expect(find.text("Données d'invitation chargées"), findsNothing);
+      },
+    );
+
+    testWidgets('prefills fields with invite data', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: RegisterScreen(
-            prefilledData: InviteLinkData(
-              serverUrl: 'https://example.com',
-              inviteCode: 'TEST123',
+        ProviderScope(
+          child: MaterialApp(
+            home: RegisterScreen(
+              prefilledData: InviteLinkData(
+                serverUrl: 'https://test-server.com',
+                inviteCode: 'INVITE-123',
+              ),
             ),
           ),
         ),
       );
 
-      expect(find.text("Données d'invitation chargées"), findsOneWidget);
-    });
-
-    testWidgets('does not display confirmation card without prefilled data', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
-
-      expect(find.text("Données d'invitation chargées"), findsNothing);
-    });
-
-    testWidgets('prefills fields with invite data', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: RegisterScreen(
-            prefilledData: InviteLinkData(
-              serverUrl: 'https://test-server.com',
-              inviteCode: 'INVITE-123',
-            ),
-          ),
-        ),
-      );
-
-      // Find the TextFormField widgets and check their controllers
       final serverField = find.widgetWithText(TextFormField, 'URL du serveur');
       final inviteField = find.widgetWithText(
         TextFormField,
@@ -66,24 +78,26 @@ void main() {
       expect(inviteField, findsOneWidget);
     });
 
-    testWidgets('shows error for empty server URL', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+    testWidgets('shows error for empty server URL', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: RegisterScreen()),
+        ),
+      );
 
-      // Tap the register button without filling fields
       await tester.tap(find.text("S'inscrire"));
       await tester.pump();
 
       expect(find.text("L'URL du serveur est requise"), findsOneWidget);
     });
 
-    testWidgets('shows error for invalid server URL', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+    testWidgets('shows error for invalid server URL', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: RegisterScreen()),
+        ),
+      );
 
-      // Enter invalid URL
       await tester.enterText(
         find.widgetWithText(TextFormField, 'URL du serveur'),
         'invalid-url',
@@ -99,9 +113,12 @@ void main() {
     });
 
     testWidgets('shows error for short password', (WidgetTester tester) async {
-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: RegisterScreen()),
+        ),
+      );
 
-      // Enter short password
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Mot de passe'),
         'short',
@@ -119,9 +136,12 @@ void main() {
     testWidgets('shows error for mismatched passwords', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: RegisterScreen()),
+        ),
+      );
 
-      // Enter different passwords
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Mot de passe'),
         'password123',
