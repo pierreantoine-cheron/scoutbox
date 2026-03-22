@@ -1,3 +1,40 @@
 .opencode/
 _bmad/
 notes/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.swp
+*.swo
+*~
+
+# Flutter/Dart
+.dart_tool/
+build/
+*.g.dart
+*.freezed.dart
+.idea/
+*.iml
+.packages
+.pub/
+pubspec.lock
+flutter_*.png
+linked_*.ds
+unlinked.ds
+unlinked_spec.ds
+
+# Environment
+.env
+appsettings.Local.json
+
+# IDE
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db

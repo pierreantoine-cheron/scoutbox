@@ -1,0 +1,6 @@
+@ScoutBoxApi_HostAddress = http://localhost:5169
+
+GET {{ScoutBoxApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
