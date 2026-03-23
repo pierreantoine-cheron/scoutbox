@@ -1,7 +1,3 @@
 namespace ScoutBoxApi.Models.DTOs;
 
-public class HealthCheckResponse
-{
-    public string Status { get; set; } = "healthy";
-    public DateTime Timestamp { get; set; }
-}
+public record HealthCheckResponse(string Status = "healthy", DateTime Timestamp = default);

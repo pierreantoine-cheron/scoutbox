@@ -10,7 +10,7 @@ public class Invite
     public Guid? CreatedByUserId { get; set; }
     public Guid? UsedByUserId { get; set; }
     public DateTime? UsedAt { get; set; }
-    
+
     public User? CreatedBy { get; set; }
     public User? UsedBy { get; set; }
 }

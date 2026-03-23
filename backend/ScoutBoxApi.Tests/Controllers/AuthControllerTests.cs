@@ -59,13 +59,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest
-        {
-            InviteCode = "VALID-123",
-            Username = "testuser",
-            Password = "password123",
-            ServerUrl = "https://test.example.com"
-        };
+        var request = new RegisterRequest("VALID-123", "testuser", "password123", "https://test.example.com");
 
         // Act
         var result = await _controller.Register(request);
@@ -87,13 +81,7 @@ public class AuthControllerTests : IDisposable
     public async Task Register_WithInvalidInvite_ReturnsBadRequest()
     {
         // Arrange
-        var request = new RegisterRequest
-        {
-            InviteCode = "INVALID-123",
-            Username = "testuser",
-            Password = "password123",
-            ServerUrl = "https://test.example.com"
-        };
+        var request = new RegisterRequest("INVALID-123", "testuser", "password123", "https://test.example.com");
 
         // Act
         var result = await _controller.Register(request);
@@ -122,13 +110,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest
-        {
-            InviteCode = "USED-123",
-            Username = "testuser",
-            Password = "password123",
-            ServerUrl = "https://test.example.com"
-        };
+        var request = new RegisterRequest("USED-123", "testuser", "password123", "https://test.example.com");
 
         // Act
         var result = await _controller.Register(request);
@@ -154,13 +136,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest
-        {
-            InviteCode = "EXPIRED-123",
-            Username = "testuser",
-            Password = "password123",
-            ServerUrl = "https://test.example.com"
-        };
+        var request = new RegisterRequest("EXPIRED-123", "testuser", "password123", "https://test.example.com");
 
         // Act
         var result = await _controller.Register(request);
@@ -195,13 +171,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest
-        {
-            InviteCode = "VALID-456",
-            Username = "existinguser",
-            Password = "password123",
-            ServerUrl = "https://test.example.com"
-        };
+        var request = new RegisterRequest("VALID-456", "existinguser", "password123", "https://test.example.com");
 
         // Act
         var result = await _controller.Register(request);
@@ -228,13 +198,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest
-        {
-            InviteCode = "VALID-789",
-            Username = "newuser",
-            Password = "password123",
-            ServerUrl = "https://test.example.com"
-        };
+        var request = new RegisterRequest("VALID-789", "newuser", "password123", "https://test.example.com");
 
         // Act
         await _controller.Register(request);
@@ -260,13 +224,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest
-        {
-            InviteCode = "VALID-ABC",
-            Username = "usertest",
-            Password = "password123",
-            ServerUrl = "https://test.example.com"
-        };
+        var request = new RegisterRequest("VALID-ABC", "usertest", "password123", "https://test.example.com");
 
         // Act
         var result = await _controller.Register(request);

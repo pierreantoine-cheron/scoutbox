@@ -54,7 +54,7 @@ public class ScoutBoxDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
+
         // User configuration
         modelBuilder.Entity<User>(entity =>
         {
@@ -64,7 +64,7 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.HasIndex(e => e.Username).IsUnique();
         });
-        
+
         // Invite configuration
         modelBuilder.Entity<Invite>(entity =>
         {
@@ -75,18 +75,18 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.IsUsed).IsRequired();
             entity.HasIndex(e => e.Code).IsUnique();
             entity.HasIndex(e => e.IsUsed);
-            
+
             entity.HasOne(e => e.CreatedBy)
                 .WithMany(u => u.CreatedInvites)
                 .HasForeignKey(e => e.CreatedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
-                
+
             entity.HasOne(e => e.UsedBy)
                 .WithMany(u => u.UsedInvites)
                 .HasForeignKey(e => e.UsedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
-        
+
         // RefreshToken configuration
         modelBuilder.Entity<RefreshToken>(entity =>
         {
@@ -97,7 +97,7 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.IsRevoked).IsRequired();
             entity.HasIndex(e => e.Token).IsUnique();
             entity.HasIndex(e => e.UserId);
-            
+
             entity.HasOne(e => e.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(e => e.UserId)
