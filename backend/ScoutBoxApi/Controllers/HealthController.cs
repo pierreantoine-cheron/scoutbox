@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ScoutBoxApi.Models.DTOs;
 
 namespace ScoutBoxApi.Controllers;
 
@@ -9,6 +10,9 @@ public class HealthController : ControllerBase
     [HttpGet]
     public IActionResult Get()
     {
-        return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+        return Ok(new HealthCheckResponse
+        {
+            Timestamp = DateTime.UtcNow
+        });
     }
 }
