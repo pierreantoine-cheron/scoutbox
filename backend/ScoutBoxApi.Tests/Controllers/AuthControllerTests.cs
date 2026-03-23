@@ -102,7 +102,7 @@ public class AuthControllerTests : IDisposable
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
         Assert.Equal("INVALID_INVITE", error.Code);
-        Assert.Equal("Code d'invitation invalide ou expiré", error.Error);
+        Assert.Equal("Invalid or expired invite code", error.Error);
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class AuthControllerTests : IDisposable
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
         Assert.Equal("USERNAME_EXISTS", error.Code);
-        Assert.Equal("Ce nom d'utilisateur existe déjà", error.Error);
+        Assert.Equal("This username already exists", error.Error);
     }
 
     [Fact]

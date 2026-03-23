@@ -54,7 +54,7 @@ public class AuthController : ControllerBase
                 _logger.LogWarning("Duplicate username registration attempted: {Username}", request.Username);
                 return BadRequest(new ErrorResponse 
                 { 
-                    Error = "This username alaredy exists",
+                    Error = "This username already exists",
                     Code = "USERNAME_EXISTS"
                 });
             }
