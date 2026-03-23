@@ -1,3 +1,3 @@
 namespace ScoutBoxApi.Models.DTOs;
 
-public record RegisterRequest(string InviteCode, string Username, string Password, string ServerUrl);
+public record RegisterRequest(string InviteCode, string Username, string Password);

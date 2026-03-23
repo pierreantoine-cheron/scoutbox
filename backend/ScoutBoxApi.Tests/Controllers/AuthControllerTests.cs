@@ -25,17 +25,17 @@ public class AuthControllerTests : IDisposable
         var options = new DbContextOptionsBuilder<ScoutBoxDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        
+
         _db = new ScoutBoxDbContext(options);
-        
+
         _configMock = new Mock<IConfiguration>();
         _configMock.Setup(x => x["Jwt:Key"]).Returns("test-key-that-is-32-characters-long");
         _configMock.Setup(x => x["Jwt:Issuer"]).Returns("TestIssuer");
         _configMock.Setup(x => x["Jwt:Audience"]).Returns("TestAudience");
-        _configMock.Setup(x => x["ServerUrl"]).Returns("https://test.example.com");
-        
+
+
         _loggerMock = new Mock<ILogger<AuthController>>();
-        
+
         _controller = new AuthController(_db, _configMock.Object, _loggerMock.Object);
     }
 
@@ -59,7 +59,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest("VALID-123", "testuser", "password123", "https://test.example.com");
+        var request = new RegisterRequest("VALID-123", "testuser", "password123");
 
         // Act
         var result = await _controller.Register(request);
@@ -69,7 +69,7 @@ public class AuthControllerTests : IDisposable
         var response = Assert.IsType<AuthResponse>(okResult.Value);
         Assert.NotNull(response.AccessToken);
         Assert.NotNull(response.RefreshToken);
-        
+
         // Verify invite is marked as used
         var updatedInvite = await _db.Invites.FindAsync(invite.Id);
         Assert.True(updatedInvite!.IsUsed);
@@ -81,7 +81,7 @@ public class AuthControllerTests : IDisposable
     public async Task Register_WithInvalidInvite_ReturnsBadRequest()
     {
         // Arrange
-        var request = new RegisterRequest("INVALID-123", "testuser", "password123", "https://test.example.com");
+        var request = new RegisterRequest("INVALID-123", "testuser", "password123");
 
         // Act
         var result = await _controller.Register(request);
@@ -110,7 +110,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest("USED-123", "testuser", "password123", "https://test.example.com");
+        var request = new RegisterRequest("USED-123", "testuser", "password123");
 
         // Act
         var result = await _controller.Register(request);
@@ -136,7 +136,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest("EXPIRED-123", "testuser", "password123", "https://test.example.com");
+        var request = new RegisterRequest("EXPIRED-123", "testuser", "password123");
 
         // Act
         var result = await _controller.Register(request);
@@ -159,7 +159,7 @@ public class AuthControllerTests : IDisposable
             CreatedAt = DateTime.UtcNow
         };
         _db.Users.Add(existingUser);
-        
+
         var invite = new Invite
         {
             Id = Guid.NewGuid(),
@@ -171,7 +171,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest("VALID-456", "existinguser", "password123", "https://test.example.com");
+        var request = new RegisterRequest("VALID-456", "existinguser", "password123");
 
         // Act
         var result = await _controller.Register(request);
@@ -198,7 +198,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest("VALID-789", "newuser", "password123", "https://test.example.com");
+        var request = new RegisterRequest("VALID-789", "newuser", "password123");
 
         // Act
         await _controller.Register(request);
@@ -224,7 +224,7 @@ public class AuthControllerTests : IDisposable
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
 
-        var request = new RegisterRequest("VALID-ABC", "usertest", "password123", "https://test.example.com");
+        var request = new RegisterRequest("VALID-ABC", "usertest", "password123");
 
         // Act
         var result = await _controller.Register(request);
@@ -232,10 +232,10 @@ public class AuthControllerTests : IDisposable
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<AuthResponse>(okResult.Value);
-        
+
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == "usertest");
         Assert.NotNull(user);
-        
+
         var refreshToken = await _db.RefreshTokens.FirstOrDefaultAsync(rt => rt.UserId == user.Id);
         Assert.NotNull(refreshToken);
         Assert.False(refreshToken.IsRevoked);
