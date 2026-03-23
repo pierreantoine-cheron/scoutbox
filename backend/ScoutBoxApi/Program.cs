@@ -29,7 +29,7 @@ builder.Services.AddDbContext<ScoutBoxDbContext>(options =>
 });
 
 // Configure JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "your-super-secret-jwt-key-that-should-be-32-chars-long";
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured. Set Jwt:Key in configuration.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ScoutBox";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "ScoutBoxUsers";
 
