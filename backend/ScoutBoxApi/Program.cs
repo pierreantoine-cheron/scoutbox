@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ScoutBoxApi.Data;
+using ScoutBoxApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,10 @@ builder.Services.AddControllers();
 // Add OpenAPI/Swagger
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+
+// Add application services
+builder.Services.AddSingleton<TokenService>();
+builder.Services.AddScoped<AuthService>();
 
 // Configure SQLite with WAL mode
 builder.Services.AddDbContext<ScoutBoxDbContext>(options =>
