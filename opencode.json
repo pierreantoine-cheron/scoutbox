@@ -10,5 +10,10 @@
       "enabled": true,
       "environment": {}
     }
+  },
+  "permission": {
+    "lsp": "allow",
+    "webfetch": "allow",
+    "websearch": "allow"
   }
 }
