@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ScoutBoxApi.Data;
 using ScoutBoxApi.Models.DTOs;
 
 namespace ScoutBoxApi.Controllers;
@@ -7,12 +9,24 @@ namespace ScoutBoxApi.Controllers;
 [ApiController]
 public class HealthController : ControllerBase
 {
-    [HttpGet]
-    public IActionResult Get()
+    private readonly ScoutBoxDbContext _db;
+
+    public HealthController(ScoutBoxDbContext db)
     {
-        return Ok(new HealthCheckResponse
+        _db = db;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Get()
+    {
+        try
         {
-            Timestamp = DateTime.UtcNow
-        });
+            await _db.Database.CanConnectAsync();
+            return Ok(new HealthCheckResponse { Timestamp = DateTime.UtcNow });
+        }
+        catch
+        {
+            return StatusCode(503, new HealthCheckResponse { Timestamp = DateTime.UtcNow });
+        }
     }
 }
