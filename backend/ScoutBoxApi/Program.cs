@@ -71,9 +71,26 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
     dbContext.Database.Migrate();
-    
+
     // Enable WAL mode for SQLite
     dbContext.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
+
+    // Seed test invite if none exists (development only)
+    if (!dbContext.Invites.Any())
+    {
+        var testInvite = new ScoutBoxApi.Models.Entities.Invite
+        {
+            Id = Guid.NewGuid(),
+            Code = "TEST-12345",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(30),
+            IsUsed = false,
+            CreatedByUserId = null
+        };
+        dbContext.Invites.Add(testInvite);
+        dbContext.SaveChanges();
+        Console.WriteLine($"[SEED] Test invite created: {testInvite.Code}");
+    }
 }
 
 // Configure the HTTP request pipeline.
