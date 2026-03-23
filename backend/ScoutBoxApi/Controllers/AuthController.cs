@@ -271,5 +271,3 @@ public class AuthController : ControllerBase
         return new string(result);
     }
 }
-
-public record RefreshTokenRequest(string RefreshToken);
