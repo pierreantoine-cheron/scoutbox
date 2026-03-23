@@ -121,26 +121,45 @@ public class AuthController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new ErrorResponse 
-                { 
+                return Unauthorized(new ErrorResponse
+                {
                     Error = "Unauthorized user",
                     Code = "UNAUTHORIZED"
                 });
             }
-            
-            // Generate code if not provided
-            var code = request.Code ?? GenerateRandomCode(9);
-            
-            // Check if code already exists
-            if (await _db.Invites.AnyAsync(i => i.Code == code))
+
+            string code;
+
+            if (!string.IsNullOrEmpty(request.Code))
             {
-                return BadRequest(new ErrorResponse 
-                { 
-                    Error = "This invite code already exist",
-                    Code = "DUPLICATE_CODE"
-                });
+                // User provided a code - check if it already exists
+                if (await _db.Invites.AnyAsync(i => i.Code == request.Code))
+                {
+                    return BadRequest(new ErrorResponse
+                    {
+                        Error = "This invite code already exists",
+                        Code = "DUPLICATE_CODE"
+                    });
+                }
+                code = request.Code;
             }
-            
+            else
+            {
+                // No code provided - generate one with retry logic (max 3 attempts)
+                var generatedCode = await GenerateAvailableCodeAsync(maxAttempts: 3);
+
+                if (generatedCode == null)
+                {
+                    return BadRequest(new ErrorResponse
+                    {
+                        Error = "Unable to generate an available invite code. Please provide a custom code.",
+                        Code = "CODE_GENERATION_FAILED"
+                    });
+                }
+
+                code = generatedCode;
+            }
+
             var invite = new Invite
             {
                 Id = Guid.NewGuid(),
@@ -150,12 +169,12 @@ public class AuthController : ControllerBase
                 IsUsed = false,
                 CreatedByUserId = userId
             };
-            
+
             await _db.Invites.AddAsync(invite);
             await _db.SaveChangesAsync();
-            
+
             _logger.LogInformation("Invite created: {Code} by user {UserId}", code, userId);
-            
+
             return Ok(new InviteResponse
             {
                 Id = invite.Id,
@@ -167,12 +186,30 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating invite");
-            return StatusCode(500, new ErrorResponse 
-            { 
+            return StatusCode(500, new ErrorResponse
+            {
                 Error = "Error during invite creation",
                 Code = "INTERNAL_ERROR"
             });
         }
+    }
+
+    private async Task<string?> GenerateAvailableCodeAsync(int maxAttempts)
+    {
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            var code = GenerateRandomCode(9);
+
+            // Check if code already exists
+            if (!await _db.Invites.AnyAsync(i => i.Code == code))
+            {
+                return code;
+            }
+
+            _logger.LogWarning("Generated invite code collision on attempt {Attempt}: {Code}", attempt + 1, code);
+        }
+
+        return null;
     }
     
     [HttpPost("refresh")]
