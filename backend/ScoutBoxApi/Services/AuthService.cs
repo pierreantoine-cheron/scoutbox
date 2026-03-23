@@ -142,6 +142,8 @@ public class AuthService
         var newAccessToken = _tokenService.GenerateAccessToken(storedToken.User.Id, storedToken.User.Username);
         var newRefreshToken = TokenService.GenerateRefreshToken();
 
+        storedToken.ReplacedByToken = newRefreshToken;
+
         await _db.RefreshTokens.AddAsync(new RefreshToken
         {
             Id = Guid.NewGuid(),
@@ -149,8 +151,7 @@ public class AuthService
             UserId = storedToken.UserId,
             ExpiresAt = DateTime.UtcNow.AddDays(180),
             CreatedAt = DateTime.UtcNow,
-            IsRevoked = false,
-            ReplacedByToken = newRefreshToken
+            IsRevoked = false
         });
 
         await _db.SaveChangesAsync();
