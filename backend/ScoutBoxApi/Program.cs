@@ -75,23 +75,7 @@ using (var scope = app.Services.CreateScope())
     // Enable WAL mode for SQLite
     dbContext.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
 
-    // Seed admin setup invite if no invites exist (always runs for initial setup)
-    if (!dbContext.Invites.Any())
-    {
-        var adminInvite = new ScoutBoxApi.Models.Entities.Invite
-        {
-            Id = Guid.NewGuid(),
-            Code = "ADMIN-SETUP",
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(30),
-            IsUsed = false,
-            CreatedByUserId = null
-        };
-        dbContext.Invites.Add(adminInvite);
-        dbContext.SaveChanges();
-        Console.WriteLine($"[SETUP] Admin invite created: {adminInvite.Code}");
-        Console.WriteLine($"[SETUP] Use this code to register the first user.");
-    }
+    // Note: Data seeding is handled by UseSeeding/UseAsyncSeeding in ScoutBoxDbContext.OnConfiguring()
 }
 
 // Configure the HTTP request pipeline.

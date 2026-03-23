@@ -8,11 +8,49 @@ public class ScoutBoxDbContext : DbContext
     public ScoutBoxDbContext(DbContextOptions<ScoutBoxDbContext> options) : base(options)
     {
     }
-    
+
     public DbSet<User> Users { get; set; }
     public DbSet<Invite> Invites { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
-    
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+
+        // Configure data seeding - creates admin invite on first run
+        optionsBuilder.UseSeeding((context, _) =>
+        {
+            SeedAdminInvite(context);
+        });
+
+        optionsBuilder.UseAsyncSeeding(async (context, _, cancellationToken) =>
+        {
+            await Task.Run(() => SeedAdminInvite(context), cancellationToken);
+        });
+    }
+
+    private static void SeedAdminInvite(DbContext context)
+    {
+        // Only create admin invite if no invites exist (first-time setup)
+        if (!context.Set<Invite>().Any())
+        {
+            var adminInvite = new Invite
+            {
+                Id = Guid.NewGuid(),
+                Code = "ADMIN-SETUP",
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                IsUsed = false,
+                CreatedByUserId = null
+            };
+            context.Set<Invite>().Add(adminInvite);
+            context.SaveChanges();
+
+            Console.WriteLine($"[SETUP] Admin invite created: {adminInvite.Code}");
+            Console.WriteLine($"[SETUP] Use this code to register the first user.");
+        }
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
