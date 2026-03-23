@@ -222,6 +222,25 @@ public async Task<IActionResult> Endpoint([FromBody] Request request)
 }
 ```
 
+**DTOs (Data Transfer Objects):**
+Prefer C# records for DTOs - immutable, concise, value-based equality:
+```csharp
+// CORRECT: Use records for DTOs
+public record TentDto(Guid Id, string Name, string Identifier, TentState State);
+public record CreateTentRequest(string Name, string Identifier, Guid TentShapeId);
+public record AuthResponse(string AccessToken, string RefreshToken, DateTime ExpiresAt);
+
+// WRONG: Don't use classes for simple DTOs
+public class TentDto { public Guid Id { get; set; } ... }  // Use record instead
+
+// EXCEPTION: Use class when validation attributes are required
+public class UploadRequest
+{
+    [Required][StringLength(100)] public string FileName { get; set; }
+    [Range(1, 10485760)] public long FileSize { get; set; }
+}
+```
+
 **Testing:**
 - Use xUnit with `[Fact]` attribute
 - Test file naming: `{Class}Tests.cs`
