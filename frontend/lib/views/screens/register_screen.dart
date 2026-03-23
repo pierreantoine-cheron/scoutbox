@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/deep_link_service.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
-  final InviteLinkData? prefilledData;
-
-  const RegisterScreen({this.prefilledData, super.key});
+  const RegisterScreen({super.key});
 
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
@@ -14,22 +11,11 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _serverController;
-  late final TextEditingController _inviteController;
+  final _serverController = TextEditingController();
+  final _inviteController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _serverController = TextEditingController(
-      text: widget.prefilledData?.serverUrl ?? '',
-    );
-    _inviteController = TextEditingController(
-      text: widget.prefilledData?.inviteCode ?? '',
-    );
-  }
 
   @override
   void dispose() {
@@ -52,26 +38,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            if (widget.prefilledData != null)
-              Card(
-                color: Colors.green.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          "Données d'invitation chargées",
-                          style: TextStyle(color: Colors.green.shade700),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
             TextFormField(
               controller: _serverController,
               decoration: const InputDecoration(

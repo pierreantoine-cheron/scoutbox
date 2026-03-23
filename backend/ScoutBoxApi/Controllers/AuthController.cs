@@ -156,14 +156,10 @@ public class AuthController : ControllerBase
             
             _logger.LogInformation("Invite created: {Code} by user {UserId}", code, userId);
             
-            // Generate invite link (server URL should come from configuration or request)
-            var serverUrl = _configuration["ServerUrl"] ?? "https://scoutbox.example.com";
-            
             return Ok(new InviteResponse
             {
                 Id = invite.Id,
                 Code = invite.Code,
-                InviteLink = invite.GenerateInviteLink(serverUrl),
                 ExpiresAt = invite.ExpiresAt,
                 IsUsed = invite.IsUsed
             });

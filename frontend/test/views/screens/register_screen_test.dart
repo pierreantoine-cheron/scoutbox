@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/views/screens/register_screen.dart';
-import 'package:frontend/services/deep_link_service.dart';
 
 void main() {
   group('RegisterScreen', () {
@@ -19,63 +18,6 @@ void main() {
       expect(find.text('Mot de passe'), findsOneWidget);
       expect(find.text('Confirmer le mot de passe'), findsOneWidget);
       expect(find.text("S'inscrire"), findsOneWidget);
-    });
-
-    testWidgets(
-      'displays confirmation card when prefilled data provided',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(
-          ProviderScope(
-            child: MaterialApp(
-              home: RegisterScreen(
-                prefilledData: InviteLinkData(
-                  serverUrl: 'https://example.com',
-                  inviteCode: 'TEST123',
-                ),
-              ),
-            ),
-          ),
-        );
-
-        expect(find.text("Données d'invitation chargées"), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'does not display confirmation card without prefilled data',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(
-          const ProviderScope(
-            child: MaterialApp(home: RegisterScreen()),
-          ),
-        );
-
-        expect(find.text("Données d'invitation chargées"), findsNothing);
-      },
-    );
-
-    testWidgets('prefills fields with invite data', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: RegisterScreen(
-              prefilledData: InviteLinkData(
-                serverUrl: 'https://test-server.com',
-                inviteCode: 'INVITE-123',
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final serverField = find.widgetWithText(TextFormField, 'URL du serveur');
-      final inviteField = find.widgetWithText(
-        TextFormField,
-        "Code d'invitation",
-      );
-
-      expect(serverField, findsOneWidget);
-      expect(inviteField, findsOneWidget);
     });
 
     testWidgets('shows error for empty server URL', (WidgetTester tester) async {

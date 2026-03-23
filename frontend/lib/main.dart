@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'services/deep_link_service.dart';
 import 'providers/auth_provider.dart';
 import 'views/screens/register_screen.dart';
 import 'views/screens/tent_list_screen.dart';
@@ -18,7 +17,6 @@ class ScoutBoxApp extends ConsumerStatefulWidget {
 }
 
 class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
-  InviteLinkData? _initialInviteData;
   bool _isInitializing = true;
 
   @override
@@ -28,33 +26,9 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
   }
 
   Future<void> _initializeApp() async {
-    // Check for initial deep link
-    final deepLinkService = DeepLinkService();
-    final initialLink = await deepLinkService.getInitialLink();
-    if (initialLink != null) {
-      setState(() {
-        _initialInviteData = DeepLinkService.parseInviteLink(initialLink);
-      });
-    }
-
-    // Check authentication status
     await ref.read(authProvider.notifier).checkAuthStatus();
-
     setState(() {
       _isInitializing = false;
-    });
-
-    // Listen for deep links while app is running
-    deepLinkService.deepLinkStream.listen((uri) {
-      final inviteData = DeepLinkService.parseInviteLink(uri);
-      if (inviteData != null && mounted) {
-        // Navigate to registration with prefilled data
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => RegisterScreen(prefilledData: inviteData),
-          ),
-        );
-      }
     });
   }
 
@@ -98,7 +72,7 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
       ),
       home: authState.isAuthenticated
           ? const TentListScreen()
-          : RegisterScreen(prefilledData: _initialInviteData),
+          : const RegisterScreen(),
     );
   }
 }
