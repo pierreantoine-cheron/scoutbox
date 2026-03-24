@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../providers/auth_provider.dart';
+import '../../utils/constants.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -79,12 +81,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 labelText: "Nom d'utilisateur",
                 border: OutlineInputBorder(),
               ),
+              maxLength: ValidationConstants.usernameMaxLength,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return "Le nom d'utilisateur est requis";
                 }
-                if (value.length < 3) {
-                  return "Le nom d'utilisateur doit contenir au moins 3 caractères";
+                if (value.length < ValidationConstants.usernameMinLength) {
+                  return "Le nom d'utilisateur doit contenir au moins ${ValidationConstants.usernameMinLength} caractères";
+                }
+                if (value.length > ValidationConstants.usernameMaxLength) {
+                  return "Le nom d'utilisateur ne peut pas dépasser ${ValidationConstants.usernameMaxLength} caractères";
                 }
                 return null;
               },
@@ -101,8 +107,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 if (value == null || value.isEmpty) {
                   return 'Le mot de passe est requis';
                 }
-                if (value.length < 8) {
-                  return 'Le mot de passe doit contenir au moins 8 caractères';
+                if (value.length < ValidationConstants.passwordMinLength) {
+                  return 'Le mot de passe doit contenir au moins ${ValidationConstants.passwordMinLength} caractères';
                 }
                 return null;
               },
