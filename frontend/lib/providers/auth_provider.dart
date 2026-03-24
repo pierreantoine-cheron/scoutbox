@@ -65,11 +65,42 @@ class AuthNotifier extends _$AuthNotifier {
   }
 
   Future<void> checkAuthStatus() async {
-    final isAuthenticated = await _authService.initializeFromStorage();
-    if (isAuthenticated) {
+    final initResult = await _authService.initializeFromStorage();
+
+    if (initResult.isAuthenticated) {
       final token = await _authService.getAccessToken();
-      state = state.copyWith(isAuthenticated: true, accessToken: token);
+      state = state.copyWith(
+        isAuthenticated: true,
+        accessToken: token,
+        isSessionExpired: false,
+      );
+    } else if (initResult.isSessionExpired) {
+      state = state.copyWith(
+        isAuthenticated: false,
+        isSessionExpired: true,
+        canRefreshToken: initResult.canRefresh,
+      );
+    } else {
+      state = state.copyWith(isAuthenticated: false, isSessionExpired: false);
     }
+  }
+
+  /// Check if current session is valid, or if token needs refresh
+  Future<void> validateSession() async {
+    final isAuthenticated = await _authService.isAuthenticated();
+    final isSessionExpired = await _authService.isSessionExpired();
+
+    if (!isAuthenticated && isSessionExpired) {
+      final canRefresh = await _authService.canRefreshToken();
+      state = state.copyWith(
+        isAuthenticated: false,
+        isSessionExpired: true,
+        canRefreshToken: canRefresh,
+      );
+    } else if (!isAuthenticated) {
+      state = state.copyWith(isAuthenticated: false, isSessionExpired: false);
+    }
+    // If authenticated, state is already correct
   }
 }
 
@@ -79,11 +110,19 @@ class AuthState {
   final String? error;
   final String? accessToken;
 
+  /// True if the user was previously authenticated but the session expired
+  final bool isSessionExpired;
+
+  /// True if the refresh token exists and can be used to restore the session
+  final bool canRefreshToken;
+
   const AuthState({
     this.isLoading = false,
     this.isAuthenticated = false,
     this.error,
     this.accessToken,
+    this.isSessionExpired = false,
+    this.canRefreshToken = false,
   });
 
   AuthState copyWith({
@@ -91,12 +130,16 @@ class AuthState {
     bool? isAuthenticated,
     String? error,
     String? accessToken,
+    bool? isSessionExpired,
+    bool? canRefreshToken,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       error: error,
       accessToken: accessToken ?? this.accessToken,
+      isSessionExpired: isSessionExpired ?? this.isSessionExpired,
+      canRefreshToken: canRefreshToken ?? this.canRefreshToken,
     );
   }
 }

@@ -7,9 +7,7 @@ void main() {
   group('RegisterScreen', () {
     testWidgets('displays all form fields', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: RegisterScreen()),
-        ),
+        const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
       expect(find.text('URL du serveur'), findsOneWidget);
@@ -20,11 +18,11 @@ void main() {
       expect(find.text("S'inscrire"), findsOneWidget);
     });
 
-    testWidgets('shows error for empty server URL', (WidgetTester tester) async {
+    testWidgets('shows error for empty server URL', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: RegisterScreen()),
-        ),
+        const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
       await tester.tap(find.text("S'inscrire"));
@@ -33,11 +31,11 @@ void main() {
       expect(find.text("L'URL du serveur est requise"), findsOneWidget);
     });
 
-    testWidgets('shows error for invalid server URL', (WidgetTester tester) async {
+    testWidgets('shows error for invalid server URL', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: RegisterScreen()),
-        ),
+        const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
       await tester.enterText(
@@ -56,9 +54,7 @@ void main() {
 
     testWidgets('shows error for short password', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: RegisterScreen()),
-        ),
+        const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
       await tester.enterText(
@@ -79,9 +75,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: RegisterScreen()),
-        ),
+        const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
       await tester.enterText(
