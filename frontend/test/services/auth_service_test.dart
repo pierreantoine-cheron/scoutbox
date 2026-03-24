@@ -37,6 +37,11 @@ void main() {
         expect(StorageKeys.accessToken, equals('access_token'));
         expect(StorageKeys.refreshToken, equals('refresh_token'));
         expect(StorageKeys.serverUrl, equals('server_url'));
+        expect(StorageKeys.accessTokenExpires, equals('access_token_expires'));
+        expect(
+          StorageKeys.refreshTokenExpires,
+          equals('refresh_token_expires'),
+        );
       });
 
       test('ApiTimeouts have correct durations', () {

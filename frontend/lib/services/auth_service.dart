@@ -80,10 +80,12 @@ class AuthService {
           response.data as Map<String, dynamic>,
         );
 
-        // Save tokens and server URL
+        // Save tokens and expiration dates
         await SecureStorageService.saveTokens(
           accessToken: authResponse.accessToken,
           refreshToken: authResponse.refreshToken,
+          accessTokenExpires: authResponse.accessTokenExpires,
+          refreshTokenExpires: authResponse.refreshTokenExpires,
         );
         await SecureStorageService.saveServerUrl(serverUrl);
 
@@ -236,17 +238,24 @@ class AuthService {
   Future<AuthResponse?> _getStoredAuthResponse() async {
     final accessToken = await SecureStorageService.getAccessToken();
     final refreshToken = await SecureStorageService.getRefreshToken();
-    final serverUrl = await SecureStorageService.getServerUrl();
+    final accessTokenExpires =
+        await SecureStorageService.getAccessTokenExpires();
+    final refreshTokenExpires =
+        await SecureStorageService.getRefreshTokenExpires();
 
-    if (accessToken == null || refreshToken == null || serverUrl == null) {
+    if (accessToken == null ||
+        refreshToken == null ||
+        accessTokenExpires == null ||
+        refreshTokenExpires == null) {
       return null;
     }
 
-    // We don't store the expiration dates separately, so we need to
-    // create a minimal AuthResponse with the tokens.
-    // The expiration check will fail and require re-authentication.
-    // TODO: Store expiration dates in secure storage for proper validation
-    return null;
+    return AuthResponse(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      accessTokenExpires: accessTokenExpires,
+      refreshTokenExpires: refreshTokenExpires,
+    );
   }
 }
 

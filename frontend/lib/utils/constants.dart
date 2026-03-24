@@ -15,6 +15,8 @@ class StorageKeys {
   static const String accessToken = 'access_token';
   static const String refreshToken = 'refresh_token';
   static const String serverUrl = 'server_url';
+  static const String accessTokenExpires = 'access_token_expires';
+  static const String refreshTokenExpires = 'refresh_token_expires';
 }
 
 // Validation constants matching backend constraints

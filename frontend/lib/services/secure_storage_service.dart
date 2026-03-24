@@ -39,15 +39,58 @@ class SecureStorageService {
     return await _secureStorage.read(key: StorageKeys.refreshToken);
   }
 
+  /// Save access token expiration
+  static Future<void> saveAccessTokenExpires(DateTime expires) async {
+    await _secureStorage.write(
+      key: StorageKeys.accessTokenExpires,
+      value: expires.toIso8601String(),
+    );
+  }
+
+  /// Get access token expiration
+  static Future<DateTime?> getAccessTokenExpires() async {
+    final value = await _secureStorage.read(
+      key: StorageKeys.accessTokenExpires,
+    );
+    return value != null ? DateTime.parse(value) : null;
+  }
+
+  /// Save refresh token expiration
+  static Future<void> saveRefreshTokenExpires(DateTime expires) async {
+    await _secureStorage.write(
+      key: StorageKeys.refreshTokenExpires,
+      value: expires.toIso8601String(),
+    );
+  }
+
+  /// Get refresh token expiration
+  static Future<DateTime?> getRefreshTokenExpires() async {
+    final value = await _secureStorage.read(
+      key: StorageKeys.refreshTokenExpires,
+    );
+    return value != null ? DateTime.parse(value) : null;
+  }
+
   /// Save both tokens at once
   static Future<void> saveTokens({
     required String accessToken,
     required String refreshToken,
+    DateTime? accessTokenExpires,
+    DateTime? refreshTokenExpires,
   }) async {
-    await Future.wait([
+    final futures = [
       saveAccessToken(accessToken),
       saveRefreshToken(refreshToken),
-    ]);
+    ];
+
+    if (accessTokenExpires != null) {
+      futures.add(saveAccessTokenExpires(accessTokenExpires));
+    }
+    if (refreshTokenExpires != null) {
+      futures.add(saveRefreshTokenExpires(refreshTokenExpires));
+    }
+
+    await Future.wait(futures);
   }
 
   /// Save server URL
@@ -70,9 +113,24 @@ class SecureStorageService {
     await _secureStorage.delete(key: StorageKeys.refreshToken);
   }
 
+  /// Delete access token expiration
+  static Future<void> deleteAccessTokenExpires() async {
+    await _secureStorage.delete(key: StorageKeys.accessTokenExpires);
+  }
+
+  /// Delete refresh token expiration
+  static Future<void> deleteRefreshTokenExpires() async {
+    await _secureStorage.delete(key: StorageKeys.refreshTokenExpires);
+  }
+
   /// Delete both tokens
   static Future<void> deleteTokens() async {
-    await Future.wait([deleteAccessToken(), deleteRefreshToken()]);
+    await Future.wait([
+      deleteAccessToken(),
+      deleteRefreshToken(),
+      deleteAccessTokenExpires(),
+      deleteRefreshTokenExpires(),
+    ]);
   }
 
   /// Delete server URL
