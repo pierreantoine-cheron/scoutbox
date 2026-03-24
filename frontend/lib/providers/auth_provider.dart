@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import '../services/auth_service.dart';
 
 part 'auth_provider.g.dart';
@@ -40,17 +41,11 @@ class AuthNotifier extends _$AuthNotifier {
       );
 
       if (result.success) {
-        // Save tokens and server URL
-        await _authService.saveTokens(
-          result.accessToken!,
-          result.refreshToken!,
-        );
-        await _authService.saveServerUrl(serverUrl);
-
+        // Tokens are already saved by AuthService.register()
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: true,
-          accessToken: result.accessToken,
+          accessToken: result.authResponse!.accessToken,
           error: null,
         );
       } else {
@@ -70,8 +65,9 @@ class AuthNotifier extends _$AuthNotifier {
   }
 
   Future<void> checkAuthStatus() async {
-    final token = await _authService.getAccessToken();
-    if (token != null) {
+    final isAuthenticated = await _authService.initializeFromStorage();
+    if (isAuthenticated) {
+      final token = await _authService.getAccessToken();
       state = state.copyWith(isAuthenticated: true, accessToken: token);
     }
   }

@@ -1,0 +1,44 @@
+// API Routes and validation constants
+class ApiRoutes {
+  // Base paths
+  static const String health = '/api/health';
+  static const String authBase = '/api/auth';
+
+  // Auth endpoints
+  static const String register = '$authBase/register';
+  static const String refresh = '$authBase/refresh';
+  static const String invites = '$authBase/invites';
+}
+
+// Storage keys
+class StorageKeys {
+  static const String accessToken = 'access_token';
+  static const String refreshToken = 'refresh_token';
+  static const String serverUrl = 'server_url';
+}
+
+// Validation constants matching backend constraints
+class ValidationConstants {
+  static const int usernameMinLength = 3;
+  static const int usernameMaxLength = 50;
+  static const int passwordMinLength = 8;
+  static const int inviteCodeMaxLength = 64;
+}
+
+// Error codes returned by backend
+class ErrorCodes {
+  static const String invalidInvite = 'INVALID_INVITE';
+  static const String usernameExists = 'USERNAME_EXISTS';
+  static const String duplicateCode = 'DUPLICATE_CODE';
+  static const String codeGenerationFailed = 'CODE_GENERATION_FAILED';
+  static const String invalidRefreshToken = 'INVALID_REFRESH_TOKEN';
+  static const String unauthorized = 'UNAUTHORIZED';
+  static const String internalError = 'INTERNAL_ERROR';
+}
+
+// API timeouts
+class ApiTimeouts {
+  static const Duration healthCheck = Duration(seconds: 5);
+  static const Duration defaultTimeout = Duration(seconds: 10);
+  static const Duration longTimeout = Duration(seconds: 30);
+}

@@ -1,170 +1,163 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../models/auth_response.dart';
+import '../utils/constants.dart';
+import 'api_client.dart';
+import 'secure_storage_service.dart';
+
+/// Authentication service handling all auth-related operations
+///
+/// Responsibilities:
+/// - Server validation
+/// - User registration
+/// - Token management
+/// - Logout
 class AuthService {
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
-
-  static const _accessTokenKey = 'access_token';
-  static const _refreshTokenKey = 'refresh_token';
-  static const _serverUrlKey = 'server_url';
-
+  /// Validate that a server is reachable and has the health endpoint
   Future<bool> validateServer(String serverUrl) async {
     try {
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: serverUrl,
-          connectTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 5),
-        ),
-      );
-
-      final response = await dio.get('/api/health');
+      final dio = ApiClient.createHealthCheckClient(serverUrl);
+      final response = await dio.get(ApiRoutes.health);
       return response.statusCode == 200;
-    } on DioException catch (e) {
-      // Server might not have health endpoint, try root
-      if (e.response == null) {
-        try {
-          final dio = Dio(
-            BaseOptions(
-              baseUrl: serverUrl,
-              connectTimeout: const Duration(seconds: 5),
-            ),
-          );
-          final response = await dio.get('/');
-          return response.statusCode != null;
-        } catch (_) {
-          return false;
-        }
-      }
-      return false;
     } catch (e) {
       return false;
     }
   }
 
+  /// Register a new user with an invite code
+  ///
+  /// Returns [AuthResult.success] with tokens on success,
+  /// or [AuthResult.failure] with an error message on failure.
   Future<AuthResult> register({
     required String serverUrl,
     required String inviteCode,
     required String username,
     required String password,
   }) async {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: serverUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
-        headers: {'Content-Type': 'application/json'},
-      ),
-    );
+    // Initialize the API client with the server URL
+    ApiClient.initialize(serverUrl);
 
     try {
-      final response = await dio.post(
-        '/api/auth/register',
+      final response = await ApiClient.instance.post(
+        ApiRoutes.register,
         data: {
           'inviteCode': inviteCode,
           'username': username,
           'password': password,
-          'serverUrl': serverUrl,
         },
       );
 
       if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        return AuthResult.success(
-          accessToken: data['accessToken'] as String,
-          refreshToken: data['refreshToken'] as String,
-          accessTokenExpires: DateTime.parse(
-            data['accessTokenExpires'] as String,
-          ),
-          refreshTokenExpires: DateTime.parse(
-            data['refreshTokenExpires'] as String,
-          ),
+        final authResponse = AuthResponse.fromJson(
+          response.data as Map<String, dynamic>,
         );
+
+        // Save tokens and server URL
+        await SecureStorageService.saveTokens(
+          accessToken: authResponse.accessToken,
+          refreshToken: authResponse.refreshToken,
+        );
+        await SecureStorageService.saveServerUrl(serverUrl);
+
+        return AuthResult.success(authResponse: authResponse);
       } else {
-        return AuthResult.failure('Erreur inattendue: ${response.statusCode}');
+        return AuthResult.failure(
+          error: 'Unexpected error: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        final data = e.response!.data as Map<String, dynamic>;
-        final errorMessage = data['error'] as String? ?? 'Erreur inconnue';
-        return AuthResult.failure(errorMessage);
+        try {
+          final errorResponse = ErrorResponse.fromJson(
+            e.response!.data as Map<String, dynamic>,
+          );
+          return AuthResult.failure(
+            error: errorResponse.error,
+            code: errorResponse.code,
+          );
+        } catch (_) {
+          return AuthResult.failure(
+            error: 'Server error: ${e.response?.statusCode}',
+          );
+        }
       }
-      return AuthResult.failure('Erreur de connexion au serveur');
+      return AuthResult.failure(error: 'Connection error. Please try again.');
     } catch (e) {
-      return AuthResult.failure('Erreur inattendue: $e');
+      return AuthResult.failure(error: 'Unexpected error: $e');
     }
   }
 
-  Future<void> saveTokens(String accessToken, String refreshToken) async {
-    await _secureStorage.write(key: _accessTokenKey, value: accessToken);
-    await _secureStorage.write(key: _refreshTokenKey, value: refreshToken);
-  }
-
-  Future<String?> getAccessToken() async {
-    return await _secureStorage.read(key: _accessTokenKey);
-  }
-
-  Future<String?> getRefreshToken() async {
-    return await _secureStorage.read(key: _refreshTokenKey);
-  }
-
-  Future<void> saveServerUrl(String serverUrl) async {
-    await _secureStorage.write(key: _serverUrlKey, value: serverUrl);
-  }
-
-  Future<String?> getServerUrl() async {
-    return await _secureStorage.read(key: _serverUrlKey);
-  }
-
-  Future<void> clearTokens() async {
-    await _secureStorage.delete(key: _accessTokenKey);
-    await _secureStorage.delete(key: _refreshTokenKey);
-  }
-
+  /// Logout the current user
+  ///
+  /// Clears all stored tokens and server URL.
+  /// Note: This doesn't invalidate the token on the server.
   Future<void> logout() async {
-    await clearTokens();
-    await _secureStorage.delete(key: _serverUrlKey);
+    await SecureStorageService.clearAll();
+    ApiClient.reset();
+  }
+
+  /// Check if user is authenticated
+  ///
+  /// Returns true if access token exists in secure storage.
+  Future<bool> isAuthenticated() async {
+    final token = await SecureStorageService.getAccessToken();
+    return token != null;
+  }
+
+  /// Get the current access token
+  Future<String?> getAccessToken() async {
+    return await SecureStorageService.getAccessToken();
+  }
+
+  /// Get the current refresh token
+  Future<String?> getRefreshToken() async {
+    return await SecureStorageService.getRefreshToken();
+  }
+
+  /// Get the stored server URL
+  Future<String?> getServerUrl() async {
+    return await SecureStorageService.getServerUrl();
+  }
+
+  /// Initialize auth service from stored credentials
+  ///
+  /// Should be called on app startup to restore the API client
+  /// with the stored server URL.
+  Future<bool> initializeFromStorage() async {
+    final serverUrl = await SecureStorageService.getServerUrl();
+    final accessToken = await SecureStorageService.getAccessToken();
+
+    if (serverUrl != null && accessToken != null) {
+      ApiClient.initialize(serverUrl);
+      return true;
+    }
+
+    return false;
   }
 }
 
+/// Result of an authentication operation
+///
+/// Use [AuthResult.success] constructor for successful operations,
+/// [AuthResult.failure] for failed operations.
 class AuthResult {
   final bool success;
   final String? error;
-  final String? accessToken;
-  final String? refreshToken;
-  final DateTime? accessTokenExpires;
-  final DateTime? refreshTokenExpires;
+  final String? code;
+  final AuthResponse? authResponse;
 
-  AuthResult._({
+  const AuthResult._({
     required this.success,
     this.error,
-    this.accessToken,
-    this.refreshToken,
-    this.accessTokenExpires,
-    this.refreshTokenExpires,
+    this.code,
+    this.authResponse,
   });
 
-  factory AuthResult.success({
-    required String accessToken,
-    required String refreshToken,
-    required DateTime accessTokenExpires,
-    required DateTime refreshTokenExpires,
-  }) {
-    return AuthResult._(
-      success: true,
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-      accessTokenExpires: accessTokenExpires,
-      refreshTokenExpires: refreshTokenExpires,
-    );
+  factory AuthResult.success({required AuthResponse authResponse}) {
+    return AuthResult._(success: true, authResponse: authResponse);
   }
 
-  factory AuthResult.failure(String error) {
-    return AuthResult._(success: false, error: error);
+  factory AuthResult.failure({required String error, String? code}) {
+    return AuthResult._(success: false, error: error, code: code);
   }
 }
