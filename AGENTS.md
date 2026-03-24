@@ -137,6 +137,7 @@ import '../providers/auth_provider.dart';
 - Single quotes for strings (enforced by linter)
 - Prefer const constructors when possible
 - Final locals by default (enforced by linter)
+- use commas to help format nested Widgets and functions
 
 **State Management (Riverpod):**
 ```dart
