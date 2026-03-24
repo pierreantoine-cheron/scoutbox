@@ -102,7 +102,9 @@ scoutbox/
 
 ## Code Style Guidelines
 
-- Write error messages in english
+- Write user-facing error messages in french
+- Write internal/API error messages in english
+- if uncertain, ask user for clarification
 
 
 ### Flutter/Dart
