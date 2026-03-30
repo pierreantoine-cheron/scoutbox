@@ -52,6 +52,22 @@ void main() {
       );
     });
 
+    testWidgets('invite code field accepts input', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: RegisterScreen())),
+      );
+
+      // Verify the field exists and can receive input
+      await tester.enterText(
+        find.widgetWithText(TextFormField, "Code d'invitation"),
+        'TESTCODE123',
+      );
+      await tester.pump();
+
+      // Verify the text was entered
+      expect(find.text('TESTCODE123'), findsOneWidget);
+    });
+
     testWidgets('shows error for short password', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
