@@ -4,13 +4,17 @@ import '../services/auth_service.dart';
 
 part 'auth_provider.g.dart';
 
+/// Provider for AuthService to enable dependency injection and testing
+@riverpod
+AuthService authService(Ref ref) => AuthService();
+
 @riverpod
 class AuthNotifier extends _$AuthNotifier {
   late final AuthService _authService;
 
   @override
   AuthState build() {
-    _authService = AuthService();
+    _authService = ref.read(authServiceProvider);
     return const AuthState();
   }
 
@@ -52,9 +56,11 @@ class AuthNotifier extends _$AuthNotifier {
         state = state.copyWith(isLoading: false, error: result.error);
       }
     } catch (e) {
+      // Generic error message without exposing exception details to UI
+      // Technical details should be logged, not shown to users
       state = state.copyWith(
         isLoading: false,
-        error: 'Une erreur est survenue: $e',
+        error: 'Une erreur inattendue est survenue. Veuillez réessayer.',
       );
     }
   }
