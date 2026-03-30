@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
+import '../utils/app_config.dart';
 import '../utils/constants.dart';
 
 /// Centralized API client with Dio configuration
@@ -56,10 +58,12 @@ class ApiClient {
       ),
     );
 
-    // Add logging interceptor in debug mode
-    dio.interceptors.add(
-      LogInterceptor(requestBody: true, responseBody: true, error: true),
-    );
+    // Add logging interceptor in debug mode or beta channel
+    if (kDebugMode || AppConfig.enableHttpLogging) {
+      dio.interceptors.add(
+        LogInterceptor(requestBody: true, responseBody: true, error: true),
+      );
+    }
 
     return dio;
   }
