@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../models/auth_response.dart';
+import '../utils/app_config.dart';
 import '../utils/constants.dart';
 import 'api_client.dart';
 import 'secure_storage_service.dart';
@@ -9,6 +10,10 @@ import 'secure_storage_service.dart';
 ///
 /// Internal API error messages (english) should remain as-is
 /// User-facing error messages (french) should be returned to UI
+///
+/// For unknown error codes:
+/// - Beta channel: returns backend message (if available) for diagnostics
+/// - Release channel: returns generic French fallback for safety
 String _getErrorMessage(String code, String defaultMessage) {
   switch (code) {
     case ErrorCodes.invalidInvite:
@@ -26,10 +31,13 @@ String _getErrorMessage(String code, String defaultMessage) {
     case ErrorCodes.internalError:
       return 'Une erreur interne est survenue. Veuillez réessayer plus tard.';
     default:
-      // Return the server message if available, otherwise default
-      return defaultMessage.isNotEmpty
-          ? defaultMessage
-          : 'Une erreur est survenue';
+      // Unknown error code: channel-aware handling
+      if (AppConfig.showUnknownBackendDetails && defaultMessage.isNotEmpty) {
+        // Beta: show backend message for diagnostics
+        return defaultMessage;
+      }
+      // Release: generic French fallback
+      return 'Une erreur est survenue. Veuillez réessayer.';
   }
 }
 
@@ -92,7 +100,7 @@ class AuthService {
         return AuthResult.success(authResponse: authResponse);
       } else {
         return AuthResult.failure(
-          error: 'Unexpected error: ${response.statusCode}',
+          error: 'Erreur inattendue (${response.statusCode}). Veuillez réessayer.',
         );
       }
     } on DioException catch (e) {
@@ -111,13 +119,17 @@ class AuthService {
           );
         } catch (_) {
           return AuthResult.failure(
-            error: 'Server error: ${e.response?.statusCode}',
+            error: 'Erreur serveur (${e.response?.statusCode}). Veuillez réessayer.',
           );
         }
       }
-      return AuthResult.failure(error: 'Connection error. Please try again.');
+      return AuthResult.failure(
+        error: 'Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.',
+      );
     } catch (e) {
-      return AuthResult.failure(error: 'Unexpected error: $e');
+      return AuthResult.failure(
+        error: 'Une erreur inattendue est survenue. Veuillez réessayer.',
+      );
     }
   }
 
