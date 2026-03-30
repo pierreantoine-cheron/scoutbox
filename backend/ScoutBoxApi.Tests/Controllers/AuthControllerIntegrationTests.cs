@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -12,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,7 +70,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomApiFactory>
 public sealed class CustomApiFactory : WebApplicationFactory<Program>
 {
     public static readonly Guid TestUserId = Guid.Parse("00000000-0000-0000-0000-000000000123");
-    private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"scoutbox_it_{Guid.NewGuid():N}.db");
+    private SqliteConnection? _connection;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -78,7 +78,6 @@ public sealed class CustomApiFactory : WebApplicationFactory<Program>
         {
             var settings = new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = $"Data Source={_dbPath}",
                 ["Jwt:Key"] = "integration-tests-jwt-key-with-minimum-32-characters"
             };
 
@@ -87,6 +86,14 @@ public sealed class CustomApiFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
+            _connection = new SqliteConnection("Data Source=:memory:;Cache=Shared");
+            _connection.Open();
+
+            services.AddDbContext<ScoutBoxDbContext>(options =>
+            {
+                options.UseSqlite(_connection);
+            });
+
             services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
@@ -100,9 +107,10 @@ public sealed class CustomApiFactory : WebApplicationFactory<Program>
     {
         base.Dispose(disposing);
 
-        if (disposing && File.Exists(_dbPath))
+        if (disposing)
         {
-            File.Delete(_dbPath);
+            _connection?.Close();
+            _connection?.Dispose();
         }
     }
 }
