@@ -340,7 +340,7 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest(null, 7);
+        var request = new CreateInviteRequest { ExpiresInDays = 7 };
 
         var result = await _controller.CreateInvite(request);
 
@@ -365,7 +365,7 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest("CUSTOM-123", 30);
+        var request = new CreateInviteRequest { Code = "CUSTOM-123", ExpiresInDays = 30 };
 
         var result = await _controller.CreateInvite(request);
 
@@ -399,12 +399,35 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest("EXISTING-999", 30);
+        var request = new CreateInviteRequest { Code = "EXISTING-999", ExpiresInDays = 30 };
 
         var result = await _controller.CreateInvite(request);
 
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
         Assert.Equal("DUPLICATE_CODE", error.Code);
+    }
+    [Fact]
+    public async Task CreateInvite_WithInvalidExpiresInDays_ReturnsBadRequest()
+    {
+        var owner = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "owner4",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(owner);
+        await _db.SaveChangesAsync();
+
+        SetControllerUser(owner.Id, owner.Username);
+
+        var request = new CreateInviteRequest { ExpiresInDays = 0 };
+
+        var result = await _controller.CreateInvite(request);
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        Assert.Equal("INVALID_EXPIRES_IN_DAYS", error.Code);
     }
 }

@@ -85,6 +85,11 @@ public class AuthService
 
     public async Task<(InviteResponse? Response, ErrorResponse? Error)> CreateInviteAsync(Guid createdByUserId, CreateInviteRequest request)
     {
+        if (request.ExpiresInDays is < 1 or > 365)
+        {
+            return (null, new ErrorResponse("Invite expiration must be between 1 and 365 days", "INVALID_EXPIRES_IN_DAYS"));
+        }
+
         string? code;
 
         if (!string.IsNullOrEmpty(request.Code))
