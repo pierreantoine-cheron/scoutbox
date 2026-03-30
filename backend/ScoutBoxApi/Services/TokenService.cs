@@ -8,15 +8,37 @@ namespace ScoutBoxApi.Services;
 
 public class TokenService
 {
+    private const int MinimumJwtKeyLength = 32;
+    private const string JwtKeyPlaceholder = "__SET_JWT_KEY_IN_ENV__";
+
     private readonly string _jwtKey;
     private readonly string _jwtIssuer;
     private readonly string _jwtAudience;
 
     public TokenService(IConfiguration configuration)
     {
-        _jwtKey = configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
-        _jwtIssuer = configuration["Jwt:Issuer"] ?? "ScoutBox";
-        _jwtAudience = configuration["Jwt:Audience"] ?? "ScoutBoxUsers";
+        var settings = GetValidatedJwtSettings(configuration);
+        _jwtKey = settings.Key;
+        _jwtIssuer = settings.Issuer;
+        _jwtAudience = settings.Audience;
+    }
+
+    public static (string Key, string Issuer, string Audience) GetValidatedJwtSettings(IConfiguration configuration)
+    {
+        var jwtKey = configuration["Jwt:Key"];
+        if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey == JwtKeyPlaceholder)
+        {
+            throw new InvalidOperationException("JWT Key is not configured. Set Jwt:Key via environment or local secrets.");
+        }
+
+        if (jwtKey.Length < MinimumJwtKeyLength)
+        {
+            throw new InvalidOperationException($"JWT Key must be at least {MinimumJwtKeyLength} characters.");
+        }
+
+        var jwtIssuer = configuration["Jwt:Issuer"] ?? "ScoutBox";
+        var jwtAudience = configuration["Jwt:Audience"] ?? "ScoutBoxUsers";
+        return (jwtKey, jwtIssuer, jwtAudience);
     }
 
     public string GenerateAccessToken(Guid userId, string username)
