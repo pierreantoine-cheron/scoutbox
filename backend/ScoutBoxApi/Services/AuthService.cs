@@ -28,17 +28,11 @@ public class AuthService
 
         var now = DateTime.UtcNow;
         var userId = Guid.NewGuid();
+        var isRelational = _db.Database.IsRelational();
 
-        await using var transaction = _db.Database.IsRelational()
+        await using var transaction = isRelational
             ? await _db.Database.BeginTransactionAsync()
             : null;
-
-        var inviteWasConsumed = await TryConsumeInviteAsync(request.InviteCode, userId, now);
-        if (!inviteWasConsumed)
-        {
-            _logger.LogWarning("Invalid or expired invite code attempted: {InviteCode}", request.InviteCode);
-            return (null, new ErrorResponse("Invalid or expired invite code", "INVALID_INVITE"));
-        }
 
         var user = new User
         {
@@ -47,11 +41,66 @@ public class AuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             CreatedAt = now
         };
-        await _db.Users.AddAsync(user);
-
         var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Username);
         var refreshToken = TokenService.GenerateRefreshToken();
         var refreshTokenHash = TokenService.HashRefreshToken(refreshToken);
+
+        if (isRelational)
+        {
+            await _db.Users.AddAsync(user);
+
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateUsernameConstraintViolation(ex))
+            {
+                _logger.LogWarning("Duplicate username registration blocked by database constraint: {Username}", request.Username);
+                return (null, new ErrorResponse("This username already exists", "USERNAME_EXISTS"));
+            }
+
+            var relationalInviteConsumed = await TryConsumeInviteAsync(request.InviteCode, userId, now);
+            if (!relationalInviteConsumed)
+            {
+                _logger.LogWarning("Invalid or expired invite code attempted: {InviteCode}", request.InviteCode);
+                return (null, new ErrorResponse("Invalid or expired invite code", "INVALID_INVITE"));
+            }
+
+            await _db.RefreshTokens.AddAsync(new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                Token = refreshTokenHash,
+                UserId = user.Id,
+                ExpiresAt = now.AddDays(180),
+                CreatedAt = now,
+                IsRevoked = false
+            });
+
+            await _db.SaveChangesAsync();
+            await transaction!.CommitAsync();
+
+            _logger.LogInformation("User registered successfully: {Username} (ID: {UserId})", user.Username, user.Id);
+            return (new AuthResponse(accessToken, refreshToken, now.AddMinutes(15), now.AddDays(180)), null);
+        }
+
+        var inviteWasConsumed = await TryConsumeInviteAsync(request.InviteCode, userId, now);
+        if (!inviteWasConsumed)
+        {
+            _logger.LogWarning("Invalid or expired invite code attempted: {InviteCode}", request.InviteCode);
+            return (null, new ErrorResponse("Invalid or expired invite code", "INVALID_INVITE"));
+        }
+
+        await _db.Users.AddAsync(user);
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsDuplicateUsernameConstraintViolation(ex))
+        {
+            _logger.LogWarning("Duplicate username registration blocked by database constraint: {Username}", request.Username);
+            return (null, new ErrorResponse("This username already exists", "USERNAME_EXISTS"));
+        }
 
         await _db.RefreshTokens.AddAsync(new RefreshToken
         {
@@ -63,20 +112,7 @@ public class AuthService
             IsRevoked = false
         });
 
-        try
-        {
-            await _db.SaveChangesAsync();
-
-            if (transaction != null)
-            {
-                await transaction.CommitAsync();
-            }
-        }
-        catch (DbUpdateException ex) when (IsDuplicateUsernameConstraintViolation(ex))
-        {
-            _logger.LogWarning("Duplicate username registration blocked by database constraint: {Username}", request.Username);
-            return (null, new ErrorResponse("This username already exists", "USERNAME_EXISTS"));
-        }
+        await _db.SaveChangesAsync();
 
         _logger.LogInformation("User registered successfully: {Username} (ID: {UserId})", user.Username, user.Id);
 

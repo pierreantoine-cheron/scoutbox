@@ -99,3 +99,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Declaration used by WebApplicationFactory
+public partial class Program
+{
+}
