@@ -66,6 +66,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 labelText: "Code d'invitation",
                 border: OutlineInputBorder(),
               ),
+              maxLength: ValidationConstants.inviteCodeMaxLength,
               textCapitalization: TextCapitalization.characters,
               validator: (value) {
                 if (value == null || value.isEmpty) {
