@@ -239,6 +239,8 @@ public class AuthControllerTests : IDisposable
         Assert.NotNull(refreshToken);
         Assert.False(refreshToken.IsRevoked);
         Assert.True(refreshToken.ExpiresAt > DateTime.UtcNow.AddDays(179));
+        Assert.NotEqual(response.RefreshToken, refreshToken.Token);
+        Assert.Equal(TokenService.HashRefreshToken(response.RefreshToken), refreshToken.Token);
     }
 
     [Fact]
@@ -256,7 +258,7 @@ public class AuthControllerTests : IDisposable
         var oldRefreshToken = new RefreshToken
         {
             Id = Guid.NewGuid(),
-            Token = "valid-refresh-token",
+            Token = TokenService.HashRefreshToken("valid-refresh-token"),
             UserId = user.Id,
             ExpiresAt = DateTime.UtcNow.AddDays(180),
             CreatedAt = DateTime.UtcNow,
@@ -277,6 +279,8 @@ public class AuthControllerTests : IDisposable
 
         var revokedToken = await _db.RefreshTokens.FindAsync(oldRefreshToken.Id);
         Assert.True(revokedToken!.IsRevoked);
+        Assert.NotEqual(response.RefreshToken, revokedToken.ReplacedByToken);
+        Assert.Equal(TokenService.HashRefreshToken(response.RefreshToken), revokedToken.ReplacedByToken);
     }
 
     [Fact]
@@ -285,6 +289,36 @@ public class AuthControllerTests : IDisposable
         var request = new RefreshTokenRequest("invalid-token");
 
         var result = await _controller.RefreshToken(request);
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        Assert.Equal("INVALID_REFRESH_TOKEN", error.Code);
+    }
+
+    [Fact]
+    public async Task RefreshToken_WithLegacyPlaintextStoredToken_ReturnsBadRequest()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "legacyrefreshuser",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+
+        _db.RefreshTokens.Add(new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            Token = "legacy-plain-text-token",
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(180),
+            CreatedAt = DateTime.UtcNow,
+            IsRevoked = false
+        });
+        await _db.SaveChangesAsync();
+
+        var result = await _controller.RefreshToken(new RefreshTokenRequest("legacy-plain-text-token"));
 
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);

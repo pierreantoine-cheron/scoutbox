@@ -51,11 +51,12 @@ public class AuthService
 
         var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Username);
         var refreshToken = TokenService.GenerateRefreshToken();
+        var refreshTokenHash = TokenService.HashRefreshToken(refreshToken);
 
         await _db.RefreshTokens.AddAsync(new RefreshToken
         {
             Id = Guid.NewGuid(),
-            Token = refreshToken,
+            Token = refreshTokenHash,
             UserId = user.Id,
             ExpiresAt = now.AddDays(180),
             CreatedAt = now,
@@ -141,9 +142,11 @@ public class AuthService
 
     public async Task<(AuthResponse? Response, ErrorResponse? Error)> RefreshTokenAsync(string refreshToken)
     {
+        var refreshTokenHash = TokenService.HashRefreshToken(refreshToken);
+
         var storedToken = await _db.RefreshTokens
             .Include(rt => rt.User)
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken && !rt.IsRevoked);
+            .FirstOrDefaultAsync(rt => rt.Token == refreshTokenHash && !rt.IsRevoked);
 
         if (storedToken == null || storedToken.ExpiresAt < DateTime.UtcNow)
         {
@@ -155,13 +158,14 @@ public class AuthService
 
         var newAccessToken = _tokenService.GenerateAccessToken(storedToken.User.Id, storedToken.User.Username);
         var newRefreshToken = TokenService.GenerateRefreshToken();
+        var newRefreshTokenHash = TokenService.HashRefreshToken(newRefreshToken);
 
-        storedToken.ReplacedByToken = newRefreshToken;
+        storedToken.ReplacedByToken = newRefreshTokenHash;
 
         await _db.RefreshTokens.AddAsync(new RefreshToken
         {
             Id = Guid.NewGuid(),
-            Token = newRefreshToken,
+            Token = newRefreshTokenHash,
             UserId = storedToken.UserId,
             ExpiresAt = DateTime.UtcNow.AddDays(180),
             CreatedAt = DateTime.UtcNow,
