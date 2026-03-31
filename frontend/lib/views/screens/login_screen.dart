@@ -24,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool _rememberUsername = false;
   bool _obscurePassword = true;
+  bool _hasSubmitted = false;
 
   @override
   void initState() {
@@ -79,13 +80,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       appBar: AppBar(title: const Text('Connexion')),
       body: Form(
         key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             TextFormField(
               controller: _serverController,
               focusNode: _serverFocusNode,
+              autovalidateMode: _hasSubmitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
               decoration: const InputDecoration(
                 labelText: 'URL du serveur',
                 hintText: 'https://votre-serveur.com',
@@ -108,6 +111,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             TextFormField(
               controller: _usernameController,
               focusNode: _usernameFocusNode,
+              autovalidateMode: _hasSubmitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
               decoration: const InputDecoration(
                 labelText: "Nom d'utilisateur",
                 border: OutlineInputBorder(),
@@ -133,6 +139,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             TextFormField(
               controller: _passwordController,
               focusNode: _passwordFocusNode,
+              autovalidateMode: _hasSubmitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
               decoration: InputDecoration(
                 labelText: 'Mot de passe',
                 border: const OutlineInputBorder(),
@@ -224,6 +233,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    setState(() {
+      _hasSubmitted = true;
+    });
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
