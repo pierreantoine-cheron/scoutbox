@@ -16,6 +16,7 @@ void main() {
       expect(find.text('Mot de passe'), findsOneWidget);
       expect(find.text('Confirmer le mot de passe'), findsOneWidget);
       expect(find.text("S'inscrire"), findsOneWidget);
+      expect(find.text('Déjà un compte ? Se connecter'), findsOneWidget);
     });
 
     testWidgets('shows error for empty server URL', (

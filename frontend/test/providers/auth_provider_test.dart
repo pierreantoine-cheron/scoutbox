@@ -8,16 +8,20 @@ AuthState createTestState({
   bool isAuthenticated = false,
   String? error,
   String? accessToken,
+  String? errorCode,
   bool isSessionExpired = false,
   bool canRefreshToken = false,
+  bool showLoginScreen = false,
 }) {
   return AuthState(
     isLoading: isLoading,
     isAuthenticated: isAuthenticated,
     error: error,
     accessToken: accessToken,
+    errorCode: errorCode,
     isSessionExpired: isSessionExpired,
     canRefreshToken: canRefreshToken,
+    showLoginScreen: showLoginScreen,
   );
 }
 
@@ -30,8 +34,10 @@ void main() {
       expect(state.isAuthenticated, isFalse);
       expect(state.error, isNull);
       expect(state.accessToken, isNull);
+      expect(state.errorCode, isNull);
       expect(state.isSessionExpired, isFalse);
       expect(state.canRefreshToken, isFalse);
+      expect(state.showLoginScreen, isFalse);
     });
 
     test('copyWith should update specified fields', () {
@@ -103,6 +109,7 @@ void main() {
       expect(result.isAuthenticated, isFalse);
       expect(result.isSessionExpired, isFalse);
       expect(result.canRefresh, isFalse); // default value
+      expect(result.shouldShowLogin, isFalse);
     });
 
     test('should accept custom values', () {
@@ -110,11 +117,13 @@ void main() {
         isAuthenticated: true,
         isSessionExpired: false,
         canRefresh: true,
+        shouldShowLogin: true,
       );
 
       expect(result.isAuthenticated, isTrue);
       expect(result.isSessionExpired, isFalse);
       expect(result.canRefresh, isTrue);
+      expect(result.shouldShowLogin, isTrue);
     });
   });
 }

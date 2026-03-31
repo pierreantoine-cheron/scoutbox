@@ -244,6 +244,89 @@ public class AuthControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task Login_WithValidCredentials_ReturnsOkResult()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "loginuser",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        var request = new LoginRequest("loginuser", "password123");
+
+        var result = await _controller.Login(request);
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<AuthResponse>(okResult.Value);
+        Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(response.RefreshToken));
+    }
+
+    [Fact]
+    public async Task Login_WithUnknownUsername_ReturnsBadRequest()
+    {
+        var request = new LoginRequest("unknown", "password123");
+
+        var result = await _controller.Login(request);
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        Assert.Equal("INVALID_CREDENTIALS", error.Code);
+        Assert.Equal("Invalid credentials", error.Error);
+    }
+
+    [Fact]
+    public async Task Login_WithWrongPassword_ReturnsBadRequest()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "loginuser2",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        var request = new LoginRequest("loginuser2", "wrong-password");
+
+        var result = await _controller.Login(request);
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        Assert.Equal("INVALID_CREDENTIALS", error.Code);
+    }
+
+    [Fact]
+    public async Task Login_CreatesRefreshToken()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "loginuser3",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        var result = await _controller.Login(new LoginRequest("loginuser3", "password123"));
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<AuthResponse>(okResult.Value);
+
+        var refreshToken = await _db.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.UserId == user.Id && !rt.IsRevoked);
+        Assert.NotNull(refreshToken);
+        Assert.True(refreshToken!.ExpiresAt > DateTime.UtcNow.AddDays(179));
+        Assert.Equal(TokenService.HashRefreshToken(response.RefreshToken), refreshToken.Token);
+    }
+
+    [Fact]
     public async Task RefreshToken_WithValidToken_ReturnsNewTokens()
     {
         var user = new User

@@ -164,6 +164,36 @@ public class AuthService
         return (new InviteResponse(invite.Id, invite.Code, invite.ExpiresAt, invite.IsUsed), null);
     }
 
+    public async Task<(AuthResponse? Response, ErrorResponse? Error)> LoginAsync(LoginRequest request)
+    {
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Username == request.Username);
+
+        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            return (null, new ErrorResponse("Invalid credentials", "INVALID_CREDENTIALS"));
+        }
+
+        var now = DateTime.UtcNow;
+        var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Username);
+        var refreshToken = TokenService.GenerateRefreshToken();
+        var refreshTokenHash = TokenService.HashRefreshToken(refreshToken);
+
+        await _db.RefreshTokens.AddAsync(new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            Token = refreshTokenHash,
+            UserId = user.Id,
+            ExpiresAt = now.AddDays(180),
+            CreatedAt = now,
+            IsRevoked = false
+        });
+
+        await _db.SaveChangesAsync();
+
+        return (new AuthResponse(accessToken, refreshToken, now.AddMinutes(15), now.AddDays(180)), null);
+    }
+
     private async Task<string?> GenerateAvailableCodeAsync(int maxAttempts = 3)
     {
         for (int attempt = 0; attempt < maxAttempts; attempt++)

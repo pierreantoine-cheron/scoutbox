@@ -42,6 +42,27 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        try
+        {
+            var (response, error) = await _authService.LoginAsync(request);
+
+            if (error != null)
+            {
+                return BadRequest(error);
+            }
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during user login");
+            return StatusCode(500, new ErrorResponse("An error occurred during login", "INTERNAL_ERROR"));
+        }
+    }
+
     [HttpPost("invites")]
     [Authorize]
     public async Task<IActionResult> CreateInvite([FromBody] CreateInviteRequest request)

@@ -65,6 +65,51 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
+  Future<void> login({
+    required String serverUrl,
+    required String username,
+    required String password,
+    required bool rememberUsername,
+  }) async {
+    if (state.isLoading) {
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, error: null, errorCode: null);
+
+    try {
+      final result = await _authService.login(
+        serverUrl: serverUrl,
+        username: username,
+        password: password,
+        rememberUsername: rememberUsername,
+      );
+
+      if (result.success) {
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: true,
+          accessToken: result.authResponse!.accessToken,
+          error: null,
+          errorCode: null,
+          showLoginScreen: true,
+        );
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: result.error,
+          errorCode: result.code,
+          isAuthenticated: false,
+        );
+      }
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Une erreur inattendue est survenue. Veuillez réessayer.',
+      );
+    }
+  }
+
   Future<void> logout() async {
     await _authService.logout();
     state = const AuthState();
@@ -79,15 +124,21 @@ class AuthNotifier extends _$AuthNotifier {
         isAuthenticated: true,
         accessToken: token,
         isSessionExpired: false,
+        showLoginScreen: true,
       );
     } else if (initResult.isSessionExpired) {
       state = state.copyWith(
         isAuthenticated: false,
         isSessionExpired: true,
         canRefreshToken: initResult.canRefresh,
+        showLoginScreen: true,
       );
     } else {
-      state = state.copyWith(isAuthenticated: false, isSessionExpired: false);
+      state = state.copyWith(
+        isAuthenticated: false,
+        isSessionExpired: false,
+        showLoginScreen: initResult.shouldShowLogin,
+      );
     }
   }
 
@@ -115,6 +166,7 @@ class AuthState {
   final bool isAuthenticated;
   final String? error;
   final String? accessToken;
+  final String? errorCode;
 
   /// True if the user was previously authenticated but the session expired
   final bool isSessionExpired;
@@ -122,13 +174,18 @@ class AuthState {
   /// True if the refresh token exists and can be used to restore the session
   final bool canRefreshToken;
 
+  /// True when unauthenticated users should land on login first
+  final bool showLoginScreen;
+
   const AuthState({
     this.isLoading = false,
     this.isAuthenticated = false,
     this.error,
     this.accessToken,
+    this.errorCode,
     this.isSessionExpired = false,
     this.canRefreshToken = false,
+    this.showLoginScreen = false,
   });
 
   AuthState copyWith({
@@ -136,16 +193,20 @@ class AuthState {
     bool? isAuthenticated,
     String? error,
     String? accessToken,
+    String? errorCode,
     bool? isSessionExpired,
     bool? canRefreshToken,
+    bool? showLoginScreen,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       error: error,
       accessToken: accessToken ?? this.accessToken,
+      errorCode: errorCode,
       isSessionExpired: isSessionExpired ?? this.isSessionExpired,
       canRefreshToken: canRefreshToken ?? this.canRefreshToken,
+      showLoginScreen: showLoginScreen ?? this.showLoginScreen,
     );
   }
 }

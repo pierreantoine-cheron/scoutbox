@@ -14,6 +14,7 @@ void main() {
           equals('CODE_GENERATION_FAILED'),
         );
         expect(ErrorCodes.invalidRefreshToken, equals('INVALID_REFRESH_TOKEN'));
+        expect(ErrorCodes.invalidCredentials, equals('INVALID_CREDENTIALS'));
         expect(ErrorCodes.unauthorized, equals('UNAUTHORIZED'));
         expect(ErrorCodes.internalError, equals('INTERNAL_ERROR'));
       });
@@ -29,6 +30,7 @@ void main() {
         expect(ApiRoutes.health, equals('/api/health'));
         expect(ApiRoutes.authBase, equals('/api/auth'));
         expect(ApiRoutes.register, equals('/api/auth/register'));
+        expect(ApiRoutes.login, equals('/api/auth/login'));
         expect(ApiRoutes.refresh, equals('/api/auth/refresh'));
         expect(ApiRoutes.invites, equals('/api/auth/invites'));
       });
@@ -37,6 +39,8 @@ void main() {
         expect(StorageKeys.accessToken, equals('access_token'));
         expect(StorageKeys.refreshToken, equals('refresh_token'));
         expect(StorageKeys.serverUrl, equals('server_url'));
+        expect(StorageKeys.rememberUsername, equals('remember_username'));
+        expect(StorageKeys.rememberedUsername, equals('remembered_username'));
         expect(StorageKeys.accessTokenExpires, equals('access_token_expires'));
         expect(
           StorageKeys.refreshTokenExpires,

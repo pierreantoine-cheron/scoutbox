@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'providers/auth_provider.dart';
+import 'views/screens/login_screen.dart';
 import 'views/screens/register_screen.dart';
 import 'views/screens/tent_list_screen.dart';
 
@@ -72,6 +74,8 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
       ),
       home: authState.isAuthenticated
           ? const TentListScreen()
+          : authState.showLoginScreen
+          ? const LoginScreen()
           : const RegisterScreen(),
     );
   }

@@ -103,6 +103,33 @@ class SecureStorageService {
     return await _secureStorage.read(key: StorageKeys.serverUrl);
   }
 
+  /// Save remember username preference
+  static Future<void> saveRememberUsernamePreference(bool value) async {
+    await _secureStorage.write(
+      key: StorageKeys.rememberUsername,
+      value: value.toString(),
+    );
+  }
+
+  /// Get remember username preference
+  static Future<bool> getRememberUsernamePreference() async {
+    final value = await _secureStorage.read(key: StorageKeys.rememberUsername);
+    return value == 'true';
+  }
+
+  /// Save remembered username
+  static Future<void> saveRememberedUsername(String username) async {
+    await _secureStorage.write(
+      key: StorageKeys.rememberedUsername,
+      value: username,
+    );
+  }
+
+  /// Get remembered username
+  static Future<String?> getRememberedUsername() async {
+    return await _secureStorage.read(key: StorageKeys.rememberedUsername);
+  }
+
   /// Delete access token
   static Future<void> deleteAccessToken() async {
     await _secureStorage.delete(key: StorageKeys.accessToken);
@@ -138,8 +165,23 @@ class SecureStorageService {
     await _secureStorage.delete(key: StorageKeys.serverUrl);
   }
 
+  /// Delete remember username preference
+  static Future<void> deleteRememberUsernamePreference() async {
+    await _secureStorage.delete(key: StorageKeys.rememberUsername);
+  }
+
+  /// Delete remembered username
+  static Future<void> deleteRememberedUsername() async {
+    await _secureStorage.delete(key: StorageKeys.rememberedUsername);
+  }
+
   /// Clear all stored data (logout)
   static Future<void> clearAll() async {
-    await Future.wait([deleteTokens(), deleteServerUrl()]);
+    await Future.wait([
+      deleteTokens(),
+      deleteServerUrl(),
+      deleteRememberUsernamePreference(),
+      deleteRememberedUsername(),
+    ]);
   }
 }

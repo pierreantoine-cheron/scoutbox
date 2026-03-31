@@ -26,6 +26,8 @@ String _getErrorMessage(String code, String defaultMessage) {
       return "Impossible de générer un code d'invitation. Veuillez réessayer.";
     case ErrorCodes.invalidRefreshToken:
       return 'Session expirée. Veuillez vous reconnecter.';
+    case ErrorCodes.invalidCredentials:
+      return 'Identifiants incorrects. Veuillez réessayer.';
     case ErrorCodes.unauthorized:
       return 'Accès non autorisé';
     case ErrorCodes.internalError:
@@ -100,7 +102,8 @@ class AuthService {
         return AuthResult.success(authResponse: authResponse);
       } else {
         return AuthResult.failure(
-          error: 'Erreur inattendue (${response.statusCode}). Veuillez réessayer.',
+          error:
+              'Erreur inattendue (${response.statusCode}). Veuillez réessayer.',
         );
       }
     } on DioException catch (e) {
@@ -119,14 +122,92 @@ class AuthService {
           );
         } catch (_) {
           return AuthResult.failure(
-            error: 'Erreur serveur (${e.response?.statusCode}). Veuillez réessayer.',
+            error:
+                'Erreur serveur (${e.response?.statusCode}). Veuillez réessayer.',
           );
         }
       }
       return AuthResult.failure(
-        error: 'Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.',
+        error:
+            'Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.',
       );
     } catch (e) {
+      return AuthResult.failure(
+        error: 'Une erreur inattendue est survenue. Veuillez réessayer.',
+      );
+    }
+  }
+
+  /// Login with existing credentials
+  Future<AuthResult> login({
+    required String serverUrl,
+    required String username,
+    required String password,
+    required bool rememberUsername,
+  }) async {
+    ApiClient.initialize(serverUrl);
+
+    try {
+      final response = await ApiClient.instance.post(
+        ApiRoutes.login,
+        data: {'username': username, 'password': password},
+      );
+
+      if (response.statusCode != 200) {
+        return AuthResult.failure(
+          error:
+              'Erreur inattendue (${response.statusCode}). Veuillez réessayer.',
+        );
+      }
+
+      final authResponse = AuthResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+
+      await SecureStorageService.saveTokens(
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
+        accessTokenExpires: authResponse.accessTokenExpires,
+        refreshTokenExpires: authResponse.refreshTokenExpires,
+      );
+      await SecureStorageService.saveServerUrl(serverUrl);
+      await SecureStorageService.saveRememberUsernamePreference(
+        rememberUsername,
+      );
+      if (rememberUsername) {
+        await SecureStorageService.saveRememberedUsername(username);
+      } else {
+        await SecureStorageService.deleteRememberedUsername();
+      }
+
+      return AuthResult.success(authResponse: authResponse);
+    } on DioException catch (e) {
+      if (e.response?.data != null) {
+        try {
+          final errorResponse = ErrorResponse.fromJson(
+            e.response!.data as Map<String, dynamic>,
+          );
+          final userMessage = _getErrorMessage(
+            errorResponse.code,
+            errorResponse.error,
+          );
+          return AuthResult.failure(
+            error: userMessage,
+            code: errorResponse.code,
+          );
+        } catch (_) {
+          return AuthResult.failure(
+            error:
+                'Erreur serveur (${e.response?.statusCode}). Veuillez réessayer.',
+          );
+        }
+      }
+
+      return AuthResult.failure(
+        error:
+            "Impossible de joindre le serveur. Vérifiez l'URL ou votre connexion, puis réessayez.",
+      );
+    } catch (_) {
       return AuthResult.failure(
         error: 'Une erreur inattendue est survenue. Veuillez réessayer.',
       );
@@ -203,6 +284,14 @@ class AuthService {
     return await SecureStorageService.getServerUrl();
   }
 
+  Future<String?> getRememberedUsername() async {
+    return await SecureStorageService.getRememberedUsername();
+  }
+
+  Future<bool> getRememberUsernamePreference() async {
+    return await SecureStorageService.getRememberUsernamePreference();
+  }
+
   /// Initialize auth service from stored credentials
   ///
   /// Should be called on app startup to restore the API client
@@ -212,12 +301,16 @@ class AuthService {
   /// false if no credentials or token expired.
   Future<AuthInitializationResult> initializeFromStorage() async {
     final serverUrl = await SecureStorageService.getServerUrl();
-    final accessToken = await SecureStorageService.getAccessToken();
+    final rememberedUsername =
+        await SecureStorageService.getRememberedUsername();
+    final hasRememberedUsername =
+        rememberedUsername != null && rememberedUsername.isNotEmpty;
 
-    if (serverUrl == null || accessToken == null) {
+    if (serverUrl == null) {
       return const AuthInitializationResult(
         isAuthenticated: false,
         isSessionExpired: false,
+        shouldShowLogin: false,
       );
     }
 
@@ -229,6 +322,7 @@ class AuthService {
       return const AuthInitializationResult(
         isAuthenticated: true,
         isSessionExpired: false,
+        shouldShowLogin: true,
       );
     } else if (tokenStatus == TokenStatus.expired) {
       // Token exists but is expired
@@ -237,12 +331,17 @@ class AuthService {
         isAuthenticated: false,
         isSessionExpired: true,
         canRefresh: canRefresh,
+        shouldShowLogin: true,
       );
     }
 
-    return const AuthInitializationResult(
+    final hasRefreshToken = await getRefreshToken() != null;
+    final shouldShowLogin = hasRememberedUsername || hasRefreshToken;
+
+    return AuthInitializationResult(
       isAuthenticated: false,
       isSessionExpired: false,
+      shouldShowLogin: shouldShowLogin,
     );
   }
 
@@ -320,9 +419,13 @@ class AuthInitializationResult {
   /// True if refresh token exists and can be used to get new access token
   final bool canRefresh;
 
+  /// True when unauthenticated users should enter from login screen
+  final bool shouldShowLogin;
+
   const AuthInitializationResult({
     required this.isAuthenticated,
     required this.isSessionExpired,
     this.canRefresh = false,
+    this.shouldShowLogin = false,
   });
 }

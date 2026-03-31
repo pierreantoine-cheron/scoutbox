@@ -6,6 +6,7 @@ class ApiRoutes {
 
   // Auth endpoints
   static const String register = '$authBase/register';
+  static const String login = '$authBase/login';
   static const String refresh = '$authBase/refresh';
   static const String invites = '$authBase/invites';
 }
@@ -15,6 +16,8 @@ class StorageKeys {
   static const String accessToken = 'access_token';
   static const String refreshToken = 'refresh_token';
   static const String serverUrl = 'server_url';
+  static const String rememberUsername = 'remember_username';
+  static const String rememberedUsername = 'remembered_username';
   static const String accessTokenExpires = 'access_token_expires';
   static const String refreshTokenExpires = 'refresh_token_expires';
 }
@@ -34,6 +37,7 @@ class ErrorCodes {
   static const String duplicateCode = 'DUPLICATE_CODE';
   static const String codeGenerationFailed = 'CODE_GENERATION_FAILED';
   static const String invalidRefreshToken = 'INVALID_REFRESH_TOKEN';
+  static const String invalidCredentials = 'INVALID_CREDENTIALS';
   static const String unauthorized = 'UNAUTHORIZED';
   static const String internalError = 'INTERNAL_ERROR';
 }
