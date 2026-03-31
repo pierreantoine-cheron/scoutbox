@@ -169,7 +169,14 @@ public class AuthService
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Username == request.Username);
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        // Use a dummy hash when user not found to prevent timing attacks
+        // This ensures both "user not found" and "wrong password" take similar time
+        var hashToVerify = user?.PasswordHash ?? "$2a$10$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+        // Always perform verification to equalize timing between null user and wrong password
+        var isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, hashToVerify);
+
+        if (user == null || !isValidPassword)
         {
             return (null, new ErrorResponse("Invalid credentials", "INVALID_CREDENTIALS"));
         }
