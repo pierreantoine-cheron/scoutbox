@@ -224,6 +224,7 @@ public class AuthService
 
         var storedToken = await _db.RefreshTokens
             .Include(rt => rt.User)
+            .OrderByDescending(rt => rt.CreatedAt)
             .FirstOrDefaultAsync(rt => rt.Token == refreshTokenHash && !rt.IsRevoked);
 
         if (storedToken == null || storedToken.ExpiresAt < DateTime.UtcNow)

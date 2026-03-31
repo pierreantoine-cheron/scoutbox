@@ -321,7 +321,9 @@ public class AuthControllerTests : IDisposable
         var response = Assert.IsType<AuthResponse>(okResult.Value);
 
         var refreshToken = await _db.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.UserId == user.Id && !rt.IsRevoked);
+            .Where(rt => rt.UserId == user.Id && !rt.IsRevoked)
+            .OrderByDescending(rt => rt.CreatedAt)
+            .FirstOrDefaultAsync();
         Assert.NotNull(refreshToken);
         Assert.True(refreshToken!.ExpiresAt > DateTime.UtcNow.AddDays(179));
         Assert.Equal(TokenService.HashRefreshToken(response.RefreshToken), refreshToken.Token);

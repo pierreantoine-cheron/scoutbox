@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/auth_response.dart';
 import '../utils/app_config.dart';
@@ -164,20 +165,37 @@ class AuthService {
         response.data as Map<String, dynamic>,
       );
 
-      await SecureStorageService.saveTokens(
-        accessToken: authResponse.accessToken,
-        refreshToken: authResponse.refreshToken,
-        accessTokenExpires: authResponse.accessTokenExpires,
-        refreshTokenExpires: authResponse.refreshTokenExpires,
-      );
-      await SecureStorageService.saveServerUrl(serverUrl);
-      await SecureStorageService.saveRememberUsernamePreference(
-        rememberUsername,
-      );
-      if (rememberUsername) {
-        await SecureStorageService.saveRememberedUsername(username);
-      } else {
-        await SecureStorageService.deleteRememberedUsername();
+      // Save auth data with error handling - don't fail login if preference storage fails
+      try {
+        await SecureStorageService.saveTokens(
+          accessToken: authResponse.accessToken,
+          refreshToken: authResponse.refreshToken,
+          accessTokenExpires: authResponse.accessTokenExpires,
+          refreshTokenExpires: authResponse.refreshTokenExpires,
+        );
+        await SecureStorageService.saveServerUrl(serverUrl);
+      } catch (e) {
+        // Critical storage failure - tokens/server URL are required
+        debugPrint('Failed to save critical auth data: $e');
+        return AuthResult.failure(
+          error:
+              'Erreur lors de la sauvegarde des données. Veuillez réessayer.',
+        );
+      }
+
+      // Save remember username preference (non-critical)
+      try {
+        await SecureStorageService.saveRememberUsernamePreference(
+          rememberUsername,
+        );
+        if (rememberUsername) {
+          await SecureStorageService.saveRememberedUsername(username);
+        } else {
+          await SecureStorageService.deleteRememberedUsername();
+        }
+      } catch (e) {
+        // Log but don't fail - preference storage is nice-to-have
+        debugPrint('Failed to save remember username preference: $e');
       }
 
       return AuthResult.success(authResponse: authResponse);

@@ -29,21 +29,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _loadInitialValues() async {
-    final serverUrl = await SecureStorageService.getServerUrl();
-    final rememberedUsername =
-        await SecureStorageService.getRememberedUsername();
-    final rememberPref =
-        await SecureStorageService.getRememberUsernamePreference();
+    try {
+      final serverUrl = await SecureStorageService.getServerUrl();
+      final rememberedUsername =
+          await SecureStorageService.getRememberedUsername();
+      final rememberPref =
+          await SecureStorageService.getRememberUsernamePreference();
 
-    if (!mounted) {
-      return;
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _serverController.text = serverUrl ?? '';
+        _usernameController.text = rememberedUsername ?? '';
+        _rememberUsername = rememberPref;
+      });
+    } catch (e) {
+      // Log error but continue with empty form
+      debugPrint('Failed to load saved values: $e');
     }
-
-    setState(() {
-      _serverController.text = serverUrl ?? '';
-      _usernameController.text = rememberedUsername ?? '';
-      _rememberUsername = rememberPref;
-    });
   }
 
   @override
