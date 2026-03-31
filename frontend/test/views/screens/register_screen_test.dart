@@ -17,6 +17,20 @@ void main() {
       expect(find.text('Confirmer le mot de passe'), findsOneWidget);
       expect(find.text("S'inscrire"), findsOneWidget);
       expect(find.text('Déjà un compte ? Se connecter'), findsOneWidget);
+      expect(find.byIcon(Icons.visibility), findsNWidgets(2));
+    });
+
+    testWidgets('password visibility toggles are tappable', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: RegisterScreen())),
+      );
+
+      await tester.tap(find.byTooltip('Afficher le mot de passe').first);
+      await tester.pump();
+
+      expect(find.byIcon(Icons.visibility_off), findsOneWidget);
     });
 
     testWidgets('shows error for empty server URL', (

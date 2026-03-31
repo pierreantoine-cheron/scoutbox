@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../services/secure_storage_service.dart';
 import '../../utils/constants.dart';
 import 'login_screen.dart';
 
@@ -19,6 +20,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStoredServerUrl();
+  }
+
+  Future<void> _loadStoredServerUrl() async {
+    final serverUrl = await SecureStorageService.getServerUrl();
+    if (!mounted || serverUrl == null || serverUrl.isEmpty) {
+      return;
+    }
+    _serverController.text = serverUrl;
+  }
 
   @override
   void dispose() {
@@ -38,6 +56,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       appBar: AppBar(title: const Text('Inscription')),
       body: Form(
         key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
@@ -49,6 +68,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.next,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return "L'URL du serveur est requise";
@@ -69,6 +89,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               maxLength: ValidationConstants.inviteCodeMaxLength,
               textCapitalization: TextCapitalization.characters,
+              textInputAction: TextInputAction.next,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return "Le code d'invitation est requis";
@@ -84,6 +105,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 border: OutlineInputBorder(),
               ),
               maxLength: ValidationConstants.usernameMaxLength,
+              textInputAction: TextInputAction.next,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return "Le nom d'utilisateur est requis";
@@ -100,11 +122,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Mot de passe',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  ),
+                  tooltip: _obscurePassword
+                      ? 'Afficher le mot de passe'
+                      : 'Masquer le mot de passe',
+                ),
               ),
-              obscureText: true,
+              obscureText: _obscurePassword,
+              textInputAction: TextInputAction.next,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Le mot de passe est requis';
@@ -118,11 +154,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _confirmPasswordController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Confirmer le mot de passe',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
+                  icon: Icon(
+                    _obscureConfirmPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                  tooltip: _obscureConfirmPassword
+                      ? 'Afficher le mot de passe'
+                      : 'Masquer le mot de passe',
+                ),
               ),
-              obscureText: true,
+              obscureText: _obscureConfirmPassword,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submit(),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Veuillez confirmer le mot de passe';
