@@ -126,5 +126,40 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('does not show validation errors before submit', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: RegisterScreen())),
+      );
+
+      // Type in server URL field - this should NOT trigger validation on other fields
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'URL du serveur'),
+        'http',
+      );
+      await tester.pump();
+
+      // No validation errors should be visible yet
+      expect(find.text("L'URL du serveur est requise"), findsNothing);
+      expect(find.text("Le code d'invitation est requis"), findsNothing);
+      expect(find.text("Le nom d'utilisateur est requis"), findsNothing);
+      expect(find.text('Le mot de passe est requis'), findsNothing);
+
+      // Now submit the form
+      await tester.tap(find.text("S'inscrire"));
+      await tester.pump();
+
+      // Validation errors should now be visible
+      expect(find.text("L'URL du serveur est requise"), findsNothing);
+      expect(
+        find.text("L'URL doit commencer par http:// ou https://"),
+        findsOneWidget,
+      );
+      expect(find.text("Le code d'invitation est requis"), findsOneWidget);
+      expect(find.text("Le nom d'utilisateur est requis"), findsOneWidget);
+      expect(find.text('Le mot de passe est requis'), findsOneWidget);
+    });
   });
 }

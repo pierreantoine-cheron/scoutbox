@@ -32,5 +32,47 @@ void main() {
 
       expect(find.text("L'URL du serveur est requise"), findsOneWidget);
     });
+
+    testWidgets('shows validation for short username', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: LoginScreen())),
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, "Nom d'utilisateur"),
+        'ab',
+      );
+
+      await tester.tap(find.text('Se connecter'));
+      await tester.pump();
+
+      expect(
+        find.text("Le nom d'utilisateur doit contenir au moins 3 caractères"),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows validation for short password', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: LoginScreen())),
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Mot de passe'),
+        'short',
+      );
+
+      await tester.tap(find.text('Se connecter'));
+      await tester.pump();
+
+      expect(
+        find.text('Le mot de passe doit contenir au moins 8 caractères'),
+        findsOneWidget,
+      );
+    });
   });
 }
