@@ -166,6 +166,8 @@ public class AuthService
 
     public async Task<(AuthResponse? Response, ErrorResponse? Error)> LoginAsync(LoginRequest request)
     {
+        // Username lookup is case-sensitive. "User" and "user" are treated as different usernames.
+        // This is intentional for security - prevents accidental account access due to case confusion.
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Username == request.Username);
 

@@ -330,6 +330,64 @@ public class AuthControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task Login_WithEmptyUsername_ReturnsUnauthorized()
+    {
+        var request = new LoginRequest("", "password123");
+
+        var result = await _controller.Login(request);
+
+        var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
+        Assert.Equal("INVALID_CREDENTIALS", error.Code);
+        Assert.Equal("Invalid credentials", error.Error);
+    }
+
+    [Fact]
+    public async Task Login_WithEmptyPassword_ReturnsUnauthorized()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "loginuser4",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        var request = new LoginRequest("loginuser4", "");
+
+        var result = await _controller.Login(request);
+
+        var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
+        Assert.Equal("INVALID_CREDENTIALS", error.Code);
+    }
+
+    [Fact]
+    public async Task Login_WithDifferentCaseUsername_ReturnsUnauthorized()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "LoginUser",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        // Attempt login with different case - should fail due to case-sensitive lookup
+        var request = new LoginRequest("loginuser", "password123");
+
+        var result = await _controller.Login(request);
+
+        var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
+        Assert.Equal("INVALID_CREDENTIALS", error.Code);
+    }
+
+    [Fact]
     public async Task RefreshToken_WithValidToken_ReturnsNewTokens()
     {
         var user = new User
