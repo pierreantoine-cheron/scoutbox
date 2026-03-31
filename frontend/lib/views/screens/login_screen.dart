@@ -119,6 +119,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 if (value == null || value.trim().isEmpty) {
                   return "Le nom d'utilisateur est requis";
                 }
+                final trimmed = value.trim();
+                if (trimmed.length < ValidationConstants.usernameMinLength) {
+                  return "Le nom d'utilisateur doit contenir au moins ${ValidationConstants.usernameMinLength} caractères";
+                }
+                if (trimmed.length > ValidationConstants.usernameMaxLength) {
+                  return "Le nom d'utilisateur ne peut pas dépasser ${ValidationConstants.usernameMaxLength} caractères";
+                }
                 return null;
               },
             ),
@@ -152,6 +159,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Le mot de passe est requis';
+                }
+                if (value.length < ValidationConstants.passwordMinLength) {
+                  return 'Le mot de passe doit contenir au moins ${ValidationConstants.passwordMinLength} caractères';
                 }
                 return null;
               },
