@@ -28,6 +28,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _hasSubmitted = false;
 
   @override
   void initState() {
@@ -66,13 +67,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       appBar: AppBar(title: const Text('Inscription')),
       body: Form(
         key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
             TextFormField(
               controller: _serverController,
               focusNode: _serverFocusNode,
+              autovalidateMode: _hasSubmitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
               decoration: const InputDecoration(
                 labelText: 'URL du serveur',
                 hintText: 'https://votre-serveur.com',
@@ -95,6 +98,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             TextFormField(
               controller: _inviteController,
               focusNode: _inviteFocusNode,
+              autovalidateMode: _hasSubmitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
               decoration: const InputDecoration(
                 labelText: "Code d'invitation",
                 border: OutlineInputBorder(),
@@ -113,6 +119,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             TextFormField(
               controller: _usernameController,
               focusNode: _usernameFocusNode,
+              autovalidateMode: _hasSubmitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
               decoration: const InputDecoration(
                 labelText: "Nom d'utilisateur",
                 border: OutlineInputBorder(),
@@ -137,6 +146,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             TextFormField(
               controller: _passwordController,
               focusNode: _passwordFocusNode,
+              autovalidateMode: _hasSubmitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
               decoration: InputDecoration(
                 labelText: 'Mot de passe',
                 border: const OutlineInputBorder(),
@@ -173,6 +185,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             TextFormField(
               controller: _confirmPasswordController,
               focusNode: _confirmPasswordFocusNode,
+              autovalidateMode: _hasSubmitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
               decoration: InputDecoration(
                 labelText: 'Confirmer le mot de passe',
                 border: const OutlineInputBorder(),
@@ -250,6 +265,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
+    setState(() {
+      _hasSubmitted = true;
+    });
+
     if (!_formKey.currentState!.validate()) return;
 
     await ref
