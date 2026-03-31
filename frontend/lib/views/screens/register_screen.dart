@@ -20,6 +20,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _serverFocusNode = FocusNode();
+  final _inviteFocusNode = FocusNode();
+  final _usernameFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -45,6 +50,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _serverFocusNode.dispose();
+    _inviteFocusNode.dispose();
+    _usernameFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 
@@ -62,6 +72,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           children: [
             TextFormField(
               controller: _serverController,
+              focusNode: _serverFocusNode,
               decoration: const InputDecoration(
                 labelText: 'URL du serveur',
                 hintText: 'https://votre-serveur.com',
@@ -83,6 +94,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _inviteController,
+              focusNode: _inviteFocusNode,
               decoration: const InputDecoration(
                 labelText: "Code d'invitation",
                 border: OutlineInputBorder(),
@@ -100,6 +112,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _usernameController,
+              focusNode: _usernameFocusNode,
               decoration: const InputDecoration(
                 labelText: "Nom d'utilisateur",
                 border: OutlineInputBorder(),
@@ -123,6 +136,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
+              focusNode: _passwordFocusNode,
               decoration: InputDecoration(
                 labelText: 'Mot de passe',
                 border: const OutlineInputBorder(),
@@ -158,6 +172,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _confirmPasswordController,
+              focusNode: _confirmPasswordFocusNode,
               decoration: InputDecoration(
                 labelText: 'Confirmer le mot de passe',
                 border: const OutlineInputBorder(),

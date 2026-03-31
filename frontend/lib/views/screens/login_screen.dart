@@ -18,6 +18,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _serverController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _serverFocusNode = FocusNode();
+  final _usernameFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
 
   bool _rememberUsername = false;
   bool _obscurePassword = true;
@@ -56,6 +59,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _serverController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
+    _serverFocusNode.dispose();
+    _usernameFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -79,6 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: [
             TextFormField(
               controller: _serverController,
+              focusNode: _serverFocusNode,
               decoration: const InputDecoration(
                 labelText: 'URL du serveur',
                 hintText: 'https://votre-serveur.com',
@@ -100,6 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _usernameController,
+              focusNode: _usernameFocusNode,
               decoration: const InputDecoration(
                 labelText: "Nom d'utilisateur",
                 border: OutlineInputBorder(),
@@ -117,6 +125,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
+              focusNode: _passwordFocusNode,
               decoration: InputDecoration(
                 labelText: 'Mot de passe',
                 border: const OutlineInputBorder(),
