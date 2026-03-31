@@ -267,20 +267,20 @@ public class AuthControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Login_WithUnknownUsername_ReturnsBadRequest()
+    public async Task Login_WithUnknownUsername_ReturnsUnauthorized()
     {
         var request = new LoginRequest("unknown", "password123");
 
         var result = await _controller.Login(request);
 
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
         Assert.Equal("INVALID_CREDENTIALS", error.Code);
         Assert.Equal("Invalid credentials", error.Error);
     }
 
     [Fact]
-    public async Task Login_WithWrongPassword_ReturnsBadRequest()
+    public async Task Login_WithWrongPassword_ReturnsUnauthorized()
     {
         var user = new User
         {
@@ -296,9 +296,10 @@ public class AuthControllerTests : IDisposable
 
         var result = await _controller.Login(request);
 
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
         Assert.Equal("INVALID_CREDENTIALS", error.Code);
+        Assert.Equal("Invalid credentials", error.Error);
     }
 
     [Fact]

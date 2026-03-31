@@ -51,7 +51,8 @@ public class AuthController : ControllerBase
 
             if (error != null)
             {
-                return BadRequest(error);
+                // Return 401 Unauthorized for authentication failures
+                return Unauthorized(error);
             }
 
             return Ok(response);
