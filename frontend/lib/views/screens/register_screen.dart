@@ -171,6 +171,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               enableSuggestions: false,
               autocorrect: false,
               textInputAction: TextInputAction.next,
+              onEditingComplete: () {
+                _confirmPasswordFocusNode.requestFocus();
+              },
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Le mot de passe est requis';
