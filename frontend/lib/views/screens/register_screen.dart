@@ -104,6 +104,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 labelText: "Nom d'utilisateur",
                 border: OutlineInputBorder(),
               ),
+              autofillHints: const [AutofillHints.username],
               maxLength: ValidationConstants.usernameMaxLength,
               textInputAction: TextInputAction.next,
               validator: (value) {
@@ -140,6 +141,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
               ),
               obscureText: _obscurePassword,
+              autofillHints: const [AutofillHints.newPassword],
+              enableSuggestions: false,
+              autocorrect: false,
               textInputAction: TextInputAction.next,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -169,11 +173,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         : Icons.visibility_off,
                   ),
                   tooltip: _obscureConfirmPassword
-                      ? 'Afficher le mot de passe'
-                      : 'Masquer le mot de passe',
+                      ? 'Afficher la confirmation'
+                      : 'Masquer la confirmation',
                 ),
               ),
               obscureText: _obscureConfirmPassword,
+              autofillHints: const [AutofillHints.newPassword],
+              enableSuggestions: false,
+              autocorrect: false,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
               validator: (value) {

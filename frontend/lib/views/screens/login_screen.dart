@@ -73,6 +73,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       appBar: AppBar(title: const Text('Connexion')),
       body: Form(
         key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -103,6 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 labelText: "Nom d'utilisateur",
                 border: OutlineInputBorder(),
               ),
+              autofillHints: const [AutofillHints.username],
               maxLength: ValidationConstants.usernameMaxLength,
               textInputAction: TextInputAction.next,
               validator: (value) {
@@ -133,6 +135,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
               obscureText: _obscurePassword,
+              autofillHints: const [AutofillHints.password],
+              enableSuggestions: false,
+              autocorrect: false,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
               validator: (value) {
