@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../services/auth_service.dart';
+import '../services/api_client.dart';
 
 part 'auth_provider.g.dart';
 
@@ -45,6 +46,9 @@ class AuthNotifier extends _$AuthNotifier {
       );
 
       if (result.success) {
+        // Initialize API client with auth interceptors
+        _initializeApiClientWithAuth(serverUrl);
+
         // Tokens are already saved by AuthService.register()
         state = state.copyWith(
           isLoading: false,
@@ -86,6 +90,9 @@ class AuthNotifier extends _$AuthNotifier {
       );
 
       if (result.success) {
+        // Initialize API client with auth interceptors
+        _initializeApiClientWithAuth(serverUrl);
+
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: true,
@@ -158,6 +165,164 @@ class AuthNotifier extends _$AuthNotifier {
       state = state.copyWith(isAuthenticated: false, isSessionExpired: false);
     }
     // If authenticated, state is already correct
+  }
+
+  /// Attempt to restore session by refreshing the token
+  ///
+  /// Called on startup when access token is expired but refresh token is valid.
+  /// Returns true if session was successfully restored.
+  Future<bool> attemptSessionRestoration() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final result = await _authService.refreshToken();
+
+      if (result.success && result.authResponse != null) {
+        // Session restored - initialize API client with auth
+        final serverUrl = await _authService.getServerUrl();
+        if (serverUrl != null) {
+          _initializeApiClientWithAuth(serverUrl);
+        }
+
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: true,
+          isSessionExpired: false,
+          accessToken: result.authResponse!.accessToken,
+          error: null,
+          showLoginScreen: true,
+        );
+        return true;
+      } else {
+        // Check if this is an unrecoverable auth failure
+        if (result.failureType == RefreshFailureType.invalidToken) {
+          // Clear auth data but preserve server URL and remembered username
+          await _authService.logout();
+
+          state = state.copyWith(
+            isLoading: false,
+            isAuthenticated: false,
+            isSessionExpired: false,
+            canRefreshToken: false,
+            error: result.error, // French message from auth_service
+            showLoginScreen: true,
+          );
+        } else {
+          // Transient failure - don't force logout, keep session state
+          state = state.copyWith(
+            isLoading: false,
+            error: result.error,
+            canRefreshToken: true,
+          );
+        }
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Erreur de connexion. Veuillez réessayer.',
+      );
+      return false;
+    }
+  }
+
+  /// Handle app resume from background - check token freshness
+  ///
+  /// Should be called from AppLifecycleState.resume handler.
+  /// Returns true if session is valid or was refreshed.
+  Future<bool> handleAppResume() async {
+    final isAuthenticated = await _authService.isAuthenticated();
+
+    if (isAuthenticated) {
+      // Token still valid, nothing to do
+      return true;
+    }
+
+    final isSessionExpired = await _authService.isSessionExpired();
+    final canRefresh = await _authService.canRefreshToken();
+
+    if (isSessionExpired && canRefresh) {
+      // Try to refresh
+      return await attemptSessionRestoration();
+    }
+
+    if (isSessionExpired && !canRefresh) {
+      // Session expired and cannot refresh - transition to logged out
+      await logout();
+      state = state.copyWith(
+        isSessionExpired: true,
+        canRefreshToken: false,
+        showLoginScreen: true,
+        error: 'Session expirée. Veuillez vous reconnecter.',
+      );
+      return false;
+    }
+
+    return false;
+  }
+
+  /// Initialize the API client with authentication interceptors
+  void _initializeApiClientWithAuth(String serverUrl) {
+    ApiClient.initializeWithAuth(
+      serverUrl,
+      getToken: () => _authService.getAccessToken(),
+      needsRefresh: () => _authService.needsProactiveRefresh(),
+      performRefresh: () async {
+        final result = await _authService.refreshToken();
+        return result.success;
+      },
+      onAuthFailure: () {
+        // Handle auth failure - this will be called from interceptor
+        logout();
+        state = state.copyWith(
+          isAuthenticated: false,
+          isSessionExpired: true,
+          canRefreshToken: false,
+          showLoginScreen: true,
+          error: 'Session expirée. Veuillez vous reconnecter.',
+        );
+      },
+    );
+  }
+
+  /// Enhanced checkAuthStatus that attempts session restoration
+  Future<void> initializeAuth() async {
+    final initResult = await _authService.initializeFromStorage();
+
+    if (initResult.isAuthenticated) {
+      // Valid access token - initialize with auth
+      final serverUrl = await _authService.getServerUrl();
+      if (serverUrl != null) {
+        _initializeApiClientWithAuth(serverUrl);
+      }
+
+      final token = await _authService.getAccessToken();
+      state = state.copyWith(
+        isAuthenticated: true,
+        accessToken: token,
+        isSessionExpired: false,
+        showLoginScreen: true,
+      );
+    } else if (initResult.isSessionExpired && initResult.canRefresh) {
+      // Access token expired but refresh token valid - try to restore
+      final restored = await attemptSessionRestoration();
+      if (!restored) {
+        // Restoration failed - update state accordingly
+        state = state.copyWith(
+          isAuthenticated: false,
+          isSessionExpired: true,
+          canRefreshToken: await _authService.canRefreshToken(),
+          showLoginScreen: true,
+        );
+      }
+    } else {
+      // No valid session
+      state = state.copyWith(
+        isAuthenticated: false,
+        isSessionExpired: false,
+        showLoginScreen: initResult.shouldShowLogin,
+      );
+    }
   }
 }
 

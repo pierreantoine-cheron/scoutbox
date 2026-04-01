@@ -44,14 +44,63 @@ String _getErrorMessage(String code, String defaultMessage) {
   }
 }
 
+/// Result of a token refresh operation
+class RefreshResult {
+  final bool success;
+  final String? error;
+  final RefreshFailureType? failureType;
+  final AuthResponse? authResponse;
+
+  const RefreshResult._({
+    required this.success,
+    this.error,
+    this.failureType,
+    this.authResponse,
+  });
+
+  factory RefreshResult.success({required AuthResponse authResponse}) {
+    return RefreshResult._(
+      success: true,
+      authResponse: authResponse,
+    );
+  }
+
+  factory RefreshResult.failure({
+    required String error,
+    required RefreshFailureType failureType,
+  }) {
+    return RefreshResult._(
+      success: false,
+      error: error,
+      failureType: failureType,
+    );
+  }
+}
+
+/// Types of refresh failures for differentiated handling
+enum RefreshFailureType {
+  /// Refresh token is invalid or expired - requires re-authentication
+  invalidToken,
+
+  /// Transient network/transport failure - retry possible
+  transientNetwork,
+
+  /// Storage failure during token persistence
+  storageFailure,
+}
+
 /// Authentication service handling all auth-related operations
 ///
 /// Responsibilities:
 /// - Server validation
 /// - User registration
 /// - Token management and validation
+/// - Token refresh with single-flight control
 /// - Logout
 class AuthService {
+  // Single-flight refresh control - shared across concurrent requests
+  Future<RefreshResult>? _ongoingRefresh;
+
   /// Validate that a server is reachable and has the health endpoint
   Future<bool> validateServer(String serverUrl) async {
     try {
@@ -285,6 +334,148 @@ class AuthService {
   Future<bool> isSessionExpired() async {
     final status = await validateAccessToken();
     return status == TokenStatus.expired;
+  }
+
+  /// Refresh the access token using the refresh token
+  ///
+  /// Implements single-flight pattern: concurrent calls will share
+  /// the same refresh operation and await its result.
+  ///
+  /// Returns [RefreshResult.success] with new tokens on success,
+  /// or [RefreshResult.failure] with error type for differentiated handling.
+  Future<RefreshResult> refreshToken() async {
+    // Single-flight pattern: if refresh is already in progress, await it
+    if (_ongoingRefresh != null) {
+      return _ongoingRefresh!;
+    }
+
+    // Start new refresh operation and store it
+    _ongoingRefresh = _performRefresh();
+
+    try {
+      final result = await _ongoingRefresh!;
+      return result;
+    } finally {
+      // Clear the ongoing refresh when done (success or failure)
+      _ongoingRefresh = null;
+    }
+  }
+
+  /// Internal refresh implementation
+  Future<RefreshResult> _performRefresh() async {
+    final refreshToken = await getRefreshToken();
+
+    if (refreshToken == null) {
+      return RefreshResult.failure(
+        error: 'Session expirée. Veuillez vous reconnecter.',
+        failureType: RefreshFailureType.invalidToken,
+      );
+    }
+
+    try {
+      final response = await ApiClient.instance.post(
+        ApiRoutes.refresh,
+        data: {'refreshToken': refreshToken},
+      );
+
+      if (response.statusCode == 200) {
+        final authResponse = AuthResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+
+        // Persist new tokens atomically
+        try {
+          await SecureStorageService.saveTokens(
+            accessToken: authResponse.accessToken,
+            refreshToken: authResponse.refreshToken,
+            accessTokenExpires: authResponse.accessTokenExpires,
+            refreshTokenExpires: authResponse.refreshTokenExpires,
+          );
+
+          return RefreshResult.success(authResponse: authResponse);
+        } catch (e) {
+          // Storage failure - clear tokens to avoid corrupted state
+          debugPrint('Failed to persist refreshed tokens: $e');
+          await SecureStorageService.deleteTokens();
+          return RefreshResult.failure(
+            error: 'Session expirée. Veuillez vous reconnecter.',
+            failureType: RefreshFailureType.storageFailure,
+          );
+        }
+      } else {
+        return RefreshResult.failure(
+          error: 'Session expirée. Veuillez vous reconnecter.',
+          failureType: RefreshFailureType.invalidToken,
+        );
+      }
+    } on DioException catch (e) {
+      // Classify failure type for differentiated handling
+      final failureType = _classifyRefreshFailure(e);
+      final errorMessage = failureType == RefreshFailureType.invalidToken
+          ? 'Session expirée. Veuillez vous reconnecter.'
+          : 'Erreur de connexion. Veuillez réessayer.';
+
+      return RefreshResult.failure(
+        error: errorMessage,
+        failureType: failureType,
+      );
+    } catch (e) {
+      debugPrint('Unexpected error during token refresh: $e');
+      return RefreshResult.failure(
+        error: 'Erreur de connexion. Veuillez réessayer.',
+        failureType: RefreshFailureType.transientNetwork,
+      );
+    }
+  }
+
+  /// Classify DioException into refresh failure type
+  RefreshFailureType _classifyRefreshFailure(DioException e) {
+    // Check for explicit auth errors from backend
+    if (e.response?.data != null) {
+      try {
+        final errorData = e.response!.data as Map<String, dynamic>;
+        final code = errorData['code'] as String?;
+        if (code == ErrorCodes.invalidRefreshToken) {
+          return RefreshFailureType.invalidToken;
+        }
+      } catch (_) {
+        // Ignore parsing errors
+      }
+    }
+
+    // Network/transport errors are transient
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.connectionError:
+        return RefreshFailureType.transientNetwork;
+      case DioExceptionType.badResponse:
+        // 401 or 400 with invalid token = auth failure
+        if (e.response?.statusCode == 401 ||
+            (e.response?.statusCode == 400 &&
+             e.response?.data['code'] == ErrorCodes.invalidRefreshToken)) {
+          return RefreshFailureType.invalidToken;
+        }
+        return RefreshFailureType.transientNetwork;
+      default:
+        return RefreshFailureType.transientNetwork;
+    }
+  }
+
+  /// Check if the access token needs proactive refresh
+  ///
+  /// Returns true if token expires within [refreshWindow] (default 5 minutes)
+  /// with optional [clockSkewTolerance] (default 30 seconds) for device clock drift.
+  Future<bool> needsProactiveRefresh({
+    Duration refreshWindow = const Duration(minutes: 5),
+    Duration clockSkewTolerance = const Duration(seconds: 30),
+  }) async {
+    final authResponse = await _getStoredAuthResponse();
+    if (authResponse == null) return false;
+
+    final totalWindow = refreshWindow + clockSkewTolerance;
+    return authResponse.isAccessTokenExpiringSoon(window: totalWindow);
   }
 
   /// Get the current access token

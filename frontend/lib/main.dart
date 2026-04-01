@@ -18,20 +18,40 @@ class ScoutBoxApp extends ConsumerStatefulWidget {
   ConsumerState<ScoutBoxApp> createState() => _ScoutBoxAppState();
 }
 
-class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> {
+class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
+    with WidgetsBindingObserver {
   bool _isInitializing = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeApp();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _handleAppResume();
+    }
+  }
+
   Future<void> _initializeApp() async {
-    await ref.read(authProvider.notifier).checkAuthStatus();
+    await ref.read(authProvider.notifier).initializeAuth();
     setState(() {
       _isInitializing = false;
     });
+  }
+
+  Future<void> _handleAppResume() async {
+    final authNotifier = ref.read(authProvider.notifier);
+    await authNotifier.handleAppResume();
   }
 
   @override

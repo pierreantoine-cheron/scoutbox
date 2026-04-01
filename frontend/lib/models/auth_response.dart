@@ -38,6 +38,24 @@ class AuthResponse {
 
   bool get isAccessTokenExpired => DateTime.now().isAfter(accessTokenExpires);
   bool get isRefreshTokenExpired => DateTime.now().isAfter(refreshTokenExpires);
+
+  /// Check if access token is expired with clock skew tolerance
+  ///
+  /// [tolerance] - Duration to subtract from expiry to account for device clock drift
+  /// Default is 30 seconds as recommended for mobile devices.
+  bool isAccessTokenExpiredWithTolerance({Duration tolerance = const Duration(seconds: 30)}) {
+    final effectiveExpiry = accessTokenExpires.subtract(tolerance);
+    return DateTime.now().isAfter(effectiveExpiry);
+  }
+
+  /// Check if access token expires within the specified window
+  ///
+  /// Returns true if token expires within [window] duration from now.
+  /// Useful for proactive refresh decisions.
+  bool isAccessTokenExpiringSoon({Duration window = const Duration(minutes: 5)}) {
+    final refreshThreshold = accessTokenExpires.subtract(window);
+    return DateTime.now().isAfter(refreshThreshold);
+  }
 }
 
 /// Data model matching backend ErrorResponse DTO
