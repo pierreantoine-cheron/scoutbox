@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:frontend/services/api_client.dart';
+import 'package:frontend/services/auth_service.dart'
+    show RefreshResult, RefreshFailureType;
 import 'package:frontend/utils/constants.dart';
 
 void main() {
@@ -189,8 +191,11 @@ void main() {
           testUrl,
           getToken: () async => 'test_token',
           needsRefresh: () async => false,
-          performRefresh: () async => true,
-          onAuthFailure: () {},
+          performRefresh: () async => RefreshResult.failure(
+            error: 'test',
+            failureType: RefreshFailureType.transientNetwork,
+          ),
+          onAuthFailure: (failureType) {},
         );
 
         expect(ApiClient.baseUrl, equals(testUrl));
@@ -200,8 +205,11 @@ void main() {
           testUrl,
           getToken: () async => 'test_token_2',
           needsRefresh: () async => false,
-          performRefresh: () async => true,
-          onAuthFailure: () {},
+          performRefresh: () async => RefreshResult.failure(
+            error: 'test',
+            failureType: RefreshFailureType.transientNetwork,
+          ),
+          onAuthFailure: (failureType) {},
         );
 
         // baseUrl should still be the same

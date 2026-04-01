@@ -283,13 +283,15 @@ class AuthService {
   /// Returns [TokenStatus.valid] if token exists and is not expired,
   /// [TokenStatus.expired] if token exists but is expired,
   /// [TokenStatus.missing] if no token exists.
+  ///
+  /// Uses clock skew tolerance to avoid false-expired decisions.
   Future<TokenStatus> validateAccessToken() async {
     final authResponse = await _getStoredAuthResponse();
     if (authResponse == null) {
       return TokenStatus.missing;
     }
 
-    if (authResponse.isAccessTokenExpired) {
+    if (authResponse.isAccessTokenExpiredWithTolerance()) {
       return TokenStatus.expired;
     }
 
@@ -298,14 +300,15 @@ class AuthService {
 
   /// Check if the refresh token is valid (not expired)
   ///
-  /// Returns true if refresh token exists and is not expired
+  /// Returns true if refresh token exists and is not expired.
+  /// Uses clock skew tolerance to avoid false-expired decisions.
   Future<bool> canRefreshToken() async {
     final authResponse = await _getStoredAuthResponse();
     if (authResponse == null) {
       return false;
     }
 
-    return !authResponse.isRefreshTokenExpired;
+    return !authResponse.isRefreshTokenExpiredWithTolerance();
   }
 
   /// Logout the current user
@@ -314,6 +317,14 @@ class AuthService {
   /// Note: This doesn't invalidate the token on the server.
   Future<void> logout() async {
     await SecureStorageService.clearAll();
+    ApiClient.reset();
+  }
+
+  /// Clear auth tokens only, preserving server URL and remembered username
+  ///
+  /// Used when session expires but user should see prefilled login form.
+  Future<void> clearAuthTokensOnly() async {
+    await SecureStorageService.clearAuthTokens();
     ApiClient.reset();
   }
 

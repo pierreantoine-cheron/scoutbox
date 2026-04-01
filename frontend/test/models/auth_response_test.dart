@@ -17,17 +17,20 @@ void main() {
         expect(response.isAccessTokenExpired, isTrue);
       });
 
-      test('isAccessTokenExpired returns false when token is not yet expired', () {
-        final futureTime = DateTime.now().add(const Duration(minutes: 5));
-        final response = AuthResponse(
-          accessToken: 'test_token',
-          refreshToken: 'test_refresh',
-          accessTokenExpires: futureTime,
-          refreshTokenExpires: DateTime.now().add(const Duration(days: 180)),
-        );
+      test(
+        'isAccessTokenExpired returns false when token is not yet expired',
+        () {
+          final futureTime = DateTime.now().add(const Duration(minutes: 5));
+          final response = AuthResponse(
+            accessToken: 'test_token',
+            refreshToken: 'test_refresh',
+            accessTokenExpires: futureTime,
+            refreshTokenExpires: DateTime.now().add(const Duration(days: 180)),
+          );
 
-        expect(response.isAccessTokenExpired, isFalse);
-      });
+          expect(response.isAccessTokenExpired, isFalse);
+        },
+      );
 
       test('isRefreshTokenExpired returns true when token is past expiry', () {
         final pastTime = DateTime.now().subtract(const Duration(days: 1));
@@ -41,17 +44,20 @@ void main() {
         expect(response.isRefreshTokenExpired, isTrue);
       });
 
-      test('isRefreshTokenExpired returns false when token is not yet expired', () {
-        final futureTime = DateTime.now().add(const Duration(days: 30));
-        final response = AuthResponse(
-          accessToken: 'test_token',
-          refreshToken: 'test_refresh',
-          accessTokenExpires: DateTime.now().add(const Duration(minutes: 15)),
-          refreshTokenExpires: futureTime,
-        );
+      test(
+        'isRefreshTokenExpired returns false when token is not yet expired',
+        () {
+          final futureTime = DateTime.now().add(const Duration(days: 30));
+          final response = AuthResponse(
+            accessToken: 'test_token',
+            refreshToken: 'test_refresh',
+            accessTokenExpires: DateTime.now().add(const Duration(minutes: 15)),
+            refreshTokenExpires: futureTime,
+          );
 
-        expect(response.isRefreshTokenExpired, isFalse);
-      });
+          expect(response.isRefreshTokenExpired, isFalse);
+        },
+      );
     });
 
     group('Clock skew tolerance', () {
@@ -70,30 +76,84 @@ void main() {
 
         // With 30 second tolerance: expired (20 - 30 = -10 seconds remaining)
         expect(
-          response.isAccessTokenExpiredWithTolerance(tolerance: const Duration(seconds: 30)),
+          response.isAccessTokenExpiredWithTolerance(
+            tolerance: const Duration(seconds: 30),
+          ),
           isTrue,
         );
 
         // With 10 second tolerance: not expired (20 - 10 = 10 seconds remaining)
         expect(
-          response.isAccessTokenExpiredWithTolerance(tolerance: const Duration(seconds: 10)),
+          response.isAccessTokenExpiredWithTolerance(
+            tolerance: const Duration(seconds: 10),
+          ),
           isFalse,
         );
       });
 
-      test('isAccessTokenExpiredWithTolerance uses default 30 second tolerance', () {
-        // Token expires 25 seconds from now
-        final nearExpiry = DateTime.now().add(const Duration(seconds: 25));
+      test(
+        'isAccessTokenExpiredWithTolerance uses default 30 second tolerance',
+        () {
+          // Token expires 25 seconds from now
+          final nearExpiry = DateTime.now().add(const Duration(seconds: 25));
+          final response = AuthResponse(
+            accessToken: 'test_token',
+            refreshToken: 'test_refresh',
+            accessTokenExpires: nearExpiry,
+            refreshTokenExpires: DateTime.now().add(const Duration(days: 180)),
+          );
+
+          // Default tolerance is 30 seconds: 25 - 30 = -5, so should be expired
+          expect(response.isAccessTokenExpiredWithTolerance(), isTrue);
+        },
+      );
+
+      test('isRefreshTokenExpiredWithTolerance applies tolerance correctly', () {
+        // Token expires 20 seconds from now
+        final nearExpiry = DateTime.now().add(const Duration(seconds: 20));
         final response = AuthResponse(
           accessToken: 'test_token',
           refreshToken: 'test_refresh',
-          accessTokenExpires: nearExpiry,
-          refreshTokenExpires: DateTime.now().add(const Duration(days: 180)),
+          accessTokenExpires: DateTime.now().add(const Duration(minutes: 15)),
+          refreshTokenExpires: nearExpiry,
         );
 
-        // Default tolerance is 30 seconds: 25 - 30 = -5, so should be expired
-        expect(response.isAccessTokenExpiredWithTolerance(), isTrue);
+        // Without tolerance: not expired (20 seconds remaining)
+        expect(response.isRefreshTokenExpired, isFalse);
+
+        // With 30 second tolerance: expired (20 - 30 = -10 seconds remaining)
+        expect(
+          response.isRefreshTokenExpiredWithTolerance(
+            tolerance: const Duration(seconds: 30),
+          ),
+          isTrue,
+        );
+
+        // With 10 second tolerance: not expired (20 - 10 = 10 seconds remaining)
+        expect(
+          response.isRefreshTokenExpiredWithTolerance(
+            tolerance: const Duration(seconds: 10),
+          ),
+          isFalse,
+        );
       });
+
+      test(
+        'isRefreshTokenExpiredWithTolerance uses default 30 second tolerance',
+        () {
+          // Token expires 25 seconds from now
+          final nearExpiry = DateTime.now().add(const Duration(seconds: 25));
+          final response = AuthResponse(
+            accessToken: 'test_token',
+            refreshToken: 'test_refresh',
+            accessTokenExpires: DateTime.now().add(const Duration(minutes: 15)),
+            refreshTokenExpires: nearExpiry,
+          );
+
+          // Default tolerance is 30 seconds: 25 - 30 = -5, so should be expired
+          expect(response.isRefreshTokenExpiredWithTolerance(), isTrue);
+        },
+      );
     });
 
     group('Proactive refresh window', () {
@@ -109,7 +169,9 @@ void main() {
 
         // Within 5 minute window: should be expiring soon
         expect(
-          response.isAccessTokenExpiringSoon(window: const Duration(minutes: 5)),
+          response.isAccessTokenExpiringSoon(
+            window: const Duration(minutes: 5),
+          ),
           isTrue,
         );
       });
@@ -126,7 +188,9 @@ void main() {
 
         // Outside 5 minute window: should not be expiring soon
         expect(
-          response.isAccessTokenExpiringSoon(window: const Duration(minutes: 5)),
+          response.isAccessTokenExpiringSoon(
+            window: const Duration(minutes: 5),
+          ),
           isFalse,
         );
       });
@@ -151,8 +215,12 @@ void main() {
         final json = {
           'accessToken': 'test_access_token',
           'refreshToken': 'test_refresh_token',
-          'accessTokenExpires': now.add(const Duration(minutes: 15)).toIso8601String(),
-          'refreshTokenExpires': now.add(const Duration(days: 180)).toIso8601String(),
+          'accessTokenExpires': now
+              .add(const Duration(minutes: 15))
+              .toIso8601String(),
+          'refreshTokenExpires': now
+              .add(const Duration(days: 180))
+              .toIso8601String(),
         };
 
         final response = AuthResponse.fromJson(json);
@@ -177,7 +245,10 @@ void main() {
         expect(json['accessToken'], equals('test_access'));
         expect(json['refreshToken'], equals('test_refresh'));
         expect(json['accessTokenExpires'], equals(now.toIso8601String()));
-        expect(json['refreshTokenExpires'], equals(now.add(const Duration(days: 180)).toIso8601String()));
+        expect(
+          json['refreshTokenExpires'],
+          equals(now.add(const Duration(days: 180)).toIso8601String()),
+        );
       });
     });
   });

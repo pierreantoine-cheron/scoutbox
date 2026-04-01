@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../utils/app_config.dart';
 import '../utils/constants.dart';
+import 'auth_service.dart' show RefreshResult, RefreshFailureType;
 
 /// Centralized API client with Dio configuration
 ///
@@ -52,8 +53,8 @@ class ApiClient {
     String baseUrl, {
     required Future<String?> Function() getToken,
     required Future<bool> Function() needsRefresh,
-    required Future<bool> Function() performRefresh,
-    required void Function() onAuthFailure,
+    required Future<RefreshResult> Function() performRefresh,
+    required void Function(RefreshFailureType?) onAuthFailure,
   }) {
     // Guard against reinitializing with same URL
     if (_dio != null && _baseUrl == baseUrl) {
@@ -112,8 +113,8 @@ class ApiClient {
     String baseUrl, {
     required Future<String?> Function() getToken,
     required Future<bool> Function() needsRefresh,
-    required Future<bool> Function() performRefresh,
-    required void Function() onAuthFailure,
+    required Future<RefreshResult> Function() performRefresh,
+    required void Function(RefreshFailureType?) onAuthFailure,
   }) {
     final dio = _createDio(baseUrl);
 
@@ -132,7 +133,14 @@ class ApiClient {
               _isRefreshing = true;
               final currentGeneration = _refreshGeneration;
               try {
-                await performRefresh();
+                final result = await performRefresh();
+                if (!result.success &&
+                    result.failureType == RefreshFailureType.invalidToken) {
+                  // Only trigger auth failure for invalid token, not transient errors
+                  onAuthFailure(result.failureType);
+                }
+                // For transient failures: don't trigger onAuthFailure
+                // Request will proceed with current token
               } finally {
                 // Only clear flag if no reset occurred during refresh
                 if (_refreshGeneration == currentGeneration) {
@@ -183,16 +191,16 @@ class ApiClient {
           if (_isRefreshing ||
               error.requestOptions.extra['retryAfterRefresh'] == true) {
             // Already tried refreshing or currently refreshing - fail
-            onAuthFailure();
+            onAuthFailure(RefreshFailureType.invalidToken);
             return handler.next(error);
           }
 
           // Attempt refresh
           _isRefreshing = true;
           try {
-            final refreshSuccess = await performRefresh();
+            final result = await performRefresh();
 
-            if (refreshSuccess) {
+            if (result.success) {
               // Retry original request with new token
               final token = await getToken();
               if (token != null) {
@@ -205,14 +213,18 @@ class ApiClient {
               // Retry the request
               final response = await dio.fetch(error.requestOptions);
               return handler.resolve(response);
+            } else if (result.failureType == RefreshFailureType.invalidToken) {
+              // Invalid token - trigger auth failure
+              onAuthFailure(result.failureType);
+              return handler.next(error);
             } else {
-              // Refresh failed - auth failure
-              onAuthFailure();
+              // Transient failure - don't force logout, just fail this request
+              // User can retry manually
               return handler.next(error);
             }
           } catch (e) {
             debugPrint('Error during refresh and retry: $e');
-            onAuthFailure();
+            // Treat unexpected errors as transient - don't force logout
             return handler.next(error);
           } finally {
             _isRefreshing = false;

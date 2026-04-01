@@ -43,8 +43,21 @@ class AuthResponse {
   ///
   /// [tolerance] - Duration to subtract from expiry to account for device clock drift
   /// Default is 30 seconds as recommended for mobile devices.
-  bool isAccessTokenExpiredWithTolerance({Duration tolerance = const Duration(seconds: 30)}) {
+  bool isAccessTokenExpiredWithTolerance({
+    Duration tolerance = const Duration(seconds: 30),
+  }) {
     final effectiveExpiry = accessTokenExpires.subtract(tolerance);
+    return DateTime.now().isAfter(effectiveExpiry);
+  }
+
+  /// Check if refresh token is expired with clock skew tolerance
+  ///
+  /// [tolerance] - Duration to subtract from expiry to account for device clock drift
+  /// Default is 30 seconds as recommended for mobile devices.
+  bool isRefreshTokenExpiredWithTolerance({
+    Duration tolerance = const Duration(seconds: 30),
+  }) {
+    final effectiveExpiry = refreshTokenExpires.subtract(tolerance);
     return DateTime.now().isAfter(effectiveExpiry);
   }
 
@@ -52,7 +65,9 @@ class AuthResponse {
   ///
   /// Returns true if token expires within [window] duration from now.
   /// Useful for proactive refresh decisions.
-  bool isAccessTokenExpiringSoon({Duration window = const Duration(minutes: 5)}) {
+  bool isAccessTokenExpiringSoon({
+    Duration window = const Duration(minutes: 5),
+  }) {
     final refreshThreshold = accessTokenExpires.subtract(window);
     return DateTime.now().isAfter(refreshThreshold);
   }

@@ -183,10 +183,13 @@ class AuthNotifier extends _$AuthNotifier {
         final serverUrl = await _authService.getServerUrl();
         if (serverUrl == null) {
           // Critical error: can't make API calls without server URL
+          // Clear tokens but preserve server URL and remembered username
           try {
-            await _authService.logout();
+            await _authService.clearAuthTokensOnly();
           } catch (e) {
-            debugPrint('Logout failed during null serverUrl handling: $e');
+            debugPrint(
+              'Clear auth tokens failed during null serverUrl handling: $e',
+            );
           }
           state = state.copyWith(
             isLoading: false,
@@ -211,11 +214,13 @@ class AuthNotifier extends _$AuthNotifier {
       } else {
         // Check if this is an unrecoverable auth failure
         if (result.failureType == RefreshFailureType.invalidToken) {
-          // Clear auth data but preserve server URL and remembered username
+          // Clear auth tokens but preserve server URL and remembered username
           try {
-            await _authService.logout();
+            await _authService.clearAuthTokensOnly();
           } catch (e) {
-            debugPrint('Logout failed during invalid token handling: $e');
+            debugPrint(
+              'Clear auth tokens failed during invalid token handling: $e',
+            );
           }
 
           state = state.copyWith(
@@ -291,22 +296,23 @@ class AuthNotifier extends _$AuthNotifier {
       getToken: () => _authService.getAccessToken(),
       needsRefresh: () => _authService.needsProactiveRefresh(),
       performRefresh: () async {
-        final result = await _authService.refreshToken();
-        return result.success;
+        return await _authService.refreshToken();
       },
-      onAuthFailure: () {
-        // Handle auth failure - this will be called from interceptor
-        // Schedule async logout without blocking
-        _authService.logout().catchError((e) {
-          debugPrint('Logout failed during auth failure: $e');
-        });
-        state = state.copyWith(
-          isAuthenticated: false,
-          isSessionExpired: true,
-          canRefreshToken: false,
-          showLoginScreen: true,
-          error: 'Session expirée. Veuillez vous reconnecter.',
-        );
+      onAuthFailure: (failureType) {
+        if (failureType == RefreshFailureType.invalidToken) {
+          // Clear auth tokens but preserve server URL and remembered username
+          _authService.clearAuthTokensOnly().catchError((e) {
+            debugPrint('Clear auth tokens failed during auth failure: $e');
+          });
+          state = state.copyWith(
+            isAuthenticated: false,
+            isSessionExpired: true,
+            canRefreshToken: false,
+            showLoginScreen: true,
+            error: 'Session expirée. Veuillez vous reconnecter.',
+          );
+        }
+        // For transient failures: don't change state, let user retry
       },
     );
   }

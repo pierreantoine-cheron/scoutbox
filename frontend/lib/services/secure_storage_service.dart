@@ -160,6 +160,13 @@ class SecureStorageService {
     ]);
   }
 
+  /// Clear only auth tokens, preserving server URL and remembered username
+  ///
+  /// Used when session expires but user should see prefilled login form.
+  static Future<void> clearAuthTokens() async {
+    await deleteTokens();
+  }
+
   /// Delete server URL
   static Future<void> deleteServerUrl() async {
     await _secureStorage.delete(key: StorageKeys.serverUrl);
