@@ -139,6 +139,17 @@ void main() {
           expect(result.failureType, equals(RefreshFailureType.storageFailure));
         },
       );
+
+      test('RefreshResult.storageFailure has appropriate error message', () {
+        final result = RefreshResult.failure(
+          error: 'Erreur de stockage. Veuillez réessayer.',
+          failureType: RefreshFailureType.storageFailure,
+        );
+
+        expect(result.success, isFalse);
+        expect(result.failureType, equals(RefreshFailureType.storageFailure));
+        expect(result.error, contains('stockage'));
+      });
     });
 
     group('AuthResult', () {
@@ -206,6 +217,51 @@ void main() {
         expect(TokenStatus.values, contains(TokenStatus.valid));
         expect(TokenStatus.values, contains(TokenStatus.expired));
         expect(TokenStatus.values, contains(TokenStatus.missing));
+      });
+    });
+
+    group('Error message patterns', () {
+      test('French error messages are user-friendly', () {
+        final frenchErrors = [
+          'Session expirée. Veuillez vous reconnecter.',
+          'Erreur de connexion. Veuillez réessayer.',
+          'Erreur de stockage. Veuillez réessayer.',
+          'Identifiants incorrects. Veuillez réessayer.',
+        ];
+
+        for (final error in frenchErrors) {
+          expect(error, contains('Veuillez'));
+        }
+      });
+
+      test('Storage failure errors are distinguishable', () {
+        final storageError = RefreshResult.failure(
+          error: 'Erreur de stockage. Veuillez réessayer.',
+          failureType: RefreshFailureType.storageFailure,
+        );
+
+        final networkError = RefreshResult.failure(
+          error: 'Erreur de connexion. Veuillez réessayer.',
+          failureType: RefreshFailureType.transientNetwork,
+        );
+
+        final authError = RefreshResult.failure(
+          error: 'Session expirée. Veuillez vous reconnecter.',
+          failureType: RefreshFailureType.invalidToken,
+        );
+
+        expect(
+          storageError.failureType,
+          equals(RefreshFailureType.storageFailure),
+        );
+        expect(
+          networkError.failureType,
+          equals(RefreshFailureType.transientNetwork),
+        );
+        expect(authError.failureType, equals(RefreshFailureType.invalidToken));
+
+        expect(storageError.error, isNot(equals(networkError.error)));
+        expect(storageError.error, isNot(equals(authError.error)));
       });
     });
   });

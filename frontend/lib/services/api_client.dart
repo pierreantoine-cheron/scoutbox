@@ -20,6 +20,9 @@ class ApiClient {
   // Flag to prevent recursive refresh calls
   static bool _isRefreshing = false;
 
+  // Generation counter to invalidate in-progress refresh after reset
+  static int _refreshGeneration = 0;
+
   // Excluded paths that should never trigger refresh or have auth headers
   static final _authExcludedPaths = [
     ApiRoutes.login,
@@ -52,6 +55,11 @@ class ApiClient {
     required Future<bool> Function() performRefresh,
     required void Function() onAuthFailure,
   }) {
+    // Guard against reinitializing with same URL
+    if (_dio != null && _baseUrl == baseUrl) {
+      return;
+    }
+
     _baseUrl = baseUrl;
     _dio = _createDioWithAuth(
       baseUrl,
@@ -72,7 +80,9 @@ class ApiClient {
   static void reset() {
     _dio = null;
     _baseUrl = null;
-    _isRefreshing = false;
+    // Increment generation to invalidate any in-progress refresh
+    // Don't reset _isRefreshing - let in-progress refresh complete naturally
+    _refreshGeneration++;
   }
 
   static Dio _createDio(String baseUrl) {
@@ -120,10 +130,14 @@ class ApiClient {
             // Check if proactive refresh is needed before the request
             if (!_isRefreshing && await needsRefresh()) {
               _isRefreshing = true;
+              final currentGeneration = _refreshGeneration;
               try {
                 await performRefresh();
               } finally {
-                _isRefreshing = false;
+                // Only clear flag if no reset occurred during refresh
+                if (_refreshGeneration == currentGeneration) {
+                  _isRefreshing = false;
+                }
               }
             }
 
@@ -131,12 +145,28 @@ class ApiClient {
             final token = await getToken();
             if (token != null) {
               options.headers['Authorization'] = 'Bearer $token';
+              return handler.next(options);
+            } else {
+              // No token available - reject request
+              return handler.reject(
+                DioException(
+                  requestOptions: options,
+                  type: DioExceptionType.unknown,
+                  message: 'No authentication token available',
+                ),
+              );
             }
           } catch (e) {
             debugPrint('Error in auth interceptor onRequest: $e');
+            // Reject request instead of proceeding without auth
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.unknown,
+                message: 'Authentication error: $e',
+              ),
+            );
           }
-
-          return handler.next(options);
         },
         onError: (error, handler) async {
           // Skip error handling for excluded paths
@@ -166,8 +196,7 @@ class ApiClient {
               // Retry original request with new token
               final token = await getToken();
               if (token != null) {
-                error.requestOptions.headers['Authorization'] =
-                    'Bearer $token';
+                error.requestOptions.headers['Authorization'] = 'Bearer $token';
               }
 
               // Mark request to prevent infinite loops
@@ -196,8 +225,16 @@ class ApiClient {
   }
 
   /// Check if a path is excluded from auth handling
+  ///
+  /// Uses prefix matching with boundary check to prevent security bypass.
+  /// A path like /api/auth/loginMalicious will NOT match /api/auth/login.
   static bool _isAuthExcluded(String path) {
-    return _authExcludedPaths.any((excluded) => path.contains(excluded));
+    return _authExcludedPaths.any((excluded) {
+      if (!path.startsWith(excluded)) return false;
+      if (path.length == excluded.length) return true;
+      // Allow trailing slash or path segment separator
+      return path[excluded.length] == '/';
+    });
   }
 
   /// Create a temporary Dio instance for health checks

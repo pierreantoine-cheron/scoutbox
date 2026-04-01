@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../services/auth_service.dart';
@@ -180,9 +181,23 @@ class AuthNotifier extends _$AuthNotifier {
       if (result.success && result.authResponse != null) {
         // Session restored - initialize API client with auth
         final serverUrl = await _authService.getServerUrl();
-        if (serverUrl != null) {
-          _initializeApiClientWithAuth(serverUrl);
+        if (serverUrl == null) {
+          // Critical error: can't make API calls without server URL
+          try {
+            await _authService.logout();
+          } catch (e) {
+            debugPrint('Logout failed during null serverUrl handling: $e');
+          }
+          state = state.copyWith(
+            isLoading: false,
+            isAuthenticated: false,
+            isSessionExpired: true,
+            error: 'Erreur de configuration. Veuillez vous reconnecter.',
+            showLoginScreen: true,
+          );
+          return false;
         }
+        _initializeApiClientWithAuth(serverUrl);
 
         state = state.copyWith(
           isLoading: false,
@@ -197,14 +212,18 @@ class AuthNotifier extends _$AuthNotifier {
         // Check if this is an unrecoverable auth failure
         if (result.failureType == RefreshFailureType.invalidToken) {
           // Clear auth data but preserve server URL and remembered username
-          await _authService.logout();
+          try {
+            await _authService.logout();
+          } catch (e) {
+            debugPrint('Logout failed during invalid token handling: $e');
+          }
 
           state = state.copyWith(
             isLoading: false,
             isAuthenticated: false,
             isSessionExpired: false,
             canRefreshToken: false,
-            error: result.error, // French message from auth_service
+            error: result.error,
             showLoginScreen: true,
           );
         } else {
@@ -248,7 +267,11 @@ class AuthNotifier extends _$AuthNotifier {
 
     if (isSessionExpired && !canRefresh) {
       // Session expired and cannot refresh - transition to logged out
-      await logout();
+      try {
+        await logout();
+      } catch (e) {
+        debugPrint('Logout failed during app resume: $e');
+      }
       state = state.copyWith(
         isSessionExpired: true,
         canRefreshToken: false,
@@ -273,7 +296,10 @@ class AuthNotifier extends _$AuthNotifier {
       },
       onAuthFailure: () {
         // Handle auth failure - this will be called from interceptor
-        logout();
+        // Schedule async logout without blocking
+        _authService.logout().catchError((e) {
+          debugPrint('Logout failed during auth failure: $e');
+        });
         state = state.copyWith(
           isAuthenticated: false,
           isSessionExpired: true,
@@ -287,40 +313,42 @@ class AuthNotifier extends _$AuthNotifier {
 
   /// Enhanced checkAuthStatus that attempts session restoration
   Future<void> initializeAuth() async {
-    final initResult = await _authService.initializeFromStorage();
+    try {
+      final initResult = await _authService.initializeFromStorage();
 
-    if (initResult.isAuthenticated) {
-      // Valid access token - initialize with auth
-      final serverUrl = await _authService.getServerUrl();
-      if (serverUrl != null) {
-        _initializeApiClientWithAuth(serverUrl);
-      }
+      if (initResult.isAuthenticated) {
+        // Valid access token - initialize with auth
+        final serverUrl = await _authService.getServerUrl();
+        if (serverUrl != null) {
+          _initializeApiClientWithAuth(serverUrl);
+        }
 
-      final token = await _authService.getAccessToken();
-      state = state.copyWith(
-        isAuthenticated: true,
-        accessToken: token,
-        isSessionExpired: false,
-        showLoginScreen: true,
-      );
-    } else if (initResult.isSessionExpired && initResult.canRefresh) {
-      // Access token expired but refresh token valid - try to restore
-      final restored = await attemptSessionRestoration();
-      if (!restored) {
-        // Restoration failed - update state accordingly
+        final token = await _authService.getAccessToken();
         state = state.copyWith(
-          isAuthenticated: false,
-          isSessionExpired: true,
-          canRefreshToken: await _authService.canRefreshToken(),
+          isAuthenticated: true,
+          accessToken: token,
+          isSessionExpired: false,
           showLoginScreen: true,
         );
+      } else if (initResult.isSessionExpired && initResult.canRefresh) {
+        // Access token expired but refresh token valid - try to restore
+        await attemptSessionRestoration();
+        // attemptSessionRestoration already handles state updates
+      } else {
+        // No valid session
+        state = state.copyWith(
+          isAuthenticated: false,
+          isSessionExpired: false,
+          showLoginScreen: initResult.shouldShowLogin,
+        );
       }
-    } else {
-      // No valid session
+    } catch (e) {
+      debugPrint('Auth initialization failed: $e');
       state = state.copyWith(
         isAuthenticated: false,
         isSessionExpired: false,
-        showLoginScreen: initResult.shouldShowLogin,
+        showLoginScreen: true,
+        error: "Erreur d'initialisation. Veuillez redémarrer l'application.",
       );
     }
   }

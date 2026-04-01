@@ -38,15 +38,23 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _handleAppResume();
+      _handleAppResume().catchError((e) {
+        debugPrint('App resume handler failed: $e');
+      });
     }
   }
 
   Future<void> _initializeApp() async {
-    await ref.read(authProvider.notifier).initializeAuth();
-    setState(() {
-      _isInitializing = false;
-    });
+    try {
+      await ref.read(authProvider.notifier).initializeAuth();
+    } catch (e) {
+      debugPrint('Auth initialization failed: $e');
+    }
+    if (mounted) {
+      setState(() {
+        _isInitializing = false;
+      });
+    }
   }
 
   Future<void> _handleAppResume() async {

@@ -59,10 +59,7 @@ class RefreshResult {
   });
 
   factory RefreshResult.success({required AuthResponse authResponse}) {
-    return RefreshResult._(
-      success: true,
-      authResponse: authResponse,
-    );
+    return RefreshResult._(success: true, authResponse: authResponse);
   }
 
   factory RefreshResult.failure({
@@ -363,7 +360,19 @@ class AuthService {
 
   /// Internal refresh implementation
   Future<RefreshResult> _performRefresh() async {
-    final refreshToken = await getRefreshToken();
+    // Read refresh token with storage error handling
+    String? refreshToken;
+    try {
+      refreshToken = await getRefreshToken();
+    } catch (e) {
+      debugPrint('Failed to read refresh token from storage: $e');
+      return RefreshResult.failure(
+        error: AppConfig.isBetaChannel
+            ? 'Erreur de lecture du token de rafraîchissement: $e'
+            : 'Erreur de stockage. Veuillez réessayer.',
+        failureType: RefreshFailureType.storageFailure,
+      );
+    }
 
     if (refreshToken == null) {
       return RefreshResult.failure(
@@ -394,11 +403,20 @@ class AuthService {
 
           return RefreshResult.success(authResponse: authResponse);
         } catch (e) {
-          // Storage failure - clear tokens to avoid corrupted state
+          // Storage failure - attempt to clear tokens to avoid corrupted state
           debugPrint('Failed to persist refreshed tokens: $e');
-          await SecureStorageService.deleteTokens();
+          try {
+            await SecureStorageService.deleteTokens();
+          } catch (deleteError) {
+            debugPrint(
+              'Failed to delete tokens after storage failure: $deleteError',
+            );
+            // Continue with failure result, don't cascade
+          }
           return RefreshResult.failure(
-            error: 'Session expirée. Veuillez vous reconnecter.',
+            error: AppConfig.isBetaChannel
+                ? 'Erreur de sauvegarde des tokens: $e'
+                : 'Session expirée. Veuillez vous reconnecter.',
             failureType: RefreshFailureType.storageFailure,
           );
         }
@@ -422,7 +440,9 @@ class AuthService {
     } catch (e) {
       debugPrint('Unexpected error during token refresh: $e');
       return RefreshResult.failure(
-        error: 'Erreur de connexion. Veuillez réessayer.',
+        error: AppConfig.isBetaChannel
+            ? 'Erreur inattendue lors du rafraîchissement: $e'
+            : 'Erreur de connexion. Veuillez réessayer.',
         failureType: RefreshFailureType.transientNetwork,
       );
     }
@@ -431,7 +451,7 @@ class AuthService {
   /// Classify DioException into refresh failure type
   RefreshFailureType _classifyRefreshFailure(DioException e) {
     // Check for explicit auth errors from backend
-    if (e.response?.data != null) {
+    if (e.response?.data != null && e.response!.data is Map<String, dynamic>) {
       try {
         final errorData = e.response!.data as Map<String, dynamic>;
         final code = errorData['code'] as String?;
@@ -452,9 +472,12 @@ class AuthService {
         return RefreshFailureType.transientNetwork;
       case DioExceptionType.badResponse:
         // 401 or 400 with invalid token = auth failure
-        if (e.response?.statusCode == 401 ||
-            (e.response?.statusCode == 400 &&
-             e.response?.data['code'] == ErrorCodes.invalidRefreshToken)) {
+        if (e.response?.statusCode == 401) {
+          return RefreshFailureType.invalidToken;
+        }
+        if (e.response?.statusCode == 400 &&
+            e.response?.data is Map<String, dynamic> &&
+            e.response?.data['code'] == ErrorCodes.invalidRefreshToken) {
           return RefreshFailureType.invalidToken;
         }
         return RefreshFailureType.transientNetwork;
