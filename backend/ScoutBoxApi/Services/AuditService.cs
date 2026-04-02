@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text.Json;
 using ScoutBoxApi.Data;
 using ScoutBoxApi.Models.Entities;
@@ -45,12 +46,20 @@ public class AuditService : IAuditService
     private readonly ScoutBoxDbContext _db;
     private readonly ILogger<AuditService> _logger;
 
-    // Sensitive field patterns that should be excluded from metadata
+    // Sensitive field patterns that should be excluded from metadata at any nesting level
     private static readonly HashSet<string> SensitiveFieldPatterns = new(StringComparer.OrdinalIgnoreCase)
     {
         "token", "refreshtoken", "password", "authorization", "apikey", "secret",
-        "credential", "authheader", "bearer", "accesstoken", "idtoken"
+        "credential", "authheader", "bearer", "accesstoken", "idtoken",
+        "jwt", "cookie", "session", "sessionid", "auth", "authentication",
+        "privatekey", "api_secret", "clientsecret", "client_secret"
     };
+
+    // Maximum recursion depth to prevent stack overflow attacks
+    private const int MaxSanitizationDepth = 8;
+
+    // Maximum serialized metadata size (16KB) to prevent oversized payloads
+    private const int MaxMetadataSizeBytes = 16 * 1024;
 
     public AuditService(ScoutBoxDbContext db, ILogger<AuditService> logger)
     {
@@ -66,9 +75,14 @@ public class AuditService : IAuditService
         Dictionary<string, object?>? metadata = null)
     {
         var sanitizedMetadata = SanitizeMetadata(metadata);
-        var metadataJson = sanitizedMetadata != null
-            ? JsonSerializer.Serialize(sanitizedMetadata)
-            : null;
+        var (metadataJson, wasTruncated) = SerializeMetadataWithSizeLimit(sanitizedMetadata);
+
+        if (wasTruncated)
+        {
+            _logger.LogWarning(
+                "Audit event metadata truncated due to size limit: {Action} by user {ActorUserId}",
+                action, actorUserId);
+        }
 
         var auditEvent = new AuditEvent
         {
@@ -99,9 +113,14 @@ public class AuditService : IAuditService
         CancellationToken cancellationToken = default)
     {
         var sanitizedMetadata = SanitizeMetadata(metadata);
-        var metadataJson = sanitizedMetadata != null
-            ? JsonSerializer.Serialize(sanitizedMetadata)
-            : null;
+        var (metadataJson, wasTruncated) = SerializeMetadataWithSizeLimit(sanitizedMetadata);
+
+        if (wasTruncated)
+        {
+            _logger.LogWarning(
+                "Audit event metadata truncated due to size limit: {Action} by user {ActorUserId}",
+                action, actorUserId);
+        }
 
         var auditEvent = new AuditEvent
         {
@@ -125,7 +144,7 @@ public class AuditService : IAuditService
     }
 
     /// <summary>
-    /// Sanitizes metadata to remove sensitive data before persistence.
+    /// Sanitizes metadata recursively to remove sensitive data at any nesting level.
     /// </summary>
     private Dictionary<string, object?>? SanitizeMetadata(Dictionary<string, object?>? metadata)
     {
@@ -134,28 +153,163 @@ public class AuditService : IAuditService
             return null;
         }
 
-        var sanitized = new Dictionary<string, object?>();
+        var sanitized = SanitizeObject(metadata, 0) as Dictionary<string, object?>;
+        return sanitized?.Count > 0 ? sanitized : null;
+    }
 
-        foreach (var (key, value) in metadata)
+    /// <summary>
+    /// Recursively sanitizes an object, handling dictionaries, lists, and primitive values.
+    /// </summary>
+    private object? SanitizeObject(object? value, int depth)
+    {
+        // Guard against excessive recursion depth
+        if (depth >= MaxSanitizationDepth)
         {
-            // Skip any keys that match sensitive patterns
-            if (IsSensitiveField(key))
-            {
-                _logger.LogDebug("Sanitizing audit metadata: excluded sensitive field '{Key}'", key);
-                continue;
-            }
-
-            // Also check string values for potential tokens/secrets
-            if (value is string stringValue && ContainsSensitivePattern(stringValue))
-            {
-                _logger.LogDebug("Sanitizing audit metadata: excluded sensitive value in '{Key}'", key);
-                continue;
-            }
-
-            sanitized[key] = value;
+            _logger.LogDebug("Audit metadata sanitization: max depth {Depth} reached, truncating", MaxSanitizationDepth);
+            return "[MAX_DEPTH_REACHED]";
         }
 
-        return sanitized.Count > 0 ? sanitized : null;
+        if (value == null)
+        {
+            return null;
+        }
+
+        // Handle dictionaries (including our metadata type)
+        if (value is Dictionary<string, object?> dict)
+        {
+            return SanitizeDictionary(dict, depth);
+        }
+
+        // Handle IDictionary (non-generic dictionary interface)
+        if (value is IDictionary nonGenericDict)
+        {
+            return SanitizeNonGenericDictionary(nonGenericDict, depth);
+        }
+
+        // Handle lists and arrays
+        if (value is IEnumerable enumerable && value is not string)
+        {
+            return SanitizeEnumerable(enumerable, depth);
+        }
+
+        // Handle strings - check for sensitive patterns
+        if (value is string stringValue)
+        {
+            return SanitizeString(stringValue);
+        }
+
+        // Handle Guid - convert to string for serialization compatibility
+        if (value is Guid guid)
+        {
+            return guid.ToString();
+        }
+
+        // Handle DateTime - ensure UTC
+        if (value is DateTime dateTime)
+        {
+            return dateTime.Kind == DateTimeKind.Utc
+                ? dateTime
+                : DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+        }
+
+        // For other primitive types (numbers, booleans), return as-is
+        if (value.GetType().IsPrimitive || value is decimal)
+        {
+            return value;
+        }
+
+        // For complex objects, attempt to convert to dictionary via reflection
+        // This handles anonymous types and simple POCOs
+        try
+        {
+            var properties = value.GetType().GetProperties()
+                .Where(p => p.CanRead)
+                .ToDictionary(
+                    p => p.Name,
+                    p => p.GetValue(value));
+
+            return SanitizeDictionary(properties, depth);
+        }
+        catch
+        {
+            // If we can't process the object, return its string representation
+            // but sanitize it first
+            return SanitizeString(value.ToString() ?? "");
+        }
+    }
+
+    private Dictionary<string, object?> SanitizeDictionary(Dictionary<string, object?> dict, int depth)
+    {
+        var sanitized = new Dictionary<string, object?>();
+
+        foreach (var (key, val) in dict)
+        {
+            // Check if key contains sensitive patterns
+            if (IsSensitiveField(key))
+            {
+                _logger.LogDebug("Sanitizing audit metadata: excluded sensitive field '{Key}' at depth {Depth}", key, depth);
+                continue;
+            }
+
+            // Recursively sanitize the value
+            var sanitizedValue = SanitizeObject(val, depth + 1);
+            sanitized[key] = sanitizedValue;
+        }
+
+        return sanitized;
+    }
+
+    private Dictionary<string, object?> SanitizeNonGenericDictionary(IDictionary dict, int depth)
+    {
+        var sanitized = new Dictionary<string, object?>();
+
+        foreach (var key in dict.Keys)
+        {
+            var keyString = key?.ToString() ?? "";
+
+            // Check if key contains sensitive patterns
+            if (IsSensitiveField(keyString))
+            {
+                _logger.LogDebug("Sanitizing audit metadata: excluded sensitive field '{Key}' at depth {Depth}", keyString, depth);
+                continue;
+            }
+
+            // Recursively sanitize the value
+            var value = key != null ? dict[key] : null;
+            var sanitizedValue = SanitizeObject(value, depth + 1);
+            sanitized[keyString] = sanitizedValue;
+        }
+
+        return sanitized;
+    }
+
+    private List<object?> SanitizeEnumerable(IEnumerable enumerable, int depth)
+    {
+        var sanitized = new List<object?>();
+
+        foreach (var item in enumerable)
+        {
+            sanitized.Add(SanitizeObject(item, depth + 1));
+        }
+
+        return sanitized;
+    }
+
+    private string? SanitizeString(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        // Check for patterns that look like tokens (long base64 strings, bearer tokens, etc.)
+        if (ContainsSensitivePattern(value))
+        {
+            _logger.LogDebug("Sanitizing audit metadata: excluded sensitive value pattern");
+            return null; // Remove entirely
+        }
+
+        return value;
     }
 
     private bool IsSensitiveField(string fieldName)
@@ -167,9 +321,10 @@ public class AuditService : IAuditService
 
     private bool ContainsSensitivePattern(string value)
     {
-        // Check for patterns that look like tokens (long base64 strings, bearer tokens, etc.)
+        // Check for patterns that look like tokens
         if (value.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ||
-            value.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+            value.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) ||
+            value.StartsWith("Token ", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -201,5 +356,40 @@ public class AuditService : IAuditService
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Serializes metadata with size limit enforcement.
+    /// Returns the JSON string and a flag indicating if truncation occurred.
+    /// </summary>
+    private (string? Json, bool WasTruncated) SerializeMetadataWithSizeLimit(Dictionary<string, object?>? metadata)
+    {
+        if (metadata == null || metadata.Count == 0)
+        {
+            return (null, false);
+        }
+
+        try
+        {
+            var json = JsonSerializer.Serialize(metadata);
+
+            if (json.Length > MaxMetadataSizeBytes)
+            {
+                _logger.LogWarning(
+                    "Audit metadata exceeds size limit ({Size} > {Limit} bytes), truncating",
+                    json.Length, MaxMetadataSizeBytes);
+
+                // Truncate and add marker
+                var truncated = json.Substring(0, MaxMetadataSizeBytes - 50) + "...[TRUNCATED]";
+                return (truncated, true);
+            }
+
+            return (json, false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to serialize audit metadata");
+            return (null, false);
+        }
     }
 }

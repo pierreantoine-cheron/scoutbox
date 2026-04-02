@@ -285,10 +285,30 @@ public class AuthService
             return (null, new ErrorResponse("Invalid or expired refresh token", "INVALID_REFRESH_TOKEN"));
         }
 
+        // Handle soft-deleted users: User property will be null due to global query filter
+        // Load user with IgnoreQueryFilters to check existence and deletion state
+        User? user = storedToken.User;
+        if (user == null)
+        {
+            user = await _db.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Id == storedToken.UserId);
+
+            // If user is soft-deleted or truly missing, reject the refresh
+            if (user == null || user.IsDeleted)
+            {
+                _logger.LogWarning(
+                    "Refresh token rejected for {Status} user {UserId}",
+                    user == null ? "missing" : "deleted",
+                    storedToken.UserId);
+                return (null, new ErrorResponse("Invalid or expired refresh token", "INVALID_REFRESH_TOKEN"));
+            }
+        }
+
         storedToken.IsRevoked = true;
         storedToken.RevokedAt = DateTime.UtcNow;
 
-        var newAccessToken = _tokenService.GenerateAccessToken(storedToken.User.Id, storedToken.User.Username);
+        var newAccessToken = _tokenService.GenerateAccessToken(user.Id, user.Username);
         var newRefreshToken = TokenService.GenerateRefreshToken();
         var newRefreshTokenHash = TokenService.HashRefreshToken(newRefreshToken);
 
@@ -298,7 +318,7 @@ public class AuthService
         {
             Id = Guid.NewGuid(),
             Token = newRefreshTokenHash,
-            UserId = storedToken.UserId,
+            UserId = user.Id,
             ExpiresAt = DateTime.UtcNow.AddDays(180),
             CreatedAt = DateTime.UtcNow,
             IsRevoked = false
@@ -307,12 +327,12 @@ public class AuthService
         // Record audit event for token rotation
         _auditService.RecordEvent(
             AuditActions.UserRefreshTokenRotated,
-            storedToken.UserId,
+            user.Id,
             nameof(RefreshToken),
             storedToken.Id,
             new Dictionary<string, object?>
             {
-                ["username"] = storedToken.User.Username
+                ["username"] = user.Username
             });
 
         await _db.SaveChangesAsync();
