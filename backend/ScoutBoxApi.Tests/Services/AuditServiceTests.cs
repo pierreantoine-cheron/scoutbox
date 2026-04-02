@@ -74,7 +74,7 @@ public class AuditServiceTests : IDisposable
     }
 
     [Fact]
-    public void RecordEvent_SanitizesSensitiveTokenData()
+    public void RecordEvent_FiltersExcludedTopLevelKeys()
     {
         var userId = Guid.NewGuid();
 
@@ -82,8 +82,8 @@ public class AuditServiceTests : IDisposable
         {
             ["username"] = "testuser",
             ["token"] = "secret-token-123",
-            ["refreshToken"] = "refresh-secret",
-            ["authorization"] = "Bearer abc123"
+            ["password"] = "secret-password",
+            ["action"] = "login"
         };
 
         var auditEvent = _auditService.RecordEvent(
@@ -96,23 +96,31 @@ public class AuditServiceTests : IDisposable
         Assert.NotNull(auditEvent.MetadataJson);
         Assert.Contains("username", auditEvent.MetadataJson);
         Assert.Contains("testuser", auditEvent.MetadataJson);
+        Assert.Contains("action", auditEvent.MetadataJson);
+        // Excluded keys should not be present
         Assert.DoesNotContain("secret-token-123", auditEvent.MetadataJson);
-        Assert.DoesNotContain("refresh-secret", auditEvent.MetadataJson);
-        Assert.DoesNotContain("Bearer abc123", auditEvent.MetadataJson);
+        Assert.DoesNotContain("secret-password", auditEvent.MetadataJson);
     }
 
     [Fact]
-    public void RecordEvent_SanitizesLongBase64Strings()
+    public void RecordEvent_KeepsNestedObjectsIntact()
     {
         var userId = Guid.NewGuid();
 
-        // Create a long base64 string (>100 chars)
-        var longBase64 = Convert.ToBase64String(new byte[80]); // ~107 chars
-
+        // Nested objects are kept as-is - callers are responsible for safe metadata
         var metadata = new Dictionary<string, object?>
         {
-            ["username"] = "testuser",
-            ["suspiciousData"] = longBase64
+            ["user"] = new Dictionary<string, object?>
+            {
+                ["id"] = userId.ToString(),
+                ["name"] = "John Doe",
+                ["settings"] = new Dictionary<string, object?>
+                {
+                    ["theme"] = "dark",
+                    ["notifications"] = true
+                }
+            },
+            ["timestamp"] = DateTime.UtcNow.ToString("O")
         };
 
         var auditEvent = _auditService.RecordEvent(
@@ -123,8 +131,41 @@ public class AuditServiceTests : IDisposable
             metadata);
 
         Assert.NotNull(auditEvent.MetadataJson);
-        Assert.Contains("username", auditEvent.MetadataJson);
-        Assert.DoesNotContain(longBase64, auditEvent.MetadataJson);
+        Assert.Contains("John Doe", auditEvent.MetadataJson);
+        Assert.Contains("dark", auditEvent.MetadataJson);
+        Assert.Contains("notifications", auditEvent.MetadataJson);
+    }
+
+    [Fact]
+    public void RecordEvent_DoesNotRecurseIntoNestedObjectsForFiltering()
+    {
+        var userId = Guid.NewGuid();
+
+        // Nested keys named "token" are NOT filtered - only top-level
+        var metadata = new Dictionary<string, object?>
+        {
+            ["user"] = new Dictionary<string, object?>
+            {
+                ["token"] = "nested-token-value",
+                ["name"] = "testuser"
+            },
+            ["safeField"] = "safe-value"
+        };
+
+        var auditEvent = _auditService.RecordEvent(
+            AuditActions.UserLoginSucceeded,
+            userId,
+            null,
+            null,
+            metadata);
+
+        Assert.NotNull(auditEvent.MetadataJson);
+        // Top-level safe field
+        Assert.Contains("safe-value", auditEvent.MetadataJson);
+        // User object preserved
+        Assert.Contains("testuser", auditEvent.MetadataJson);
+        // Nested token is NOT filtered - only top-level keys are checked
+        Assert.Contains("nested-token-value", auditEvent.MetadataJson);
     }
 
     [Fact]
@@ -191,134 +232,35 @@ public class AuditServiceTests : IDisposable
     }
 
     [Fact]
-    public void RecordEvent_SanitizesNestedDictionaryContainingSensitiveKeys()
+    public void RecordEvent_HandlesComplexMetadata()
     {
         var userId = Guid.NewGuid();
 
         var metadata = new Dictionary<string, object?>
         {
-            ["username"] = "testuser",
-            ["nested"] = new Dictionary<string, object?>
-            {
-                ["token"] = "secret-token-123",
-                ["validData"] = "this-should-remain"
-            }
+            ["count"] = 42,
+            ["isValid"] = true,
+            ["ratio"] = 3.14,
+            ["nullable"] = (string?)null,
+            ["guid"] = Guid.NewGuid(),
+            ["date"] = DateTime.UtcNow
         };
 
         var auditEvent = _auditService.RecordEvent(
-            AuditActions.UserLoginSucceeded,
+            AuditActions.TentCreated,
             userId,
             null,
             null,
             metadata);
 
         Assert.NotNull(auditEvent.MetadataJson);
-        Assert.Contains("username", auditEvent.MetadataJson);
-        Assert.Contains("validData", auditEvent.MetadataJson);
-        Assert.Contains("this-should-remain", auditEvent.MetadataJson);
-        Assert.DoesNotContain("secret-token-123", auditEvent.MetadataJson);
-        Assert.DoesNotContain("\"token\"", auditEvent.MetadataJson);
+        Assert.Contains("42", auditEvent.MetadataJson);
+        Assert.Contains("true", auditEvent.MetadataJson);
+        Assert.Contains("3.14", auditEvent.MetadataJson);
     }
 
     [Fact]
-    public void RecordEvent_SanitizesListOfObjectsContainingPasswords()
-    {
-        var userId = Guid.NewGuid();
-
-        var metadata = new Dictionary<string, object?>
-        {
-            ["items"] = new List<object>
-            {
-                new Dictionary<string, object?> { ["name"] = "item1", ["password"] = "secret123" },
-                new Dictionary<string, object?> { ["name"] = "item2", ["apiKey"] = "key456" },
-                new Dictionary<string, object?> { ["name"] = "item3", ["value"] = "safe-value" }
-            }
-        };
-
-        var auditEvent = _auditService.RecordEvent(
-            AuditActions.UserLoginSucceeded,
-            userId,
-            null,
-            null,
-            metadata);
-
-        Assert.NotNull(auditEvent.MetadataJson);
-        Assert.Contains("item1", auditEvent.MetadataJson);
-        Assert.Contains("item2", auditEvent.MetadataJson);
-        Assert.Contains("item3", auditEvent.MetadataJson);
-        Assert.Contains("safe-value", auditEvent.MetadataJson);
-        Assert.DoesNotContain("secret123", auditEvent.MetadataJson);
-        Assert.DoesNotContain("key456", auditEvent.MetadataJson);
-    }
-
-    [Fact]
-    public void RecordEvent_SanitizesDeeplyNestedBearerToken()
-    {
-        var userId = Guid.NewGuid();
-
-        var metadata = new Dictionary<string, object?>
-        {
-            ["level1"] = new Dictionary<string, object?>
-            {
-                ["level2"] = new Dictionary<string, object?>
-                {
-                    ["level3"] = new Dictionary<string, object?>
-                    {
-                        ["auth"] = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    }
-                }
-            }
-        };
-
-        var auditEvent = _auditService.RecordEvent(
-            AuditActions.UserLoginSucceeded,
-            userId,
-            null,
-            null,
-            metadata);
-
-        Assert.NotNull(auditEvent.MetadataJson);
-        Assert.Contains("level1", auditEvent.MetadataJson);
-        Assert.Contains("level2", auditEvent.MetadataJson);
-        Assert.Contains("level3", auditEvent.MetadataJson);
-        Assert.DoesNotContain("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", auditEvent.MetadataJson);
-    }
-
-    [Fact]
-    public void RecordEvent_PreservesNonSensitiveNestedMetadata()
-    {
-        var userId = Guid.NewGuid();
-
-        var metadata = new Dictionary<string, object?>
-        {
-            ["user"] = new Dictionary<string, object?>
-            {
-                ["id"] = userId.ToString(),
-                ["name"] = "John Doe",
-                ["preferences"] = new Dictionary<string, object?>
-                {
-                    ["theme"] = "dark",
-                    ["language"] = "fr"
-                }
-            },
-            ["timestamp"] = DateTime.UtcNow.ToString("O")
-        };
-
-        var auditEvent = _auditService.RecordEvent(
-            AuditActions.UserLoginSucceeded,
-            userId,
-            null,
-            null,
-            metadata);
-
-        Assert.NotNull(auditEvent.MetadataJson);
-        Assert.Contains("John Doe", auditEvent.MetadataJson);
-        Assert.Contains("dark", auditEvent.MetadataJson);
-        Assert.Contains("fr", auditEvent.MetadataJson);
-    }
-
-    [Fact]
-    public void RecordEvent_ReturnsNullMetadata_WhenAllContentSanitized()
+    public void RecordEvent_ReturnsNullMetadata_WhenAllContentFiltered()
     {
         var userId = Guid.NewGuid();
 
@@ -335,65 +277,24 @@ public class AuditServiceTests : IDisposable
             null,
             metadata);
 
-        // When everything is sanitized away, metadata should be null
+        // When everything is filtered away, metadata should be null
         Assert.Null(auditEvent.MetadataJson);
     }
 
     [Fact]
-    public void RecordEvent_HandlesMaxDepthGracefully()
+    public void RecordEvent_HandlesEmptyMetadata()
     {
         var userId = Guid.NewGuid();
-
-        // Create deeply nested structure (beyond max depth of 8)
-        var deepNested = new Dictionary<string, object?>();
-        var current = deepNested;
-        for (int i = 0; i < 15; i++)
-        {
-            var next = new Dictionary<string, object?>();
-            current[$"level{i}"] = next;
-            current = next;
-        }
-        current["data"] = "some-value";
-
-        var metadata = new Dictionary<string, object?> { ["nested"] = deepNested };
 
         var auditEvent = _auditService.RecordEvent(
             AuditActions.UserLoginSucceeded,
             userId,
             null,
             null,
-            metadata);
+            new Dictionary<string, object?>());
 
-        Assert.NotNull(auditEvent.MetadataJson);
-        Assert.Contains("MAX_DEPTH_REACHED", auditEvent.MetadataJson);
-    }
-
-    [Fact]
-    public void RecordEvent_SanitizesArrayContainingSensitiveData()
-    {
-        var userId = Guid.NewGuid();
-
-        var metadata = new Dictionary<string, object?>
-        {
-            ["items"] = new[]
-            {
-                "normal-value",
-                "Bearer secret-token",
-                "another-normal"
-            }
-        };
-
-        var auditEvent = _auditService.RecordEvent(
-            AuditActions.UserLoginSucceeded,
-            userId,
-            null,
-            null,
-            metadata);
-
-        Assert.NotNull(auditEvent.MetadataJson);
-        Assert.Contains("normal-value", auditEvent.MetadataJson);
-        Assert.Contains("another-normal", auditEvent.MetadataJson);
-        Assert.DoesNotContain("Bearer secret-token", auditEvent.MetadataJson);
+        Assert.NotNull(auditEvent);
+        Assert.Null(auditEvent.MetadataJson);
     }
 
     [Fact]

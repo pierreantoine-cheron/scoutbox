@@ -1,7 +1,7 @@
 namespace ScoutBoxApi.Models.Entities;
 
 /// <summary>
-/// Immutable audit event record capturing user actions for accountability and history.
+/// Audit event record capturing user actions for accountability and history.
 /// All timestamps are stored in UTC.
 /// </summary>
 public class AuditEvent
@@ -37,7 +37,8 @@ public class AuditEvent
 
     /// <summary>
     /// JSON-encoded metadata about the action.
-    /// Must not contain secrets, tokens, passwords, or sensitive data.
+    /// Optional context for troubleshooting and reporting.
+    /// Callers should avoid passing sensitive values (tokens, passwords) in metadata.
     /// </summary>
     public string? MetadataJson { get; set; }
 
