@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ScoutBoxApi.Data;
+using ScoutBoxApi.Models.DTOs;
 using ScoutBoxApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,9 @@ builder.Services.AddSwaggerGen();
 // Add application services
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 // Configure SQLite with WAL mode
 builder.Services.AddDbContext<ScoutBoxDbContext>(options =>
@@ -44,6 +48,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
             ClockSkew = TimeSpan.Zero
+        };
+
+        // Configure custom challenge/forbidden responses with error codes
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                var errorResponse = new ErrorResponse("Invalid or expired token", "AUTH_INVALID_TOKEN");
+                await context.Response.WriteAsJsonAsync(errorResponse);
+            },
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode = 403;
+                context.Response.ContentType = "application/json";
+                var errorResponse = new ErrorResponse("Access denied", "FORBIDDEN");
+                await context.Response.WriteAsJsonAsync(errorResponse);
+            }
         };
     });
 

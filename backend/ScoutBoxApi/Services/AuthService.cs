@@ -9,12 +9,14 @@ public class AuthService
 {
     private readonly ScoutBoxDbContext _db;
     private readonly TokenService _tokenService;
+    private readonly IAuditService _auditService;
     private readonly ILogger<AuthService> _logger;
 
-    public AuthService(ScoutBoxDbContext db, TokenService tokenService, ILogger<AuthService> logger)
+    public AuthService(ScoutBoxDbContext db, TokenService tokenService, IAuditService auditService, ILogger<AuthService> logger)
     {
         _db = db;
         _tokenService = tokenService;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -76,6 +78,18 @@ public class AuthService
                 IsRevoked = false
             });
 
+            // Record audit event for user registration
+            _auditService.RecordEvent(
+                AuditActions.UserRegisteredFromInvite,
+                userId,
+                nameof(User),
+                userId,
+                new Dictionary<string, object?>
+                {
+                    ["username"] = user.Username,
+                    ["inviteCode"] = request.InviteCode
+                });
+
             await _db.SaveChangesAsync();
             await transaction!.CommitAsync();
 
@@ -111,6 +125,18 @@ public class AuthService
             CreatedAt = now,
             IsRevoked = false
         });
+
+        // Record audit event for user registration
+        _auditService.RecordEvent(
+            AuditActions.UserRegisteredFromInvite,
+            userId,
+            nameof(User),
+            userId,
+            new Dictionary<string, object?>
+            {
+                ["username"] = user.Username,
+                ["inviteCode"] = request.InviteCode
+            });
 
         await _db.SaveChangesAsync();
 
@@ -157,6 +183,20 @@ public class AuthService
         };
 
         await _db.Invites.AddAsync(invite);
+
+        // Record audit event for invite creation
+        _auditService.RecordEvent(
+            AuditActions.InviteCreated,
+            createdByUserId,
+            nameof(Invite),
+            invite.Id,
+            new Dictionary<string, object?>
+            {
+                ["code"] = code,
+                ["expiresInDays"] = request.ExpiresInDays,
+                ["isCustomCode"] = !string.IsNullOrEmpty(request.Code)
+            });
+
         await _db.SaveChangesAsync();
 
         _logger.LogInformation("Invite created: {Code} by user {UserId}", code, createdByUserId);
@@ -197,6 +237,17 @@ public class AuthService
             CreatedAt = now,
             IsRevoked = false
         });
+
+        // Record audit event for successful login
+        _auditService.RecordEvent(
+            AuditActions.UserLoginSucceeded,
+            user.Id,
+            nameof(User),
+            user.Id,
+            new Dictionary<string, object?>
+            {
+                ["username"] = user.Username
+            });
 
         await _db.SaveChangesAsync();
 
@@ -252,6 +303,17 @@ public class AuthService
             CreatedAt = DateTime.UtcNow,
             IsRevoked = false
         });
+
+        // Record audit event for token rotation
+        _auditService.RecordEvent(
+            AuditActions.UserRefreshTokenRotated,
+            storedToken.UserId,
+            nameof(RefreshToken),
+            storedToken.Id,
+            new Dictionary<string, object?>
+            {
+                ["username"] = storedToken.User.Username
+            });
 
         await _db.SaveChangesAsync();
 

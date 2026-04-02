@@ -57,12 +57,17 @@ public class AuthServiceConcurrencyTests
         var tokenService = new TokenService(config);
         var logger1 = new Mock<ILogger<AuthService>>();
         var logger2 = new Mock<ILogger<AuthService>>();
+        var auditLogger1 = new Mock<ILogger<AuditService>>();
+        var auditLogger2 = new Mock<ILogger<AuditService>>();
 
         await using var context1 = new ScoutBoxDbContext(options);
         await using var context2 = new ScoutBoxDbContext(options);
 
-        var service1 = new AuthService(context1, tokenService, logger1.Object);
-        var service2 = new AuthService(context2, tokenService, logger2.Object);
+        var auditService1 = new AuditService(context1, auditLogger1.Object);
+        var auditService2 = new AuditService(context2, auditLogger2.Object);
+
+        var service1 = new AuthService(context1, tokenService, auditService1, logger1.Object);
+        var service2 = new AuthService(context2, tokenService, auditService2, logger2.Object);
 
         var t1 = service1.RegisterAsync(new RegisterRequest("RACE-INVITE-001", $"race_user_{Guid.NewGuid():N}", "password123"));
         var t2 = service2.RegisterAsync(new RegisterRequest("RACE-INVITE-001", $"race_user_{Guid.NewGuid():N}", "password123"));

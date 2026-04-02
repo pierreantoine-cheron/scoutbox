@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -13,11 +12,13 @@ namespace ScoutBoxApi.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(AuthService authService, ILogger<AuthController> logger)
+    public AuthController(AuthService authService, ICurrentUserAccessor currentUserAccessor, ILogger<AuthController> logger)
     {
         _authService = authService;
+        _currentUserAccessor = currentUserAccessor;
         _logger = logger;
     }
 
@@ -70,11 +71,14 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+            // Use the current user accessor for standardized identity validation
+            var identityError = _currentUserAccessor.ValidateCurrentUserIdentity();
+            if (identityError != null)
             {
-                return Unauthorized(new ErrorResponse("Unauthorized user", "UNAUTHORIZED"));
+                return Unauthorized(identityError);
             }
+
+            var userId = _currentUserAccessor.GetCurrentUserId()!.Value;
 
             var (response, error) = await _authService.CreateInviteAsync(userId, request);
 

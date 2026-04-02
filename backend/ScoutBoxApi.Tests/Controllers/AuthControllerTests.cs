@@ -22,6 +22,7 @@ public class AuthControllerTests : IDisposable
     private readonly AuthController _controller;
     private readonly AuthService _authService;
     private readonly TokenService _tokenService;
+    private readonly HttpContextAccessor _httpContextAccessor;
 
     public AuthControllerTests()
     {
@@ -38,10 +39,17 @@ public class AuthControllerTests : IDisposable
 
         var loggerMock = new Mock<ILogger<AuthController>>();
         var authServiceLoggerMock = new Mock<ILogger<AuthService>>();
+        var auditServiceLoggerMock = new Mock<ILogger<AuditService>>();
 
         _tokenService = new TokenService(configMock.Object);
-        _authService = new AuthService(_db, _tokenService, authServiceLoggerMock.Object);
-        _controller = new AuthController(_authService, loggerMock.Object);
+        var auditService = new AuditService(_db, auditServiceLoggerMock.Object);
+        _authService = new AuthService(_db, _tokenService, auditService, authServiceLoggerMock.Object);
+
+        // Create HttpContextAccessor for CurrentUserAccessor
+        _httpContextAccessor = new HttpContextAccessor();
+        var currentUserAccessor = new CurrentUserAccessor(_httpContextAccessor);
+
+        _controller = new AuthController(_authService, currentUserAccessor, loggerMock.Object);
     }
 
     public void Dispose()
@@ -59,9 +67,11 @@ public class AuthControllerTests : IDisposable
         var identity = new ClaimsIdentity(claims, "TestAuth");
         var principal = new ClaimsPrincipal(identity);
 
+        var httpContext = new DefaultHttpContext { User = principal };
+        _httpContextAccessor.HttpContext = httpContext;
         _controller.ControllerContext = new ControllerContext
         {
-            HttpContext = new DefaultHttpContext { User = principal }
+            HttpContext = httpContext
         };
     }
 
