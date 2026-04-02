@@ -3,6 +3,7 @@
 ## Project Overview
 
 ScoutBox is a scout group tent inventory management system with a Flutter/Dart frontend and .NET backend.
+It is not an enterprise product, and it doesn't host sensitive data, so it should't have superfluous security features
 
 ## Build/Lint/Test Commands
 
