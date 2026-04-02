@@ -313,11 +313,54 @@ class AuthService {
 
   /// Logout the current user
   ///
-  /// Clears all stored tokens and server URL.
-  /// Note: This doesn't invalidate the token on the server.
+  /// Calls backend logout endpoint to revoke refresh token (best effort),
+  /// then clears local auth tokens. Server URL and remembered username
+  /// are preserved for next login.
+  ///
+  /// This method is resilient - local cleanup always happens even if
+  /// backend logout fails.
   Future<void> logout() async {
-    await SecureStorageService.clearAll();
+    // Attempt to call backend logout (best effort)
+    try {
+      final refreshToken = await getRefreshToken();
+      if (refreshToken != null) {
+        await _callBackendLogout(refreshToken);
+      }
+    } catch (e) {
+      // Backend logout failure is non-blocking
+      // Local cleanup will still proceed
+      debugPrint('Backend logout call failed: $e');
+    }
+
+    // Always clear local auth tokens (never leave stale auth state)
+    await SecureStorageService.clearAuthTokens();
     ApiClient.reset();
+  }
+
+  /// Call backend logout endpoint
+  Future<void> _callBackendLogout(String refreshToken) async {
+    try {
+      await ApiClient.instance.post(
+        ApiRoutes.logout,
+        data: {'refreshToken': refreshToken},
+      );
+    } on DioException catch (e) {
+      // Auth failures (401, 400 with invalid token) are expected
+      // if token already expired or was revoked
+      if (e.response?.statusCode == 401) {
+        debugPrint('Backend logout: token already invalid (401)');
+        return;
+      }
+      if (e.response?.statusCode == 400) {
+        final data = e.response?.data as Map<String, dynamic>?;
+        if (data?['code'] == ErrorCodes.invalidRefreshToken) {
+          debugPrint('Backend logout: refresh token invalid (400)');
+          return;
+        }
+      }
+      // Re-throw other errors to be handled by caller
+      rethrow;
+    }
   }
 
   /// Clear auth tokens only, preserving server URL and remembered username

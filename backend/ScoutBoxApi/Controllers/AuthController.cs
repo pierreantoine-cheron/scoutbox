@@ -116,4 +116,39 @@ public class AuthController : ControllerBase
             return StatusCode(500, new ErrorResponse("Error while refreshing token", "INTERNAL_ERROR"));
         }
     }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    {
+        try
+        {
+            // Validate current user identity
+            var identityError = _currentUserAccessor.ValidateCurrentUserIdentity();
+            if (identityError != null)
+            {
+                return Unauthorized(identityError);
+            }
+
+            var userId = _currentUserAccessor.GetCurrentUserId()!.Value;
+
+            var (response, error) = await _authService.LogoutAsync(userId, request.RefreshToken);
+
+            if (error != null)
+            {
+                // Return 400 for validation errors (e.g., missing refresh token)
+                // The client should still perform local cleanup
+                return BadRequest(error);
+            }
+
+            return Ok(new { data = response });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout");
+            // Even on server error, client should perform local cleanup
+            // Return 500 with error details but client must not treat this as "stay logged in"
+            return StatusCode(500, new ErrorResponse("Error during logout processing", "INTERNAL_ERROR"));
+        }
+    }
 }

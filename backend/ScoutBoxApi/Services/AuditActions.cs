@@ -15,6 +15,7 @@ public static class AuditActions
     public const string UserRegisteredFromInvite = "user_registered_from_invite";
     public const string UserLoginSucceeded = "user_login_succeeded";
     public const string UserRefreshTokenRotated = "user_refresh_token_rotated";
+    public const string UserLogoutSucceeded = "user_logout_succeeded";
 
     // Tent management actions (for future stories)
     public const string TentCreated = "tent_created";

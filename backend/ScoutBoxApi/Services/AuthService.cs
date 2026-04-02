@@ -369,6 +369,43 @@ public class AuthService
         return true;
     }
 
+    public async Task<(LogoutResponse? Response, ErrorResponse? Error)> LogoutAsync(Guid userId, string? refreshToken)
+    {
+        // Validate refresh token is provided
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return (null, new ErrorResponse("Refresh token is required", "INVALID_REFRESH_TOKEN"));
+        }
+
+        var refreshTokenHash = TokenService.HashRefreshToken(refreshToken);
+        var now = DateTime.UtcNow;
+
+        // Find the refresh token for this user (include revoked to handle idempotency)
+        var storedToken = await _db.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.Token == refreshTokenHash && rt.UserId == userId);
+
+        if (storedToken != null && !storedToken.IsRevoked)
+        {
+            // Revoke the token
+            storedToken.IsRevoked = true;
+            storedToken.RevokedAt = now;
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation("Refresh token revoked for user {UserId}", userId);
+        }
+        // If token not found or already revoked, treat as idempotent success
+
+        // Record audit event for logout
+        _auditService.RecordEvent(
+            AuditActions.UserLogoutSucceeded,
+            userId,
+            nameof(User),
+            userId,
+            new Dictionary<string, object?> { });
+
+        return (new LogoutResponse(true), null);
+    }
+
     private static bool IsDuplicateUsernameConstraintViolation(DbUpdateException ex)
     {
         var message = ex.InnerException?.Message ?? ex.Message;

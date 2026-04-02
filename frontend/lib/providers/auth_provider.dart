@@ -119,8 +119,48 @@ class AuthNotifier extends _$AuthNotifier {
   }
 
   Future<void> logout() async {
-    await _authService.logout();
-    state = const AuthState();
+    // Prevent duplicate logout submissions
+    if (state.isLoading) {
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      await _authService.logout();
+
+      // Logout successful - reset state but preserve success message for login screen
+      state = const AuthState(
+        isLoading: false,
+        isAuthenticated: false,
+        error: null,
+        accessToken: null,
+        errorCode: null,
+        isSessionExpired: false,
+        canRefreshToken: false,
+        showLoginScreen: true,
+        logoutSuccessMessage: 'Déconnexion réussie',
+      );
+    } catch (e) {
+      // Even on error, clear auth state to ensure user is logged out locally
+      debugPrint('Logout error: $e');
+      state = const AuthState(
+        isLoading: false,
+        isAuthenticated: false,
+        error: null,
+        accessToken: null,
+        errorCode: null,
+        isSessionExpired: false,
+        canRefreshToken: false,
+        showLoginScreen: true,
+        logoutSuccessMessage: 'Déconnexion réussie',
+      );
+    }
+  }
+
+  /// Consume the logout success message (clears it from state)
+  void consumeLogoutSuccessMessage() {
+    state = state.copyWith(logoutSuccessMessage: null);
   }
 
   Future<void> checkAuthStatus() async {
@@ -370,11 +410,14 @@ class AuthState {
   /// True if the user was previously authenticated but the session expired
   final bool isSessionExpired;
 
-  /// True if the refresh token exists and can be used to restore the session
+  /// True if the refresh token exists and can be used to get new access token
   final bool canRefreshToken;
 
-  /// True when unauthenticated users should land on login first
+  /// True when unauthenticated users should land on login screen
   final bool showLoginScreen;
+
+  /// One-time success message to show after logout (not persisted)
+  final String? logoutSuccessMessage;
 
   const AuthState({
     this.isLoading = false,
@@ -385,6 +428,7 @@ class AuthState {
     this.isSessionExpired = false,
     this.canRefreshToken = false,
     this.showLoginScreen = false,
+    this.logoutSuccessMessage,
   });
 
   AuthState copyWith({
@@ -396,6 +440,7 @@ class AuthState {
     bool? isSessionExpired,
     bool? canRefreshToken,
     bool? showLoginScreen,
+    String? logoutSuccessMessage,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -406,6 +451,7 @@ class AuthState {
       isSessionExpired: isSessionExpired ?? this.isSessionExpired,
       canRefreshToken: canRefreshToken ?? this.canRefreshToken,
       showLoginScreen: showLoginScreen ?? this.showLoginScreen,
+      logoutSuccessMessage: logoutSuccessMessage,
     );
   }
 }

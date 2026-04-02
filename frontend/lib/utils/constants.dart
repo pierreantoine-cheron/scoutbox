@@ -9,6 +9,7 @@ class ApiRoutes {
   static const String login = '$authBase/login';
   static const String refresh = '$authBase/refresh';
   static const String invites = '$authBase/invites';
+  static const String logout = '$authBase/logout';
 }
 
 // Storage keys

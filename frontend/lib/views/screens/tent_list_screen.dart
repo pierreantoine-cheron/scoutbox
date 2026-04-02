@@ -7,15 +7,17 @@ class TentListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('ScoutBox - Tentes'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await ref.read(authProvider.notifier).logout();
-            },
+            onPressed: authState.isLoading
+                ? null
+                : () => _showLogoutConfirmationDialog(context, ref),
           ),
         ],
       ),
@@ -39,6 +41,33 @@ class TentListScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Se déconnecter ?'),
+          content: const Text('Votre session sera fermée.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await ref.read(authProvider.notifier).logout();
+              },
+              child: const Text('Déconnecter'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -584,4 +584,177 @@ public class AuthControllerTests : IDisposable
         var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
         Assert.Equal("INVALID_EXPIRES_IN_DAYS", error.Code);
     }
+
+    [Fact]
+    public async Task Logout_WithValidToken_RevokesTokenAndReturnsSuccess()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "logoutuser",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+
+        var refreshToken = TokenService.GenerateRefreshToken();
+        var refreshTokenHash = TokenService.HashRefreshToken(refreshToken);
+        var token = new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            Token = refreshTokenHash,
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(180),
+            CreatedAt = DateTime.UtcNow,
+            IsRevoked = false
+        };
+        _db.RefreshTokens.Add(token);
+        await _db.SaveChangesAsync();
+
+        SetControllerUser(user.Id, user.Username);
+
+        var request = new LogoutRequest(refreshToken);
+
+        // Act
+        var result = await _controller.Logout(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
+        // Value is an anonymous type with a data property containing LogoutResponse
+        // Use reflection to access the properties
+        var valueType = okResult.Value.GetType();
+        var dataProperty = valueType.GetProperty("data");
+        Assert.NotNull(dataProperty);
+        var logoutResponse = dataProperty.GetValue(okResult.Value) as LogoutResponse;
+        Assert.NotNull(logoutResponse);
+        Assert.True(logoutResponse.Success);
+
+        // Verify token is revoked
+        var revokedToken = await _db.RefreshTokens.FindAsync(token.Id);
+        Assert.NotNull(revokedToken);
+        Assert.True(revokedToken.IsRevoked);
+        Assert.NotNull(revokedToken.RevokedAt);
+    }
+
+    [Fact]
+    public async Task Logout_WithAlreadyRevokedToken_ReturnsSuccess_Idempotent()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "logoutuser2",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+
+        var refreshToken = TokenService.GenerateRefreshToken();
+        var refreshTokenHash = TokenService.HashRefreshToken(refreshToken);
+        var token = new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            Token = refreshTokenHash,
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(180),
+            CreatedAt = DateTime.UtcNow,
+            IsRevoked = true,
+            RevokedAt = DateTime.UtcNow.AddHours(-1)
+        };
+        _db.RefreshTokens.Add(token);
+        await _db.SaveChangesAsync();
+
+        SetControllerUser(user.Id, user.Username);
+
+        var request = new LogoutRequest(refreshToken);
+
+        // Act
+        var result = await _controller.Logout(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
+        var valueType = okResult.Value.GetType();
+        var dataProperty = valueType.GetProperty("data");
+        Assert.NotNull(dataProperty);
+        var logoutResponse = dataProperty.GetValue(okResult.Value) as LogoutResponse;
+        Assert.NotNull(logoutResponse);
+        Assert.True(logoutResponse.Success);
+    }
+
+    [Fact]
+    public async Task Logout_WithEmptyRefreshToken_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "logoutuser3",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        SetControllerUser(user.Id, user.Username);
+
+        var request = new LogoutRequest("");
+
+        // Act
+        var result = await _controller.Logout(request);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        Assert.Equal("INVALID_REFRESH_TOKEN", error.Code);
+    }
+
+    [Fact]
+    public async Task Logout_WithoutAuthHeader_ReturnsUnauthorized()
+    {
+        // Arrange - no user set in controller context
+        var request = new LogoutRequest("some-token");
+
+        // Act
+        var result = await _controller.Logout(request);
+
+        // Assert
+        Assert.IsType<UnauthorizedObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Logout_WithNonExistentToken_ReturnsSuccess_Idempotent()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "logoutuser4",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        SetControllerUser(user.Id, user.Username);
+
+        // Token that doesn't exist in database
+        var nonExistentToken = TokenService.GenerateRefreshToken();
+        var request = new LogoutRequest(nonExistentToken);
+
+        // Act
+        var result = await _controller.Logout(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
+        var valueType = okResult.Value.GetType();
+        var dataProperty = valueType.GetProperty("data");
+        Assert.NotNull(dataProperty);
+        var logoutResponse = dataProperty.GetValue(okResult.Value) as LogoutResponse;
+        Assert.NotNull(logoutResponse);
+        Assert.True(logoutResponse.Success);
+    }
 }
