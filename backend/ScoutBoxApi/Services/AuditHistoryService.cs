@@ -123,32 +123,8 @@ public class AuditHistoryService : IAuditHistoryService
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        // Resolve display names for all unique actor IDs
-        var actorIds = events
-            .Where(e => e.ActorUserId.HasValue)
-            .Select(e => e.ActorUserId!.Value)
-            .Distinct()
-            .ToList();
-
-        var displayNameMap = new Dictionary<Guid, string>();
-        foreach (var id in actorIds)
-        {
-            displayNameMap[id] = await ResolveActorDisplayNameAsync(id, cancellationToken);
-        }
-
-        // Map to DTOs
-        return events.Select(ae => new AuditEventHistoryItemDto(
-            ae.Id,
-            ae.Action,
-            ae.OccurredAt,
-            ae.TargetEntityType,
-            ae.TargetEntityId,
-            ae.MetadataJson,
-            ae.ActorUserId,
-            ae.ActorUserId.HasValue && displayNameMap.ContainsKey(ae.ActorUserId.Value)
-                ? displayNameMap[ae.ActorUserId.Value]
-                : DeletedUserDisplayName
-        )).ToList();
+        // Map to DTOs with resolved display names
+        return await MapToHistoryDtosAsync(events, cancellationToken);
     }
 
     public async Task<List<AuditEventHistoryItemDto>> GetEntityHistoryAsync(
@@ -164,7 +140,18 @@ public class AuditHistoryService : IAuditHistoryService
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        // Resolve display names
+        // Map to DTOs with resolved display names
+        return await MapToHistoryDtosAsync(events, cancellationToken);
+    }
+
+    /// <summary>
+    /// Maps audit events to DTOs with resolved actor display names.
+    /// </summary>
+    private async Task<List<AuditEventHistoryItemDto>> MapToHistoryDtosAsync(
+        List<AuditEvent> events,
+        CancellationToken cancellationToken)
+    {
+        // Resolve display names for all unique actor IDs
         var actorIds = events
             .Where(e => e.ActorUserId.HasValue)
             .Select(e => e.ActorUserId!.Value)
