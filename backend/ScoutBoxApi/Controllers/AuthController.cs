@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using ScoutBoxApi.Filters;
 using ScoutBoxApi.Models.DTOs;
 using ScoutBoxApi.Services;
 
@@ -10,7 +9,6 @@ namespace ScoutBoxApi.Controllers;
 [Route("api/auth")]
 [ApiController]
 [EnableRateLimiting("auth")]
-[TypeFilter(typeof(ApiExceptionFilter))]
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
@@ -98,6 +96,6 @@ public class AuthController : ControllerBase
             return BadRequest(error);
         }
 
-        return Ok(new { data = response });
+        return Ok(response);
     }
 }

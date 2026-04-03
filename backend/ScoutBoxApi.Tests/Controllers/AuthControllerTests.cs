@@ -632,14 +632,7 @@ public class AuthControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.NotNull(okResult.Value);
-        // Value is an anonymous type with a data property containing LogoutResponse
-        // Use reflection to access the properties
-        var valueType = okResult.Value.GetType();
-        var dataProperty = valueType.GetProperty("data");
-        Assert.NotNull(dataProperty);
-        var logoutResponse = dataProperty.GetValue(okResult.Value) as LogoutResponse;
-        Assert.NotNull(logoutResponse);
+        var logoutResponse = Assert.IsType<LogoutResponse>(okResult.Value);
         Assert.True(logoutResponse.Success);
 
         // Verify token is revoked
@@ -691,12 +684,7 @@ public class AuthControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.NotNull(okResult.Value);
-        var valueType = okResult.Value.GetType();
-        var dataProperty = valueType.GetProperty("data");
-        Assert.NotNull(dataProperty);
-        var logoutResponse = dataProperty.GetValue(okResult.Value) as LogoutResponse;
-        Assert.NotNull(logoutResponse);
+        var logoutResponse = Assert.IsType<LogoutResponse>(okResult.Value);
         Assert.True(logoutResponse.Success);
 
         var auditEvents = await _db.AuditEvents.ToListAsync();
@@ -767,12 +755,7 @@ public class AuthControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.NotNull(okResult.Value);
-        var valueType = okResult.Value.GetType();
-        var dataProperty = valueType.GetProperty("data");
-        Assert.NotNull(dataProperty);
-        var logoutResponse = dataProperty.GetValue(okResult.Value) as LogoutResponse;
-        Assert.NotNull(logoutResponse);
+        var logoutResponse = Assert.IsType<LogoutResponse>(okResult.Value);
         Assert.True(logoutResponse.Success);
 
         var auditEvents = await _db.AuditEvents.ToListAsync();
