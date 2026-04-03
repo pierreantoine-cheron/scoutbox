@@ -20,6 +20,49 @@ class AuthNotifier extends _$AuthNotifier {
     return const AuthState();
   }
 
+  // Internal helpers for repeated state transitions
+
+  /// Sets state to logged-out with success message (used after logout)
+  void _setLoggedOutSuccessState() {
+    state = const AuthState(
+      isLoading: false,
+      isAuthenticated: false,
+      error: null,
+      accessToken: null,
+      errorCode: null,
+      isSessionExpired: false,
+      canRefreshToken: false,
+      showLoginScreen: true,
+      logoutSuccessMessage: 'Déconnexion réussie',
+    );
+  }
+
+  /// Sets state to session-expired with optional error and refresh capability
+  void _setSessionExpiredState({
+    required bool canRefresh,
+    String? error,
+    bool clearAuth = false,
+  }) {
+    if (clearAuth) {
+      _clearTokensOnFailure();
+    }
+    state = state.copyWith(
+      isLoading: false,
+      isAuthenticated: false,
+      isSessionExpired: true,
+      canRefreshToken: canRefresh,
+      showLoginScreen: true,
+      error: error,
+    );
+  }
+
+  /// Clears auth tokens on failure with error logging
+  void _clearTokensOnFailure() {
+    _authService.clearAuthTokensOnly().catchError((e) {
+      debugPrint('Clear auth tokens failed: $e');
+    });
+  }
+
   Future<void> register({
     required String serverUrl,
     required String inviteCode,
@@ -136,33 +179,11 @@ class AuthNotifier extends _$AuthNotifier {
 
     try {
       await _authService.logout();
-
-      // Logout successful - reset state but preserve success message for login screen
-      state = const AuthState(
-        isLoading: false,
-        isAuthenticated: false,
-        error: null,
-        accessToken: null,
-        errorCode: null,
-        isSessionExpired: false,
-        canRefreshToken: false,
-        showLoginScreen: true,
-        logoutSuccessMessage: 'Déconnexion réussie',
-      );
+      _setLoggedOutSuccessState();
     } catch (e) {
       // Even on error, clear auth state to ensure user is logged out locally
       debugPrint('Logout error: $e');
-      state = const AuthState(
-        isLoading: false,
-        isAuthenticated: false,
-        error: null,
-        accessToken: null,
-        errorCode: null,
-        isSessionExpired: false,
-        canRefreshToken: false,
-        showLoginScreen: true,
-        logoutSuccessMessage: 'Déconnexion réussie',
-      );
+      _setLoggedOutSuccessState();
     }
   }
 
@@ -243,20 +264,10 @@ class AuthNotifier extends _$AuthNotifier {
         final serverUrl = await _authService.getServerUrl();
         if (serverUrl == null) {
           // Critical error: can't make API calls without server URL
-          // Clear tokens but preserve server URL and remembered username
-          try {
-            await _authService.clearAuthTokensOnly();
-          } catch (e) {
-            debugPrint(
-              'Clear auth tokens failed during null serverUrl handling: $e',
-            );
-          }
-          state = state.copyWith(
-            isLoading: false,
-            isAuthenticated: false,
-            isSessionExpired: true,
+          _clearTokensOnFailure();
+          _setSessionExpiredState(
+            canRefresh: true,
             error: 'Erreur de configuration. Veuillez vous reconnecter.',
-            showLoginScreen: true,
           );
           return false;
         }
@@ -274,15 +285,7 @@ class AuthNotifier extends _$AuthNotifier {
       } else {
         // Check if this is an unrecoverable auth failure
         if (result.failureType == RefreshFailureType.invalidToken) {
-          // Clear auth tokens but preserve server URL and remembered username
-          try {
-            await _authService.clearAuthTokensOnly();
-          } catch (e) {
-            debugPrint(
-              'Clear auth tokens failed during invalid token handling: $e',
-            );
-          }
-
+          _clearTokensOnFailure();
           state = state.copyWith(
             isLoading: false,
             isAuthenticated: false,
@@ -337,10 +340,8 @@ class AuthNotifier extends _$AuthNotifier {
       } catch (e) {
         debugPrint('Logout failed during app resume: $e');
       }
-      state = state.copyWith(
-        isSessionExpired: true,
-        canRefreshToken: false,
-        showLoginScreen: true,
+      _setSessionExpiredState(
+        canRefresh: false,
         error: 'Session expirée. Veuillez vous reconnecter.',
       );
       return false;
@@ -360,15 +361,9 @@ class AuthNotifier extends _$AuthNotifier {
       },
       onAuthFailure: (failureType) {
         if (failureType == RefreshFailureType.invalidToken) {
-          // Clear auth tokens but preserve server URL and remembered username
-          _authService.clearAuthTokensOnly().catchError((e) {
-            debugPrint('Clear auth tokens failed during auth failure: $e');
-          });
-          state = state.copyWith(
-            isAuthenticated: false,
-            isSessionExpired: true,
-            canRefreshToken: false,
-            showLoginScreen: true,
+          _clearTokensOnFailure();
+          _setSessionExpiredState(
+            canRefresh: false,
             error: 'Session expirée. Veuillez vous reconnecter.',
           );
         }

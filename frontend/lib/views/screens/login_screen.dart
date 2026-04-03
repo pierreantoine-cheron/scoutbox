@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
+import '../widgets/password_form_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +24,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordFocusNode = FocusNode();
 
   bool _rememberUsername = false;
-  bool _obscurePassword = true;
   bool _hasSubmitted = false;
 
   @override
@@ -133,33 +133,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               validator: AuthValidators.validateUsername,
             ),
             const SizedBox(height: 16),
-            TextFormField(
+            PasswordFormField(
               controller: _passwordController,
               focusNode: _passwordFocusNode,
               autovalidateMode: _hasSubmitted
                   ? AutovalidateMode.onUserInteraction
                   : AutovalidateMode.disabled,
-              decoration: InputDecoration(
-                labelText: 'Mot de passe',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                  ),
-                  tooltip: _obscurePassword
-                      ? 'Afficher le mot de passe'
-                      : 'Masquer le mot de passe',
-                ),
-              ),
-              obscureText: _obscurePassword,
-              autofillHints: const [AutofillHints.password],
-              enableSuggestions: false,
-              autocorrect: false,
+              labelText: 'Mot de passe',
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
               validator: AuthValidators.validatePassword,

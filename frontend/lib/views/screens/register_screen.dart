@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
+import '../widgets/password_form_field.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -26,8 +27,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordFocusNode = FocusNode();
   final _confirmPasswordFocusNode = FocusNode();
 
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
   bool _hasSubmitted = false;
 
   @override
@@ -118,33 +117,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               validator: AuthValidators.validateUsername,
             ),
             const SizedBox(height: 16),
-            TextFormField(
+            PasswordFormField(
               controller: _passwordController,
               focusNode: _passwordFocusNode,
               autovalidateMode: _hasSubmitted
                   ? AutovalidateMode.onUserInteraction
                   : AutovalidateMode.disabled,
-              decoration: InputDecoration(
-                labelText: 'Mot de passe',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                  ),
-                  tooltip: _obscurePassword
-                      ? 'Afficher le mot de passe'
-                      : 'Masquer le mot de passe',
-                ),
-              ),
-              obscureText: _obscurePassword,
+              labelText: 'Mot de passe',
               autofillHints: const [AutofillHints.newPassword],
-              enableSuggestions: false,
-              autocorrect: false,
               textInputAction: TextInputAction.next,
               onEditingComplete: () {
                 _confirmPasswordFocusNode.requestFocus();
@@ -152,35 +132,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               validator: AuthValidators.validatePassword,
             ),
             const SizedBox(height: 16),
-            TextFormField(
+            PasswordFormField(
               controller: _confirmPasswordController,
               focusNode: _confirmPasswordFocusNode,
               autovalidateMode: _hasSubmitted
                   ? AutovalidateMode.onUserInteraction
                   : AutovalidateMode.disabled,
-              decoration: InputDecoration(
-                labelText: 'Confirmer le mot de passe',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _obscureConfirmPassword = !_obscureConfirmPassword;
-                    });
-                  },
-                  icon: Icon(
-                    _obscureConfirmPassword
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                  ),
-                  tooltip: _obscureConfirmPassword
-                      ? 'Afficher la confirmation'
-                      : 'Masquer la confirmation',
-                ),
-              ),
-              obscureText: _obscureConfirmPassword,
+              labelText: 'Confirmer le mot de passe',
+              showPasswordTooltip: 'Afficher la confirmation',
+              hidePasswordTooltip: 'Masquer la confirmation',
               autofillHints: const [AutofillHints.newPassword],
-              enableSuggestions: false,
-              autocorrect: false,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
               validator:
