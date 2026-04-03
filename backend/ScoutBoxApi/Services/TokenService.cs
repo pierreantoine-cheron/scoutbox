@@ -11,6 +11,10 @@ public class TokenService
     private const int MinimumJwtKeyLength = 32;
     private const string JwtKeyPlaceholder = "__SET_JWT_KEY_IN_ENV__";
 
+    // Token lifetime constants
+    public const int AccessTokenLifetimeMinutes = 15;
+    public const int RefreshTokenLifetimeDays = 180;
+
     private readonly string _jwtKey;
     private readonly string _jwtIssuer;
     private readonly string _jwtAudience;
@@ -57,7 +61,7 @@ public class TokenService
             issuer: _jwtIssuer,
             audience: _jwtAudience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(15),
+            expires: DateTime.UtcNow.AddMinutes(AccessTokenLifetimeMinutes),
             signingCredentials: credentials
         );
 

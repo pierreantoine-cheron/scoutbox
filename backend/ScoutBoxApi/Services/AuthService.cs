@@ -30,12 +30,8 @@ public class AuthService
 
         var now = DateTime.UtcNow;
         var userId = Guid.NewGuid();
-        var isRelational = _db.Database.IsRelational();
 
-        await using var transaction = isRelational
-            ? await _db.Database.BeginTransactionAsync()
-            : null;
-
+        // Prepare user entity early (shared between relational and non-relational paths)
         var user = new User
         {
             Id = userId,
@@ -43,67 +39,14 @@ public class AuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             CreatedAt = now
         };
-        var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Username);
-        var refreshToken = TokenService.GenerateRefreshToken();
-        var refreshTokenHash = TokenService.HashRefreshToken(refreshToken);
 
-        if (isRelational)
-        {
-            await _db.Users.AddAsync(user);
+        // For relational databases, use transaction; otherwise use manual compensation on failure
+        var isRelational = _db.Database.IsRelational();
+        await using var transaction = isRelational
+            ? await _db.Database.BeginTransactionAsync()
+            : null;
 
-            try
-            {
-                await _db.SaveChangesAsync();
-            }
-            catch (DbUpdateException ex) when (IsDuplicateUsernameConstraintViolation(ex))
-            {
-                _logger.LogWarning("Duplicate username registration blocked by database constraint: {Username}", request.Username);
-                return (null, new ErrorResponse("This username already exists", "USERNAME_EXISTS"));
-            }
-
-            var relationalInviteConsumed = await TryConsumeInviteAsync(request.InviteCode, userId, now);
-            if (!relationalInviteConsumed)
-            {
-                _logger.LogWarning("Invalid or expired invite code attempted: {InviteCode}", request.InviteCode);
-                return (null, new ErrorResponse("Invalid or expired invite code", "INVALID_INVITE"));
-            }
-
-            await _db.RefreshTokens.AddAsync(new RefreshToken
-            {
-                Id = Guid.NewGuid(),
-                Token = refreshTokenHash,
-                UserId = user.Id,
-                ExpiresAt = now.AddDays(180),
-                CreatedAt = now,
-                IsRevoked = false
-            });
-
-            // Record audit event for user registration
-            _auditService.RecordEvent(
-                AuditActions.UserRegisteredFromInvite,
-                userId,
-                nameof(User),
-                userId,
-                new Dictionary<string, object?>
-                {
-                    ["username"] = user.Username,
-                    ["inviteCode"] = request.InviteCode
-                });
-
-            await _db.SaveChangesAsync();
-            await transaction!.CommitAsync();
-
-            _logger.LogInformation("User registered successfully: {Username} (ID: {UserId})", user.Username, user.Id);
-            return (new AuthResponse(accessToken, refreshToken, now.AddMinutes(15), now.AddDays(180)), null);
-        }
-
-        var inviteWasConsumed = await TryConsumeInviteAsync(request.InviteCode, userId, now);
-        if (!inviteWasConsumed)
-        {
-            _logger.LogWarning("Invalid or expired invite code attempted: {InviteCode}", request.InviteCode);
-            return (null, new ErrorResponse("Invalid or expired invite code", "INVALID_INVITE"));
-        }
-
+        // Persist user first (required for FK constraint when consuming invite relationally)
         await _db.Users.AddAsync(user);
 
         try
@@ -116,33 +59,36 @@ public class AuthService
             return (null, new ErrorResponse("This username already exists", "USERNAME_EXISTS"));
         }
 
-        await _db.RefreshTokens.AddAsync(new RefreshToken
+        // Consume invite (only difference is how it's consumed)
+        var inviteConsumed = isRelational
+            ? await TryConsumeInviteRelationalAsync(request.InviteCode, userId, now)
+            : await TryConsumeInviteNonRelationalAsync(request.InviteCode, userId, now);
+
+        if (!inviteConsumed)
         {
-            Id = Guid.NewGuid(),
-            Token = refreshTokenHash,
-            UserId = user.Id,
-            ExpiresAt = now.AddDays(180),
-            CreatedAt = now,
-            IsRevoked = false
+            _logger.LogWarning("Invalid or expired invite code attempted: {InviteCode}", request.InviteCode);
+            return (null, new ErrorResponse("Invalid or expired invite code", "INVALID_INVITE"));
+        }
+
+        // Issue session (generates tokens, persists refresh token, records audit)
+        var (response, error) = await IssueSessionAsync(user.Id, user.Username, AuditActions.UserRegisteredFromInvite, new Dictionary<string, object?>
+        {
+            ["username"] = user.Username,
+            ["inviteCode"] = request.InviteCode
         });
 
-        // Record audit event for user registration
-        _auditService.RecordEvent(
-            AuditActions.UserRegisteredFromInvite,
-            userId,
-            nameof(User),
-            userId,
-            new Dictionary<string, object?>
-            {
-                ["username"] = user.Username,
-                ["inviteCode"] = request.InviteCode
-            });
+        if (error != null)
+        {
+            return (null, error);
+        }
 
-        await _db.SaveChangesAsync();
+        if (transaction != null)
+        {
+            await transaction.CommitAsync();
+        }
 
         _logger.LogInformation("User registered successfully: {Username} (ID: {UserId})", user.Username, user.Id);
-
-        return (new AuthResponse(accessToken, refreshToken, now.AddMinutes(15), now.AddDays(180)), null);
+        return (response, null);
     }
 
     public async Task<(InviteResponse? Response, ErrorResponse? Error)> CreateInviteAsync(Guid createdByUserId, CreateInviteRequest request)
@@ -223,8 +169,23 @@ public class AuthService
             return (null, new ErrorResponse("Invalid credentials", "INVALID_CREDENTIALS"));
         }
 
+        return await IssueSessionAsync(user.Id, user.Username, AuditActions.UserLoginSucceeded, new Dictionary<string, object?>
+        {
+            ["username"] = user.Username
+        });
+    }
+
+    /// <summary>
+    /// Issues a new session: generates access/refresh tokens, persists refresh token, records audit event.
+    /// </summary>
+    private async Task<(AuthResponse Response, ErrorResponse? Error)> IssueSessionAsync(
+        Guid userId,
+        string username,
+        string auditAction,
+        Dictionary<string, object?> auditDetails)
+    {
         var now = DateTime.UtcNow;
-        var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Username);
+        var accessToken = _tokenService.GenerateAccessToken(userId, username);
         var refreshToken = TokenService.GenerateRefreshToken();
         var refreshTokenHash = TokenService.HashRefreshToken(refreshToken);
 
@@ -232,26 +193,27 @@ public class AuthService
         {
             Id = Guid.NewGuid(),
             Token = refreshTokenHash,
-            UserId = user.Id,
-            ExpiresAt = now.AddDays(180),
+            UserId = userId,
+            ExpiresAt = now.AddDays(TokenService.RefreshTokenLifetimeDays),
             CreatedAt = now,
             IsRevoked = false
         });
 
-        // Record audit event for successful login
+        // Record audit event
         _auditService.RecordEvent(
-            AuditActions.UserLoginSucceeded,
-            user.Id,
+            auditAction,
+            userId,
             nameof(User),
-            user.Id,
-            new Dictionary<string, object?>
-            {
-                ["username"] = user.Username
-            });
+            userId,
+            auditDetails);
 
         await _db.SaveChangesAsync();
 
-        return (new AuthResponse(accessToken, refreshToken, now.AddMinutes(15), now.AddDays(180)), null);
+        return (new AuthResponse(
+            accessToken,
+            refreshToken,
+            now.AddMinutes(TokenService.AccessTokenLifetimeMinutes),
+            now.AddDays(TokenService.RefreshTokenLifetimeDays)), null);
     }
 
     private async Task<string?> GenerateAvailableCodeAsync(int maxAttempts = 3)
@@ -314,13 +276,14 @@ public class AuthService
 
         storedToken.ReplacedByToken = newRefreshTokenHash;
 
+        var now = DateTime.UtcNow;
         await _db.RefreshTokens.AddAsync(new RefreshToken
         {
             Id = Guid.NewGuid(),
             Token = newRefreshTokenHash,
             UserId = user.Id,
-            ExpiresAt = DateTime.UtcNow.AddDays(180),
-            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = now.AddDays(TokenService.RefreshTokenLifetimeDays),
+            CreatedAt = now,
             IsRevoked = false
         });
 
@@ -337,23 +300,27 @@ public class AuthService
 
         await _db.SaveChangesAsync();
 
-        return (new AuthResponse(newAccessToken, newRefreshToken, DateTime.UtcNow.AddMinutes(15), DateTime.UtcNow.AddDays(180)), null);
+        return (new AuthResponse(
+            newAccessToken,
+            newRefreshToken,
+            now.AddMinutes(TokenService.AccessTokenLifetimeMinutes),
+            now.AddDays(TokenService.RefreshTokenLifetimeDays)), null);
     }
 
-    private async Task<bool> TryConsumeInviteAsync(string inviteCode, Guid userId, DateTime consumedAt)
+    private async Task<bool> TryConsumeInviteRelationalAsync(string inviteCode, Guid userId, DateTime consumedAt)
     {
-        if (_db.Database.IsRelational())
-        {
-            var affectedRows = await _db.Invites
-                .Where(i => i.Code == inviteCode && !i.IsUsed && i.ExpiresAt > consumedAt)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(i => i.IsUsed, true)
-                    .SetProperty(i => i.UsedByUserId, userId)
-                    .SetProperty(i => i.UsedAt, consumedAt));
+        var affectedRows = await _db.Invites
+            .Where(i => i.Code == inviteCode && !i.IsUsed && i.ExpiresAt > consumedAt)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(i => i.IsUsed, true)
+                .SetProperty(i => i.UsedByUserId, userId)
+                .SetProperty(i => i.UsedAt, consumedAt));
 
-            return affectedRows == 1;
-        }
+        return affectedRows == 1;
+    }
 
+    private async Task<bool> TryConsumeInviteNonRelationalAsync(string inviteCode, Guid userId, DateTime consumedAt)
+    {
         var invite = await _db.Invites
             .FirstOrDefaultAsync(i => i.Code == inviteCode);
 
