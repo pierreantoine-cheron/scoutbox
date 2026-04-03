@@ -29,6 +29,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     _loadInitialValues();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = ref.read(authProvider).logoutSuccessMessage;
+      if (message != null) {
+        _showLogoutSuccessMessage(message);
+        ref.read(authProvider.notifier).consumeLogoutSuccessMessage();
+      }
+    });
   }
 
   Future<void> _loadInitialValues() async {
@@ -74,18 +85,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _passwordController.clear();
       }
 
-      if (next.logoutSuccessMessage != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) {
-            return;
-          }
-
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(next.logoutSuccessMessage!)));
-
-          ref.read(authProvider.notifier).consumeLogoutSuccessMessage();
-        });
+      if (next.logoutSuccessMessage != null &&
+          previous?.logoutSuccessMessage != next.logoutSuccessMessage) {
+        final message = next.logoutSuccessMessage!;
+        ref.read(authProvider.notifier).consumeLogoutSuccessMessage();
+        _showLogoutSuccessMessage(message);
       }
     });
 
@@ -258,5 +262,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           password: _passwordController.text,
           rememberUsername: _rememberUsername,
         );
+  }
+
+  void _showLogoutSuccessMessage(String message) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    });
   }
 }

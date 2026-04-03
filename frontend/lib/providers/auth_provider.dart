@@ -80,7 +80,12 @@ class AuthNotifier extends _$AuthNotifier {
       return;
     }
 
-    state = state.copyWith(isLoading: true, error: null, errorCode: null);
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      errorCode: null,
+      logoutSuccessMessage: null,
+    );
 
     try {
       final result = await _authService.login(
@@ -101,6 +106,7 @@ class AuthNotifier extends _$AuthNotifier {
           error: null,
           errorCode: null,
           showLoginScreen: true,
+          logoutSuccessMessage: null,
         );
       } else {
         state = state.copyWith(
@@ -108,12 +114,14 @@ class AuthNotifier extends _$AuthNotifier {
           error: result.error,
           errorCode: result.code,
           isAuthenticated: false,
+          logoutSuccessMessage: null,
         );
       }
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
         error: 'Une erreur inattendue est survenue. Veuillez réessayer.',
+        logoutSuccessMessage: null,
       );
     }
   }
