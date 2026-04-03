@@ -4,13 +4,17 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ScoutBoxApi.Data;
+using ScoutBoxApi.Filters;
 using ScoutBoxApi.Models.DTOs;
 using ScoutBoxApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ApiExceptionFilter>();
+});
 
 // Add OpenAPI/Swagger
 builder.Services.AddOpenApi();

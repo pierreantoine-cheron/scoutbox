@@ -37,7 +37,6 @@ public class AuthControllerTests : IDisposable
         configMock.Setup(x => x["Jwt:Issuer"]).Returns("TestIssuer");
         configMock.Setup(x => x["Jwt:Audience"]).Returns("TestAudience");
 
-        var loggerMock = new Mock<ILogger<AuthController>>();
         var authServiceLoggerMock = new Mock<ILogger<AuthService>>();
         var auditServiceLoggerMock = new Mock<ILogger<AuditService>>();
 
@@ -49,7 +48,7 @@ public class AuthControllerTests : IDisposable
         _httpContextAccessor = new HttpContextAccessor();
         var currentUserAccessor = new CurrentUserAccessor(_httpContextAccessor);
 
-        _controller = new AuthController(_authService, currentUserAccessor, loggerMock.Object);
+        _controller = new AuthController(_authService, currentUserAccessor);
     }
 
     public void Dispose()
@@ -372,6 +371,7 @@ public class AuthControllerTests : IDisposable
         var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
         var error = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
         Assert.Equal("INVALID_CREDENTIALS", error.Code);
+        Assert.Equal("Invalid credentials", error.Error);
     }
 
     [Fact]
@@ -395,6 +395,7 @@ public class AuthControllerTests : IDisposable
         var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
         var error = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
         Assert.Equal("INVALID_CREDENTIALS", error.Code);
+        Assert.Equal("Invalid credentials", error.Error);
     }
 
     [Fact]
@@ -586,6 +587,16 @@ public class AuthControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateInvite_WithoutAuthHeader_ThrowsUnauthorizedAccessException()
+    {
+        // Arrange - no user set in controller context
+        var request = new CreateInviteRequest { ExpiresInDays = 7 };
+
+        // Act & Assert - should throw UnauthorizedAccessException (filter would convert to 401 in real request)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _controller.CreateInvite(request));
+    }
+
+    [Fact]
     public async Task Logout_WithValidToken_RevokesTokenAndReturnsSuccess()
     {
         // Arrange
@@ -722,16 +733,13 @@ public class AuthControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task Logout_WithoutAuthHeader_ReturnsUnauthorized()
+    public async Task Logout_WithoutAuthHeader_ThrowsUnauthorizedAccessException()
     {
         // Arrange - no user set in controller context
         var request = new LogoutRequest("some-token");
 
-        // Act
-        var result = await _controller.Logout(request);
-
-        // Assert
-        Assert.IsType<UnauthorizedObjectResult>(result);
+        // Act & Assert - should throw UnauthorizedAccessException (filter would convert to 401 in real request)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _controller.Logout(request));
     }
 
     [Fact]

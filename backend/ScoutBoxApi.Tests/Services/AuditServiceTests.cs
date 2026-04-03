@@ -435,11 +435,12 @@ public class CurrentUserAccessorTests
     }
 
     [Fact]
-    public void ValidateCurrentUserIdentity_WithValidClaim_ReturnsNull()
+    public void GetValidatedUserId_WithValidClaim_ReturnsUserId()
     {
+        var userId = Guid.NewGuid();
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(ClaimTypes.Name, "testuser")
         };
         var identity = new ClaimsIdentity(claims, "Test");
@@ -449,26 +450,24 @@ public class CurrentUserAccessorTests
         var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
         var accessor = new CurrentUserAccessor(httpContextAccessor);
 
-        var result = accessor.ValidateCurrentUserIdentity();
+        var result = accessor.GetValidatedUserId();
 
-        Assert.Null(result);
+        Assert.Equal(userId, result);
     }
 
     [Fact]
-    public void ValidateCurrentUserIdentity_WithNoAuthentication_ReturnsError()
+    public void GetValidatedUserId_WithNoAuthentication_ThrowsUnauthorizedAccessException()
     {
         var httpContext = new DefaultHttpContext();
         var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
         var accessor = new CurrentUserAccessor(httpContextAccessor);
 
-        var result = accessor.ValidateCurrentUserIdentity();
-
-        Assert.NotNull(result);
-        Assert.Equal("AUTH_INVALID_TOKEN", result.Code);
+        var exception = Assert.Throws<UnauthorizedAccessException>(() => accessor.GetValidatedUserId());
+        Assert.Equal("Authentication required", exception.Message);
     }
 
     [Fact]
-    public void ValidateCurrentUserIdentity_WithInvalidClaim_ReturnsIdentityError()
+    public void GetValidatedUserId_WithInvalidClaim_ThrowsUnauthorizedAccessException()
     {
         var claims = new[]
         {
@@ -481,9 +480,7 @@ public class CurrentUserAccessorTests
         var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
         var accessor = new CurrentUserAccessor(httpContextAccessor);
 
-        var result = accessor.ValidateCurrentUserIdentity();
-
-        Assert.NotNull(result);
-        Assert.Equal("AUTH_INVALID_IDENTITY_CLAIM", result.Code);
+        var exception = Assert.Throws<UnauthorizedAccessException>(() => accessor.GetValidatedUserId());
+        Assert.Equal("Invalid identity claim in token", exception.Message);
     }
 }

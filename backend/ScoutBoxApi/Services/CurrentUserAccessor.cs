@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using ScoutBoxApi.Models.DTOs;
 
 namespace ScoutBoxApi.Services;
 
@@ -29,11 +28,12 @@ public interface ICurrentUserAccessor
     string? GetCurrentUsername();
 
     /// <summary>
-    /// Validates that the current user has a valid identity claim.
-    /// Returns an error response if the claim is missing or invalid.
+    /// Validates that the current user has a valid identity claim and returns the user ID.
+    /// Throws UnauthorizedAccessException if the identity is invalid (combines ValidateCurrentUserIdentity + GetCurrentUserId).
     /// </summary>
-    /// <returns>ErrorResponse if identity is invalid, null if valid</returns>
-    ErrorResponse? ValidateCurrentUserIdentity();
+    /// <returns>The validated user ID</returns>
+    /// <exception cref="UnauthorizedAccessException">Thrown when user is not authenticated or has invalid identity claim</exception>
+    Guid GetValidatedUserId();
 }
 
 /// <summary>
@@ -86,20 +86,20 @@ public class CurrentUserAccessor : ICurrentUserAccessor
         return user.FindFirst(ClaimTypes.Name)?.Value;
     }
 
-    public ErrorResponse? ValidateCurrentUserIdentity()
+    public Guid GetValidatedUserId()
     {
         var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext?.User?.Identity?.IsAuthenticated != true)
         {
-            return new ErrorResponse("Authentication required", "AUTH_INVALID_TOKEN");
+            throw new UnauthorizedAccessException("Authentication required");
         }
 
         var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out _))
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            return new ErrorResponse("Invalid identity claim in token", "AUTH_INVALID_IDENTITY_CLAIM");
+            throw new UnauthorizedAccessException("Invalid identity claim in token");
         }
 
-        return null;
+        return userId;
     }
 }
