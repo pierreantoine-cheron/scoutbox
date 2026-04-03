@@ -64,7 +64,7 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    ref.watch(authProvider);
 
     if (_isInitializing) {
       return MaterialApp(
@@ -100,11 +100,26 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
           ),
         ),
       ),
-      home: authState.isAuthenticated
-          ? const TentListScreen()
-          : authState.showLoginScreen
-          ? const LoginScreen()
-          : const RegisterScreen(),
+      home: const AuthGate(),
     );
+  }
+}
+
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+
+    if (authState.isAuthenticated) {
+      return const TentListScreen();
+    }
+
+    if (authState.showLoginScreen) {
+      return const LoginScreen();
+    }
+
+    return const RegisterScreen();
   }
 }

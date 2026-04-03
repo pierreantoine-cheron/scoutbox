@@ -17,6 +17,7 @@ import 'auth_service.dart' show RefreshResult, RefreshFailureType;
 class ApiClient {
   static Dio? _dio;
   static String? _baseUrl;
+  static bool _hasAuthInterceptors = false;
 
   // Flag to prevent recursive refresh calls
   static bool _isRefreshing = false;
@@ -46,6 +47,7 @@ class ApiClient {
   static void initialize(String baseUrl) {
     _baseUrl = baseUrl;
     _dio = _createDio(baseUrl);
+    _hasAuthInterceptors = false;
   }
 
   /// Initialize with auth interceptors for authenticated requests
@@ -57,7 +59,7 @@ class ApiClient {
     required void Function(RefreshFailureType?) onAuthFailure,
   }) {
     // Guard against reinitializing with same URL
-    if (_dio != null && _baseUrl == baseUrl) {
+    if (_dio != null && _baseUrl == baseUrl && _hasAuthInterceptors) {
       return;
     }
 
@@ -69,18 +71,21 @@ class ApiClient {
       performRefresh: performRefresh,
       onAuthFailure: onAuthFailure,
     );
+    _hasAuthInterceptors = true;
   }
 
   /// Update the base URL (e.g., when user changes server)
   static void updateBaseUrl(String baseUrl) {
     _baseUrl = baseUrl;
     _dio = _createDio(baseUrl);
+    _hasAuthInterceptors = false;
   }
 
   /// Dispose and recreate the client (useful for testing)
   static void reset() {
     _dio = null;
     _baseUrl = null;
+    _hasAuthInterceptors = false;
     // Increment generation to invalidate any in-progress refresh
     // Don't reset _isRefreshing - let in-progress refresh complete naturally
     _refreshGeneration++;

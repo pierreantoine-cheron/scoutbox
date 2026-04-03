@@ -215,6 +215,30 @@ void main() {
         // baseUrl should still be the same
         expect(ApiClient.baseUrl, equals(testUrl));
       });
+
+      test('initializeWithAuth upgrades non-auth client on same URL', () {
+        const testUrl = 'https://test.scoutbox.app';
+
+        ApiClient.initialize(testUrl);
+        final interceptorsBefore = ApiClient.instance.interceptors.length;
+
+        ApiClient.initializeWithAuth(
+          testUrl,
+          getToken: () async => 'test_token',
+          needsRefresh: () async => false,
+          performRefresh: () async => RefreshResult.failure(
+            error: 'test',
+            failureType: RefreshFailureType.transientNetwork,
+          ),
+          onAuthFailure: (failureType) {},
+        );
+
+        expect(ApiClient.baseUrl, equals(testUrl));
+        expect(
+          ApiClient.instance.interceptors.length,
+          greaterThan(interceptorsBefore),
+        );
+      });
     });
 
     group('Health check client', () {

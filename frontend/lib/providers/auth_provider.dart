@@ -163,6 +163,18 @@ class AuthNotifier extends _$AuthNotifier {
     state = state.copyWith(logoutSuccessMessage: null);
   }
 
+  void showLoginScreen() {
+    state = state.copyWith(showLoginScreen: true, error: null, errorCode: null);
+  }
+
+  void showRegisterScreen() {
+    state = state.copyWith(
+      showLoginScreen: false,
+      error: null,
+      errorCode: null,
+    );
+  }
+
   Future<void> checkAuthStatus() async {
     final initResult = await _authService.initializeFromStorage();
 

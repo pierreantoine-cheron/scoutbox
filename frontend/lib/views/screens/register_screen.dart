@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/constants.dart';
-import 'login_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -244,11 +243,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onPressed: authState.isLoading
                   ? null
                   : () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const LoginScreen(),
-                        ),
-                      );
+                      ref.read(authProvider.notifier).showLoginScreen();
                     },
               child: const Text('Déjà un compte ? Se connecter'),
             ),

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/constants.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -81,9 +80,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             return;
           }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(next.logoutSuccessMessage!)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(next.logoutSuccessMessage!)));
 
           ref.read(authProvider.notifier).consumeLogoutSuccessMessage();
         });
@@ -223,11 +222,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onPressed: authState.isLoading
                   ? null
                   : () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const RegisterScreen(),
-                        ),
-                      );
+                      ref.read(authProvider.notifier).showRegisterScreen();
                     },
               child: const Text("Pas de compte ? S'inscrire"),
             ),

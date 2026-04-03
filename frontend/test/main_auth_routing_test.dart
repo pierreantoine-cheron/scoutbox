@@ -1,13 +1,19 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/main.dart';
+import 'package:frontend/models/auth_response.dart';
 import 'package:frontend/providers/auth_provider.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/views/screens/login_screen.dart';
+import 'package:frontend/views/screens/register_screen.dart';
+import 'package:frontend/views/screens/tent_list_screen.dart';
 
 class FakeAuthService extends AuthService {
-  FakeAuthService(this._result);
+  FakeAuthService(this._result, {this.loginSucceeds = false});
 
   final AuthInitializationResult _result;
+  final bool loginSucceeds;
 
   @override
   Future<AuthInitializationResult> initializeFromStorage() async {
@@ -17,6 +23,28 @@ class FakeAuthService extends AuthService {
   @override
   Future<String?> getAccessToken() async {
     return 'token';
+  }
+
+  @override
+  Future<AuthResult> login({
+    required String serverUrl,
+    required String username,
+    required String password,
+    required bool rememberUsername,
+  }) async {
+    if (!loginSucceeds) {
+      return AuthResult.failure(error: 'Identifiants invalides');
+    }
+
+    final now = DateTime.now();
+    return AuthResult.success(
+      authResponse: AuthResponse(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        accessTokenExpires: now.add(const Duration(minutes: 30)),
+        refreshTokenExpires: now.add(const Duration(days: 30)),
+      ),
+    );
   }
 }
 
@@ -34,14 +62,15 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authServiceProvider.overrideWith((ref) => fake)],
+        overrides: [authServiceProvider.overrideWithValue(fake)],
         child: const ScoutBoxApp(),
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Connexion'), findsOneWidget);
+    expect(find.byType(LoginScreen), findsOneWidget);
   });
 
   testWidgets('routes to RegisterScreen for first-time users', (
@@ -57,13 +86,58 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authServiceProvider.overrideWith((ref) => fake)],
+        overrides: [authServiceProvider.overrideWithValue(fake)],
         child: const ScoutBoxApp(),
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Inscription'), findsOneWidget);
+    expect(find.byType(RegisterScreen), findsOneWidget);
+  });
+
+  testWidgets('transitions to TentListScreen after successful login', (
+    WidgetTester tester,
+  ) async {
+    final fake = FakeAuthService(
+      const AuthInitializationResult(
+        isAuthenticated: false,
+        isSessionExpired: false,
+        shouldShowLogin: true,
+      ),
+      loginSucceeds: true,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authServiceProvider.overrideWithValue(fake)],
+        child: const ScoutBoxApp(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byType(LoginScreen), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'URL du serveur'),
+      'https://api.scoutbox.test',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, "Nom d'utilisateur"),
+      'testuser',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Mot de passe'),
+      'password123',
+    );
+
+    await tester.tap(find.text('Se connecter'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byType(TentListScreen), findsOneWidget);
   });
 }
