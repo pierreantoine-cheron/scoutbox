@@ -154,28 +154,9 @@ class AuthService {
         );
       }
     } on DioException catch (e) {
-      if (e.response?.data != null) {
-        try {
-          final errorResponse = ErrorResponse.fromJson(
-            e.response!.data as Map<String, dynamic>,
-          );
-          final userMessage = _getErrorMessage(
-            errorResponse.code,
-            errorResponse.error,
-          );
-          return AuthResult.failure(
-            error: userMessage,
-            code: errorResponse.code,
-          );
-        } catch (_) {
-          return AuthResult.failure(
-            error:
-                'Erreur serveur (${e.response?.statusCode}). Veuillez réessayer.',
-          );
-        }
-      }
-      return AuthResult.failure(
-        error:
+      return _mapDioExceptionToAuthResult(
+        e,
+        connectionErrorMessage:
             'Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.',
       );
     } catch (e) {
@@ -246,29 +227,9 @@ class AuthService {
 
       return AuthResult.success(authResponse: authResponse);
     } on DioException catch (e) {
-      if (e.response?.data != null) {
-        try {
-          final errorResponse = ErrorResponse.fromJson(
-            e.response!.data as Map<String, dynamic>,
-          );
-          final userMessage = _getErrorMessage(
-            errorResponse.code,
-            errorResponse.error,
-          );
-          return AuthResult.failure(
-            error: userMessage,
-            code: errorResponse.code,
-          );
-        } catch (_) {
-          return AuthResult.failure(
-            error:
-                'Erreur serveur (${e.response?.statusCode}). Veuillez réessayer.',
-          );
-        }
-      }
-
-      return AuthResult.failure(
-        error:
+      return _mapDioExceptionToAuthResult(
+        e,
+        connectionErrorMessage:
             "Impossible de joindre le serveur. Vérifiez l'URL ou votre connexion, puis réessayez.",
       );
     } catch (_) {
@@ -278,7 +239,33 @@ class AuthService {
     }
   }
 
-  /// Check if the current access token is valid (not expired)
+  /// Maps a [DioException] to an [AuthResult.failure] with appropriate user message
+  AuthResult _mapDioExceptionToAuthResult(
+    DioException e, {
+    required String connectionErrorMessage,
+  }) {
+    if (e.response?.data != null) {
+      try {
+        final errorResponse = ErrorResponse.fromJson(
+          e.response!.data as Map<String, dynamic>,
+        );
+        final userMessage = _getErrorMessage(
+          errorResponse.code,
+          errorResponse.error,
+        );
+        return AuthResult.failure(
+          error: userMessage,
+          code: errorResponse.code,
+        );
+      } catch (_) {
+        return AuthResult.failure(
+          error:
+              'Erreur serveur (${e.response?.statusCode}). Veuillez réessayer.',
+        );
+      }
+    }
+    return AuthResult.failure(error: connectionErrorMessage);
+  }
   ///
   /// Returns [TokenStatus.valid] if token exists and is not expired,
   /// [TokenStatus.expired] if token exists but is expired,

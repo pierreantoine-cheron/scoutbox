@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/secure_storage_service.dart';
+import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -82,16 +83,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               keyboardType: TextInputType.url,
               textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return "L'URL du serveur est requise";
-                }
-                if (!value.startsWith('http://') &&
-                    !value.startsWith('https://')) {
-                  return "L'URL doit commencer par http:// ou https://";
-                }
-                return null;
-              },
+              validator: AuthValidators.validateServerUrl,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -107,12 +99,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               maxLength: ValidationConstants.inviteCodeMaxLength,
               textCapitalization: TextCapitalization.characters,
               textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return "Le code d'invitation est requis";
-                }
-                return null;
-              },
+              validator: AuthValidators.validateInviteCode,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -128,18 +115,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               autofillHints: const [AutofillHints.username],
               maxLength: ValidationConstants.usernameMaxLength,
               textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return "Le nom d'utilisateur est requis";
-                }
-                if (value.length < ValidationConstants.usernameMinLength) {
-                  return "Le nom d'utilisateur doit contenir au moins ${ValidationConstants.usernameMinLength} caractères";
-                }
-                if (value.length > ValidationConstants.usernameMaxLength) {
-                  return "Le nom d'utilisateur ne peut pas dépasser ${ValidationConstants.usernameMaxLength} caractères";
-                }
-                return null;
-              },
+              validator: AuthValidators.validateUsername,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -173,15 +149,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onEditingComplete: () {
                 _confirmPasswordFocusNode.requestFocus();
               },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Le mot de passe est requis';
-                }
-                if (value.length < ValidationConstants.passwordMinLength) {
-                  return 'Le mot de passe doit contenir au moins ${ValidationConstants.passwordMinLength} caractères';
-                }
-                return null;
-              },
+              validator: AuthValidators.validatePassword,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -215,15 +183,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               autocorrect: false,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Veuillez confirmer le mot de passe';
-                }
-                if (value != _passwordController.text) {
-                  return 'Les mots de passe ne correspondent pas';
-                }
-                return null;
-              },
+              validator:
+                  (value) => AuthValidators.validatePasswordMatch(
+                    value,
+                    _passwordController.text,
+                  ),
             ),
             const SizedBox(height: 24),
             SizedBox(

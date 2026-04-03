@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/secure_storage_service.dart';
+import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -113,16 +114,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               keyboardType: TextInputType.url,
               textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return "L'URL du serveur est requise";
-                }
-                if (!value.startsWith('http://') &&
-                    !value.startsWith('https://')) {
-                  return "L'URL doit commencer par http:// ou https://";
-                }
-                return null;
-              },
+              validator: AuthValidators.validateServerUrl,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -138,19 +130,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               autofillHints: const [AutofillHints.username],
               maxLength: ValidationConstants.usernameMaxLength,
               textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return "Le nom d'utilisateur est requis";
-                }
-                final trimmed = value.trim();
-                if (trimmed.length < ValidationConstants.usernameMinLength) {
-                  return "Le nom d'utilisateur doit contenir au moins ${ValidationConstants.usernameMinLength} caractères";
-                }
-                if (trimmed.length > ValidationConstants.usernameMaxLength) {
-                  return "Le nom d'utilisateur ne peut pas dépasser ${ValidationConstants.usernameMaxLength} caractères";
-                }
-                return null;
-              },
+              validator: AuthValidators.validateUsername,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -182,15 +162,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               autocorrect: false,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Le mot de passe est requis';
-                }
-                if (value.length < ValidationConstants.passwordMinLength) {
-                  return 'Le mot de passe doit contenir au moins ${ValidationConstants.passwordMinLength} caractères';
-                }
-                return null;
-              },
+              validator: AuthValidators.validatePassword,
             ),
             const SizedBox(height: 8),
             CheckboxListTile(
