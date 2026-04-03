@@ -35,6 +35,7 @@ void main() {
         expect(ApiRoutes.login, equals('/api/auth/login'));
         expect(ApiRoutes.refresh, equals('/api/auth/refresh'));
         expect(ApiRoutes.invites, equals('/api/auth/invites'));
+        expect(ApiRoutes.logout, equals('/api/auth/logout'));
       });
 
       test('StorageKeys are correctly defined', () {

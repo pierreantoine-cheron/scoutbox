@@ -636,6 +636,11 @@ public class AuthControllerTests : IDisposable
         Assert.NotNull(revokedToken);
         Assert.True(revokedToken.IsRevoked);
         Assert.NotNull(revokedToken.RevokedAt);
+
+        var auditEvents = await _db.AuditEvents.ToListAsync();
+        Assert.Single(auditEvents);
+        Assert.Equal(AuditActions.UserLogoutSucceeded, auditEvents[0].Action);
+        Assert.Equal(user.Id, auditEvents[0].ActorUserId);
     }
 
     [Fact]
@@ -682,6 +687,11 @@ public class AuthControllerTests : IDisposable
         var logoutResponse = dataProperty.GetValue(okResult.Value) as LogoutResponse;
         Assert.NotNull(logoutResponse);
         Assert.True(logoutResponse.Success);
+
+        var auditEvents = await _db.AuditEvents.ToListAsync();
+        Assert.Single(auditEvents);
+        Assert.Equal(AuditActions.UserLogoutSucceeded, auditEvents[0].Action);
+        Assert.Equal(user.Id, auditEvents[0].ActorUserId);
     }
 
     [Fact]
@@ -756,5 +766,22 @@ public class AuthControllerTests : IDisposable
         var logoutResponse = dataProperty.GetValue(okResult.Value) as LogoutResponse;
         Assert.NotNull(logoutResponse);
         Assert.True(logoutResponse.Success);
+
+        var auditEvents = await _db.AuditEvents.ToListAsync();
+        Assert.Single(auditEvents);
+        Assert.Equal(AuditActions.UserLogoutSucceeded, auditEvents[0].Action);
+        Assert.Equal(user.Id, auditEvents[0].ActorUserId);
+    }
+
+    [Fact]
+    public async Task Logout_WithNullBody_ReturnsBadRequest()
+    {
+        // Act
+        var result = await _controller.Logout(null!);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        Assert.Equal("INVALID_REFRESH_TOKEN", error.Code);
     }
 }

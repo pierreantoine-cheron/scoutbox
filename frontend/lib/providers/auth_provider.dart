@@ -401,6 +401,8 @@ class AuthNotifier extends _$AuthNotifier {
 }
 
 class AuthState {
+  static const Object _unset = Object();
+
   final bool isLoading;
   final bool isAuthenticated;
   final String? error;
@@ -440,7 +442,7 @@ class AuthState {
     bool? isSessionExpired,
     bool? canRefreshToken,
     bool? showLoginScreen,
-    String? logoutSuccessMessage,
+    Object? logoutSuccessMessage = _unset,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -451,7 +453,9 @@ class AuthState {
       isSessionExpired: isSessionExpired ?? this.isSessionExpired,
       canRefreshToken: canRefreshToken ?? this.canRefreshToken,
       showLoginScreen: showLoginScreen ?? this.showLoginScreen,
-      logoutSuccessMessage: logoutSuccessMessage,
+      logoutSuccessMessage: identical(logoutSuccessMessage, _unset)
+          ? this.logoutSuccessMessage
+          : logoutSuccessMessage as String?,
     );
   }
 }

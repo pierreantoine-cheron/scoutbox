@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/providers/auth_provider.dart';
+import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/views/screens/login_screen.dart';
+
+class _FakeAuthService extends AuthService {
+  @override
+  Future<void> logout() async {}
+}
 
 void main() {
   group('LoginScreen', () {
@@ -73,6 +80,29 @@ void main() {
         find.text('Le mot de passe doit contenir au moins 8 caractères'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('shows and consumes logout success message', (
+      WidgetTester tester,
+    ) async {
+      final container = ProviderContainer(
+        overrides: [authServiceProvider.overrideWithValue(_FakeAuthService())],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: LoginScreen()),
+        ),
+      );
+
+      await container.read(authProvider.notifier).logout();
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Déconnexion réussie'), findsOneWidget);
+      expect(container.read(authProvider).logoutSuccessMessage, isNull);
     });
   });
 }

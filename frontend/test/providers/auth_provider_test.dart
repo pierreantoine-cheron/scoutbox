@@ -12,6 +12,7 @@ AuthState createTestState({
   bool isSessionExpired = false,
   bool canRefreshToken = false,
   bool showLoginScreen = false,
+  String? logoutSuccessMessage,
 }) {
   return AuthState(
     isLoading: isLoading,
@@ -22,6 +23,7 @@ AuthState createTestState({
     isSessionExpired: isSessionExpired,
     canRefreshToken: canRefreshToken,
     showLoginScreen: showLoginScreen,
+    logoutSuccessMessage: logoutSuccessMessage,
   );
 }
 
@@ -38,6 +40,7 @@ void main() {
       expect(state.isSessionExpired, isFalse);
       expect(state.canRefreshToken, isFalse);
       expect(state.showLoginScreen, isFalse);
+      expect(state.logoutSuccessMessage, isNull);
     });
 
     test('copyWith should update specified fields', () {
@@ -71,6 +74,7 @@ void main() {
         accessToken: 'token',
         isSessionExpired: true,
         canRefreshToken: true,
+        logoutSuccessMessage: 'Déconnexion réussie',
       );
 
       final updated = state.copyWith();
@@ -79,6 +83,15 @@ void main() {
       expect(updated.accessToken, equals('token'));
       expect(updated.isSessionExpired, isTrue);
       expect(updated.canRefreshToken, isTrue);
+      expect(updated.logoutSuccessMessage, equals('Déconnexion réussie'));
+    });
+
+    test('copyWith should clear logout message when explicitly null', () {
+      final state = createTestState(logoutSuccessMessage: 'Déconnexion réussie');
+
+      final updated = state.copyWith(logoutSuccessMessage: null);
+
+      expect(updated.logoutSuccessMessage, isNull);
     });
   });
 

@@ -74,6 +74,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (next.errorCode == ErrorCodes.invalidCredentials) {
         _passwordController.clear();
       }
+
+      if (next.logoutSuccessMessage != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(next.logoutSuccessMessage!)),
+          );
+
+          ref.read(authProvider.notifier).consumeLogoutSuccessMessage();
+        });
+      }
     });
 
     return Scaffold(

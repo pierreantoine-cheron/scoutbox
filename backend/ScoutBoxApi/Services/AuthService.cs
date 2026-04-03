@@ -389,8 +389,6 @@ public class AuthService
             // Revoke the token
             storedToken.IsRevoked = true;
             storedToken.RevokedAt = now;
-            await _db.SaveChangesAsync();
-
             _logger.LogInformation("Refresh token revoked for user {UserId}", userId);
         }
         // If token not found or already revoked, treat as idempotent success
@@ -402,6 +400,8 @@ public class AuthService
             nameof(User),
             userId,
             new Dictionary<string, object?> { });
+
+        await _db.SaveChangesAsync();
 
         return (new LogoutResponse(true), null);
     }

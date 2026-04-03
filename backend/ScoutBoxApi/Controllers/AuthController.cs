@@ -119,10 +119,15 @@ public class AuthController : ControllerBase
 
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest? request)
     {
         try
         {
+            if (request == null)
+            {
+                return BadRequest(new ErrorResponse("Refresh token is required", "INVALID_REFRESH_TOKEN"));
+            }
+
             // Validate current user identity
             var identityError = _currentUserAccessor.ValidateCurrentUserIdentity();
             if (identityError != null)
