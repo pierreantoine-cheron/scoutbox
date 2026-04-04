@@ -23,5 +23,8 @@ public class User
     public ICollection<Invite> CreatedInvites { get; set; } = new List<Invite>();
     public ICollection<Invite> UsedInvites { get; set; } = new List<Invite>();
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+    public ICollection<Tent> CreatedTents { get; set; } = new List<Tent>();
+    public ICollection<Tent> UpdatedTents { get; set; } = new List<Tent>();
+    public ICollection<Part> CreatedParts { get; set; } = new List<Part>();
+    public ICollection<Part> UpdatedParts { get; set; } = new List<Part>();
 }
-

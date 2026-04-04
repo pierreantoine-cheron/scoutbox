@@ -5,6 +5,8 @@ namespace ScoutBoxApi.Data;
 
 public class ScoutBoxDbContext : DbContext
 {
+    private static readonly DateTime TentSeedTimestampUtc = new(2026, 4, 4, 0, 0, 0, DateTimeKind.Utc);
+
     public ScoutBoxDbContext(DbContextOptions<ScoutBoxDbContext> options) : base(options)
     {
     }
@@ -13,6 +15,11 @@ public class ScoutBoxDbContext : DbContext
     public DbSet<Invite> Invites { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<AuditEvent> AuditEvents { get; set; }
+    public DbSet<Tent> Tents { get; set; }
+    public DbSet<TentShape> TentShapes { get; set; }
+    public DbSet<TentShapePart> TentShapeParts { get; set; }
+    public DbSet<PartKind> PartKinds { get; set; }
+    public DbSet<Part> Parts { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -134,5 +141,197 @@ public class ScoutBoxDbContext : DbContext
             entity.HasIndex(e => e.TargetEntityType);
             entity.HasIndex(e => e.TargetEntityId);
         });
+
+        modelBuilder.Entity<Tent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.OverallState).HasConversion<int>().IsRequired();
+            entity.Property(e => e.Size).IsRequired();
+            entity.Property(e => e.Comments).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.CreatedByUserId).IsRequired();
+            entity.Property(e => e.UpdatedByUserId).IsRequired();
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Tents_Size_Positive", "Size > 0");
+            });
+
+            entity.HasOne(e => e.TentShape)
+                .WithMany(e => e.Tents)
+                .HasForeignKey(e => e.TentShapeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.CreatedByUser)
+                .WithMany(e => e.CreatedTents)
+                .HasForeignKey(e => e.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedByUser)
+                .WithMany(e => e.UpdatedTents)
+                .HasForeignKey(e => e.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.TentShapeId);
+            entity.HasIndex(e => e.CreatedByUserId);
+            entity.HasIndex(e => e.UpdatedByUserId);
+        });
+
+        modelBuilder.Entity<TentShape>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IsActive).IsRequired();
+            entity.Property(e => e.DisplayOrder).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_TentShapes_DisplayOrder_Positive", "DisplayOrder > 0");
+            });
+
+            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasIndex(e => e.DisplayOrder);
+            entity.HasIndex(e => e.CreatedAt);
+        });
+
+        modelBuilder.Entity<PartKind>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.IsStandard).IsRequired();
+            entity.Property(e => e.DisplayOrder).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_PartKinds_DisplayOrder_Positive", "DisplayOrder > 0");
+            });
+
+            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasIndex(e => e.DisplayOrder);
+            entity.HasIndex(e => e.CreatedAt);
+        });
+
+        modelBuilder.Entity<TentShapePart>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.TentShape)
+                .WithMany(e => e.TentShapeParts)
+                .HasForeignKey(e => e.TentShapeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.PartKind)
+                .WithMany(e => e.TentShapeParts)
+                .HasForeignKey(e => e.PartKindId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.TentShapeId, e.PartKindId }).IsUnique();
+            entity.HasIndex(e => e.TentShapeId);
+            entity.HasIndex(e => e.PartKindId);
+        });
+
+        modelBuilder.Entity<Part>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.State).HasConversion<int>().IsRequired();
+            entity.Property(e => e.Comments).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.CreatedByUserId).IsRequired();
+            entity.Property(e => e.UpdatedByUserId).IsRequired();
+
+            entity.HasOne(e => e.Tent)
+                .WithMany(e => e.Parts)
+                .HasForeignKey(e => e.TentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.PartKind)
+                .WithMany(e => e.Parts)
+                .HasForeignKey(e => e.PartKindId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.CreatedByUser)
+                .WithMany(e => e.CreatedParts)
+                .HasForeignKey(e => e.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedByUser)
+                .WithMany(e => e.UpdatedParts)
+                .HasForeignKey(e => e.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.TentId);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.PartKindId);
+            entity.HasIndex(e => e.CreatedByUserId);
+            entity.HasIndex(e => e.UpdatedByUserId);
+        });
+
+        SeedTentReferenceData(modelBuilder);
+    }
+
+    private static void SeedTentReferenceData(ModelBuilder modelBuilder)
+    {
+        var partKinds = new[]
+        {
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000101"), Name = "toit", IsStandard = true, DisplayOrder = 1, CreatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000102"), Name = "double toit", IsStandard = true, DisplayOrder = 2, CreatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000103"), Name = "fetiere", IsStandard = true, DisplayOrder = 3, CreatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000104"), Name = "piquets", IsStandard = true, DisplayOrder = 4, CreatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000105"), Name = "tapis de sol", IsStandard = true, DisplayOrder = 5, CreatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000106"), Name = "sac", IsStandard = true, DisplayOrder = 6, CreatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000107"), Name = "sardines", IsStandard = true, DisplayOrder = 7, CreatedAt = TentSeedTimestampUtc }
+        };
+
+        var tentShapes = new[]
+        {
+            new TentShape { Id = Guid.Parse("00000000-0000-0000-0000-000000000201"), Name = "Canadienne", Description = "Tente legere a double pente.", IsActive = true, DisplayOrder = 1, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
+            new TentShape { Id = Guid.Parse("00000000-0000-0000-0000-000000000202"), Name = "Cabanon", Description = "Tente spacieuse avec murs droits.", IsActive = true, DisplayOrder = 2, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
+            new TentShape { Id = Guid.Parse("00000000-0000-0000-0000-000000000203"), Name = "Tipi", Description = "Structure conique monomat.", IsActive = true, DisplayOrder = 3, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
+            new TentShape { Id = Guid.Parse("00000000-0000-0000-0000-000000000204"), Name = "Marabout", Description = "Grande tente collective.", IsActive = true, DisplayOrder = 4, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc }
+        };
+
+        var tentShapeParts = new[]
+        {
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000301"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000101") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000302"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000102") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000303"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000103") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000304"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000104") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000305"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000105") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000306"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000106") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000307"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000107") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000308"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000101") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000309"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000102") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000310"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000103") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000311"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000104") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000312"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000105") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000313"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000106") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000314"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000107") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000315"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000101") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000316"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000102") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000317"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000103") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000318"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000104") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000319"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000105") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000320"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000106") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000321"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000107") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000322"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000101") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000323"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000102") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000324"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000103") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000325"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000104") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000326"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000105") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000327"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000106") },
+            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000328"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000107") }
+        };
+
+        modelBuilder.Entity<PartKind>().HasData(partKinds);
+        modelBuilder.Entity<TentShape>().HasData(tentShapes);
+        modelBuilder.Entity<TentShapePart>().HasData(tentShapeParts);
     }
 }
