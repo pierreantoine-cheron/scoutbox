@@ -43,3 +43,18 @@ dotnet run
 - Keep this key private and never commit it.
 - For production, prefer a secret manager (platform secrets, vault, etc.).
 - If you rotate the key, previously issued access tokens become invalid.
+
+## Staging deployment
+
+The shared staging environment is exposed at `https://staging-api.scoutbox.app`.
+
+Production-oriented defaults live in `appsettings.Production.json`:
+
+- SQLite database path: `/app/data/scoutbox.db`
+- uploads path: `/app/uploads`
+
+At deployment time, set the matching environment variables so the container uses persistent storage instead of ephemeral storage.
+
+In particular, set `Server__Url` from the deployment environment because the public server URL depends on where the application is installed.
+
+See `docs/deployment/staging.md` for the full staging deployment checklist.

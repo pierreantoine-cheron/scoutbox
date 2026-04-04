@@ -56,6 +56,12 @@ flutter run
 
 See [architecture documentation](docs/architecture.md) for detailed system design, patterns, and conventions.
 
+## Deployment
+
+The shared staging API is exposed at `https://staging-api.scoutbox.app`.
+
+See `docs/deployment/staging.md` for the required runtime configuration, persistent storage paths, and first-deploy checklist.
+
 ## Project Structure
 
 ```
