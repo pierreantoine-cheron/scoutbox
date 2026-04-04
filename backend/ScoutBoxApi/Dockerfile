@@ -15,4 +15,6 @@ EXPOSE 8080
 
 COPY --from=build /app/publish ./
 
+RUN mkdir -p /app/data /app/uploads
+
 ENTRYPOINT ["dotnet", "ScoutBoxApi.dll"]
