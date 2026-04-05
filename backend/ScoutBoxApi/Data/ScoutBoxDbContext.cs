@@ -59,6 +59,51 @@ public class ScoutBoxDbContext : DbContext
         }
     }
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ValidateNameFields();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        ValidateNameFields();
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void ValidateNameFields()
+    {
+        var entities = ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
+
+        foreach (var entry in entities)
+        {
+            string? nameValue = null;
+            string entityType = entry.Entity.GetType().Name;
+
+            switch (entry.Entity)
+            {
+                case Tent tent:
+                    nameValue = tent.Name;
+                    break;
+                case TentShape shape:
+                    nameValue = shape.Name;
+                    break;
+                case PartKind partKind:
+                    nameValue = partKind.Name;
+                    break;
+            }
+
+            if (nameValue is not null)
+            {
+                if (string.IsNullOrWhiteSpace(nameValue))
+                {
+                    throw new InvalidOperationException($"{entityType}.Name cannot be empty or whitespace-only.");
+                }
+            }
+        }
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -157,6 +202,8 @@ public class ScoutBoxDbContext : DbContext
             entity.ToTable(t =>
             {
                 t.HasCheckConstraint("CK_Tents_Size_Positive", "Size > 0");
+                t.HasCheckConstraint("CK_Tents_Size_Max", "Size <= 100");
+                t.HasCheckConstraint("CK_Tents_OverallState_Valid", "OverallState BETWEEN 1 AND 3");
             });
 
             entity.HasOne(e => e.TentShape)
@@ -193,6 +240,7 @@ public class ScoutBoxDbContext : DbContext
             entity.ToTable(t =>
             {
                 t.HasCheckConstraint("CK_TentShapes_DisplayOrder_Positive", "DisplayOrder > 0");
+                t.HasCheckConstraint("CK_TentShapes_DisplayOrder_Max", "DisplayOrder <= 999");
             });
 
             entity.HasIndex(e => e.Name).IsUnique();
@@ -207,10 +255,12 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.IsStandard).IsRequired();
             entity.Property(e => e.DisplayOrder).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
 
             entity.ToTable(t =>
             {
                 t.HasCheckConstraint("CK_PartKinds_DisplayOrder_Positive", "DisplayOrder > 0");
+                t.HasCheckConstraint("CK_PartKinds_DisplayOrder_Max", "DisplayOrder <= 999");
             });
 
             entity.HasIndex(e => e.Name).IsUnique();
@@ -247,6 +297,11 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.CreatedByUserId).IsRequired();
             entity.Property(e => e.UpdatedByUserId).IsRequired();
 
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Parts_State_Valid", "State BETWEEN 1 AND 4");
+            });
+
             entity.HasOne(e => e.Tent)
                 .WithMany(e => e.Parts)
                 .HasForeignKey(e => e.TentId)
@@ -281,13 +336,13 @@ public class ScoutBoxDbContext : DbContext
     {
         var partKinds = new[]
         {
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000101"), Name = "toit", IsStandard = true, DisplayOrder = 1, CreatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000102"), Name = "double toit", IsStandard = true, DisplayOrder = 2, CreatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000103"), Name = "fetiere", IsStandard = true, DisplayOrder = 3, CreatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000104"), Name = "piquets", IsStandard = true, DisplayOrder = 4, CreatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000105"), Name = "tapis de sol", IsStandard = true, DisplayOrder = 5, CreatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000106"), Name = "sac", IsStandard = true, DisplayOrder = 6, CreatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000107"), Name = "sardines", IsStandard = true, DisplayOrder = 7, CreatedAt = TentSeedTimestampUtc }
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000101"), Name = "toit", IsStandard = true, DisplayOrder = 1, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000102"), Name = "double toit", IsStandard = true, DisplayOrder = 2, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000103"), Name = "fetiere", IsStandard = true, DisplayOrder = 3, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000104"), Name = "piquets", IsStandard = true, DisplayOrder = 4, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000105"), Name = "tapis de sol", IsStandard = true, DisplayOrder = 5, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000106"), Name = "sac", IsStandard = true, DisplayOrder = 6, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
+            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000107"), Name = "sardines", IsStandard = true, DisplayOrder = 7, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc }
         };
 
         var tentShapes = new[]
