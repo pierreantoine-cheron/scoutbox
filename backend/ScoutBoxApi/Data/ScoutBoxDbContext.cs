@@ -190,7 +190,7 @@ public class ScoutBoxDbContext : DbContext
         modelBuilder.Entity<Tent>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Name).UseCollation("NOCASE").IsRequired().HasMaxLength(100);
             entity.Property(e => e.OverallState).HasConversion<int>().IsRequired();
             entity.Property(e => e.Size).IsRequired();
             entity.Property(e => e.Comments).HasMaxLength(500);

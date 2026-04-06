@@ -319,6 +319,7 @@ namespace ScoutBoxApi.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .UseCollation("NOCASE")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
