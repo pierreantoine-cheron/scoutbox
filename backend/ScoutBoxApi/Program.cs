@@ -28,6 +28,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAuditHistoryService, AuditHistoryService>();
+builder.Services.AddScoped<TentService>();
 
 // Configure SQLite with WAL mode
 builder.Services.AddDbContext<ScoutBoxDbContext>(options =>

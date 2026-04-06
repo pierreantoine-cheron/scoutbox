@@ -253,10 +253,7 @@ class AuthService {
           errorResponse.code,
           errorResponse.error,
         );
-        return AuthResult.failure(
-          error: userMessage,
-          code: errorResponse.code,
-        );
+        return AuthResult.failure(error: userMessage, code: errorResponse.code);
       } catch (_) {
         return AuthResult.failure(
           error:
@@ -266,6 +263,7 @@ class AuthService {
     }
     return AuthResult.failure(error: connectionErrorMessage);
   }
+
   ///
   /// Returns [TokenStatus.valid] if token exists and is not expired,
   /// [TokenStatus.expired] if token exists but is expired,

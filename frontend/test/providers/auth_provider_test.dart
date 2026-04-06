@@ -87,7 +87,9 @@ void main() {
     });
 
     test('copyWith should clear logout message when explicitly null', () {
-      final state = createTestState(logoutSuccessMessage: 'Déconnexion réussie');
+      final state = createTestState(
+        logoutSuccessMessage: 'Déconnexion réussie',
+      );
 
       final updated = state.copyWith(logoutSuccessMessage: null);
 

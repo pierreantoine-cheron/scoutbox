@@ -144,11 +144,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               autofillHints: const [AutofillHints.newPassword],
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
-              validator:
-                  (value) => AuthValidators.validatePasswordMatch(
-                    value,
-                    _passwordController.text,
-                  ),
+              validator: (value) => AuthValidators.validatePasswordMatch(
+                value,
+                _passwordController.text,
+              ),
             ),
             const SizedBox(height: 24),
             SizedBox(

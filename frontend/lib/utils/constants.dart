@@ -3,6 +3,8 @@ class ApiRoutes {
   // Base paths
   static const String health = '/api/health';
   static const String authBase = '/api/auth';
+  static const String tents = '/api/tents';
+  static const String tentShapes = '/api/tent-shapes';
 
   // Auth endpoints
   static const String register = '$authBase/register';
@@ -29,6 +31,10 @@ class ValidationConstants {
   static const int usernameMaxLength = 50;
   static const int passwordMinLength = 8;
   static const int inviteCodeMaxLength = 64;
+  static const int tentNameMaxLength = 100;
+  static const int tentCommentsMaxLength = 500;
+  static const int tentMinSize = 1;
+  static const int tentMaxSize = 100;
 }
 
 // Error codes returned by backend
@@ -41,6 +47,11 @@ class ErrorCodes {
   static const String invalidCredentials = 'INVALID_CREDENTIALS';
   static const String unauthorized = 'UNAUTHORIZED';
   static const String internalError = 'INTERNAL_ERROR';
+  static const String tentNameRequired = 'TENT_NAME_REQUIRED';
+  static const String tentNameExists = 'TENT_NAME_EXISTS';
+  static const String invalidTentSize = 'INVALID_TENT_SIZE';
+  static const String invalidTentShape = 'INVALID_TENT_SHAPE';
+  static const String tentCreateFailed = 'TENT_CREATE_FAILED';
 }
 
 // API timeouts

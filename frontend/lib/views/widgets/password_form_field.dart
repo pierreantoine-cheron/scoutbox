@@ -75,9 +75,7 @@ class _PasswordFormFieldState extends State<PasswordFormField> {
               _obscureText = !_obscureText;
             });
           },
-          icon: Icon(
-            _obscureText ? Icons.visibility : Icons.visibility_off,
-          ),
+          icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
           tooltip: _obscureText
               ? (widget.showPasswordTooltip ?? 'Afficher le mot de passe')
               : (widget.hidePasswordTooltip ?? 'Masquer le mot de passe'),

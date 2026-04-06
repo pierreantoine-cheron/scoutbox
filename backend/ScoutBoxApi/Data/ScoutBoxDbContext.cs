@@ -225,6 +225,7 @@ public class ScoutBoxDbContext : DbContext
             entity.HasIndex(e => e.TentShapeId);
             entity.HasIndex(e => e.CreatedByUserId);
             entity.HasIndex(e => e.UpdatedByUserId);
+            entity.HasIndex(e => e.Name).IsUnique();
         });
 
         modelBuilder.Entity<TentShape>(entity =>
