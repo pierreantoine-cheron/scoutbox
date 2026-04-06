@@ -99,6 +99,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
     [InlineData("   ", 6, "TENT_NAME_REQUIRED")]
     [InlineData("Tente", 0, "INVALID_TENT_SIZE")]
     [InlineData("Tente", -1, "INVALID_TENT_SIZE")]
+    [InlineData("Tente", 101, "INVALID_TENT_SIZE")]
     public async Task CreateTent_WithInvalidPayload_ReturnsErrorCode(string name, int size, string expectedCode)
     {
         await EnsureTestUserExistsAsync();
@@ -132,6 +133,42 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.NotNull(payload);
         Assert.False(string.IsNullOrWhiteSpace(payload.Error));
         Assert.Equal(expectedCode, payload.Code);
+    }
+
+    [Fact]
+    public async Task CreateTent_WithInvalidOverallState_ReturnsInvalidTentStateError()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = "Tente Etat Invalide",
+            size = 6,
+            tentShapeId = shapeId,
+            overallState = "BrokenBeyondRepair",
+            comments = "test"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/tents", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.False(string.IsNullOrWhiteSpace(payload.Error));
+        Assert.Equal("INVALID_TENT_STATE", payload.Code);
     }
 
     [Fact]
