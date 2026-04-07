@@ -200,7 +200,225 @@ void main() {
 
       expect(find.text('Créer une tente'), findsOneWidget);
     });
+
+    testWidgets('back confirmation quitter closes the screen', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: const MaterialApp(home: _TentCreationHostScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Ouvrir création'));
+      await tester.pumpAndSettle();
+      expect(find.text('Créer une tente'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Quitter'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Écran hôte'), findsOneWidget);
+      expect(find.text('Créer une tente'), findsNothing);
+    });
+
+    testWidgets('shows empty state when no shape is available', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(
+              _EmptyShapesTentRepository(),
+            ),
+          ],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Aucune forme de tente disponible pour le moment.'),
+        findsOneWidget,
+      );
+      final continueButton = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Continuer'),
+      );
+      expect(continueButton.onPressed, isNull);
+    });
+
+    testWidgets('shows error state and retries shape loading', (
+      WidgetTester tester,
+    ) async {
+      final repo = _RetryableShapesTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Impossible de charger les formes de tentes.'),
+        findsOneWidget,
+      );
+
+      repo.fail = false;
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Réessayer'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Canadienne'), findsOneWidget);
+    });
+
+    testWidgets('validates name field at widget level', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Canadienne'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const ValueKey('tent-name-input')), '');
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-size-input')),
+        '6',
+      );
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Le nom de la tente est requis'), findsOneWidget);
+    });
+
+    testWidgets('validates size boundaries at widget level', (
+      WidgetTester tester,
+    ) async {
+      Future<void> submitWithSize(String name, String size) async {
+        await tester.enterText(
+          find.byKey(const ValueKey('tent-name-input')),
+          name,
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('tent-size-input')),
+          size,
+        );
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
+        await tester.pumpAndSettle();
+      }
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_FailingTentRepository()),
+          ],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Canadienne'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.pumpAndSettle();
+
+      await submitWithSize('Tente Min', '1');
+      expect(find.text('La taille doit être un nombre positif'), findsNothing);
+
+      await submitWithSize('Tente Max', '100');
+      expect(find.text('La taille doit être un nombre positif'), findsNothing);
+
+      await submitWithSize('Tente TooBig', '101');
+      expect(
+        find.text('La taille doit être un nombre positif'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('validates comments max length', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Canadienne'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.pumpAndSettle();
+
+      final commentsField = tester.widget<TextFormField>(
+        find.byKey(const ValueKey('tent-comments-input')),
+      );
+
+      final validator = commentsField.validator;
+      expect(validator, isNotNull);
+      expect(
+        validator!.call('a' * 501),
+        equals('Le commentaire ne doit pas dépasser 500 caractères'),
+      );
+    });
   });
+}
+
+class _TentCreationHostScreen extends StatelessWidget {
+  const _TentCreationHostScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Écran hôte')),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const TentCreationScreen()),
+            );
+          },
+          child: const Text('Ouvrir création'),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyShapesTentRepository extends _SuccessTentRepository {
+  @override
+  Future<List<TentShape>> getTentShapes() async {
+    return const [];
+  }
+}
+
+class _RetryableShapesTentRepository extends _SuccessTentRepository {
+  bool fail = true;
+
+  @override
+  Future<List<TentShape>> getTentShapes() async {
+    if (fail) {
+      throw Exception('network');
+    }
+
+    return super.getTentShapes();
+  }
 }
 
 class _SuccessTentRepository extends TentRepository {

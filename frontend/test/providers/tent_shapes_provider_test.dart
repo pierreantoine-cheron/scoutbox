@@ -17,26 +17,36 @@ void main() {
       expect(first.length, equals(2));
       expect(first.first.name, equals('Canadienne'));
       expect(first.map((shape) => shape.displayOrder).toList(), equals([1, 2]));
+      expect(fakeRepository.callCount, equals(1));
 
       fakeRepository.failNext = true;
       await container.read(tentShapesProvider.notifier).retry();
       final stateAfterFailure = container.read(tentShapesProvider);
       expect(stateAfterFailure.hasError, isTrue);
+      expect(fakeRepository.callCount, equals(2));
 
       fakeRepository.failNext = false;
       await container.read(tentShapesProvider.notifier).retry();
       final stateAfterRetry = container.read(tentShapesProvider);
       expect(stateAfterRetry.hasValue, isTrue);
       expect(stateAfterRetry.requireValue.length, equals(2));
+      expect(fakeRepository.callCount, equals(3));
+
+      final latest = stateAfterRetry.requireValue;
+      expect(latest.first.name, equals('Canadienne'));
+      expect(latest.last.name, equals('Tipi'));
     });
   });
 }
 
 class _ToggleTentRepository extends TentRepository {
+  int callCount = 0;
   bool failNext = false;
 
   @override
   Future<List<TentShape>> getTentShapes() async {
+    callCount++;
+
     if (failNext) {
       throw Exception('network');
     }

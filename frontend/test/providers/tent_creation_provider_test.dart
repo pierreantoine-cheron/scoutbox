@@ -8,6 +8,39 @@ import 'package:frontend/utils/constants.dart';
 
 void main() {
   group('TentCreationNotifier', () {
+    test('submit success creates tent with expected payload', () async {
+      final repository = _CapturingTentRepository();
+      final container = ProviderContainer(
+        overrides: [tentRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(tentCreationProvider.notifier);
+      notifier.selectShape(
+        const TentShape(
+          id: 'shape-1',
+          name: 'Canadienne',
+          displayOrder: 1,
+          isActive: true,
+        ),
+      );
+      notifier.updateName('  Tente Alpha  ');
+      notifier.updateSize('6');
+      notifier.updateOverallState(TentOverallState.needsRepair);
+      notifier.updateComments('  A verifier  ');
+
+      final created = await notifier.submit();
+
+      expect(created, isNotNull);
+      expect(repository.createTentCallCount, equals(1));
+      expect(repository.lastName, equals('Tente Alpha'));
+      expect(repository.lastSize, equals(6));
+      expect(repository.lastTentShapeId, equals('shape-1'));
+      expect(repository.lastOverallState, equals(TentOverallState.needsRepair));
+      expect(repository.lastComments, equals('A verifier'));
+      expect(container.read(tentCreationProvider).submitError, isNull);
+    });
+
     test(
       'submit maps backend duplicate-name error to french message',
       () async {
@@ -110,7 +143,95 @@ void main() {
         'L\'état global de la tente est invalide',
       );
     });
+
+    test('submit maps unknown repository failure to generic message', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentRepositoryProvider.overrideWithValue(
+            _UnexpectedFailingTentRepository(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(tentCreationProvider.notifier);
+      notifier.selectShape(
+        const TentShape(
+          id: 'shape-1',
+          name: 'Canadienne',
+          displayOrder: 1,
+          isActive: true,
+        ),
+      );
+      notifier.updateName('Tente B');
+      notifier.updateSize('7');
+
+      final created = await notifier.submit();
+
+      expect(created, isNull);
+      expect(
+        container.read(tentCreationProvider).submitError,
+        equals('Erreur serveur. Réessayez.'),
+      );
+    });
   });
+}
+
+class _CapturingTentRepository extends TentRepository {
+  int createTentCallCount = 0;
+  String? lastName;
+  int? lastSize;
+  String? lastTentShapeId;
+  TentOverallState? lastOverallState;
+  String? lastComments;
+
+  @override
+  Future<List<TentShape>> getTentShapes() async {
+    return const [];
+  }
+
+  @override
+  Future<Tent> createTent({
+    required String name,
+    required int size,
+    required String tentShapeId,
+    required TentOverallState overallState,
+    String? comments,
+  }) async {
+    createTentCallCount++;
+    lastName = name;
+    lastSize = size;
+    lastTentShapeId = tentShapeId;
+    lastOverallState = overallState;
+    lastComments = comments;
+
+    return Tent(
+      id: 'tent-1',
+      name: name,
+      size: size,
+      tentShapeId: tentShapeId,
+      overallState: overallState,
+      comments: comments,
+    );
+  }
+}
+
+class _UnexpectedFailingTentRepository extends TentRepository {
+  @override
+  Future<List<TentShape>> getTentShapes() async {
+    return const [];
+  }
+
+  @override
+  Future<Tent> createTent({
+    required String name,
+    required int size,
+    required String tentShapeId,
+    required TentOverallState overallState,
+    String? comments,
+  }) {
+    throw Exception('network timeout');
+  }
 }
 
 class _FailingTentRepository extends TentRepository {
