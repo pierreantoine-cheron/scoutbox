@@ -160,17 +160,20 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
                   onChanged: notifier.updateSize,
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
+                DropdownButtonFormField<TentOverallState>(
                   key: const ValueKey('tent-overall-state-input'),
                   initialValue: creationState.overallState,
                   items: const [
-                    DropdownMenuItem(value: 'Good', child: Text('Bon état')),
                     DropdownMenuItem(
-                      value: 'NeedsRepair',
+                      value: TentOverallState.good,
+                      child: Text('Bon état'),
+                    ),
+                    DropdownMenuItem(
+                      value: TentOverallState.needsRepair,
                       child: Text('À réparer'),
                     ),
                     DropdownMenuItem(
-                      value: 'Unusable',
+                      value: TentOverallState.unusable,
                       child: Text('Inutilisable'),
                     ),
                   ],

@@ -61,7 +61,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
                     return ListTile(
                       title: Text(tent.name),
                       subtitle: Text(
-                        'Taille ${tent.size} - Etat ${tent.overallState}',
+                        'Taille ${tent.size} - État ${tent.overallState.toFrenchLabel()}',
                       ),
                     );
                   },

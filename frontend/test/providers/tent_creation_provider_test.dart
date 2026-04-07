@@ -37,7 +37,7 @@ void main() {
         expect(created, isNull);
         expect(state.name, equals('Tente A'));
         expect(state.sizeInput, equals('6'));
-        expect(state.submitError, equals('Une tente avec ce nom existe deja'));
+        expect(state.submitError, equals('Une tente avec ce nom existe déjà'));
       },
     );
 
@@ -53,22 +53,71 @@ void main() {
 
       expect(
         notifier.validateSize('0'),
-        equals('La taille doit etre un nombre positif'),
+        equals('La taille doit être un nombre positif'),
       );
       expect(
         notifier.validateSize('12.5'),
-        equals('La taille doit etre un nombre positif'),
+        equals('La taille doit être un nombre positif'),
       );
       expect(
         notifier.validateSize('-2'),
-        equals('La taille doit etre un nombre positif'),
+        equals('La taille doit être un nombre positif'),
       );
       expect(notifier.validateSize('10'), isNull);
+    });
+
+    test('maps tent creation error codes to french messages', () async {
+      Future<void> expectCodeMessage(String? code, String expectedMessage) async {
+        final container = ProviderContainer(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(
+              _FailingTentRepository(errorCode: code),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final notifier = container.read(tentCreationProvider.notifier);
+        notifier.selectShape(
+          const TentShape(
+            id: 'shape-1',
+            name: 'Canadienne',
+            displayOrder: 1,
+            isActive: true,
+          ),
+        );
+        notifier.updateName('Tente A');
+        notifier.updateSize('6');
+
+        await notifier.submit();
+        expect(container.read(tentCreationProvider).submitError, expectedMessage);
+      }
+
+      await expectCodeMessage(
+        ErrorCodes.tentNameRequired,
+        'Le nom de la tente est requis',
+      );
+      await expectCodeMessage(
+        ErrorCodes.invalidTentSize,
+        'La taille doit être un nombre positif',
+      );
+      await expectCodeMessage(
+        ErrorCodes.invalidTentShape,
+        'La forme de tente sélectionnée est invalide',
+      );
+      await expectCodeMessage(
+        ErrorCodes.invalidTentState,
+        'L\'état global de la tente est invalide',
+      );
     });
   });
 }
 
 class _FailingTentRepository extends TentRepository {
+  final String? errorCode;
+
+  _FailingTentRepository({this.errorCode = ErrorCodes.tentNameExists});
+
   @override
   Future<List<TentShape>> getTentShapes() async {
     return const [];
@@ -79,11 +128,11 @@ class _FailingTentRepository extends TentRepository {
     required String name,
     required int size,
     required String tentShapeId,
-    required String overallState,
+    required TentOverallState overallState,
     String? comments,
   }) {
-    throw const TentRepositoryException(
-      code: ErrorCodes.tentNameExists,
+    throw TentRepositoryException(
+      code: errorCode,
       message: 'Tent name already exists',
     );
   }

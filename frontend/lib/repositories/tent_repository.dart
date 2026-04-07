@@ -15,8 +15,7 @@ class TentRepository {
   Future<List<TentShape>> getTentShapes() async {
     try {
       final response = await ApiClient.instance.get(ApiRoutes.tentShapes);
-      final envelope = response.data as Map<String, dynamic>;
-      final rawShapes = envelope['data'] as List<dynamic>? ?? [];
+      final rawShapes = _readEnvelopeList(response.data);
 
       final shapes =
           rawShapes
@@ -34,6 +33,16 @@ class TentRepository {
         fallbackMessage:
             'Impossible de charger les formes de tentes. Réessayez.',
       );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors du chargement des formes de tentes.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors du chargement des formes de tentes.',
+      );
     }
   }
 
@@ -41,7 +50,7 @@ class TentRepository {
     required String name,
     required int size,
     required String tentShapeId,
-    required String overallState,
+    required TentOverallState overallState,
     String? comments,
   }) async {
     try {
@@ -51,19 +60,54 @@ class TentRepository {
           'name': name,
           'size': size,
           'tentShapeId': tentShapeId,
-          'overallState': overallState,
+          'overallState': overallState.toApiValue(),
           'comments': comments,
         },
       );
 
-      final envelope = response.data as Map<String, dynamic>;
-      return Tent.fromJson(envelope['data'] as Map<String, dynamic>);
+      return Tent.fromJson(_readEnvelopeMap(response.data));
     } on DioException catch (e) {
       throw _toRepositoryException(
         e,
-        fallbackMessage: 'Impossible de creer la tente. Réessayez.',
+        fallbackMessage: 'Impossible de créer la tente. Réessayez.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message: 'Réponse du serveur invalide lors de la création de la tente.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message: 'Réponse du serveur invalide lors de la création de la tente.',
       );
     }
+  }
+
+  List<dynamic> _readEnvelopeList(Object? responseData) {
+    final envelope = _asMap(responseData);
+    final data = envelope['data'];
+    if (data is List<dynamic>) {
+      return data;
+    }
+
+    throw const FormatException('Response envelope data is not a list');
+  }
+
+  Map<String, dynamic> _readEnvelopeMap(Object? responseData) {
+    final envelope = _asMap(responseData);
+    final data = envelope['data'];
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+
+    throw const FormatException('Response envelope data is not an object');
+  }
+
+  Map<String, dynamic> _asMap(Object? value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+
+    throw const FormatException('Response is not a JSON object');
   }
 
   TentRepositoryException _toRepositoryException(

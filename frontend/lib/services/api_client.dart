@@ -19,8 +19,8 @@ class ApiClient {
   static String? _baseUrl;
   static bool _hasAuthInterceptors = false;
 
-  // Flag to prevent recursive refresh calls
-  static bool _isRefreshing = false;
+  // Single-flight refresh task shared by all concurrent requests
+  static Future<RefreshResult>? _ongoingRefresh;
 
   // Generation counter to invalidate in-progress refresh after reset
   static int _refreshGeneration = 0;
@@ -86,8 +86,7 @@ class ApiClient {
     _dio = null;
     _baseUrl = null;
     _hasAuthInterceptors = false;
-    // Increment generation to invalidate any in-progress refresh
-    // Don't reset _isRefreshing - let in-progress refresh complete naturally
+    _ongoingRefresh = null;
     _refreshGeneration++;
   }
 
@@ -134,24 +133,15 @@ class ApiClient {
 
           try {
             // Check if proactive refresh is needed before the request
-            if (!_isRefreshing && await needsRefresh()) {
-              _isRefreshing = true;
-              final currentGeneration = _refreshGeneration;
-              try {
-                final result = await performRefresh();
-                if (!result.success &&
-                    result.failureType == RefreshFailureType.invalidToken) {
-                  // Only trigger auth failure for invalid token, not transient errors
-                  onAuthFailure(result.failureType);
-                }
-                // For transient failures: don't trigger onAuthFailure
-                // Request will proceed with current token
-              } finally {
-                // Only clear flag if no reset occurred during refresh
-                if (_refreshGeneration == currentGeneration) {
-                  _isRefreshing = false;
-                }
+            if (await needsRefresh()) {
+              final result = await _runRefreshSingleFlight(performRefresh);
+              if (!result.success &&
+                  result.failureType == RefreshFailureType.invalidToken) {
+                // Only trigger auth failure for invalid token, not transient errors
+                onAuthFailure(result.failureType);
               }
+              // For transient failures: don't trigger onAuthFailure
+              // Request will proceed with current token
             }
 
             // Attach token
@@ -193,17 +183,14 @@ class ApiClient {
           }
 
           // Prevent recursive refresh attempts
-          if (_isRefreshing ||
-              error.requestOptions.extra['retryAfterRefresh'] == true) {
-            // Already tried refreshing or currently refreshing - fail
+          if (error.requestOptions.extra['retryAfterRefresh'] == true) {
             onAuthFailure(RefreshFailureType.invalidToken);
             return handler.next(error);
           }
 
           // Attempt refresh
-          _isRefreshing = true;
           try {
-            final result = await performRefresh();
+            final result = await _runRefreshSingleFlight(performRefresh);
 
             if (result.success) {
               // Retry original request with new token
@@ -231,8 +218,6 @@ class ApiClient {
             debugPrint('Error during refresh and retry: $e');
             // Treat unexpected errors as transient - don't force logout
             return handler.next(error);
-          } finally {
-            _isRefreshing = false;
           }
         },
       ),
@@ -251,6 +236,24 @@ class ApiClient {
       if (path.length == excluded.length) return true;
       // Allow trailing slash or path segment separator
       return path[excluded.length] == '/';
+    });
+  }
+
+  static Future<RefreshResult> _runRefreshSingleFlight(
+    Future<RefreshResult> Function() performRefresh,
+  ) {
+    if (_ongoingRefresh != null) {
+      return _ongoingRefresh!;
+    }
+
+    final currentGeneration = _refreshGeneration;
+    final refreshFuture = performRefresh();
+    _ongoingRefresh = refreshFuture;
+
+    return refreshFuture.whenComplete(() {
+      if (_refreshGeneration == currentGeneration) {
+        _ongoingRefresh = null;
+      }
     });
   }
 

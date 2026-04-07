@@ -68,10 +68,51 @@ void main() {
       await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Une tente avec ce nom existe deja'), findsOneWidget);
+      expect(find.text('Une tente avec ce nom existe déjà'), findsOneWidget);
       expect(find.text('Tente A'), findsOneWidget);
       expect(find.text('6'), findsOneWidget);
       expect(find.text('Commentaire'), findsOneWidget);
+    });
+
+    testWidgets('preserves draft when navigating back to shape step', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Canadienne'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-name-input')),
+        'Tente Brouillon',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-size-input')),
+        '8',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-comments-input')),
+        'Conserver ce brouillon',
+      );
+
+      await tester.tap(find.widgetWithText(TextButton, 'Modifier'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Brouillon'), findsOneWidget);
+      expect(find.text('8'), findsOneWidget);
+      expect(find.text('Conserver ce brouillon'), findsOneWidget);
     });
   });
 }
@@ -92,7 +133,7 @@ class _FailingTentRepository extends _SuccessTentRepository {
     required String name,
     required int size,
     required String tentShapeId,
-    required String overallState,
+    required TentOverallState overallState,
     String? comments,
   }) {
     throw const TentRepositoryException(

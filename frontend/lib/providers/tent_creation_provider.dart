@@ -26,7 +26,7 @@ class TentCreationNotifier extends _$TentCreationNotifier {
     state = state.copyWith(sizeInput: value, submitError: null);
   }
 
-  void updateOverallState(String value) {
+  void updateOverallState(TentOverallState value) {
     state = state.copyWith(overallState: value, submitError: null);
   }
 
@@ -52,7 +52,7 @@ class TentCreationNotifier extends _$TentCreationNotifier {
 
   String? validateSize(String? value) {
     if (value == null) {
-      return 'La taille doit etre un nombre positif';
+      return 'La taille doit être un nombre positif';
     }
 
     if (value.trim().isEmpty) {
@@ -63,7 +63,7 @@ class TentCreationNotifier extends _$TentCreationNotifier {
     if (parsedSize == null ||
         parsedSize < ValidationConstants.tentMinSize ||
         parsedSize > ValidationConstants.tentMaxSize) {
-      return 'La taille doit etre un nombre positif';
+      return 'La taille doit être un nombre positif';
     }
 
     return null;
@@ -140,11 +140,13 @@ class TentCreationNotifier extends _$TentCreationNotifier {
       case ErrorCodes.tentNameRequired:
         return 'Le nom de la tente est requis';
       case ErrorCodes.tentNameExists:
-        return 'Une tente avec ce nom existe deja';
+        return 'Une tente avec ce nom existe déjà';
       case ErrorCodes.invalidTentSize:
-        return 'La taille doit etre un nombre positif';
+        return 'La taille doit être un nombre positif';
       case ErrorCodes.invalidTentShape:
         return 'La forme de tente sélectionnée est invalide';
+      case ErrorCodes.invalidTentState:
+        return 'L\'état global de la tente est invalide';
       default:
         return 'Erreur serveur. Réessayez.';
     }
@@ -155,7 +157,7 @@ class TentCreationState {
   final TentShape? selectedShape;
   final String name;
   final String sizeInput;
-  final String overallState;
+  final TentOverallState overallState;
   final String comments;
   final bool isSubmitting;
   final String? submitError;
@@ -164,7 +166,7 @@ class TentCreationState {
     this.selectedShape,
     this.name = '',
     this.sizeInput = '',
-    this.overallState = 'Good',
+    this.overallState = TentOverallState.good,
     this.comments = '',
     this.isSubmitting = false,
     this.submitError,
@@ -174,7 +176,7 @@ class TentCreationState {
     TentShape? selectedShape,
     String? name,
     String? sizeInput,
-    String? overallState,
+    TentOverallState? overallState,
     String? comments,
     bool? isSubmitting,
     String? submitError,

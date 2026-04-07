@@ -250,6 +250,19 @@ void main() {
           equals(now.add(const Duration(days: 180)).toIso8601String()),
         );
       });
+
+      test('fromJson throws FormatException on invalid date string', () {
+        final json = {
+          'accessToken': 'test_access_token',
+          'refreshToken': 'test_refresh_token',
+          'accessTokenExpires': 'not-a-date',
+          'refreshTokenExpires': DateTime.now()
+              .add(const Duration(days: 180))
+              .toIso8601String(),
+        };
+
+        expect(() => AuthResponse.fromJson(json), throwsFormatException);
+      });
     });
   });
 }

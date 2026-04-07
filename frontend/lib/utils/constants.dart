@@ -51,6 +51,7 @@ class ErrorCodes {
   static const String tentNameExists = 'TENT_NAME_EXISTS';
   static const String invalidTentSize = 'INVALID_TENT_SIZE';
   static const String invalidTentShape = 'INVALID_TENT_SHAPE';
+  static const String invalidTentState = 'INVALID_TENT_STATE';
   static const String tentCreateFailed = 'TENT_CREATE_FAILED';
 }
 

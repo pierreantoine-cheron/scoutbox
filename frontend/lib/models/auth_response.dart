@@ -17,14 +17,36 @@ class AuthResponse {
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
+    final accessTokenExpiresRaw = json['accessTokenExpires'];
+    final refreshTokenExpiresRaw = json['refreshTokenExpires'];
+
     return AuthResponse(
       accessToken: json['accessToken'] as String,
       refreshToken: json['refreshToken'] as String,
-      accessTokenExpires: DateTime.parse(json['accessTokenExpires'] as String),
-      refreshTokenExpires: DateTime.parse(
-        json['refreshTokenExpires'] as String,
+      accessTokenExpires: _parseRequiredDateTime(
+        value: accessTokenExpiresRaw,
+        fieldName: 'accessTokenExpires',
+      ),
+      refreshTokenExpires: _parseRequiredDateTime(
+        value: refreshTokenExpiresRaw,
+        fieldName: 'refreshTokenExpires',
       ),
     );
+  }
+
+  static DateTime _parseRequiredDateTime({
+    required Object? value,
+    required String fieldName,
+  }) {
+    if (value is! String) {
+      throw FormatException('$fieldName must be a valid ISO-8601 string');
+    }
+
+    try {
+      return DateTime.parse(value);
+    } on FormatException {
+      throw FormatException('$fieldName must be a valid ISO-8601 string');
+    }
   }
 
   Map<String, dynamic> toJson() {
