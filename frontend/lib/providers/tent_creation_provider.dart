@@ -34,6 +34,10 @@ class TentCreationNotifier extends _$TentCreationNotifier {
     state = state.copyWith(comments: value, submitError: null);
   }
 
+  void clearSubmitError() {
+    state = state.copyWith(submitError: null);
+  }
+
   String? validateName(String? value) {
     if (value == null) {
       return 'Le nom de la tente est requis';

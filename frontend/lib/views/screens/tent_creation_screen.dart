@@ -23,6 +23,8 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
   final _commentsController = TextEditingController();
 
   int _currentStep = 0;
+  bool _didAttemptSubmit = false;
+  bool _isRetryingShapes = false;
 
   @override
   void initState() {
@@ -45,15 +47,33 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
   Widget build(BuildContext context) {
     final shapesState = ref.watch(tentShapesProvider);
     final creationState = ref.watch(tentCreationProvider);
+    _syncControllersFromState(creationState);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Créer une tente')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: _currentStep == 0
-              ? _buildShapeStep(context, shapesState, creationState)
-              : _buildDetailsStep(context, creationState),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) {
+          return;
+        }
+
+        final shouldLeave = await _confirmDiscardDraft();
+        if (shouldLeave && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Créer une tente')),
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _currentStep == 0
+                  ? _buildShapeStep(context, shapesState, creationState)
+                  : _buildDetailsStep(context, creationState),
+            ),
+          ),
         ),
       ),
     );
@@ -76,9 +96,8 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
           child: shapesState.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, _) => _ShapesErrorView(
-              onRetry: () {
-                ref.read(tentShapesProvider.notifier).retry();
-              },
+              isRetrying: _isRetryingShapes,
+              onRetry: _retryShapes,
             ),
             data: (shapes) {
               if (shapes.isEmpty) {
@@ -99,13 +118,16 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
         ElevatedButton(
           onPressed: creationState.selectedShape == null
               ? null
-              : () {
-                  setState(() {
-                    _currentStep = 1;
-                  });
-                },
+              : () => _goToDetailsStep(),
           child: const Text('Continuer'),
         ),
+        if (creationState.submitError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            creationState.submitError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
       ],
     );
   }
@@ -124,11 +146,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
             title: const Text('Forme sélectionnée'),
             subtitle: Text(creationState.selectedShape?.name ?? ''),
             trailing: TextButton(
-              onPressed: () {
-                setState(() {
-                  _currentStep = 0;
-                });
-              },
+              onPressed: _goToShapeStep,
               child: const Text('Modifier'),
             ),
           ),
@@ -137,6 +155,9 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
         Expanded(
           child: Form(
             key: _formKey,
+            autovalidateMode: _didAttemptSubmit
+                ? AutovalidateMode.onUserInteraction
+                : AutovalidateMode.disabled,
             child: ListView(
               children: [
                 TextFormField(
@@ -226,6 +247,12 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
   }
 
   Future<void> _submit(TentCreationNotifier notifier) async {
+    if (!_didAttemptSubmit) {
+      setState(() {
+        _didAttemptSubmit = true;
+      });
+    }
+
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
       return;
@@ -242,6 +269,81 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
 
     Navigator.of(context).pop<Tent>(createdTent);
   }
+
+  void _syncControllersFromState(TentCreationState creationState) {
+    _syncController(_nameController, creationState.name);
+    _syncController(_sizeController, creationState.sizeInput);
+    _syncController(_commentsController, creationState.comments);
+  }
+
+  void _syncController(TextEditingController controller, String value) {
+    if (controller.text == value) {
+      return;
+    }
+
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
+  void _goToDetailsStep() {
+    ref.read(tentCreationProvider.notifier).clearSubmitError();
+    setState(() {
+      _currentStep = 1;
+    });
+  }
+
+  void _goToShapeStep() {
+    FocusScope.of(context).unfocus();
+    ref.read(tentCreationProvider.notifier).clearSubmitError();
+    setState(() {
+      _currentStep = 0;
+    });
+  }
+
+  Future<void> _retryShapes() async {
+    if (_isRetryingShapes) {
+      return;
+    }
+
+    setState(() {
+      _isRetryingShapes = true;
+    });
+
+    await ref.read(tentShapesProvider.notifier).retry();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isRetryingShapes = false;
+    });
+  }
+
+  Future<bool> _confirmDiscardDraft() async {
+    final shouldLeave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Quitter la création ?'),
+          content: const Text('Votre brouillon sera conservé pour plus tard.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Rester'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Quitter'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return shouldLeave ?? false;
+  }
 }
 
 class _ShapesEmptyView extends StatelessWidget {
@@ -256,9 +358,10 @@ class _ShapesEmptyView extends StatelessWidget {
 }
 
 class _ShapesErrorView extends StatelessWidget {
+  final bool isRetrying;
   final VoidCallback onRetry;
 
-  const _ShapesErrorView({required this.onRetry});
+  const _ShapesErrorView({required this.isRetrying, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +371,16 @@ class _ShapesErrorView extends StatelessWidget {
         children: [
           const Text('Impossible de charger les formes de tentes.'),
           const SizedBox(height: 12),
-          ElevatedButton(onPressed: onRetry, child: const Text('Réessayer')),
+          ElevatedButton(
+            onPressed: isRetrying ? null : onRetry,
+            child: isRetrying
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Réessayer'),
+          ),
         ],
       ),
     );

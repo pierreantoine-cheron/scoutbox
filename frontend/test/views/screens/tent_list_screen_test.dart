@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/models/tent_shape.dart';
 import 'package:frontend/providers/auth_provider.dart';
+import 'package:frontend/repositories/tent_repository.dart';
 import 'package:frontend/views/screens/tent_list_screen.dart';
 
 void main() {
@@ -38,5 +40,32 @@ void main() {
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       expect(iconButton.onPressed, isNull);
     });
+
+    testWidgets('opens tent creation screen from FAB', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_TentListTestRepository()),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Créer une tente'), findsOneWidget);
+    });
   });
+}
+
+class _TentListTestRepository extends TentRepository {
+  @override
+  Future<List<TentShape>> getTentShapes() async {
+    return const [
+      TentShape(id: 's1', name: 'Canadienne', displayOrder: 1, isActive: true),
+    ];
+  }
 }

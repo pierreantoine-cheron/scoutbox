@@ -114,6 +114,92 @@ void main() {
       expect(find.text('8'), findsOneWidget);
       expect(find.text('Conserver ce brouillon'), findsOneWidget);
     });
+
+    testWidgets('shows success snackbar after successful creation', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Canadienne'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-name-input')),
+        'Tente réussite',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-size-input')),
+        '4',
+      );
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
+      await tester.pump();
+
+      expect(find.text('Tente créée avec succès'), findsOneWidget);
+    });
+
+    testWidgets('filters non-digit characters in size field', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Canadienne'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.pumpAndSettle();
+
+      final sizeFinder = find.byKey(const ValueKey('tent-size-input'));
+      await tester.enterText(sizeFinder, '12a-3b');
+      await tester.pumpAndSettle();
+
+      final sizeField = tester.widget<TextFormField>(sizeFinder);
+      expect(sizeField.controller?.text, equals('123'));
+    });
+
+    testWidgets('intercepts back button and asks confirmation', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quitter la création ?'), findsOneWidget);
+      expect(
+        find.text('Votre brouillon sera conservé pour plus tard.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Rester'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Créer une tente'), findsOneWidget);
+    });
   });
 }
 
@@ -124,6 +210,24 @@ class _SuccessTentRepository extends TentRepository {
       TentShape(id: '1', name: 'Canadienne', displayOrder: 1, isActive: true),
       TentShape(id: '2', name: 'Tipi', displayOrder: 2, isActive: true),
     ];
+  }
+
+  @override
+  Future<Tent> createTent({
+    required String name,
+    required int size,
+    required String tentShapeId,
+    required TentOverallState overallState,
+    String? comments,
+  }) async {
+    return Tent(
+      id: 'tent-1',
+      name: name,
+      size: size,
+      tentShapeId: tentShapeId,
+      overallState: overallState,
+      comments: comments,
+    );
   }
 }
 

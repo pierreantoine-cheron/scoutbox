@@ -9,13 +9,20 @@ part 'tent_shapes_provider.g.dart';
 class TentShapesNotifier extends _$TentShapesNotifier {
   @override
   Future<List<TentShape>> build() async {
-    return ref.read(tentRepositoryProvider).getTentShapes();
+    final shapes = await ref.read(tentRepositoryProvider).getTentShapes();
+    return _sortShapes(shapes);
   }
 
   Future<void> retry() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
-      () => ref.read(tentRepositoryProvider).getTentShapes(),
-    );
+    state = await AsyncValue.guard(() async {
+      final shapes = await ref.read(tentRepositoryProvider).getTentShapes();
+      return _sortShapes(shapes);
+    });
+  }
+
+  List<TentShape> _sortShapes(List<TentShape> shapes) {
+    return [...shapes]
+      ..sort((left, right) => left.displayOrder.compareTo(right.displayOrder));
   }
 }

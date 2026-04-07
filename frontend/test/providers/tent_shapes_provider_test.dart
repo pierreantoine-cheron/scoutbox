@@ -16,6 +16,7 @@ void main() {
       final first = await container.read(tentShapesProvider.future);
       expect(first.length, equals(2));
       expect(first.first.name, equals('Canadienne'));
+      expect(first.map((shape) => shape.displayOrder).toList(), equals([1, 2]));
 
       fakeRepository.failNext = true;
       await container.read(tentShapesProvider.notifier).retry();
@@ -41,8 +42,8 @@ class _ToggleTentRepository extends TentRepository {
     }
 
     return const [
-      TentShape(id: '1', name: 'Canadienne', displayOrder: 1, isActive: true),
       TentShape(id: '2', name: 'Tipi', displayOrder: 2, isActive: true),
+      TentShape(id: '1', name: 'Canadienne', displayOrder: 1, isActive: true),
     ];
   }
 }
