@@ -149,10 +149,7 @@ namespace ScoutBoxApi.Migrations
 
                     b.HasIndex("UpdatedByUserId");
 
-                    b.ToTable("Parts", t =>
-                        {
-                            t.HasCheckConstraint("CK_Parts_State_Valid", "State BETWEEN 1 AND 4");
-                        });
+                    b.ToTable("Parts");
                 });
 
             modelBuilder.Entity("ScoutBoxApi.Models.Entities.PartKind", b =>
@@ -187,12 +184,7 @@ namespace ScoutBoxApi.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("PartKinds", t =>
-                        {
-                            t.HasCheckConstraint("CK_PartKinds_DisplayOrder_Max", "DisplayOrder <= 999");
-
-                            t.HasCheckConstraint("CK_PartKinds_DisplayOrder_Positive", "DisplayOrder > 0");
-                        });
+                    b.ToTable("PartKinds");
 
                     b.HasData(
                         new
@@ -348,14 +340,7 @@ namespace ScoutBoxApi.Migrations
 
                     b.HasIndex("UpdatedByUserId");
 
-                    b.ToTable("Tents", t =>
-                        {
-                            t.HasCheckConstraint("CK_Tents_OverallState_Valid", "OverallState BETWEEN 1 AND 3");
-
-                            t.HasCheckConstraint("CK_Tents_Size_Max", "Size <= 100");
-
-                            t.HasCheckConstraint("CK_Tents_Size_Positive", "Size > 0");
-                        });
+                    b.ToTable("Tents");
                 });
 
             modelBuilder.Entity("ScoutBoxApi.Models.Entities.TentShape", b =>
@@ -394,12 +379,7 @@ namespace ScoutBoxApi.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("TentShapes", t =>
-                        {
-                            t.HasCheckConstraint("CK_TentShapes_DisplayOrder_Max", "DisplayOrder <= 999");
-
-                            t.HasCheckConstraint("CK_TentShapes_DisplayOrder_Positive", "DisplayOrder > 0");
-                        });
+                    b.ToTable("TentShapes");
 
                     b.HasData(
                         new

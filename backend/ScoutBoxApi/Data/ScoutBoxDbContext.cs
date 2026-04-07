@@ -199,13 +199,6 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.CreatedByUserId).IsRequired();
             entity.Property(e => e.UpdatedByUserId).IsRequired();
 
-            entity.ToTable(t =>
-            {
-                t.HasCheckConstraint("CK_Tents_Size_Positive", "Size > 0");
-                t.HasCheckConstraint("CK_Tents_Size_Max", "Size <= 100");
-                t.HasCheckConstraint("CK_Tents_OverallState_Valid", "OverallState BETWEEN 1 AND 3");
-            });
-
             entity.HasOne(e => e.TentShape)
                 .WithMany(e => e.Tents)
                 .HasForeignKey(e => e.TentShapeId)
@@ -238,12 +231,6 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
 
-            entity.ToTable(t =>
-            {
-                t.HasCheckConstraint("CK_TentShapes_DisplayOrder_Positive", "DisplayOrder > 0");
-                t.HasCheckConstraint("CK_TentShapes_DisplayOrder_Max", "DisplayOrder <= 999");
-            });
-
             entity.HasIndex(e => e.Name).IsUnique();
             entity.HasIndex(e => e.DisplayOrder);
             entity.HasIndex(e => e.CreatedAt);
@@ -257,12 +244,6 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.DisplayOrder).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
-
-            entity.ToTable(t =>
-            {
-                t.HasCheckConstraint("CK_PartKinds_DisplayOrder_Positive", "DisplayOrder > 0");
-                t.HasCheckConstraint("CK_PartKinds_DisplayOrder_Max", "DisplayOrder <= 999");
-            });
 
             entity.HasIndex(e => e.Name).IsUnique();
             entity.HasIndex(e => e.DisplayOrder);
@@ -297,11 +278,6 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.UpdatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId).IsRequired();
             entity.Property(e => e.UpdatedByUserId).IsRequired();
-
-            entity.ToTable(t =>
-            {
-                t.HasCheckConstraint("CK_Parts_State_Valid", "State BETWEEN 1 AND 4");
-            });
 
             entity.HasOne(e => e.Tent)
                 .WithMany(e => e.Parts)
