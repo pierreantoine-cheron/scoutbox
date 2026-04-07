@@ -20,7 +20,7 @@ This document describes the shared staging deployment contract for ScoutBox.
 Provide persistent storage for these paths:
 
 - `/app/data`
-  Purpose: SQLite database files
+  Purpose: SQLite database files and ASP.NET Data Protection keys
 - `/app/uploads`
   Purpose: uploaded photos and future file storage
 
@@ -42,6 +42,7 @@ Jwt__Issuer=ScoutBoxApi
 Jwt__Audience=ScoutBoxApp
 Server__Url=https://staging-api.scoutbox.app
 Storage__UploadsRoot=/app/uploads
+Storage__DataProtectionKeysRoot=/app/data/data-protection-keys
 ```
 
 `Server__Url` should stay aligned with the public staging domain so future invite links and external URLs are generated correctly.
@@ -52,6 +53,7 @@ Keep stable, non-secret runtime defaults in `backend/ScoutBoxApi/appsettings.Pro
 
 - `ConnectionStrings:DefaultConnection`
 - `Storage:UploadsRoot`
+- `Storage:DataProtectionKeysRoot`
 
 Set environment-specific and secret values at deployment time:
 

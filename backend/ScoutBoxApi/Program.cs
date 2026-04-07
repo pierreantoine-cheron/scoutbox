@@ -1,4 +1,6 @@
+using System.IO;
 using System.Text;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
@@ -29,6 +31,15 @@ builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAuditHistoryService, AuditHistoryService>();
 builder.Services.AddScoped<TentService>();
+
+var dataProtectionKeysRoot = builder.Configuration["Storage:DataProtectionKeysRoot"]
+    ?? Path.Combine(AppContext.BaseDirectory, "data-protection-keys");
+
+Directory.CreateDirectory(dataProtectionKeysRoot);
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysRoot))
+    .SetApplicationName("ScoutBoxApi");
 
 // Configure SQLite with WAL mode
 builder.Services.AddDbContext<ScoutBoxDbContext>(options =>
