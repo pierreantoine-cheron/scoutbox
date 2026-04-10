@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_provider.dart';
@@ -98,9 +99,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       appBar: AppBar(title: const Text('Connexion')),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
+        child: AutofillGroup(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
             TextFormField(
               controller: _serverController,
               focusNode: _serverFocusNode,
@@ -195,7 +197,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -218,6 +221,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           password: _passwordController.text,
           rememberUsername: _rememberUsername,
         );
+
+    if (mounted && ref.read(authProvider).isAuthenticated) {
+      TextInput.finishAutofillContext(shouldSave: true);
+    }
   }
 
   void _showLogoutSuccessMessage(String message) {

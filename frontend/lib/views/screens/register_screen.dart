@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_provider.dart';
@@ -66,9 +67,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       appBar: AppBar(title: const Text('Inscription')),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
+        child: AutofillGroup(
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
             TextFormField(
               controller: _serverController,
               focusNode: _serverFocusNode,
@@ -184,7 +186,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   textAlign: TextAlign.center,
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -205,5 +208,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           username: _usernameController.text.trim(),
           password: _passwordController.text,
         );
+
+    if (mounted && ref.read(authProvider).isAuthenticated) {
+      TextInput.finishAutofillContext(shouldSave: true);
+    }
   }
 }
