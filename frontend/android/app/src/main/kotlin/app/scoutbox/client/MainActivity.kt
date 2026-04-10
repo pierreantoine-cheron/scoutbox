@@ -1,4 +1,4 @@
-package app.scoutbox.frontend
+package app.scoutbox.client
 
 import io.flutter.embedding.android.FlutterActivity
 
