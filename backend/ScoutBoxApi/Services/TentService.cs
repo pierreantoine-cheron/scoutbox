@@ -103,25 +103,10 @@ public class TentService
         {
             await _db.SaveChangesAsync();
         }
-        catch (DbUpdateConcurrencyException ex)
-        {
-            _logger.LogError(ex, "Tent creation failed due to a concurrency conflict for {TentName}", normalizedName);
-            return (null, new ErrorResponse("Failed to create tent", "TENT_CREATE_FAILED"));
-        }
         catch (DbUpdateException ex) when (IsDuplicateTentNameViolation(ex))
         {
             _logger.LogWarning(ex, "Duplicate tent name blocked by DB constraint: {TentName}", normalizedName);
             return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"));
-        }
-        catch (DbUpdateException ex)
-        {
-            _logger.LogError(ex, "Tent creation failed due to database error for {TentName}", normalizedName);
-            return (null, new ErrorResponse("Failed to create tent", "TENT_CREATE_FAILED"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to create tent {TentName}", normalizedName);
-            return (null, new ErrorResponse("Failed to create tent", "TENT_CREATE_FAILED"));
         }
 
         var dto = new TentDto(

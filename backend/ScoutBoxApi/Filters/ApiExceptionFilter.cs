@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.EntityFrameworkCore;
 using ScoutBoxApi.Models.DTOs;
 
 namespace ScoutBoxApi.Filters;
@@ -25,6 +26,16 @@ public class ApiExceptionFilter : IExceptionFilter
                 _logger.LogWarning(ex, "Authentication failure");
                 context.Result = new UnauthorizedObjectResult(
                     new ErrorResponse(ex.Message, "AUTH_INVALID_TOKEN"));
+                context.ExceptionHandled = true;
+                break;
+
+            case DbUpdateConcurrencyException ex:
+                _logger.LogWarning(ex, "Concurrency conflict while processing request");
+                context.Result = new ObjectResult(
+                    new ErrorResponse("Resource was modified concurrently. Please retry.", "CONCURRENCY_CONFLICT"))
+                {
+                    StatusCode = 409
+                };
                 context.ExceptionHandled = true;
                 break;
 
