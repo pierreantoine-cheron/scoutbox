@@ -27,3 +27,5 @@ obj/
 # OS files
 .DS_Store
 Thumbs.db
+
+data-protection-keys/
