@@ -111,6 +111,8 @@ public class TentService
                 .ThenBy(sp => sp.PartKindId)
                 .ToList();
 
+            var createdParts = new List<Part>(orderedShapeParts.Count);
+
             foreach (var shapePart in orderedShapeParts)
             {
                 var part = new Part
@@ -126,6 +128,7 @@ public class TentService
                     UpdatedByUserId = userId
                 };
                 _db.Parts.Add(part);
+                createdParts.Add(part);
             }
 
             try
@@ -141,16 +144,20 @@ public class TentService
 
             await transaction.CommitAsync();
 
-            var partDtos = orderedShapeParts.Select(sp => new PartDto(
-                Guid.Empty,
-                sp.PartKindId,
-                sp.PartKind.Name,
-                sp.PartKind.DisplayOrder,
-                PartState.Good.ToString(),
-                null,
-                now,
-                now
-            )).ToList();
+            var partDtos = createdParts
+                .OrderBy(p => p.PartKind.DisplayOrder)
+                .ThenBy(p => p.PartKindId)
+                .Select(p => new PartDto(
+                    p.Id,
+                    p.PartKindId,
+                    p.PartKind.Name,
+                    p.PartKind.DisplayOrder,
+                    p.State.ToString(),
+                    p.Comments,
+                    p.CreatedAt,
+                    p.UpdatedAt
+                ))
+                .ToList();
 
             var dto = new TentDto(
                 tent.Id,

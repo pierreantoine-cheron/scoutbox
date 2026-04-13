@@ -9,4 +9,4 @@ public record TentDto(
     string? Comments,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    IReadOnlyList<PartDto> Parts = null!);
+    IReadOnlyList<PartDto> Parts);

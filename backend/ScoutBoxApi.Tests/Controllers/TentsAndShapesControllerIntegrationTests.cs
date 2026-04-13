@@ -297,6 +297,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         foreach (var part in payload.Data.Parts)
         {
+            Assert.NotEqual(Guid.Empty, part.Id);
             Assert.Equal("Good", part.State);
             Assert.Null(part.Comments);
         }
@@ -511,11 +512,15 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         await EnsureTestUserExistsAsync();
 
         var uniqueName = $"Tente Atomic Test {Guid.NewGuid():N}";
+        var tentsCountBefore = 0;
+        var partsCountBefore = 0;
         Guid shapeId;
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
             shapeId = await GetFirstActiveShapeWithPartsAsync(db);
+            tentsCountBefore = await db.Tents.CountAsync();
+            partsCountBefore = await db.Parts.CountAsync();
 
             db.Tents.Add(new Tent
             {
@@ -531,6 +536,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 UpdatedByUserId = CustomApiFactory.TestUserId
             });
             await db.SaveChangesAsync();
+
+            tentsCountBefore = await db.Tents.CountAsync();
+            partsCountBefore = await db.Parts.CountAsync();
         }
 
         using var client = CreateAuthenticatedClient();
@@ -550,6 +558,16 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
         Assert.NotNull(payload);
         Assert.Equal("TENT_NAME_EXISTS", payload.Code);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var tentsCountAfter = await db.Tents.CountAsync();
+            var partsCountAfter = await db.Parts.CountAsync();
+
+            Assert.Equal(tentsCountBefore, tentsCountAfter);
+            Assert.Equal(partsCountBefore, partsCountAfter);
+        }
     }
 
     [Fact]
@@ -561,11 +579,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.DisplayOrder)
-                .Select(x => x.Id)
-                .FirstAsync();
+            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
         }
 
         using var client = CreateAuthenticatedClient();
