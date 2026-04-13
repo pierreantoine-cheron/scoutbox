@@ -247,6 +247,370 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.Equal("TENT_NAME_EXISTS", payload.Code);
     }
 
+    // --- Story 2.3: Auto-generate parts tests ---
+
+    [Fact]
+    public async Task CreateTent_WithCanadienneShape_ReturnsSevenStandardParts()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid canadienneShapeId;
+        int expectedPartCount;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shape = await db.TentShapes
+                .Include(s => s.TentShapeParts)
+                .Where(x => x.Name == "Canadienne")
+                .FirstOrDefaultAsync();
+            if (shape == null || !shape.IsActive)
+            {
+                shape = await db.TentShapes
+                    .Include(s => s.TentShapeParts)
+                    .Where(x => x.IsActive && x.TentShapeParts.Any())
+                    .OrderBy(x => x.DisplayOrder)
+                    .FirstAsync();
+            }
+            canadienneShapeId = shape.Id;
+            expectedPartCount = shape.TentShapeParts.Count;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = $"Tente Parts Test {Guid.NewGuid():N}",
+            size = 6,
+            tentShapeId = canadienneShapeId,
+            overallState = "Good",
+            comments = null as string
+        };
+
+        var response = await client.PostAsJsonAsync("/api/tents", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.NotNull(payload.Data.Parts);
+        Assert.Equal(expectedPartCount, payload.Data.Parts.Count);
+
+        foreach (var part in payload.Data.Parts)
+        {
+            Assert.Equal("Good", part.State);
+            Assert.Null(part.Comments);
+        }
+    }
+
+    [Fact]
+    public async Task CreateTent_WithCustomShapeConfig_ReturnsExactConfiguredPartCount()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        int expectedPartCount;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
+            expectedPartCount = await db.TentShapeParts
+                .CountAsync(sp => sp.TentShapeId == shapeId);
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = $"Tente Cabanon Test {Guid.NewGuid():N}",
+            size = 8,
+            tentShapeId = shapeId,
+            overallState = "Good",
+            comments = null as string
+        };
+
+        var response = await client.PostAsJsonAsync("/api/tents", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.NotNull(payload.Data.Parts);
+        Assert.Equal(expectedPartCount, payload.Data.Parts.Count);
+    }
+
+    [Fact]
+    public async Task CreateTent_WithShapeWithZeroDefaults_CreatesTentWithEmptyParts()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid emptyShapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+
+            var shape = new TentShape
+            {
+                Id = Guid.NewGuid(),
+                Name = "Empty Shape Test",
+                IsActive = true,
+                DisplayOrder = 99,
+                Description = "Shape with no default parts",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            db.TentShapes.Add(shape);
+            await db.SaveChangesAsync();
+            emptyShapeId = shape.Id;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = "Tente No Parts Test",
+            size = 2,
+            tentShapeId = emptyShapeId,
+            overallState = "Good",
+            comments = null as string
+        };
+
+        var response = await client.PostAsJsonAsync("/api/tents", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.NotNull(payload.Data.Parts);
+        Assert.Empty(payload.Data.Parts);
+    }
+
+    [Fact]
+    public async Task CreateTent_AutoGeneratedParts_HaveGoodStateAndAuditAttribution()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = $"Tente Audit Test {Guid.NewGuid():N}",
+            size = 4,
+            tentShapeId = shapeId,
+            overallState = "Good",
+            comments = null as string
+        };
+
+        var response = await client.PostAsJsonAsync("/api/tents", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.NotNull(payload.Data.Parts);
+        Assert.NotEmpty(payload.Data.Parts);
+
+        foreach (var part in payload.Data.Parts)
+        {
+            Assert.Equal("Good", part.State);
+            Assert.Null(part.Comments);
+            Assert.NotEqual(Guid.Empty, part.PartKindId);
+            Assert.False(string.IsNullOrWhiteSpace(part.PartKindName));
+            Assert.True(part.DisplayOrder > 0);
+            Assert.True(part.CreatedAt <= DateTime.UtcNow);
+            Assert.True(part.UpdatedAt <= DateTime.UtcNow);
+        }
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var dbParts = await db.Parts
+                .Where(p => p.TentId == payload.Data.Id)
+                .ToListAsync();
+
+            Assert.Equal(payload.Data.Parts.Count, dbParts.Count);
+
+            foreach (var dbPart in dbParts)
+            {
+                Assert.Equal(PartState.Good, dbPart.State);
+                Assert.Null(dbPart.Comments);
+                Assert.Equal(CustomApiFactory.TestUserId, dbPart.CreatedByUserId);
+                Assert.Equal(CustomApiFactory.TestUserId, dbPart.UpdatedByUserId);
+                Assert.True(dbPart.CreatedAt <= DateTime.UtcNow);
+                Assert.True(dbPart.UpdatedAt <= DateTime.UtcNow);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task CreateTent_AutoGeneratedParts_AreOrderedByDisplayOrderThenPartKindId()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = $"Tente Order Test {Guid.NewGuid():N}",
+            size = 4,
+            tentShapeId = shapeId,
+            overallState = "Good",
+            comments = null as string
+        };
+
+        var response = await client.PostAsJsonAsync("/api/tents", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.NotNull(payload.Data.Parts);
+
+        var displayOrders = payload.Data.Parts.Select(p => p.DisplayOrder).ToList();
+        for (int i = 1; i < displayOrders.Count; i++)
+        {
+            Assert.True(displayOrders[i] >= displayOrders[i - 1],
+                $"Parts not ordered: part {i} has DisplayOrder {displayOrders[i]} < part {i - 1} has DisplayOrder {displayOrders[i - 1]}");
+        }
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var dbParts = await db.Parts
+                .Where(p => p.TentId == payload.Data.Id)
+                .Include(p => p.PartKind)
+                .OrderBy(p => p.PartKind.DisplayOrder)
+                .ThenBy(p => p.PartKindId)
+                .ToListAsync();
+
+            Assert.Equal(payload.Data.Parts.Count, dbParts.Count);
+
+            for (int i = 0; i < dbParts.Count; i++)
+            {
+                Assert.Equal(dbParts[i].PartKindId, payload.Data.Parts[i].PartKindId);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task CreateTent_OnFailure_NoPartialPersistenceRemains()
+    {
+        await EnsureTestUserExistsAsync();
+
+        var uniqueName = $"Tente Atomic Test {Guid.NewGuid():N}";
+        Guid shapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
+
+            db.Tents.Add(new Tent
+            {
+                Id = Guid.NewGuid(),
+                Name = uniqueName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = "seed",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = uniqueName,
+            size = 4,
+            tentShapeId = shapeId,
+            overallState = "Good",
+            comments = null as string
+        };
+
+        var response = await client.PostAsJsonAsync("/api/tents", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TENT_NAME_EXISTS", payload.Code);
+    }
+
+    [Fact]
+    public async Task CreateTent_ExistingFieldsStillWork_AfterPartsAutoGeneration()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = $"Tente Compatibility Test {Guid.NewGuid():N}",
+            size = 8,
+            tentShapeId = shapeId,
+            overallState = "Good",
+            comments = "Test compatibility"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/tents", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.NotEqual(Guid.Empty, payload.Data.Id);
+        Assert.Equal(8, payload.Data.Size);
+        Assert.Equal(shapeId, payload.Data.TentShapeId);
+        Assert.Equal("Good", payload.Data.OverallState);
+        Assert.Equal("Test compatibility", payload.Data.Comments);
+        Assert.NotNull(payload.Data.Parts);
+        Assert.NotEmpty(payload.Data.Parts);
+    }
+
+    private static async Task<Guid> GetFirstActiveShapeWithPartsAsync(ScoutBoxDbContext db)
+    {
+        var canadienne = await db.TentShapes
+            .Where(x => x.Name == "Canadienne" && x.IsActive)
+            .Select(x => x.Id)
+            .FirstOrDefaultAsync();
+
+        if (canadienne != Guid.Empty)
+            return canadienne;
+
+        return await db.TentShapes
+            .Where(x => x.IsActive && x.TentShapeParts.Any())
+            .OrderBy(x => x.DisplayOrder)
+            .Select(x => x.Id)
+            .FirstAsync();
+    }
+
     private HttpClient CreateAuthenticatedClient()
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -298,6 +662,21 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public Guid TentShapeId { get; set; }
         public string OverallState { get; set; } = string.Empty;
         public string? Comments { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public List<PartApiDto> Parts { get; set; } = new();
+    }
+
+    private sealed class PartApiDto
+    {
+        public Guid Id { get; set; }
+        public Guid PartKindId { get; set; }
+        public string PartKindName { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public string State { get; set; } = string.Empty;
+        public string? Comments { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 
     private sealed class ErrorPayload

@@ -8,4 +8,5 @@ public record TentDto(
     string OverallState,
     string? Comments,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    IReadOnlyList<PartDto> Parts = null!);

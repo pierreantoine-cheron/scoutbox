@@ -60,10 +60,13 @@ public class TentService
             return (null, new ErrorResponse("Tent comments exceed maximum length", "TENT_CREATE_FAILED"));
         }
 
-        var hasShape = await _db.TentShapes
-            .AnyAsync(shape => shape.Id == request.TentShapeId && shape.IsActive);
+        var shape = await _db.TentShapes
+            .Include(s => s.TentShapeParts)
+                .ThenInclude(sp => sp.PartKind)
+            .Where(shape => shape.Id == request.TentShapeId && shape.IsActive)
+            .FirstOrDefaultAsync();
 
-        if (!hasShape)
+        if (shape == null)
         {
             return (null, new ErrorResponse("Tent shape does not exist", "INVALID_TENT_SHAPE"));
         }
@@ -82,44 +85,93 @@ public class TentService
             return (null, new ErrorResponse("Tent overall state is invalid", "INVALID_TENT_STATE"));
         }
 
-        var now = DateTime.UtcNow;
-        var tent = new Tent
-        {
-            Id = Guid.NewGuid(),
-            Name = normalizedName,
-            Size = request.Size,
-            TentShapeId = request.TentShapeId,
-            OverallState = overallState,
-            Comments = string.IsNullOrWhiteSpace(request.Comments) ? null : request.Comments.Trim(),
-            CreatedAt = now,
-            UpdatedAt = now,
-            CreatedByUserId = userId,
-            UpdatedByUserId = userId
-        };
-
-        _db.Tents.Add(tent);
+        await using var transaction = await _db.Database.BeginTransactionAsync();
 
         try
         {
-            await _db.SaveChangesAsync();
+            var now = DateTime.UtcNow;
+            var tent = new Tent
+            {
+                Id = Guid.NewGuid(),
+                Name = normalizedName,
+                Size = request.Size,
+                TentShapeId = request.TentShapeId,
+                OverallState = overallState,
+                Comments = string.IsNullOrWhiteSpace(request.Comments) ? null : request.Comments.Trim(),
+                CreatedAt = now,
+                UpdatedAt = now,
+                CreatedByUserId = userId,
+                UpdatedByUserId = userId
+            };
+
+            _db.Tents.Add(tent);
+
+            var orderedShapeParts = shape.TentShapeParts
+                .OrderBy(sp => sp.PartKind.DisplayOrder)
+                .ThenBy(sp => sp.PartKindId)
+                .ToList();
+
+            foreach (var shapePart in orderedShapeParts)
+            {
+                var part = new Part
+                {
+                    Id = Guid.NewGuid(),
+                    TentId = tent.Id,
+                    PartKindId = shapePart.PartKindId,
+                    State = PartState.Good,
+                    Comments = null,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    CreatedByUserId = userId,
+                    UpdatedByUserId = userId
+                };
+                _db.Parts.Add(part);
+            }
+
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateTentNameViolation(ex))
+            {
+                await transaction.RollbackAsync();
+                _logger.LogWarning(ex, "Duplicate tent name blocked by DB constraint: {TentName}", normalizedName);
+                return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"));
+            }
+
+            await transaction.CommitAsync();
+
+            var partDtos = orderedShapeParts.Select(sp => new PartDto(
+                Guid.Empty,
+                sp.PartKindId,
+                sp.PartKind.Name,
+                sp.PartKind.DisplayOrder,
+                PartState.Good.ToString(),
+                null,
+                now,
+                now
+            )).ToList();
+
+            var dto = new TentDto(
+                tent.Id,
+                tent.Name,
+                tent.Size,
+                tent.TentShapeId,
+                tent.OverallState.ToString(),
+                tent.Comments,
+                tent.CreatedAt,
+                tent.UpdatedAt,
+                partDtos
+            );
+
+            return (dto, null);
         }
-        catch (DbUpdateException ex) when (IsDuplicateTentNameViolation(ex))
+        catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Duplicate tent name blocked by DB constraint: {TentName}", normalizedName);
-            return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"));
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Failed to create tent {TentName} with shape {TentShapeId} for user {UserId}", normalizedName, request.TentShapeId, userId);
+            throw;
         }
-
-        var dto = new TentDto(
-            tent.Id,
-            tent.Name,
-            tent.Size,
-            tent.TentShapeId,
-            tent.OverallState.ToString(),
-            tent.Comments,
-            tent.CreatedAt,
-            tent.UpdatedAt);
-
-        return (dto, null);
     }
 
     private static bool IsDuplicateTentNameViolation(DbUpdateException exception)
