@@ -92,6 +92,7 @@ scoutbox/
 ├── backend/
 │   ├── ScoutBoxApi/            # .NET Web API
 │   │   ├── Controllers/        # API endpoints
+│   │   ├── Filters/            # Global API exception filters
 │   │   ├── Models/
 │   │   │   ├── DTOs/           # Data transfer objects
 │   │   │   └── Entities/       # Database entities
@@ -199,30 +200,27 @@ public class MyController : ControllerBase
 ```
 
 **Error Handling:**
-- Use try/catch in controllers
-- Log errors with `ILogger`
-- Return appropriate HTTP status codes with `ErrorResponse`
-- Use error codes for client handling: `INVALID_INVITE`, `USERNAME_EXISTS`
+- Prefer global exception handling with `ApiExceptionFilter` instead of repetitive controller try/catch
+- Keep controller try/catch only for local recovery or custom branching that should not be global
+- Log known exceptions with `Warning` and unknown exceptions with `Error`
+- Return standardized `ErrorResponse(string Error, string Code)` payloads with stable error codes
+
+**Global Exception Filter (`ApiExceptionFilter`):**
+- Location: `backend/ScoutBoxApi/Filters/ApiExceptionFilter.cs`
+- Registration: `backend/ScoutBoxApi/Program.cs` via `AddControllers(options => options.Filters.Add<ApiExceptionFilter>())`
+- Exception mappings:
+  - `UnauthorizedAccessException` -> `401` with `AUTH_INVALID_TOKEN`
+  - `DbUpdateConcurrencyException` -> `409` with `CONCURRENCY_CONFLICT`
+  - Any other `Exception` -> `500` with `INTERNAL_ERROR`
 
 **API Response Pattern:**
 ```csharp
 [HttpPost("endpoint")]
 public async Task<IActionResult> Endpoint([FromBody] Request request)
 {
-    try
-    {
-        // Validate and process
-        return Ok(new Response { ... });
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Error description");
-        return StatusCode(500, new ErrorResponse 
-        { 
-            Error = "User-friendly message", 
-            Code = "ERROR_CODE" 
-        });
-    }
+    // Validate and process
+    // Throw specific exceptions when needed, ApiExceptionFilter maps them to ErrorResponse
+    return Ok(new Response { ... });
 }
 ```
 
@@ -269,6 +267,8 @@ public class UploadRequest
 ## Key Files to Modify
 
 - Adding new API endpoint: `backend/ScoutBoxApi/Controllers/`
+- API exception mapping policy: `backend/ScoutBoxApi/Filters/ApiExceptionFilter.cs`
+- Global API filter registration: `backend/ScoutBoxApi/Program.cs`
 - New data model: `backend/ScoutBoxApi/Models/Entities/`
 - New DTO: `backend/ScoutBoxApi/Models/DTOs/`
 - New Flutter screen: `frontend/lib/views/screens/`
