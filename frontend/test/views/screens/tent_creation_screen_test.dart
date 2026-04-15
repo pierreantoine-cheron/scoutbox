@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/models/tent.dart';
-import 'package:frontend/models/tent_shape.dart';
-import 'package:frontend/repositories/tent_repository.dart';
-import 'package:frontend/views/screens/tent_creation_screen.dart';
+import 'package:client/models/tent.dart';
+import 'package:client/models/tent_shape.dart';
+import 'package:client/repositories/tent_repository.dart';
+import 'package:client/views/screens/tent_creation_screen.dart';
 
 void main() {
   group('TentCreationScreen', () {

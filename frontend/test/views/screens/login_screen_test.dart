@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/providers/auth_provider.dart';
-import 'package:frontend/services/auth_service.dart';
-import 'package:frontend/views/screens/login_screen.dart';
+import 'package:client/providers/auth_provider.dart';
+import 'package:client/services/auth_service.dart';
+import 'package:client/views/screens/login_screen.dart';
 
 class _FakeAuthService extends AuthService {
   @override

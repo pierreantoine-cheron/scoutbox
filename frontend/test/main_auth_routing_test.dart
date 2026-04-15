@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/main.dart';
-import 'package:frontend/models/auth_response.dart';
-import 'package:frontend/providers/auth_provider.dart';
-import 'package:frontend/services/auth_service.dart';
-import 'package:frontend/views/screens/login_screen.dart';
-import 'package:frontend/views/screens/register_screen.dart';
-import 'package:frontend/views/screens/tent_list_screen.dart';
+import 'package:client/main.dart';
+import 'package:client/models/auth_response.dart';
+import 'package:client/providers/auth_provider.dart';
+import 'package:client/services/auth_service.dart';
+import 'package:client/views/screens/login_screen.dart';
+import 'package:client/views/screens/register_screen.dart';
+import 'package:client/views/screens/tent_list_screen.dart';
 
 class FakeAuthService extends AuthService {
   FakeAuthService(this._result, {this.loginSucceeds = false});

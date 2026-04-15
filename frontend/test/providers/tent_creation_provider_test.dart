@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/models/tent.dart';
-import 'package:frontend/models/tent_shape.dart';
-import 'package:frontend/providers/tent_creation_provider.dart';
-import 'package:frontend/repositories/tent_repository.dart';
-import 'package:frontend/utils/constants.dart';
+import 'package:client/models/tent.dart';
+import 'package:client/models/tent_shape.dart';
+import 'package:client/providers/tent_creation_provider.dart';
+import 'package:client/repositories/tent_repository.dart';
+import 'package:client/utils/constants.dart';
 
 void main() {
   group('TentCreationNotifier', () {

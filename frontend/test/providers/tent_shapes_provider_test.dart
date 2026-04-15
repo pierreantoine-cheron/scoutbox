@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/models/tent_shape.dart';
-import 'package:frontend/providers/tent_shapes_provider.dart';
-import 'package:frontend/repositories/tent_repository.dart';
+import 'package:client/models/tent_shape.dart';
+import 'package:client/providers/tent_shapes_provider.dart';
+import 'package:client/repositories/tent_repository.dart';
 
 void main() {
   group('TentShapesNotifier', () {

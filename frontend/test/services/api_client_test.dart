@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:frontend/services/api_client.dart';
-import 'package:frontend/services/auth_service.dart'
+import 'package:client/services/api_client.dart';
+import 'package:client/services/auth_service.dart'
     show RefreshResult, RefreshFailureType;
-import 'package:frontend/utils/constants.dart';
+import 'package:client/utils/constants.dart';
 
 void main() {
   group('ApiClient Unit Tests', () {
