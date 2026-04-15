@@ -30,6 +30,28 @@ public class TentService
             .ToListAsync();
     }
 
+    public async Task<IReadOnlyList<TentDto>> GetTentsAsync()
+    {
+        return await (
+            from tent in _db.Tents.AsNoTracking()
+            join shape in _db.TentShapes.AsNoTracking() on tent.TentShapeId equals shape.Id into shapeJoin
+            from shape in shapeJoin.DefaultIfEmpty()
+            orderby tent.UpdatedAt descending, tent.CreatedAt descending
+            select new TentDto(
+                tent.Id,
+                tent.Name,
+                tent.Size,
+                tent.TentShapeId,
+                shape != null ? shape.Name : null,
+                tent.OverallState.ToString(),
+                tent.Comments,
+                tent.CreatedAt,
+                tent.UpdatedAt,
+                Array.Empty<PartDto>()
+            )
+        ).ToListAsync();
+    }
+
     public async Task<(TentDto? Response, ErrorResponse? Error)> CreateTentAsync(Guid userId, CreateTentRequest request)
     {
         var rawName = request.Name ?? string.Empty;
@@ -164,6 +186,7 @@ public class TentService
                 tent.Name,
                 tent.Size,
                 tent.TentShapeId,
+                shape.Name,
                 tent.OverallState.ToString(),
                 tent.Comments,
                 tent.CreatedAt,

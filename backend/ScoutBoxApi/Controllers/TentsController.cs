@@ -19,6 +19,13 @@ public class TentsController : ControllerBase
         _currentUserAccessor = currentUserAccessor;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetTents()
+    {
+        var tents = await _tentService.GetTentsAsync();
+        return Ok(new { data = tents });
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateTent([FromBody] CreateTentRequest request)
     {

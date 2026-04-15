@@ -94,6 +94,142 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.Equal("Commentaire", payload.Data.Comments);
     }
 
+    [Fact]
+    public async Task GetTents_ReturnsEnvelopeWithRequiredFieldsIncludingShapeName()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        string shapeName;
+        var tentName = $"Tente Liste {Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shape = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .FirstAsync();
+
+            shapeId = shape.Id;
+            shapeName = shape.Name;
+
+            db.Tents.Add(new Tent
+            {
+                Id = Guid.NewGuid(),
+                Name = tentName,
+                Size = 5,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = "Test list",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync("/api/tents");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentApiDto>>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+
+        var createdTent = payload.Data.FirstOrDefault(t => t.Name == tentName);
+        Assert.NotNull(createdTent);
+        Assert.NotEqual(Guid.Empty, createdTent.Id);
+        Assert.Equal(5, createdTent.Size);
+        Assert.Equal(shapeId, createdTent.TentShapeId);
+        Assert.Equal(shapeName, createdTent.TentShapeName);
+        Assert.Equal("Good", createdTent.OverallState);
+    }
+
+    [Fact]
+    public async Task GetTents_ReturnsDeterministicOrderingByUpdatedAtThenCreatedAtDesc()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        string firstName;
+        string secondName;
+        string thirdName;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            var baseTime = DateTime.UtcNow;
+            firstName = $"Order-A-{Guid.NewGuid():N}";
+            secondName = $"Order-B-{Guid.NewGuid():N}";
+            thirdName = $"Order-C-{Guid.NewGuid():N}";
+
+            db.Tents.AddRange(
+                new Tent
+                {
+                    Id = Guid.NewGuid(),
+                    Name = firstName,
+                    Size = 4,
+                    TentShapeId = shapeId,
+                    OverallState = TentOverallState.Good,
+                    CreatedAt = baseTime.AddMinutes(-3),
+                    UpdatedAt = baseTime,
+                    CreatedByUserId = CustomApiFactory.TestUserId,
+                    UpdatedByUserId = CustomApiFactory.TestUserId
+                },
+                new Tent
+                {
+                    Id = Guid.NewGuid(),
+                    Name = secondName,
+                    Size = 4,
+                    TentShapeId = shapeId,
+                    OverallState = TentOverallState.Good,
+                    CreatedAt = baseTime.AddMinutes(-1),
+                    UpdatedAt = baseTime,
+                    CreatedByUserId = CustomApiFactory.TestUserId,
+                    UpdatedByUserId = CustomApiFactory.TestUserId
+                },
+                new Tent
+                {
+                    Id = Guid.NewGuid(),
+                    Name = thirdName,
+                    Size = 4,
+                    TentShapeId = shapeId,
+                    OverallState = TentOverallState.Good,
+                    CreatedAt = baseTime.AddMinutes(-2),
+                    UpdatedAt = baseTime.AddMinutes(-1),
+                    CreatedByUserId = CustomApiFactory.TestUserId,
+                    UpdatedByUserId = CustomApiFactory.TestUserId
+                }
+            );
+
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync("/api/tents");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentApiDto>>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+
+        var orderedNames = payload.Data
+            .Where(t => t.Name == firstName || t.Name == secondName || t.Name == thirdName)
+            .Select(t => t.Name)
+            .ToList();
+
+        Assert.Equal(new[] { secondName, firstName, thirdName }, orderedNames);
+    }
+
     [Theory]
     [InlineData("", 6, "TENT_NAME_REQUIRED")]
     [InlineData("   ", 6, "TENT_NAME_REQUIRED")]
@@ -674,6 +810,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public string Name { get; set; } = string.Empty;
         public int Size { get; set; }
         public Guid TentShapeId { get; set; }
+        public string? TentShapeName { get; set; }
         public string OverallState { get; set; } = string.Empty;
         public string? Comments { get; set; }
         public DateTime CreatedAt { get; set; }

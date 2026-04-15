@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tent.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/tent_list_provider.dart';
+import '../../repositories/tent_repository.dart';
+import '../widgets/tent_card.dart';
 import 'tent_creation_screen.dart';
 
 class TentListScreen extends ConsumerStatefulWidget {
@@ -13,11 +16,12 @@ class TentListScreen extends ConsumerStatefulWidget {
 }
 
 class _TentListScreenState extends ConsumerState<TentListScreen> {
-  final List<Tent> _createdTents = [];
+  static const bool _isFilteredMode = false;
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final tentsState = ref.watch(tentListProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -31,49 +35,87 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 64),
-            const SizedBox(height: 16),
-            const Text(
-              'Inscription réussie !',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text('Vous êtes maintenant connecté.'),
-            const SizedBox(height: 32),
-            const Text(
-              'Liste des tentes à venir...',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            if (_createdTents.isEmpty)
-              const Text('Aucune tente créée pour le moment.')
-            else
-              SizedBox(
-                height: 160,
-                child: ListView.builder(
-                  itemCount: _createdTents.length,
-                  itemBuilder: (context, index) {
-                    final tent = _createdTents[index];
-                    return ListTile(
-                      title: Text(tent.name),
-                      subtitle: Text(
-                        'Taille ${tent.size} - État ${tent.overallState.toFrenchLabel()}',
-                      ),
-                    );
-                  },
-                ),
-              ),
-          ],
+      body: SafeArea(
+        child: tentsState.when(
+          loading: _buildLoadingState,
+          error: (error, _) => _buildErrorState(error),
+          data: (tents) => _buildDataState(tents),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openTentCreation(context),
         tooltip: 'Ajouter une tente',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ListView.builder(
+      itemCount: 6,
+      itemBuilder: (_, _) => const _TentCardSkeleton(),
+    );
+  }
+
+  Widget _buildErrorState(Object error) {
+    final message = error is TentRepositoryException
+        ? error.message
+        : 'Impossible de charger les tentes. Réessayez.';
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () =>
+                        ref.read(tentListProvider.notifier).retry(),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Réessayer'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDataState(List<Tent> tents) {
+    if (tents.isEmpty) {
+      if (_isFilteredMode) {
+        return _FilteredEmptyState(onClearFilters: _clearFiltersHook);
+      }
+
+      return _EmptyState(onCreateTent: () => _openTentCreation(context));
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: tents.length,
+        itemBuilder: (context, index) {
+          final tent = tents[index];
+          return TentCard(
+            tent: tent,
+            onTap: () => _openTentDetailStub(context, tent),
+          );
+        },
       ),
     );
   }
@@ -87,9 +129,15 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
       return;
     }
 
-    setState(() {
-      _createdTents.insert(0, createdTent);
-    });
+    await ref.read(tentListProvider.notifier).refresh();
+  }
+
+  Future<void> _openTentDetailStub(BuildContext context, Tent tent) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TentDetailStubScreen(tentName: tent.name),
+      ),
+    );
   }
 
   void _showLogoutConfirmationDialog(BuildContext context, WidgetRef ref) {
@@ -116,6 +164,144 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
           ],
         );
       },
+    );
+  }
+
+  void _clearFiltersHook() {}
+}
+
+class _EmptyState extends StatelessWidget {
+  final VoidCallback onCreateTent;
+
+  const _EmptyState({required this.onCreateTent});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const SizedBox(height: 72),
+        const Icon(Icons.cabin, size: 64),
+        const SizedBox(height: 16),
+        const Center(
+          child: Text(
+            'Aucune tente disponible',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Center(child: Text('Commencez par créer votre première tente.')),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: FilledButton.icon(
+            onPressed: onCreateTent,
+            icon: const Icon(Icons.add),
+            label: const Text('Créer une tente'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FilteredEmptyState extends StatelessWidget {
+  final VoidCallback onClearFilters;
+
+  const _FilteredEmptyState({required this.onClearFilters});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const SizedBox(height: 72),
+        const Icon(Icons.filter_alt_off, size: 64),
+        const SizedBox(height: 16),
+        const Center(
+          child: Text(
+            'Aucune tente ne correspond à vos critères',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: OutlinedButton(
+            onPressed: onClearFilters,
+            child: const Text('Effacer les filtres'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TentCardSkeleton extends StatelessWidget {
+  const _TentCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SkeletonLine(widthFactor: 0.6, height: 18),
+            SizedBox(height: 10),
+            _SkeletonLine(widthFactor: 0.35, height: 14),
+            SizedBox(height: 8),
+            _SkeletonLine(widthFactor: 0.45, height: 14),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonLine extends StatelessWidget {
+  final double widthFactor;
+  final double height;
+
+  const _SkeletonLine({required this.widthFactor, required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+    return FractionallySizedBox(
+      widthFactor: widthFactor,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: baseColor,
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
+    );
+  }
+}
+
+class TentDetailStubScreen extends StatelessWidget {
+  final String tentName;
+
+  const TentDetailStubScreen({super.key, required this.tentName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Détail de la tente')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Le détail de "$tentName" sera disponible dans la Story 2.7.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
     );
   }
 }

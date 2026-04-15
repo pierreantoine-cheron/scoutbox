@@ -12,6 +12,30 @@ part 'tent_repository.g.dart';
 TentRepository tentRepository(Ref ref) => TentRepository();
 
 class TentRepository {
+  Future<List<Tent>> getTents() async {
+    try {
+      final response = await ApiClient.instance.get(ApiRoutes.tents);
+      final rawTents = _readEnvelopeList(response.data);
+
+      return rawTents
+          .map((tent) => Tent.fromJson(tent as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _toRepositoryException(
+        e,
+        fallbackMessage: 'Impossible de charger les tentes. Réessayez.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message: 'Réponse du serveur invalide lors du chargement des tentes.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message: 'Réponse du serveur invalide lors du chargement des tentes.',
+      );
+    }
+  }
+
   Future<List<TentShape>> getTentShapes() async {
     try {
       final response = await ApiClient.instance.get(ApiRoutes.tentShapes);

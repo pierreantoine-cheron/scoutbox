@@ -5,6 +5,7 @@ public record TentDto(
     string Name,
     int Size,
     Guid TentShapeId,
+    string? TentShapeName,
     string OverallState,
     string? Comments,
     DateTime CreatedAt,

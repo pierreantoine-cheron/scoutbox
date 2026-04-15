@@ -44,6 +44,7 @@ class Tent {
   final String name;
   final int size;
   final String tentShapeId;
+  final String? tentShapeName;
   final TentOverallState overallState;
   final String? comments;
 
@@ -52,6 +53,7 @@ class Tent {
     required this.name,
     required this.size,
     required this.tentShapeId,
+    this.tentShapeName,
     required this.overallState,
     required this.comments,
   });
@@ -62,6 +64,7 @@ class Tent {
       name: json['name'] as String,
       size: json['size'] as int,
       tentShapeId: json['tentShapeId'] as String,
+      tentShapeName: json['tentShapeName'] as String?,
       overallState: TentOverallState.fromApiValue(
         json['overallState'] as String,
       ),
