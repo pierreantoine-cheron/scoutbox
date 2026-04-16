@@ -271,33 +271,21 @@ class TentListInlineErrorState extends StatelessWidget {
         ? (error as TentRepositoryException).message
         : 'Impossible de charger les tentes. Réessayez.';
 
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: onRetry,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Réessayer'),
-                  ),
-                ],
-              ),
-            ),
+        Center(
+          child: Text(
+            message,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: onRetry,
+          icon: const Icon(Icons.refresh),
+          label: const Text('Réessayer'),
         ),
       ],
     );
