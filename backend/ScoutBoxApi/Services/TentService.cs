@@ -36,7 +36,7 @@ public class TentService
             from tent in _db.Tents.AsNoTracking()
             join shape in _db.TentShapes.AsNoTracking() on tent.TentShapeId equals shape.Id into shapeJoin
             from shape in shapeJoin.DefaultIfEmpty()
-            orderby tent.UpdatedAt descending, tent.CreatedAt descending
+            orderby tent.UpdatedAt descending, tent.CreatedAt descending, tent.Id descending
             select new TentDto(
                 tent.Id,
                 tent.Name,

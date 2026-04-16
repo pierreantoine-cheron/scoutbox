@@ -153,9 +153,13 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         await EnsureTestUserExistsAsync();
 
         Guid shapeId;
+        Guid firstId;
+        Guid secondId;
+        Guid fourthId;
         string firstName;
         string secondName;
         string thirdName;
+        string fourthName;
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -167,31 +171,36 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 .FirstAsync();
 
             var baseTime = DateTime.UtcNow;
+            var tiedCreatedAt = baseTime.AddMinutes(-4);
+            firstId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            secondId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+            fourthId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
             firstName = $"Order-A-{Guid.NewGuid():N}";
             secondName = $"Order-B-{Guid.NewGuid():N}";
             thirdName = $"Order-C-{Guid.NewGuid():N}";
+            fourthName = $"Order-D-{Guid.NewGuid():N}";
 
             db.Tents.AddRange(
                 new Tent
                 {
-                    Id = Guid.NewGuid(),
+                    Id = firstId,
                     Name = firstName,
                     Size = 4,
                     TentShapeId = shapeId,
                     OverallState = TentOverallState.Good,
-                    CreatedAt = baseTime.AddMinutes(-3),
+                    CreatedAt = tiedCreatedAt,
                     UpdatedAt = baseTime,
                     CreatedByUserId = CustomApiFactory.TestUserId,
                     UpdatedByUserId = CustomApiFactory.TestUserId
                 },
                 new Tent
                 {
-                    Id = Guid.NewGuid(),
+                    Id = secondId,
                     Name = secondName,
                     Size = 4,
                     TentShapeId = shapeId,
                     OverallState = TentOverallState.Good,
-                    CreatedAt = baseTime.AddMinutes(-1),
+                    CreatedAt = tiedCreatedAt,
                     UpdatedAt = baseTime,
                     CreatedByUserId = CustomApiFactory.TestUserId,
                     UpdatedByUserId = CustomApiFactory.TestUserId
@@ -205,6 +214,18 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                     OverallState = TentOverallState.Good,
                     CreatedAt = baseTime.AddMinutes(-2),
                     UpdatedAt = baseTime.AddMinutes(-1),
+                    CreatedByUserId = CustomApiFactory.TestUserId,
+                    UpdatedByUserId = CustomApiFactory.TestUserId
+                },
+                new Tent
+                {
+                    Id = fourthId,
+                    Name = fourthName,
+                    Size = 4,
+                    TentShapeId = shapeId,
+                    OverallState = TentOverallState.Good,
+                    CreatedAt = tiedCreatedAt,
+                    UpdatedAt = baseTime,
                     CreatedByUserId = CustomApiFactory.TestUserId,
                     UpdatedByUserId = CustomApiFactory.TestUserId
                 }
@@ -223,11 +244,11 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.NotNull(payload.Data);
 
         var orderedNames = payload.Data
-            .Where(t => t.Name == firstName || t.Name == secondName || t.Name == thirdName)
+            .Where(t => t.Name == firstName || t.Name == secondName || t.Name == thirdName || t.Name == fourthName)
             .Select(t => t.Name)
             .ToList();
 
-        Assert.Equal(new[] { secondName, firstName, thirdName }, orderedNames);
+        Assert.Equal(new[] { fourthName, secondName, firstName, thirdName }, orderedNames);
     }
 
     [Theory]

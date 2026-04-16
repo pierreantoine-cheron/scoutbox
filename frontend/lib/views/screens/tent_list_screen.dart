@@ -16,12 +16,12 @@ class TentListScreen extends ConsumerStatefulWidget {
 }
 
 class _TentListScreenState extends ConsumerState<TentListScreen> {
-  static const bool _isFilteredMode = false;
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final tentsState = ref.watch(tentListProvider);
+    final refreshIssue = ref.watch(tentListRefreshIssueProvider);
+    final isFilteredMode = ref.watch(tentListFilteredModeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -39,7 +39,11 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
         child: tentsState.when(
           loading: _buildLoadingState,
           error: (error, _) => _buildErrorState(error),
-          data: (tents) => _buildDataState(tents),
+          data: (tents) => _buildDataState(
+            tents,
+            refreshIssue: refreshIssue,
+            isFilteredMode: isFilteredMode,
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -58,59 +62,51 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
   }
 
   Widget _buildErrorState(Object error) {
-    final message = error is TentRepositoryException
-        ? error.message
-        : 'Impossible de charger les tentes. Réessayez.';
-
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: () =>
-                        ref.read(tentListProvider.notifier).retry(),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Réessayer'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+    return TentListInlineErrorState(
+      error: error,
+      onRetry: () => ref.read(tentListProvider.notifier).retry(),
     );
   }
 
-  Widget _buildDataState(List<Tent> tents) {
+  Widget _buildDataState(
+    List<Tent> tents, {
+    required Object? refreshIssue,
+    required bool isFilteredMode,
+  }) {
     if (tents.isEmpty) {
-      if (_isFilteredMode) {
-        return _FilteredEmptyState(onClearFilters: _clearFiltersHook);
+      if (isFilteredMode) {
+        return RefreshIndicator(
+          onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
+          child: _FilteredEmptyState(
+            onClearFilters: _clearFiltersHook,
+            warningMessage: _toRefreshWarningMessage(refreshIssue),
+          ),
+        );
       }
 
-      return _EmptyState(onCreateTent: () => _openTentCreation(context));
+      return RefreshIndicator(
+        onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
+        child: _EmptyState(
+          onCreateTent: () => _openTentCreation(context),
+          warningMessage: _toRefreshWarningMessage(refreshIssue),
+        ),
+      );
     }
 
     return RefreshIndicator(
       onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: tents.length,
+        itemCount: tents.length + (refreshIssue == null ? 0 : 1),
         itemBuilder: (context, index) {
-          final tent = tents[index];
+          if (refreshIssue != null && index == 0) {
+            return _RefreshWarningCard(
+              message: _toRefreshWarningMessage(refreshIssue)!,
+            );
+          }
+
+          final tentIndex = refreshIssue == null ? index : index - 1;
+          final tent = tents[tentIndex];
           return TentCard(
             tent: tent,
             onTap: () => _openTentDetailStub(context, tent),
@@ -129,7 +125,19 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
       return;
     }
 
+    ref.read(tentListProvider.notifier).showTent(createdTent);
     await ref.read(tentListProvider.notifier).refresh();
+  }
+
+  String? _toRefreshWarningMessage(Object? refreshIssue) {
+    if (refreshIssue == null) {
+      return null;
+    }
+
+    final detail = refreshIssue is TentRepositoryException
+        ? refreshIssue.message
+        : 'Impossible d\'actualiser la liste pour le moment.';
+    return 'Les données affichées peuvent être anciennes. $detail';
   }
 
   Future<void> _openTentDetailStub(BuildContext context, Tent tent) async {
@@ -172,14 +180,17 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
 
 class _EmptyState extends StatelessWidget {
   final VoidCallback onCreateTent;
+  final String? warningMessage;
 
-  const _EmptyState({required this.onCreateTent});
+  const _EmptyState({required this.onCreateTent, this.warningMessage});
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
+        if (warningMessage != null)
+          _RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
         const Icon(Icons.cabin, size: 64),
         const SizedBox(height: 16),
@@ -207,14 +218,20 @@ class _EmptyState extends StatelessWidget {
 
 class _FilteredEmptyState extends StatelessWidget {
   final VoidCallback onClearFilters;
+  final String? warningMessage;
 
-  const _FilteredEmptyState({required this.onClearFilters});
+  const _FilteredEmptyState({
+    required this.onClearFilters,
+    this.warningMessage,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
+        if (warningMessage != null)
+          _RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
         const Icon(Icons.filter_alt_off, size: 64),
         const SizedBox(height: 16),
@@ -234,6 +251,80 @@ class _FilteredEmptyState extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class TentListInlineErrorState extends StatelessWidget {
+  final Object error;
+  final Future<void> Function() onRetry;
+
+  const TentListInlineErrorState({
+    super.key,
+    required this.error,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final message = error is TentRepositoryException
+        ? (error as TentRepositoryException).message
+        : 'Impossible de charger les tentes. Réessayez.';
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Réessayer'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RefreshWarningCard extends StatelessWidget {
+  final String message;
+
+  const _RefreshWarningCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Card(
+        color: colorScheme.errorContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            message,
+            style: TextStyle(color: colorScheme.onErrorContainer),
+          ),
+        ),
+      ),
     );
   }
 }

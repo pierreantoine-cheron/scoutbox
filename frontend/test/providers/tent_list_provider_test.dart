@@ -95,6 +95,72 @@ void main() {
         equals('Tente apres refresh'),
       );
     });
+
+    test('keeps existing data and exposes refresh failure', () async {
+      final repository = _RefreshFailureTentListRepository();
+      final container = ProviderContainer(
+        overrides: [tentRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(tentListProvider.future);
+
+      await container.read(tentListProvider.notifier).refresh();
+
+      expect(
+        container.read(tentListProvider).requireValue.first.name,
+        equals('Tente initiale'),
+      );
+      expect(
+        container.read(tentListRefreshIssueProvider),
+        isA<TentRepositoryException>(),
+      );
+    });
+
+    test('ignores stale concurrent refresh results', () async {
+      final repository = _ConcurrentRefreshTentListRepository();
+      final container = ProviderContainer(
+        overrides: [tentRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(tentListProvider.future);
+
+      final firstRefresh = container.read(tentListProvider.notifier).refresh();
+      final secondRefresh = container.read(tentListProvider.notifier).refresh();
+
+      repository.completeRefresh(1, const [
+        Tent(
+          id: 't2',
+          name: 'Tente la plus recente',
+          size: 4,
+          tentShapeId: 'shape-1',
+          tentShapeName: 'Canadienne',
+          overallState: TentOverallState.good,
+          comments: null,
+        ),
+      ]);
+      await secondRefresh;
+
+      repository.completeRefresh(0, const [
+        Tent(
+          id: 't3',
+          name: 'Tente obselete',
+          size: 4,
+          tentShapeId: 'shape-1',
+          tentShapeName: 'Canadienne',
+          overallState: TentOverallState.good,
+          comments: null,
+        ),
+      ]);
+      await firstRefresh;
+
+      expect(
+        container.read(tentListProvider).requireValue.first.name,
+        equals('Tente la plus recente'),
+      );
+      expect(container.read(tentListRefreshIssueProvider), isNull);
+    });
   });
 }
 
@@ -195,5 +261,65 @@ class _DelayedRefreshTentListRepository extends TentRepository {
         comments: null,
       ),
     ]);
+  }
+}
+
+class _RefreshFailureTentListRepository extends TentRepository {
+  int getTentsCallCount = 0;
+
+  @override
+  Future<List<Tent>> getTents() async {
+    getTentsCallCount++;
+
+    if (getTentsCallCount == 1) {
+      return const [
+        Tent(
+          id: 't1',
+          name: 'Tente initiale',
+          size: 4,
+          tentShapeId: 'shape-1',
+          tentShapeName: 'Canadienne',
+          overallState: TentOverallState.good,
+          comments: null,
+        ),
+      ];
+    }
+
+    throw const TentRepositoryException(
+      code: 'INTERNAL_ERROR',
+      message: 'Erreur serveur. Réessayez.',
+    );
+  }
+}
+
+class _ConcurrentRefreshTentListRepository extends TentRepository {
+  int getTentsCallCount = 0;
+  final List<Completer<List<Tent>>> _refreshCompleters = [];
+
+  @override
+  Future<List<Tent>> getTents() {
+    getTentsCallCount++;
+
+    if (getTentsCallCount == 1) {
+      return Future.value(const [
+        Tent(
+          id: 't1',
+          name: 'Tente initiale',
+          size: 4,
+          tentShapeId: 'shape-1',
+          tentShapeName: 'Canadienne',
+          overallState: TentOverallState.good,
+          comments: null,
+        ),
+      ]);
+    }
+
+    final completer = Completer<List<Tent>>();
+    _refreshCompleters.add(completer);
+    return completer.future;
+  }
+
+  void completeRefresh(int index, List<Tent> tents) {
+    _refreshCompleters[index].complete(tents);
   }
 }
