@@ -384,11 +384,11 @@ class TentDetailStubScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Détail de la tente')),
-      body: Center(
+      body: const Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Text(
-            'Le détail de "$tentName" sera disponible dans la Story 2.7.',
+            'Le détail des tentes sera bientot disponible',
             textAlign: TextAlign.center,
           ),
         ),

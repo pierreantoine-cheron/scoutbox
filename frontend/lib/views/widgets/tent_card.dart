@@ -41,19 +41,27 @@ class TentCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  'Taille: ${tent.size}',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      tent.size == 1
+                          ? '${tent.size} place'
+                          : '${tent.size} places',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+
+                    if (hasShapeName) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        shapeName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ],
                 ),
-                if (hasShapeName) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    'Forme: $shapeName',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
                 const SizedBox(height: 8),
                 const SizedBox(
                   width: double.infinity,
