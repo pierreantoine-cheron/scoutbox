@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/tent_list_provider.dart';
 import '../../repositories/tent_repository.dart';
 import '../widgets/tent_card.dart';
+import '../widgets/tent_data_table.dart';
 import 'tent_creation_screen.dart';
 
 class TentListScreen extends ConsumerStatefulWidget {
@@ -73,6 +74,8 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
     required Object? refreshIssue,
     required bool isFilteredMode,
   }) {
+    final isDesktop = MediaQuery.sizeOf(context).width >= 768;
+
     if (tents.isEmpty) {
       if (isFilteredMode) {
         return RefreshIndicator(
@@ -89,6 +92,29 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
         child: _EmptyState(
           onCreateTent: () => _openTentCreation(context),
           warningMessage: _toRefreshWarningMessage(refreshIssue),
+        ),
+      );
+    }
+
+    if (isDesktop) {
+      final warning = _toRefreshWarningMessage(refreshIssue);
+      return RefreshIndicator(
+        onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            if (warning != null) _RefreshWarningCard(message: warning),
+            SizedBox(
+              height: _desktopTableHeight(context, hasWarning: warning != null),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: TentDataTable(
+                  tents: tents,
+                  onOpenTent: (tent) => _openTentDetailStub(context, tent),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -114,6 +140,17 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
         },
       ),
     );
+  }
+
+  double _desktopTableHeight(BuildContext context, {required bool hasWarning}) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = mediaQuery.size.height;
+    final topPadding = mediaQuery.padding.top;
+    final bottomPadding = mediaQuery.padding.bottom;
+    final warningSpace = hasWarning ? 96 : 0;
+    final reserved = kToolbarHeight + topPadding + bottomPadding + warningSpace;
+
+    return (screenHeight - reserved).clamp(360.0, 1200.0).toDouble();
   }
 
   Future<void> _openTentCreation(BuildContext context) async {

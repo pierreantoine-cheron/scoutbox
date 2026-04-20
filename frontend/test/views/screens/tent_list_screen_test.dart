@@ -97,9 +97,37 @@ void main() {
       expect(find.text('Créer une tente'), findsOneWidget);
     });
 
-    testWidgets('renders cards and opens detail stub on tap', (
+    testWidgets('renders desktop table for wide screens', (
       WidgetTester tester,
     ) async {
+      await _setViewportSize(tester, const Size(1200, 900));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildSampleTents()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nom'), findsOneWidget);
+      expect(find.text('Etat'), findsOneWidget);
+      expect(find.text('Taille'), findsOneWidget);
+      expect(find.text('Forme'), findsOneWidget);
+      expect(find.text('Derniere mise a jour'), findsOneWidget);
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(find.text('Forme: Canadienne'), findsNothing);
+    });
+
+    testWidgets('sorts desktop rows ascending then descending', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(1200, 900));
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -107,11 +135,20 @@ void main() {
               () => _TentListTestNotifier(const [
                 Tent(
                   id: 't1',
-                  name: 'Tente Atlas',
-                  size: 6,
+                  name: 'Zulu',
+                  size: 2,
                   tentShapeId: 'shape-1',
+                  tentShapeName: 'Tipi',
+                  overallState: TentOverallState.good,
+                  comments: null,
+                ),
+                Tent(
+                  id: 't2',
+                  name: 'Alpha',
+                  size: 4,
+                  tentShapeId: 'shape-2',
                   tentShapeName: 'Canadienne',
-                  overallState: TentOverallState.needsRepair,
+                  overallState: TentOverallState.good,
                   comments: null,
                 ),
               ]),
@@ -122,13 +159,111 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Tente Atlas'), findsOneWidget);
-      expect(find.text('Forme: Canadienne'), findsOneWidget);
+      expect(find.text('Zulu').evaluate().single.widget, isA<Text>());
+
+      await tester.tap(find.text('Nom'));
+      await tester.pumpAndSettle();
+
+      final textsAfterAsc = find
+          .byType(Text)
+          .evaluate()
+          .map((element) {
+            final text = element.widget as Text;
+            return text.data;
+          })
+          .whereType<String>()
+          .toList();
+      expect(
+        textsAfterAsc.indexOf('Alpha') < textsAfterAsc.indexOf('Zulu'),
+        isTrue,
+      );
+
+      await tester.tap(find.text('Nom'));
+      await tester.pumpAndSettle();
+
+      final textsAfterDesc = find
+          .byType(Text)
+          .evaluate()
+          .map((element) {
+            final text = element.widget as Text;
+            return text.data;
+          })
+          .whereType<String>()
+          .toList();
+      expect(
+        textsAfterDesc.indexOf('Zulu') < textsAfterDesc.indexOf('Alpha'),
+        isTrue,
+      );
+    });
+
+    testWidgets('opens detail stub from desktop row tap', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(1200, 900));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildSampleTents()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Tente Atlas'));
       await tester.pumpAndSettle();
 
       expect(find.text('Détail de la tente'), findsOneWidget);
+    });
+
+    testWidgets('renders cards and opens detail stub on tap on mobile', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(600, 900));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildSampleTents()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(find.text('Canadienne'), findsOneWidget);
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Détail de la tente'), findsOneWidget);
+    });
+
+    testWidgets('keeps mobile cards below desktop breakpoint', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(767, 900));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildSampleTents()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Canadienne'), findsOneWidget);
+      expect(find.text('Nom'), findsNothing);
     });
 
     testWidgets('renders loading skeleton state', (WidgetTester tester) async {
@@ -255,6 +390,29 @@ void main() {
       expect(find.text('Créer une tente'), findsOneWidget);
     });
   });
+}
+
+Future<void> _setViewportSize(WidgetTester tester, Size size) async {
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+}
+
+List<Tent> _buildSampleTents() {
+  return const [
+    Tent(
+      id: 't1',
+      name: 'Tente Atlas',
+      size: 6,
+      tentShapeId: 'shape-1',
+      tentShapeName: 'Canadienne',
+      overallState: TentOverallState.needsRepair,
+      comments: null,
+    ),
+  ];
 }
 
 class _TentListAndShapesTestRepository extends TentRepository {

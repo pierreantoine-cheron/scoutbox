@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 enum TentOverallState {
   good,
   needsRepair,
@@ -47,6 +49,7 @@ class Tent {
   final String? tentShapeName;
   final TentOverallState overallState;
   final String? comments;
+  final DateTime? updatedAt;
 
   const Tent({
     required this.id,
@@ -56,6 +59,7 @@ class Tent {
     this.tentShapeName,
     required this.overallState,
     required this.comments,
+    this.updatedAt,
   });
 
   factory Tent.fromJson(Map<String, dynamic> json) {
@@ -69,6 +73,28 @@ class Tent {
         json['overallState'] as String,
       ),
       comments: json['comments'] as String?,
+      updatedAt: _parseUpdatedAt(json['updatedAt']),
     );
+  }
+
+  String toFrenchUpdatedAtLabel(DateFormat formatter) {
+    final value = updatedAt;
+    if (value == null) {
+      return '-';
+    }
+
+    return formatter.format(value.toLocal());
+  }
+
+  static DateTime? _parseUpdatedAt(Object? value) {
+    if (value is String && value.isNotEmpty) {
+      return DateTime.tryParse(value);
+    }
+
+    if (value is DateTime) {
+      return value;
+    }
+
+    return null;
   }
 }
