@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/providers/auth_provider.dart';
@@ -18,8 +19,8 @@ void main() {
         ProviderScope(
           overrides: [
             tentListProvider.overrideWith(
-              () => _TentListTestNotifier(const [
-                Tent(
+              () => _TentListTestNotifier([
+                const Tent(
                   id: '1',
                   name: 'Tente A',
                   size: 6,
@@ -53,6 +54,8 @@ void main() {
     ) async {
       const loadingState = AuthState(isLoading: true);
 
+      await _setViewportSize(tester, const Size(600, 900));
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -66,7 +69,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
+      final iconButton = tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.logout),
+          matching: find.byType(IconButton),
+        ),
+      );
       expect(iconButton.onPressed, isNull);
     });
 
@@ -121,6 +129,7 @@ void main() {
       expect(find.text('Derniere mise a jour'), findsOneWidget);
       expect(find.text('Tente Atlas'), findsOneWidget);
       expect(find.text('Forme: Canadienne'), findsNothing);
+      expect(find.byTooltip('Actualiser la liste'), findsOneWidget);
     });
 
     testWidgets('sorts desktop rows ascending then descending', (
@@ -132,8 +141,8 @@ void main() {
         ProviderScope(
           overrides: [
             tentListProvider.overrideWith(
-              () => _TentListTestNotifier(const [
-                Tent(
+              () => _TentListTestNotifier([
+                const Tent(
                   id: 't1',
                   name: 'Zulu',
                   size: 2,
@@ -142,7 +151,7 @@ void main() {
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
-                Tent(
+                const Tent(
                   id: 't2',
                   name: 'Alpha',
                   size: 4,
@@ -196,6 +205,104 @@ void main() {
       );
     });
 
+    testWidgets('keeps blank shape values last in both sort directions', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(1200, 900));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier([
+                const Tent(
+                  id: 't1',
+                  name: 'Alpha',
+                  size: 2,
+                  tentShapeId: 'shape-1',
+                  overallState: TentOverallState.good,
+                  comments: null,
+                ),
+                const Tent(
+                  id: 't2',
+                  name: 'Bravo',
+                  size: 4,
+                  tentShapeId: 'shape-2',
+                  tentShapeName: 'Tipi',
+                  overallState: TentOverallState.good,
+                  comments: null,
+                ),
+              ]),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Forme'));
+      await tester.pumpAndSettle();
+
+      var textOrder = _extractTextData(tester);
+      expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
+
+      await tester.tap(find.text('Forme'));
+      await tester.pumpAndSettle();
+
+      textOrder = _extractTextData(tester);
+      expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
+    });
+
+    testWidgets('keeps missing updatedAt values last in both sort directions', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(1200, 900));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier([
+                const Tent(
+                  id: 't1',
+                  name: 'Alpha',
+                  size: 2,
+                  tentShapeId: 'shape-1',
+                  tentShapeName: 'Tipi',
+                  overallState: TentOverallState.good,
+                  comments: null,
+                ),
+                Tent(
+                  id: 't2',
+                  name: 'Bravo',
+                  size: 4,
+                  tentShapeId: 'shape-2',
+                  tentShapeName: 'Canadienne',
+                  overallState: TentOverallState.good,
+                  comments: null,
+                  updatedAt: DateTime.utc(2026, 4, 12, 10, 30),
+                ),
+              ]),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Derniere mise a jour'));
+      await tester.pumpAndSettle();
+
+      var textOrder = _extractTextData(tester);
+      expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
+
+      await tester.tap(find.text('Derniere mise a jour'));
+      await tester.pumpAndSettle();
+
+      textOrder = _extractTextData(tester);
+      expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
+    });
+
     testWidgets('opens detail stub from desktop row tap', (
       WidgetTester tester,
     ) async {
@@ -217,6 +324,49 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Détail de la tente'), findsOneWidget);
+    });
+
+    testWidgets('opens detail stub from desktop keyboard activation', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(1200, 900));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildSampleTents()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Détail de la tente'), findsOneWidget);
+    });
+
+    testWidgets('refreshes desktop table from app bar action', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(1200, 900));
+      final notifier = _RefreshTrackingTentListNotifier(_buildSampleTents());
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentListProvider.overrideWith(() => notifier)],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Actualiser la liste'));
+      await tester.pump();
+
+      expect(notifier.refreshCallCount, equals(1));
     });
 
     testWidgets('renders cards and opens detail stub on tap on mobile', (
@@ -264,6 +414,37 @@ void main() {
 
       expect(find.text('Canadienne'), findsOneWidget);
       expect(find.text('Nom'), findsNothing);
+    });
+
+    testWidgets('renders long desktop refresh warning without overflow', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(1200, 900));
+      const warning = TentRepositoryException(
+        code: 'NETWORK_ERROR',
+        message:
+            'Message très long pour vérifier que la carte d\'avertissement reste lisible sur plusieurs lignes sans couper le tableau.',
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildSampleTents()),
+            ),
+            tentListRefreshIssueProvider.overrideWithValue(warning),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Les données affichées peuvent être anciennes.'),
+        findsOneWidget,
+      );
+      expect(find.text('Nom'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('renders loading skeleton state', (WidgetTester tester) async {
@@ -399,6 +580,15 @@ Future<void> _setViewportSize(WidgetTester tester, Size size) async {
     tester.view.resetPhysicalSize();
     tester.view.resetDevicePixelRatio();
   });
+}
+
+List<String> _extractTextData(WidgetTester tester) {
+  return find
+      .byType(Text)
+      .evaluate()
+      .map((element) => (element.widget as Text).data)
+      .whereType<String>()
+      .toList();
 }
 
 List<Tent> _buildSampleTents() {
