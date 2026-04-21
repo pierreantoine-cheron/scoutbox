@@ -1,6 +1,5 @@
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/tent.dart';
@@ -70,30 +69,16 @@ class _TentDataTableState extends State<TentDataTable> {
           size: ColumnSize.M,
         ),
       ],
-      rows: [
-        for (var index = 0; index < tents.length; index++)
-          _buildDataRow(context, tents[index], autofocus: index == 0),
-      ],
+      rows: [for (final tent in tents) _buildDataRow(context, tent)],
       empty: const Center(child: Text('Aucune tente disponible')),
     );
   }
 
-  DataRow2 _buildDataRow(
-    BuildContext context,
-    Tent tent, {
-    required bool autofocus,
-  }) {
+  DataRow2 _buildDataRow(BuildContext context, Tent tent) {
     return DataRow2(
       onTap: () => widget.onOpenTent(tent),
       cells: [
-        DataCell(
-          _RowActivationCell(
-            label: tent.name,
-            onActivate: () => widget.onOpenTent(tent),
-            semanticsHint: 'Ouvrir le détail de la tente',
-            autofocus: autofocus,
-          ),
-        ),
+        DataCell(Text(tent.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
         DataCell(Text(tent.overallState.toFrenchLabel())),
         DataCell(Text(tent.size == 1 ? '1 place' : '${tent.size} places')),
         DataCell(_EllipsisCell(value: tent.tentShapeName)),
@@ -204,90 +189,6 @@ class _EllipsisCell extends StatelessWidget {
     return Tooltip(
       message: displayValue,
       child: Text(displayValue, maxLines: 1, overflow: TextOverflow.ellipsis),
-    );
-  }
-}
-
-class _RowActivationCell extends StatefulWidget {
-  final String label;
-  final VoidCallback onActivate;
-  final String semanticsHint;
-  final bool autofocus;
-
-  const _RowActivationCell({
-    required this.label,
-    required this.onActivate,
-    required this.semanticsHint,
-    required this.autofocus,
-  });
-
-  @override
-  State<_RowActivationCell> createState() => _RowActivationCellState();
-}
-
-class _RowActivationCellState extends State<_RowActivationCell> {
-  bool _isFocused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Tooltip(
-      message: widget.label,
-      child: Semantics(
-        button: true,
-        label: widget.label,
-        hint: widget.semanticsHint,
-        child: FocusableActionDetector(
-          autofocus: widget.autofocus,
-          onShowFocusHighlight: (value) {
-            if (_isFocused == value) {
-              return;
-            }
-
-            setState(() {
-              _isFocused = value;
-            });
-          },
-          shortcuts: const {
-            SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
-            SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
-          },
-          actions: {
-            ActivateIntent: CallbackAction<ActivateIntent>(
-              onInvoke: (_) {
-                widget.onActivate();
-                return null;
-              },
-            ),
-          },
-          child: Material(
-            color: _isFocused
-                ? colorScheme.secondaryContainer
-                : Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: _isFocused ? colorScheme.primary : Colors.transparent,
-                width: 2,
-              ),
-            ),
-            child: InkWell(
-              key: ValueKey('tent-row-activator-${widget.label}'),
-              onTap: widget.onActivate,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: Text(
-                  widget.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

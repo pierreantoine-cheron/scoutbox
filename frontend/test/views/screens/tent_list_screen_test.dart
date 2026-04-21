@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/providers/auth_provider.dart';
@@ -321,29 +320,6 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Tente Atlas'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Détail de la tente'), findsOneWidget);
-    });
-
-    testWidgets('opens detail stub from desktop keyboard activation', (
-      WidgetTester tester,
-    ) async {
-      await _setViewportSize(tester, const Size(1200, 900));
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSampleTents()),
-            ),
-          ],
-          child: const MaterialApp(home: TentListScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
 
       expect(find.text('Détail de la tente'), findsOneWidget);
