@@ -91,6 +91,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? throw new Exception("CORS origins not configured!");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("LocalDevelopment", policy =>
@@ -107,6 +111,13 @@ builder.Services.AddCors(options =>
                     && (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
                         || uri.Host.Equals("127.0.0.1"));
             })
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+
+    options.AddPolicy("FromConfig", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -163,6 +174,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseForwardedHeaders();
+app.UseCors("FromConfig");
 
 if (app.Environment.IsDevelopment())
 {
