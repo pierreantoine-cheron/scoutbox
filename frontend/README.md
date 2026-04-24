@@ -74,6 +74,31 @@ flutter build apk --dart-define=SCOUTBOX_CHANNEL=release
 - No HTTP payload logging (security best practice)
 - Optimized for end-user safety and privacy
 
+### Local Release Command
+
+Use the local release script to bump the app version and build a release APK:
+
+```bash
+dart run tool/release.dart patch
+```
+
+Supported bump modes:
+- `patch`
+- `minor`
+- `major`
+
+The version source of truth is `pubspec.yaml`. Starting from `0.1.0+1`, the script updates the version, runs `flutter build apk --release`, and copies the APK to:
+
+```text
+build/app/outputs/flutter-apk/scoutbox-<version>-<build>.apk
+```
+
+Example output:
+
+```text
+build/app/outputs/flutter-apk/scoutbox-0.1.1-2.apk
+```
+
 ## Error Handling Behavior
 
 ### Known Backend Error Codes
@@ -218,4 +243,3 @@ dart run build_runner build --delete-conflicting-outputs
 find lib -name "*.g.dart" -delete
 dart run build_runner build --delete-conflicting-outputs
 ```
-
