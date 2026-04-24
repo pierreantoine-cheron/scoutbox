@@ -131,9 +131,15 @@ class ApiClient {
             return handler.next(options);
           }
 
+          bool shouldRefresh = false;
           try {
-            // Check if proactive refresh is needed before the request
-            if (await needsRefresh()) {
+            shouldRefresh = await needsRefresh();
+          } catch (e) {
+            debugPrint('Needs-refresh check failed, continuing request: $e');
+          }
+
+          if (shouldRefresh) {
+            try {
               final result = await _runRefreshSingleFlight(performRefresh);
               if (!result.success &&
                   result.failureType == RefreshFailureType.invalidToken) {
@@ -142,34 +148,29 @@ class ApiClient {
               }
               // For transient failures: don't trigger onAuthFailure
               // Request will proceed with current token
+            } catch (e) {
+              debugPrint('Proactive refresh failed, continuing request: $e');
             }
+          }
 
-            // Attach token
+          try {
             final token = await getToken();
             if (token != null) {
               options.headers['Authorization'] = 'Bearer $token';
               return handler.next(options);
-            } else {
-              // No token available - reject request
-              return handler.reject(
-                DioException(
-                  requestOptions: options,
-                  type: DioExceptionType.unknown,
-                  message: 'No authentication token available',
-                ),
-              );
             }
           } catch (e) {
-            debugPrint('Error in auth interceptor onRequest: $e');
-            // Reject request instead of proceeding without auth
-            return handler.reject(
-              DioException(
-                requestOptions: options,
-                type: DioExceptionType.unknown,
-                message: 'Authentication error: $e',
-              ),
-            );
+            debugPrint('Token read failed in auth interceptor: $e');
           }
+
+          // No token available - reject request
+          return handler.reject(
+            DioException(
+              requestOptions: options,
+              type: DioExceptionType.unknown,
+              message: 'No authentication token available',
+            ),
+          );
         },
         onError: (error, handler) async {
           // Skip error handling for excluded paths

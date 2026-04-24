@@ -276,16 +276,21 @@ class AuthService {
   ///
   /// Uses clock skew tolerance to avoid false-expired decisions.
   Future<TokenStatus> validateAccessToken() async {
-    final authResponse = await _getStoredAuthResponse();
-    if (authResponse == null) {
+    try {
+      final authResponse = await _getStoredAuthResponse();
+      if (authResponse == null) {
+        return TokenStatus.missing;
+      }
+
+      if (authResponse.isAccessTokenExpiredWithTolerance()) {
+        return TokenStatus.expired;
+      }
+
+      return TokenStatus.valid;
+    } catch (e) {
+      debugPrint('Access token validation failed: $e');
       return TokenStatus.missing;
     }
-
-    if (authResponse.isAccessTokenExpiredWithTolerance()) {
-      return TokenStatus.expired;
-    }
-
-    return TokenStatus.valid;
   }
 
   /// Check if the refresh token is valid (not expired)
@@ -293,12 +298,17 @@ class AuthService {
   /// Returns true if refresh token exists and is not expired.
   /// Uses clock skew tolerance to avoid false-expired decisions.
   Future<bool> canRefreshToken() async {
-    final authResponse = await _getStoredAuthResponse();
-    if (authResponse == null) {
+    try {
+      final authResponse = await _getStoredAuthResponse();
+      if (authResponse == null) {
+        return false;
+      }
+
+      return !authResponse.isRefreshTokenExpiredWithTolerance();
+    } catch (e) {
+      debugPrint('Refresh token validation failed: $e');
       return false;
     }
-
-    return !authResponse.isRefreshTokenExpiredWithTolerance();
   }
 
   /// Logout the current user
@@ -542,11 +552,16 @@ class AuthService {
     Duration refreshWindow = const Duration(minutes: 5),
     Duration clockSkewTolerance = const Duration(seconds: 30),
   }) async {
-    final authResponse = await _getStoredAuthResponse();
-    if (authResponse == null) return false;
+    try {
+      final authResponse = await _getStoredAuthResponse();
+      if (authResponse == null) return false;
 
-    final totalWindow = refreshWindow + clockSkewTolerance;
-    return authResponse.isAccessTokenExpiringSoon(window: totalWindow);
+      final totalWindow = refreshWindow + clockSkewTolerance;
+      return authResponse.isAccessTokenExpiringSoon(window: totalWindow);
+    } catch (e) {
+      debugPrint('Proactive refresh check failed: $e');
+      return false;
+    }
   }
 
   /// Get the current access token

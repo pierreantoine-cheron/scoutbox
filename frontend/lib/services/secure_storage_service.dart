@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/constants.dart';
 
@@ -19,55 +21,123 @@ class SecureStorageService {
     ),
   );
 
+  static Future<SharedPreferences> _getFallbackPrefs() {
+    return SharedPreferences.getInstance();
+  }
+
+  static Future<void> _writeValue(String key, String value) async {
+    if (!kIsWeb) {
+      await _secureStorage.write(key: key, value: value);
+      return;
+    }
+
+    var secureWriteFailed = false;
+    try {
+      await _secureStorage.write(key: key, value: value);
+    } catch (e) {
+      secureWriteFailed = true;
+      debugPrint('Secure web write failed for $key: $e');
+    }
+
+    try {
+      final prefs = await _getFallbackPrefs();
+      await prefs.setString(key, value);
+    } catch (e) {
+      if (secureWriteFailed) {
+        rethrow;
+      }
+      debugPrint('Fallback web write failed for $key: $e');
+    }
+  }
+
+  static Future<String?> _readValue(String key) async {
+    if (!kIsWeb) {
+      return await _secureStorage.read(key: key);
+    }
+
+    try {
+      final secureValue = await _secureStorage.read(key: key);
+      if (secureValue != null) {
+        return secureValue;
+      }
+    } catch (e) {
+      debugPrint('Secure web read failed for $key: $e');
+    }
+
+    try {
+      final prefs = await _getFallbackPrefs();
+      return prefs.getString(key);
+    } catch (e) {
+      debugPrint('Fallback web read failed for $key: $e');
+      return null;
+    }
+  }
+
+  static Future<void> _deleteValue(String key) async {
+    if (!kIsWeb) {
+      await _secureStorage.delete(key: key);
+      return;
+    }
+
+    try {
+      await _secureStorage.delete(key: key);
+    } catch (e) {
+      debugPrint('Secure web delete failed for $key: $e');
+    }
+
+    try {
+      final prefs = await _getFallbackPrefs();
+      await prefs.remove(key);
+    } catch (e) {
+      debugPrint('Fallback web delete failed for $key: $e');
+    }
+  }
+
   /// Save access token
   static Future<void> saveAccessToken(String token) async {
-    await _secureStorage.write(key: StorageKeys.accessToken, value: token);
+    await _writeValue(StorageKeys.accessToken, token);
   }
 
   /// Get access token
   static Future<String?> getAccessToken() async {
-    return await _secureStorage.read(key: StorageKeys.accessToken);
+    return await _readValue(StorageKeys.accessToken);
   }
 
   /// Save refresh token
   static Future<void> saveRefreshToken(String token) async {
-    await _secureStorage.write(key: StorageKeys.refreshToken, value: token);
+    await _writeValue(StorageKeys.refreshToken, token);
   }
 
   /// Get refresh token
   static Future<String?> getRefreshToken() async {
-    return await _secureStorage.read(key: StorageKeys.refreshToken);
+    return await _readValue(StorageKeys.refreshToken);
   }
 
   /// Save access token expiration
   static Future<void> saveAccessTokenExpires(DateTime expires) async {
-    await _secureStorage.write(
-      key: StorageKeys.accessTokenExpires,
-      value: expires.toIso8601String(),
+    await _writeValue(
+      StorageKeys.accessTokenExpires,
+      expires.toIso8601String(),
     );
   }
 
   /// Get access token expiration
   static Future<DateTime?> getAccessTokenExpires() async {
-    final value = await _secureStorage.read(
-      key: StorageKeys.accessTokenExpires,
-    );
+    final value = await _readValue(StorageKeys.accessTokenExpires);
     return value != null ? DateTime.parse(value) : null;
   }
 
   /// Save refresh token expiration
   static Future<void> saveRefreshTokenExpires(DateTime expires) async {
-    await _secureStorage.write(
-      key: StorageKeys.refreshTokenExpires,
-      value: expires.toIso8601String(),
+    await _writeValue(
+      StorageKeys.refreshTokenExpires,
+      expires.toIso8601String(),
     );
   }
 
   /// Get refresh token expiration
   static Future<DateTime?> getRefreshTokenExpires() async {
-    final value = await _secureStorage.read(
-      key: StorageKeys.refreshTokenExpires,
-    );
+    final value = await _readValue(StorageKeys.refreshTokenExpires);
     return value != null ? DateTime.parse(value) : null;
   }
 
@@ -95,59 +165,53 @@ class SecureStorageService {
 
   /// Save server URL
   static Future<void> saveServerUrl(String url) async {
-    await _secureStorage.write(key: StorageKeys.serverUrl, value: url);
+    await _writeValue(StorageKeys.serverUrl, url);
   }
 
   /// Get server URL
   static Future<String?> getServerUrl() async {
-    return await _secureStorage.read(key: StorageKeys.serverUrl);
+    return await _readValue(StorageKeys.serverUrl);
   }
 
   /// Save remember username preference
   static Future<void> saveRememberUsernamePreference(bool value) async {
-    await _secureStorage.write(
-      key: StorageKeys.rememberUsername,
-      value: value.toString(),
-    );
+    await _writeValue(StorageKeys.rememberUsername, value.toString());
   }
 
   /// Get remember username preference
   static Future<bool> getRememberUsernamePreference() async {
-    final value = await _secureStorage.read(key: StorageKeys.rememberUsername);
+    final value = await _readValue(StorageKeys.rememberUsername);
     return value == 'true';
   }
 
   /// Save remembered username
   static Future<void> saveRememberedUsername(String username) async {
-    await _secureStorage.write(
-      key: StorageKeys.rememberedUsername,
-      value: username,
-    );
+    await _writeValue(StorageKeys.rememberedUsername, username);
   }
 
   /// Get remembered username
   static Future<String?> getRememberedUsername() async {
-    return await _secureStorage.read(key: StorageKeys.rememberedUsername);
+    return await _readValue(StorageKeys.rememberedUsername);
   }
 
   /// Delete access token
   static Future<void> deleteAccessToken() async {
-    await _secureStorage.delete(key: StorageKeys.accessToken);
+    await _deleteValue(StorageKeys.accessToken);
   }
 
   /// Delete refresh token
   static Future<void> deleteRefreshToken() async {
-    await _secureStorage.delete(key: StorageKeys.refreshToken);
+    await _deleteValue(StorageKeys.refreshToken);
   }
 
   /// Delete access token expiration
   static Future<void> deleteAccessTokenExpires() async {
-    await _secureStorage.delete(key: StorageKeys.accessTokenExpires);
+    await _deleteValue(StorageKeys.accessTokenExpires);
   }
 
   /// Delete refresh token expiration
   static Future<void> deleteRefreshTokenExpires() async {
-    await _secureStorage.delete(key: StorageKeys.refreshTokenExpires);
+    await _deleteValue(StorageKeys.refreshTokenExpires);
   }
 
   /// Delete both tokens
@@ -169,17 +233,17 @@ class SecureStorageService {
 
   /// Delete server URL
   static Future<void> deleteServerUrl() async {
-    await _secureStorage.delete(key: StorageKeys.serverUrl);
+    await _deleteValue(StorageKeys.serverUrl);
   }
 
   /// Delete remember username preference
   static Future<void> deleteRememberUsernamePreference() async {
-    await _secureStorage.delete(key: StorageKeys.rememberUsername);
+    await _deleteValue(StorageKeys.rememberUsername);
   }
 
   /// Delete remembered username
   static Future<void> deleteRememberedUsername() async {
-    await _secureStorage.delete(key: StorageKeys.rememberedUsername);
+    await _deleteValue(StorageKeys.rememberedUsername);
   }
 
   /// Clear all stored data (logout)
