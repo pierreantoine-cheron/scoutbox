@@ -287,3 +287,4 @@ public class UploadRequest
 ## Documents edit
 
 When changing a decision from _bmad-output files, replace the old decision with the new, no need to justify or mark as new, do not add history to file, I handle the versionning myself through git.
+Use windows-style line endings.
