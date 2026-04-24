@@ -38,32 +38,14 @@ void main(List<String> args) async {
       'build',
       'apk',
       '--release',
+      '--dart-define=SCOUTBOX_CHANNEL=beta',
     ], workingDirectory: frontendDirectory.path);
   } on ProcessException catch (error) {
     stderr.writeln('Failed to start Flutter build: ${error.message}');
     exit(1);
   }
 
-  final apkDirectory = Directory(
-    '${frontendDirectory.path}/build/app/outputs/flutter-apk',
-  );
-  final builtApk = File('${apkDirectory.path}/app-release.apk');
-  if (!builtApk.existsSync()) {
-    stderr.writeln(
-      'Flutter build completed, but app-release.apk was not found.',
-    );
-    exit(1);
-  }
-
-  final versionedApk = File(
-    '${apkDirectory.path}/scoutbox-${nextVersion.name}-${nextVersion.build}.apk',
-  );
-  if (versionedApk.existsSync()) {
-    await versionedApk.delete();
-  }
-  await builtApk.copy(versionedApk.path);
-
-  stdout.writeln('APK ready: ${versionedApk.path}');
+  stdout.writeln('Build completed. Check build/app/outputs/apk/release/.');
 }
 
 Future<void> _runCommand(

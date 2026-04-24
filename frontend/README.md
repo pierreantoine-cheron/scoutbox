@@ -87,16 +87,18 @@ Supported bump modes:
 - `minor`
 - `major`
 
-The version source of truth is `pubspec.yaml`. Starting from `0.1.0+1`, the script updates the version, runs `flutter build apk --release`, and copies the APK to:
+The version source of truth is `pubspec.yaml`. Starting from `0.1.0+1`, the script updates the version and runs `flutter build apk --release`.
+
+APK naming is handled by `frontend/android/app/build.gradle.kts`, and the build outputs are written to:
 
 ```text
-build/app/outputs/flutter-apk/scoutbox-<version>-<build>.apk
+build/app/outputs/flutter-apk/
 ```
 
-Example output:
+With the current Gradle configuration, the APK name format is:
 
 ```text
-build/app/outputs/flutter-apk/scoutbox-0.1.1-2.apk
+scoutbox-v<version>-<build>-release.apk
 ```
 
 ## Error Handling Behavior
