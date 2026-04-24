@@ -98,6 +98,9 @@ class AuthService {
   // Single-flight refresh control - shared across concurrent requests
   Future<RefreshResult>? _ongoingRefresh;
 
+  // Keeps the latest access token available for immediate authenticated calls.
+  String? _cachedAccessToken;
+
   /// Validate that a server is reachable and has the health endpoint
   Future<bool> validateServer(String serverUrl) async {
     try {
@@ -145,6 +148,7 @@ class AuthService {
           refreshTokenExpires: authResponse.refreshTokenExpires,
         );
         await SecureStorageService.saveServerUrl(serverUrl);
+        _cachedAccessToken = authResponse.accessToken;
 
         return AuthResult.success(authResponse: authResponse);
       } else {
@@ -201,6 +205,7 @@ class AuthService {
           refreshTokenExpires: authResponse.refreshTokenExpires,
         );
         await SecureStorageService.saveServerUrl(serverUrl);
+        _cachedAccessToken = authResponse.accessToken;
       } catch (e) {
         // Critical storage failure - tokens/server URL are required
         debugPrint('Failed to save critical auth data: $e');
@@ -319,6 +324,7 @@ class AuthService {
 
     // Always clear local auth tokens (never leave stale auth state)
     await SecureStorageService.clearAuthTokens();
+    _cachedAccessToken = null;
     ApiClient.reset();
   }
 
@@ -353,6 +359,7 @@ class AuthService {
   /// Used when session expires but user should see prefilled login form.
   Future<void> clearAuthTokensOnly() async {
     await SecureStorageService.clearAuthTokens();
+    _cachedAccessToken = null;
     ApiClient.reset();
   }
 
@@ -439,11 +446,13 @@ class AuthService {
             accessTokenExpires: authResponse.accessTokenExpires,
             refreshTokenExpires: authResponse.refreshTokenExpires,
           );
+          _cachedAccessToken = authResponse.accessToken;
 
           return RefreshResult.success(authResponse: authResponse);
         } catch (e) {
           // Storage failure - attempt to clear tokens to avoid corrupted state
           debugPrint('Failed to persist refreshed tokens: $e');
+          _cachedAccessToken = null;
           try {
             await SecureStorageService.deleteTokens();
           } catch (deleteError) {
@@ -542,7 +551,13 @@ class AuthService {
 
   /// Get the current access token
   Future<String?> getAccessToken() async {
-    return await SecureStorageService.getAccessToken();
+    if (_cachedAccessToken != null) {
+      return _cachedAccessToken;
+    }
+
+    final accessToken = await SecureStorageService.getAccessToken();
+    _cachedAccessToken = accessToken;
+    return accessToken;
   }
 
   /// Get the current refresh token
@@ -590,6 +605,7 @@ class AuthService {
     // Check token status
     final tokenStatus = await validateAccessToken();
     if (tokenStatus == TokenStatus.valid) {
+      _cachedAccessToken = await SecureStorageService.getAccessToken();
       return const AuthInitializationResult(
         isAuthenticated: true,
         isSessionExpired: false,
@@ -597,6 +613,7 @@ class AuthService {
       );
     } else if (tokenStatus == TokenStatus.expired) {
       // Token exists but is expired
+      _cachedAccessToken = null;
       final canRefresh = await canRefreshToken();
       return AuthInitializationResult(
         isAuthenticated: false,
@@ -605,6 +622,8 @@ class AuthService {
         shouldShowLogin: true,
       );
     }
+
+    _cachedAccessToken = null;
 
     final hasRefreshToken = await getRefreshToken() != null;
     final shouldShowLogin = hasRememberedUsername || hasRefreshToken;
