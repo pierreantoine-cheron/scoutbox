@@ -163,10 +163,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseForwardedHeaders();
-app.UseCors("LocalDevelopment");
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseCors("LocalDevelopment");
     app.UseHttpsRedirection();
 }
 
