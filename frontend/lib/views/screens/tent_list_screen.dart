@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tent.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/tent_filter_provider.dart';
 import '../../providers/tent_list_provider.dart';
 import '../../repositories/tent_repository.dart';
 import '../widgets/tent_card.dart';
 import '../widgets/tent_data_table.dart';
+import '../widgets/tent_list_filter_bar.dart';
 import 'tent_creation_screen.dart';
 
 class TentListScreen extends ConsumerStatefulWidget {
@@ -17,13 +19,31 @@ class TentListScreen extends ConsumerStatefulWidget {
 }
 
 class _TentListScreenState extends ConsumerState<TentListScreen> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.sizeOf(context).width >= 768;
     final authState = ref.watch(authProvider);
     final tentsState = ref.watch(tentListProvider);
+    final filterState = ref.watch(tentListFilterProvider);
+    final filteredTents = ref.watch(filteredTentListProvider);
     final refreshIssue = ref.watch(tentListRefreshIssueProvider);
     final isFilteredMode = ref.watch(tentListFilteredModeProvider);
+
+    _syncSearchController(filterState.searchText);
 
     return Scaffold(
       appBar: AppBar(
@@ -50,9 +70,11 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
           loading: _buildLoadingState,
           error: (error, _) => _buildErrorState(error),
           data: (tents) => _buildDataState(
-            tents,
+            rawTents: tents,
+            visibleTents: filteredTents,
             refreshIssue: refreshIssue,
             isFilteredMode: isFilteredMode,
+            filterState: filterState,
           ),
         ),
       ),
@@ -78,30 +100,46 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
     );
   }
 
-  Widget _buildDataState(
-    List<Tent> tents, {
+  Widget _buildDataState({
+    required List<Tent> rawTents,
+    required List<Tent> visibleTents,
     required Object? refreshIssue,
     required bool isFilteredMode,
+    required TentListFilterState filterState,
   }) {
     final isDesktop = MediaQuery.sizeOf(context).width >= 768;
 
-    if (tents.isEmpty) {
-      if (isFilteredMode) {
-        return RefreshIndicator(
-          onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
-          child: _FilteredEmptyState(
-            onClearFilters: _clearFiltersHook,
-            warningMessage: _toRefreshWarningMessage(refreshIssue),
+    if (rawTents.isEmpty && !isFilteredMode) {
+      return Column(
+        children: [
+          _buildFilterBar(filterState, isFilteredMode),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
+              child: _EmptyState(
+                onCreateTent: () => _openTentCreation(context),
+                warningMessage: _toRefreshWarningMessage(refreshIssue),
+              ),
+            ),
           ),
-        );
-      }
+        ],
+      );
+    }
 
-      return RefreshIndicator(
-        onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
-        child: _EmptyState(
-          onCreateTent: () => _openTentCreation(context),
-          warningMessage: _toRefreshWarningMessage(refreshIssue),
-        ),
+    if (visibleTents.isEmpty) {
+      return Column(
+        children: [
+          _buildFilterBar(filterState, isFilteredMode),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
+              child: _FilteredEmptyState(
+                onClearFilters: _clearFiltersHook,
+                warningMessage: _toRefreshWarningMessage(refreshIssue),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
@@ -110,12 +148,13 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _buildFilterBar(filterState, isFilteredMode),
           if (warning != null) _RefreshWarningCard(message: warning),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: TentDataTable(
-                tents: tents,
+                tents: visibleTents,
                 onOpenTent: (tent) => _openTentDetailStub(context, tent),
               ),
             ),
@@ -124,26 +163,59 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: tents.length + (refreshIssue == null ? 0 : 1),
-        itemBuilder: (context, index) {
-          if (refreshIssue != null && index == 0) {
-            return _RefreshWarningCard(
-              message: _toRefreshWarningMessage(refreshIssue)!,
-            );
-          }
+    return Column(
+      children: [
+        _buildFilterBar(filterState, isFilteredMode),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: visibleTents.length + (refreshIssue == null ? 0 : 1),
+              itemBuilder: (context, index) {
+                if (refreshIssue != null && index == 0) {
+                  return _RefreshWarningCard(
+                    message: _toRefreshWarningMessage(refreshIssue)!,
+                  );
+                }
 
-          final tentIndex = refreshIssue == null ? index : index - 1;
-          final tent = tents[tentIndex];
-          return TentCard(
-            tent: tent,
-            onTap: () => _openTentDetailStub(context, tent),
-          );
-        },
-      ),
+                final tentIndex = refreshIssue == null ? index : index - 1;
+                final tent = visibleTents[tentIndex];
+                return TentCard(
+                  tent: tent,
+                  onTap: () => _openTentDetailStub(context, tent),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterBar(TentListFilterState filterState, bool isFilteredMode) {
+    return TentListFilterBar(
+      searchController: _searchController,
+      selectedStates: filterState.selectedStates,
+      isFilteredMode: isFilteredMode,
+      onSearchChanged: (value) {
+        ref.read(tentListFilterProvider.notifier).setSearchText(value);
+      },
+      onToggleState: (state) {
+        ref.read(tentListFilterProvider.notifier).toggleState(state);
+      },
+      onClearAll: _clearFiltersHook,
+    );
+  }
+
+  void _syncSearchController(String searchText) {
+    if (_searchController.text == searchText) {
+      return;
+    }
+
+    _searchController.value = TextEditingValue(
+      text: searchText,
+      selection: TextSelection.collapsed(offset: searchText.length),
     );
   }
 
@@ -206,7 +278,9 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
     );
   }
 
-  void _clearFiltersHook() {}
+  void _clearFiltersHook() {
+    ref.read(tentListFilterProvider.notifier).clearAll();
+  }
 }
 
 class _EmptyState extends StatelessWidget {

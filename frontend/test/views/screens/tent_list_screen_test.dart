@@ -512,6 +512,132 @@ void main() {
       expect(find.text('Effacer les filtres'), findsOneWidget);
     });
 
+    testWidgets('renders persistent filter controls on desktop and mobile', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(1200, 900));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildFilteringSampleTents()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rechercher une tente'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'Bon état'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'À réparer'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'Inutilisable'), findsOneWidget);
+
+      await _setViewportSize(tester, const Size(600, 900));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rechercher une tente'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'Bon état'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'À réparer'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'Inutilisable'), findsOneWidget);
+    });
+
+    testWidgets('filters list by state chip and clears all filters', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildFilteringSampleTents()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(find.text('Tente Boreale'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilterChip, 'Bon état'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(find.text('Tente Boreale'), findsNothing);
+      expect(find.text('Effacer tout'), findsOneWidget);
+
+      await tester.tap(find.text('Effacer tout'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(find.text('Tente Boreale'), findsOneWidget);
+    });
+
+    testWidgets('applies debounced search and supports clear search action', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildFilteringSampleTents()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'at');
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Tente Boreale'), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(find.text('Tente Boreale'), findsNothing);
+
+      await tester.tap(find.byTooltip('Effacer la recherche'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(find.text('Tente Boreale'), findsOneWidget);
+    });
+
+    testWidgets('shows filtered empty state and clear-all restores list', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildFilteringSampleTents()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'zz');
+      await tester.pump(const Duration(milliseconds: 320));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Aucune tente ne correspond à vos critères'),
+        findsOneWidget,
+      );
+      expect(find.text('Effacer les filtres'), findsOneWidget);
+
+      await tester.tap(find.text('Effacer les filtres'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(find.text('Tente Boreale'), findsOneWidget);
+    });
+
     testWidgets('opens tent creation screen from fab', (
       WidgetTester tester,
     ) async {
@@ -575,6 +701,29 @@ List<Tent> _buildSampleTents() {
       size: 6,
       tentShapeId: 'shape-1',
       tentShapeName: 'Canadienne',
+      overallState: TentOverallState.needsRepair,
+      comments: null,
+    ),
+  ];
+}
+
+List<Tent> _buildFilteringSampleTents() {
+  return const [
+    Tent(
+      id: 't1',
+      name: 'Tente Atlas',
+      size: 6,
+      tentShapeId: 'shape-1',
+      tentShapeName: 'Canadienne',
+      overallState: TentOverallState.good,
+      comments: null,
+    ),
+    Tent(
+      id: 't2',
+      name: 'Tente Boreale',
+      size: 4,
+      tentShapeId: 'shape-2',
+      tentShapeName: 'Tipi',
       overallState: TentOverallState.needsRepair,
       comments: null,
     ),

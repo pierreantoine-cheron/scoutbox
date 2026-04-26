@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/tent.dart';
 import '../repositories/tent_repository.dart';
+import 'tent_filter_provider.dart';
 
 part 'tent_list_provider.g.dart';
 
@@ -20,7 +21,33 @@ class TentListRefreshIssueNotifier extends _$TentListRefreshIssueNotifier {
 }
 
 @riverpod
-bool tentListFilteredMode(Ref ref) => false;
+bool tentListFilteredMode(Ref ref) {
+  return ref.watch(tentListFilterProvider).isFilteredMode;
+}
+
+@riverpod
+List<Tent> filteredTentList(Ref ref) {
+  final tents = ref.watch(tentListProvider).asData?.value;
+  final filterState = ref.watch(tentListFilterProvider);
+
+  if (tents == null) {
+    return const <Tent>[];
+  }
+
+  return tents
+      .where((tent) {
+        final matchesState =
+            filterState.selectedStates.isEmpty ||
+            filterState.selectedStates.contains(tent.overallState);
+
+        final search = filterState.effectiveSearchText;
+        final matchesSearch =
+            search.isEmpty || tent.name.toLowerCase().contains(search);
+
+        return matchesState && matchesSearch;
+      })
+      .toList(growable: false);
+}
 
 @riverpod
 class TentListNotifier extends _$TentListNotifier {
