@@ -97,12 +97,17 @@ var allowedOrigins = builder.Configuration
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("LocalDevelopment", policy =>
+    options.AddPolicy("Default", policy =>
     {
-        policy
-            .SetIsOriginAllowed(origin =>
+        policy.SetIsOriginAllowed(origin =>
             {
-                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                if (allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (!builder.Environment.IsDevelopment()
+                    || !Uri.TryCreate(origin, UriKind.Absolute, out var uri))
                 {
                     return false;
                 }
@@ -111,13 +116,6 @@ builder.Services.AddCors(options =>
                     && (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
                         || uri.Host.Equals("127.0.0.1"));
             })
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-
-    options.AddPolicy("FromConfig", policy =>
-    {
-        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -174,11 +172,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseForwardedHeaders();
-app.UseCors("FromConfig");
+app.UseCors("Default");
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseCors("LocalDevelopment");
     app.UseHttpsRedirection();
 }
 
