@@ -1,8 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/tent.dart';
+
+part 'tent_filter_provider.g.dart';
 
 class TentListFilterState {
   final String searchText;
@@ -31,7 +33,8 @@ class TentListFilterState {
   }
 }
 
-class TentListFilterNotifier extends Notifier<TentListFilterState> {
+@riverpod
+class TentListFilterNotifier extends _$TentListFilterNotifier {
   Timer? _searchDebounce;
 
   @override
@@ -74,8 +77,3 @@ class TentListFilterNotifier extends Notifier<TentListFilterState> {
     state = const TentListFilterState();
   }
 }
-
-final tentListFilterProvider =
-    NotifierProvider<TentListFilterNotifier, TentListFilterState>(
-      TentListFilterNotifier.new,
-    );

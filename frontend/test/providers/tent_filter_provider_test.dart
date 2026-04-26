@@ -20,6 +20,11 @@ void main() {
         (_, _) {},
       );
       addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
 
       await container.read(tentListProvider.future);
 
@@ -45,6 +50,11 @@ void main() {
           (_, _) {},
         );
         addTearDown(tentListSubscription.close);
+        final filterSubscription = container.listen(
+          tentListFilterProvider,
+          (_, _) {},
+        );
+        addTearDown(filterSubscription.close);
 
         await container.read(tentListProvider.future);
 
@@ -80,6 +90,11 @@ void main() {
         (_, _) {},
       );
       addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
 
       await container.read(tentListProvider.future);
 
@@ -107,6 +122,11 @@ void main() {
         (_, _) {},
       );
       addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
 
       await container.read(tentListProvider.future);
 
@@ -133,6 +153,11 @@ void main() {
           (_, _) {},
         );
         addTearDown(tentListSubscription.close);
+        final filterSubscription = container.listen(
+          tentListFilterProvider,
+          (_, _) {},
+        );
+        addTearDown(filterSubscription.close);
 
         await container.read(tentListProvider.future);
 
@@ -170,6 +195,11 @@ void main() {
         (_, _) {},
       );
       addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
 
       await container.read(tentListProvider.future);
 

@@ -43,7 +43,10 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
     final refreshIssue = ref.watch(tentListRefreshIssueProvider);
     final isFilteredMode = ref.watch(tentListFilteredModeProvider);
 
-    _syncSearchController(filterState.searchText);
+    ref.listen(
+      tentListFilterProvider.select((state) => state.searchText),
+      (_, searchText) => _syncSearchController(searchText),
+    );
 
     return Scaffold(
       appBar: AppBar(
