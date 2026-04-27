@@ -69,7 +69,7 @@ class Part {
 
   static DateTime? _parseDateTime(Object? value) {
     if (value is String && value.isNotEmpty) {
-      return DateTime.tryParse(value);
+      return DateTime.parse(value);
     }
 
     if (value is DateTime) {

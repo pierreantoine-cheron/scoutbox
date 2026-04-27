@@ -69,5 +69,21 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test('throws FormatException for invalid timestamp', () {
+      expect(
+        () => Part.fromJson({
+          'id': 'p1',
+          'partKindId': 'k1',
+          'partKindName': 'Toile',
+          'displayOrder': 1,
+          'state': 'Good',
+          'comments': null,
+          'createdAt': 'not-a-date',
+          'updatedAt': '2026-04-01T10:00:00Z',
+        }),
+        throwsA(isA<FormatException>()),
+      );
+    });
   });
 }

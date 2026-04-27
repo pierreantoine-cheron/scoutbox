@@ -164,11 +164,20 @@ class TentRepository {
       final error = responseData['error'] as String?;
       return TentRepositoryException(
         code: code,
-        message: error ?? fallbackMessage,
+        message: _localizedMessageForCode(code) ?? error ?? fallbackMessage,
       );
     }
 
     return TentRepositoryException(message: fallbackMessage);
+  }
+
+  String? _localizedMessageForCode(String? code) {
+    switch (code) {
+      case 'TENT_NOT_FOUND':
+        return 'Tente introuvable.';
+      default:
+        return null;
+    }
   }
 }
 

@@ -33,19 +33,20 @@ void main() {
       expect(tent.updatedAt, isNull);
     });
 
-    test('keeps updatedAt null when timestamp is invalid', () {
-      final tent = Tent.fromJson({
-        'id': 't1',
-        'name': 'Tente Atlas',
-        'size': 6,
-        'tentShapeId': 'shape-1',
-        'tentShapeName': 'Canadienne',
-        'overallState': 'Good',
-        'comments': null,
-        'updatedAt': 'not-a-date',
-      });
-
-      expect(tent.updatedAt, isNull);
+    test('throws FormatException when timestamp is invalid', () {
+      expect(
+        () => Tent.fromJson({
+          'id': 't1',
+          'name': 'Tente Atlas',
+          'size': 6,
+          'tentShapeId': 'shape-1',
+          'tentShapeName': 'Canadienne',
+          'overallState': 'Good',
+          'comments': null,
+          'updatedAt': 'not-a-date',
+        }),
+        throwsA(isA<FormatException>()),
+      );
     });
 
     test('parses detail payload with parts and createdAt', () {
