@@ -10,25 +10,36 @@ class TentListFilterState {
   final String searchText;
   final String effectiveSearchText;
   final Set<TentOverallState> selectedStates;
+  final Set<int> selectedSizes;
+  final Set<String> selectedShapeIds;
 
   const TentListFilterState({
     this.searchText = '',
     this.effectiveSearchText = '',
     this.selectedStates = const {},
+    this.selectedSizes = const {},
+    this.selectedShapeIds = const {},
   });
 
   bool get isFilteredMode =>
-      selectedStates.isNotEmpty || effectiveSearchText.isNotEmpty;
+      selectedStates.isNotEmpty ||
+      selectedSizes.isNotEmpty ||
+      selectedShapeIds.isNotEmpty ||
+      effectiveSearchText.isNotEmpty;
 
   TentListFilterState copyWith({
     String? searchText,
     String? effectiveSearchText,
     Set<TentOverallState>? selectedStates,
+    Set<int>? selectedSizes,
+    Set<String>? selectedShapeIds,
   }) {
     return TentListFilterState(
       searchText: searchText ?? this.searchText,
       effectiveSearchText: effectiveSearchText ?? this.effectiveSearchText,
       selectedStates: selectedStates ?? this.selectedStates,
+      selectedSizes: selectedSizes ?? this.selectedSizes,
+      selectedShapeIds: selectedShapeIds ?? this.selectedShapeIds,
     );
   }
 }
@@ -70,6 +81,28 @@ class TentListFilterNotifier extends _$TentListFilterNotifier {
     }
 
     state = state.copyWith(selectedStates: nextStates);
+  }
+
+  void toggleSize(int size) {
+    final nextSizes = Set<int>.from(state.selectedSizes);
+    if (nextSizes.contains(size)) {
+      nextSizes.remove(size);
+    } else {
+      nextSizes.add(size);
+    }
+
+    state = state.copyWith(selectedSizes: nextSizes);
+  }
+
+  void toggleShape(String shapeId) {
+    final nextShapeIds = Set<String>.from(state.selectedShapeIds);
+    if (nextShapeIds.contains(shapeId)) {
+      nextShapeIds.remove(shapeId);
+    } else {
+      nextShapeIds.add(shapeId);
+    }
+
+    state = state.copyWith(selectedShapeIds: nextShapeIds);
   }
 
   void clearAll() {

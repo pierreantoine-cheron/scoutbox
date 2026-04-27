@@ -44,7 +44,15 @@ List<Tent> filteredTentList(Ref ref) {
         final matchesSearch =
             search.isEmpty || tent.name.toLowerCase().contains(search);
 
-        return matchesState && matchesSearch;
+        final matchesSize =
+            filterState.selectedSizes.isEmpty ||
+            filterState.selectedSizes.contains(tent.size);
+
+        final matchesShape =
+            filterState.selectedShapeIds.isEmpty ||
+            filterState.selectedShapeIds.contains(tent.tentShapeId);
+
+        return matchesState && matchesSearch && matchesSize && matchesShape;
       })
       .toList(growable: false);
 }

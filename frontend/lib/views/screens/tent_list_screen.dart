@@ -5,6 +5,7 @@ import '../../models/tent.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/tent_filter_provider.dart';
 import '../../providers/tent_list_provider.dart';
+import '../../providers/tent_shapes_provider.dart';
 import '../../repositories/tent_repository.dart';
 import '../widgets/tent_card.dart';
 import '../widgets/tent_data_table.dart';
@@ -111,11 +112,19 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
     required TentListFilterState filterState,
   }) {
     final isDesktop = MediaQuery.sizeOf(context).width >= 768;
+    final availableSizes = _buildSizeOptions(rawTents);
+    final availableShapeOptions = _buildShapeOptions(rawTents);
 
     if (rawTents.isEmpty && !isFilteredMode) {
       return Column(
         children: [
-          _buildFilterBar(filterState, isFilteredMode),
+          _buildFilterBar(
+            filterState,
+            isFilteredMode,
+            isDesktop,
+            availableSizes,
+            availableShapeOptions,
+          ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
@@ -132,7 +141,13 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
     if (visibleTents.isEmpty) {
       return Column(
         children: [
-          _buildFilterBar(filterState, isFilteredMode),
+          _buildFilterBar(
+            filterState,
+            isFilteredMode,
+            isDesktop,
+            availableSizes,
+            availableShapeOptions,
+          ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
@@ -151,7 +166,13 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildFilterBar(filterState, isFilteredMode),
+          _buildFilterBar(
+            filterState,
+            isFilteredMode,
+            isDesktop,
+            availableSizes,
+            availableShapeOptions,
+          ),
           if (warning != null) _RefreshWarningCard(message: warning),
           Expanded(
             child: Padding(
@@ -168,7 +189,13 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
 
     return Column(
       children: [
-        _buildFilterBar(filterState, isFilteredMode),
+        _buildFilterBar(
+          filterState,
+          isFilteredMode,
+          isDesktop,
+          availableSizes,
+          availableShapeOptions,
+        ),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
@@ -196,10 +223,21 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
     );
   }
 
-  Widget _buildFilterBar(TentListFilterState filterState, bool isFilteredMode) {
+  Widget _buildFilterBar(
+    TentListFilterState filterState,
+    bool isFilteredMode,
+    bool isDesktop,
+    List<int> availableSizes,
+    List<TentTypeFilterOption> availableShapeOptions,
+  ) {
     return TentListFilterBar(
+      isDesktop: isDesktop,
       searchController: _searchController,
       selectedStates: filterState.selectedStates,
+      selectedSizes: filterState.selectedSizes,
+      selectedShapeIds: filterState.selectedShapeIds,
+      availableSizes: availableSizes,
+      availableShapeOptions: availableShapeOptions,
       isFilteredMode: isFilteredMode,
       onSearchChanged: (value) {
         ref.read(tentListFilterProvider.notifier).setSearchText(value);
@@ -207,8 +245,56 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
       onToggleState: (state) {
         ref.read(tentListFilterProvider.notifier).toggleState(state);
       },
+      onToggleSize: (size) {
+        ref.read(tentListFilterProvider.notifier).toggleSize(size);
+      },
+      onToggleShape: (shapeId) {
+        ref.read(tentListFilterProvider.notifier).toggleShape(shapeId);
+      },
       onClearAll: _clearFiltersHook,
     );
+  }
+
+  List<int> _buildSizeOptions(List<Tent> rawTents) {
+    final options = rawTents.map((tent) => tent.size).toSet().toList();
+    options.sort();
+    return options;
+  }
+
+  List<TentTypeFilterOption> _buildShapeOptions(List<Tent> rawTents) {
+    final rawShapeIds = rawTents.map((tent) => tent.tentShapeId).toSet();
+    final rawShapeLabels = <String, String>{
+      for (final tent in rawTents)
+        if ((tent.tentShapeName ?? '').trim().isNotEmpty)
+          tent.tentShapeId: tent.tentShapeName!.trim(),
+    };
+
+    final shapeMetadata = ref.watch(tentShapesProvider).asData?.value ?? const [];
+    final options = <TentTypeFilterOption>[];
+    final includedIds = <String>{};
+
+    for (final shape in shapeMetadata) {
+      if (!rawShapeIds.contains(shape.id)) {
+        continue;
+      }
+
+      options.add(TentTypeFilterOption(id: shape.id, label: shape.name));
+      includedIds.add(shape.id);
+    }
+
+    final missingIds = rawShapeIds.where((id) => !includedIds.contains(id)).toList()
+      ..sort();
+
+    for (final shapeId in missingIds) {
+      options.add(
+        TentTypeFilterOption(
+          id: shapeId,
+          label: rawShapeLabels[shapeId] ?? 'Type inconnu',
+        ),
+      );
+    }
+
+    return options;
   }
 
   void _syncSearchController(String searchText) {

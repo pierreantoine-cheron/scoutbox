@@ -213,6 +213,142 @@ void main() {
       final filtered = container.read(filteredTentListProvider);
       expect(filtered, isEmpty);
     });
+
+    test('size-only filtering works and marks filtered mode', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTents),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      container.read(tentListFilterProvider.notifier).toggleSize(2);
+
+      final filtered = container.read(filteredTentListProvider);
+      expect(container.read(tentListFilteredModeProvider), isTrue);
+      expect(filtered.map((tent) => tent.name), equals(['Boreal']));
+    });
+
+    test('shape-only filtering works and marks filtered mode', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTents),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      container.read(tentListFilterProvider.notifier).toggleShape('shape-1');
+
+      final filtered = container.read(filteredTentListProvider);
+      expect(container.read(tentListFilteredModeProvider), isTrue);
+      expect(filtered.map((tent) => tent.name), equals(['Atlas']));
+    });
+
+    test('combined state size shape and search filtering works', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTents),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      container
+          .read(tentListFilterProvider.notifier)
+          .toggleState(TentOverallState.good);
+      container.read(tentListFilterProvider.notifier).toggleSize(4);
+      container.read(tentListFilterProvider.notifier).toggleShape('shape-1');
+      container.read(tentListFilterProvider.notifier).setSearchText('at');
+      await Future<void>.delayed(const Duration(milliseconds: 320));
+
+      final filtered = container.read(filteredTentListProvider);
+      expect(filtered.map((tent) => tent.name), equals(['Atlas']));
+    });
+
+    test('clear-all resets state size shape and search criteria', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTents),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      container
+          .read(tentListFilterProvider.notifier)
+          .toggleState(TentOverallState.unusable);
+      container.read(tentListFilterProvider.notifier).toggleSize(6);
+      container.read(tentListFilterProvider.notifier).toggleShape('shape-3');
+      container.read(tentListFilterProvider.notifier).setSearchText('ce');
+      await Future<void>.delayed(const Duration(milliseconds: 320));
+
+      expect(container.read(tentListFilteredModeProvider), isTrue);
+
+      container.read(tentListFilterProvider.notifier).clearAll();
+
+      final state = container.read(tentListFilterProvider);
+      expect(state.searchText, isEmpty);
+      expect(state.effectiveSearchText, isEmpty);
+      expect(state.selectedStates, isEmpty);
+      expect(state.selectedSizes, isEmpty);
+      expect(state.selectedShapeIds, isEmpty);
+      expect(container.read(tentListFilteredModeProvider), isFalse);
+      expect(container.read(filteredTentListProvider), hasLength(3));
+    });
   });
 }
 
