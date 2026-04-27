@@ -560,14 +560,17 @@ void main() {
       expect(find.text('Tente Atlas'), findsOneWidget);
       expect(find.text('Tente Boreale'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Bon état'));
+      await tester.enterText(find.byType(TextField), 'zz');
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tente Atlas'), findsOneWidget);
-      expect(find.text('Tente Boreale'), findsNothing);
-      expect(find.text('Effacer tout'), findsOneWidget);
+      expect(
+        find.text('Aucune tente ne correspond à vos critères'),
+        findsOneWidget,
+      );
+      expect(find.text('Effacer les filtres'), findsOneWidget);
 
-      await tester.tap(find.text('Effacer tout'));
+      await tester.tap(find.text('Effacer les filtres'));
       await tester.pumpAndSettle();
 
       expect(find.text('Tente Atlas'), findsOneWidget);
