@@ -55,50 +55,111 @@ class TentListFilterBar extends StatelessWidget {
               onSearchChanged: onSearchChanged,
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                const _SectionLabel(label: 'Etat'),
-                for (final state in TentOverallState.values)
-                  FilterChip(
-                    label: Text(state.toFrenchLabel()),
-                    selected: selectedStates.contains(state),
-                    onSelected: (_) => onToggleState(state),
-                  ),
-                if (isDesktop && availableSizes.isNotEmpty) ...[
-                  const _SectionLabel(label: 'Taille'),
-                  for (final size in availableSizes)
-                    FilterChip(
-                      label: Text(_sizeLabel(size)),
-                      selected: selectedSizes.contains(size),
-                      onSelected: (_) => onToggleSize(size),
+            if (isDesktop)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _DesktopCategory(
+                          label: 'Etat',
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final state in TentOverallState.values)
+                                FilterChip(
+                                  label: Text(state.toFrenchLabel()),
+                                  selected: selectedStates.contains(state),
+                                  onSelected: (_) => onToggleState(state),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (availableSizes.isNotEmpty) ...[
+                          const SizedBox(width: 24),
+                          _DesktopCategory(
+                            label: 'Taille',
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final size in availableSizes)
+                                  FilterChip(
+                                    label: Text(_sizeLabel(size)),
+                                    selected: selectedSizes.contains(size),
+                                    onSelected: (_) => onToggleSize(size),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        if (availableShapeOptions.isNotEmpty) ...[
+                          const SizedBox(width: 24),
+                          _DesktopCategory(
+                            label: 'Type',
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final option in availableShapeOptions)
+                                  FilterChip(
+                                    label: Text(option.label),
+                                    selected: selectedShapeIds.contains(option.id),
+                                    onSelected: (_) => onToggleShape(option.id),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                ],
-                if (isDesktop && availableShapeOptions.isNotEmpty) ...[
-                  const _SectionLabel(label: 'Type'),
-                  for (final option in availableShapeOptions)
-                    FilterChip(
-                      label: Text(option.label),
-                      selected: selectedShapeIds.contains(option.id),
-                      onSelected: (_) => onToggleShape(option.id),
+                  ),
+                  if (isFilteredMode) ...[
+                    const SizedBox(height: 12),
+                    ActionChip(
+                      avatar: const Icon(Icons.clear_all),
+                      label: const Text('Effacer tout'),
+                      onPressed: onClearAll,
                     ),
+                  ],
                 ],
-                if (!isDesktop && _hasSecondaryFilters)
-                  FilledButton.tonalIcon(
-                    onPressed: () => _openMobileFilters(context),
-                    icon: const Icon(Icons.tune),
-                    label: Text(_mobileFiltersLabel()),
+              )
+            else
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _SectionLabel(label: 'Etat'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final state in TentOverallState.values)
+                        FilterChip(
+                          label: Text(state.toFrenchLabel()),
+                          selected: selectedStates.contains(state),
+                          onSelected: (_) => onToggleState(state),
+                        ),
+                      if (_hasSecondaryFilters)
+                        FilledButton.tonalIcon(
+                          onPressed: () => _openMobileFilters(context),
+                          icon: const Icon(Icons.tune),
+                          label: Text(_mobileFiltersLabel()),
+                        ),
+                      if (isFilteredMode)
+                        ActionChip(
+                          avatar: const Icon(Icons.clear_all),
+                          label: const Text('Effacer tout'),
+                          onPressed: onClearAll,
+                        ),
+                    ],
                   ),
-                if (isFilteredMode)
-                  ActionChip(
-                    avatar: const Icon(Icons.clear_all),
-                    label: const Text('Effacer tout'),
-                    onPressed: onClearAll,
-                  ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),
@@ -235,6 +296,28 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(label, style: const TextStyle(fontWeight: FontWeight.w600));
+  }
+}
+
+class _DesktopCategory extends StatelessWidget {
+  final String label;
+  final Widget child;
+
+  const _DesktopCategory({required this.label, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 220),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(label: label),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
   }
 }
 
