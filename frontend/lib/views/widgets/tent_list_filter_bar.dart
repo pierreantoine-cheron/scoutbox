@@ -112,68 +112,102 @@ class TentListFilterBar extends StatelessWidget {
   }
 
   Future<void> _openMobileFilters(BuildContext context) async {
+    final sheetSelectedSizes = Set<int>.from(selectedSizes);
+    final sheetSelectedShapeIds = Set<String>.from(selectedShapeIds);
+
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (availableSizes.isNotEmpty) ...[
-                  const Text(
-                    'Taille',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final size in availableSizes)
-                        FilterChip(
-                          label: Text(_sizeLabel(size)),
-                          selected: selectedSizes.contains(size),
-                          onSelected: (_) => onToggleSize(size),
+                      if (availableSizes.isNotEmpty) ...[
+                        const Text(
+                          'Taille',
+                          style: TextStyle(fontWeight: FontWeight.w600),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (availableShapeOptions.isNotEmpty) ...[
-                  const Text(
-                    'Type',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final option in availableShapeOptions)
-                        FilterChip(
-                          label: Text(option.label),
-                          selected: selectedShapeIds.contains(option.id),
-                          onSelected: (_) => onToggleShape(option.id),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final size in availableSizes)
+                              FilterChip(
+                                label: Text(_sizeLabel(size)),
+                                selected: sheetSelectedSizes.contains(size),
+                                onSelected: (_) {
+                                  setSheetState(() {
+                                    if (sheetSelectedSizes.contains(size)) {
+                                      sheetSelectedSizes.remove(size);
+                                    } else {
+                                      sheetSelectedSizes.add(size);
+                                    }
+                                  });
+                                  onToggleSize(size);
+                                },
+                              ),
+                          ],
                         ),
+                        const SizedBox(height: 12),
+                      ],
+                      if (availableShapeOptions.isNotEmpty) ...[
+                        const Text(
+                          'Type',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final option in availableShapeOptions)
+                              FilterChip(
+                                label: Text(option.label),
+                                selected: sheetSelectedShapeIds.contains(
+                                  option.id,
+                                ),
+                                onSelected: (_) {
+                                  setSheetState(() {
+                                    if (sheetSelectedShapeIds.contains(
+                                      option.id,
+                                    )) {
+                                      sheetSelectedShapeIds.remove(option.id);
+                                    } else {
+                                      sheetSelectedShapeIds.add(option.id);
+                                    }
+                                  });
+                                  onToggleShape(option.id);
+                                },
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Fermer'),
+                        ),
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Fermer'),
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );

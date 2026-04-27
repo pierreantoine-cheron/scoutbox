@@ -646,7 +646,8 @@ void main() {
         ProviderScope(
           overrides: [
             tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
+              () =>
+                  _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
             tentShapesProvider.overrideWith(
               () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
@@ -672,7 +673,8 @@ void main() {
         ProviderScope(
           overrides: [
             tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
+              () =>
+                  _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
             tentShapesProvider.overrideWith(
               () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
@@ -687,76 +689,82 @@ void main() {
       expect(find.widgetWithText(FilterChip, '4 places'), findsNothing);
     });
 
-    testWidgets('mobile filter sheet opens and closing keeps applied size filter', (
-      WidgetTester tester,
-    ) async {
-      await _setViewportSize(tester, const Size(600, 900));
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
-            ),
-            tentShapesProvider.overrideWith(
-              () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
-            ),
-          ],
-          child: const MaterialApp(home: TentListScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
+    testWidgets(
+      'mobile filter sheet opens and closing keeps applied size filter',
+      (WidgetTester tester) async {
+        await _setViewportSize(tester, const Size(600, 900));
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              tentListProvider.overrideWith(
+                () => _TentListTestNotifier(
+                  _buildSecondaryFilteringSampleTents(),
+                ),
+              ),
+              tentShapesProvider.overrideWith(
+                () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+              ),
+            ],
+            child: const MaterialApp(home: TentListScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Filtres'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Filtres'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Fermer'), findsOneWidget);
-      await tester.tap(find.widgetWithText(FilterChip, '4 places'));
-      await tester.pumpAndSettle();
+        expect(find.text('Fermer'), findsOneWidget);
+        await tester.tap(find.widgetWithText(FilterChip, '4 places'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Tente Boreale'), findsOneWidget);
-      expect(find.text('Tente Atlas'), findsNothing);
-      expect(find.text('Tente Cerise'), findsNothing);
+        expect(find.text('Tente Boreale'), findsOneWidget);
+        expect(find.text('Tente Atlas'), findsNothing);
+        expect(find.text('Tente Cerise'), findsNothing);
 
-      await tester.tap(find.text('Fermer'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Fermer'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Fermer'), findsNothing);
-      expect(find.text('Tente Boreale'), findsOneWidget);
-      expect(find.text('Filtres (1)'), findsOneWidget);
-    });
+        expect(find.text('Fermer'), findsNothing);
+        expect(find.text('Tente Boreale'), findsOneWidget);
+        expect(find.text('Filtres (1)'), findsOneWidget);
+      },
+    );
 
-    testWidgets('dismissing mobile sheet outside keeps already-applied changes', (
-      WidgetTester tester,
-    ) async {
-      await _setViewportSize(tester, const Size(600, 900));
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
-            ),
-            tentShapesProvider.overrideWith(
-              () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
-            ),
-          ],
-          child: const MaterialApp(home: TentListScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
+    testWidgets(
+      'dismissing mobile sheet outside keeps already-applied changes',
+      (WidgetTester tester) async {
+        await _setViewportSize(tester, const Size(600, 900));
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              tentListProvider.overrideWith(
+                () => _TentListTestNotifier(
+                  _buildSecondaryFilteringSampleTents(),
+                ),
+              ),
+              tentShapesProvider.overrideWith(
+                () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+              ),
+            ],
+            child: const MaterialApp(home: TentListScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Filtres'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Filtres'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Tipi'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilterChip, 'Tipi'));
+        await tester.pumpAndSettle();
 
-      await tester.tapAt(const Offset(20, 20));
-      await tester.pumpAndSettle();
+        await tester.tapAt(const Offset(20, 20));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Tente Boreale'), findsOneWidget);
-      expect(find.text('Tente Atlas'), findsNothing);
-      expect(find.text('Filtres (1)'), findsOneWidget);
-    });
+        expect(find.text('Tente Boreale'), findsOneWidget);
+        expect(find.text('Tente Atlas'), findsNothing);
+        expect(find.text('Filtres (1)'), findsOneWidget);
+      },
+    );
 
     testWidgets('mobile shape filter updates results immediately', (
       WidgetTester tester,
@@ -766,7 +774,8 @@ void main() {
         ProviderScope(
           overrides: [
             tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
+              () =>
+                  _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
             tentShapesProvider.overrideWith(
               () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
@@ -788,6 +797,72 @@ void main() {
       expect(find.text('Tente Cerise'), findsNothing);
     });
 
+    testWidgets('mobile filter sheet updates chip selection while open', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(600, 900));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () =>
+                  _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
+            ),
+            tentShapesProvider.overrideWith(
+              () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Filtres'));
+      await tester.pumpAndSettle();
+
+      FilterChip chip(String label) {
+        return tester.widget<FilterChip>(
+          find.widgetWithText(FilterChip, label),
+        );
+      }
+
+      expect(chip('4 places').selected, isFalse);
+      await tester.tap(find.widgetWithText(FilterChip, '4 places'));
+      await tester.pumpAndSettle();
+      expect(chip('4 places').selected, isTrue);
+
+      await tester.tap(find.widgetWithText(FilterChip, '4 places'));
+      await tester.pumpAndSettle();
+      expect(chip('4 places').selected, isFalse);
+    });
+
+    testWidgets('mobile filter sheet scrolls on short viewports', (
+      WidgetTester tester,
+    ) async {
+      await _setViewportSize(tester, const Size(600, 320));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentListProvider.overrideWith(
+              () => _TentListTestNotifier(_buildManyFilterOptionsTents()),
+            ),
+            tentShapesProvider.overrideWith(
+              () => _TentShapesLoadedNotifier(_buildManyShapeOptionsMetadata()),
+            ),
+          ],
+          child: const MaterialApp(home: TentListScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Filtres'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Fermer'), findsOneWidget);
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
+    });
+
     testWidgets('effacer tout resets secondary filters and search', (
       WidgetTester tester,
     ) async {
@@ -796,7 +871,8 @@ void main() {
         ProviderScope(
           overrides: [
             tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
+              () =>
+                  _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
             tentShapesProvider.overrideWith(
               () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
@@ -834,7 +910,8 @@ void main() {
         ProviderScope(
           overrides: [
             tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
+              () =>
+                  _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
             tentShapesProvider.overrideWith(() => _TentShapesFailingNotifier()),
           ],
@@ -859,7 +936,8 @@ void main() {
         ProviderScope(
           overrides: [
             tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
+              () =>
+                  _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
             tentShapesProvider.overrideWith(() => _TentShapesLoadingNotifier()),
           ],
@@ -885,18 +963,18 @@ void main() {
         ProviderScope(
           overrides: [
             tentListProvider.overrideWith(
-              () => _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
+              () =>
+                  _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
             tentShapesProvider.overrideWith(
-              () =>
-                  _TentShapesLoadedNotifier(const [
-                    TentShape(
-                      id: 'shape-1',
-                      name: 'Canadienne',
-                      displayOrder: 1,
-                      isActive: true,
-                    ),
-                  ]),
+              () => _TentShapesLoadedNotifier(const [
+                TentShape(
+                  id: 'shape-1',
+                  name: 'Canadienne',
+                  displayOrder: 1,
+                  isActive: true,
+                ),
+              ]),
             ),
           ],
           child: const MaterialApp(home: TentListScreen()),
@@ -1036,10 +1114,42 @@ List<Tent> _buildSecondaryFilteringSampleTents() {
   ];
 }
 
+List<Tent> _buildManyFilterOptionsTents() {
+  return [
+    for (var index = 1; index <= 12; index++)
+      Tent(
+        id: 't$index',
+        name: 'Tente $index',
+        size: index,
+        tentShapeId: 'shape-$index',
+        tentShapeName: 'Type $index',
+        overallState: TentOverallState.good,
+        comments: null,
+      ),
+  ];
+}
+
 List<TentShape> _buildShapeOptionsMetadata() {
   return const [
-    TentShape(id: 'shape-1', name: 'Canadienne', displayOrder: 1, isActive: true),
+    TentShape(
+      id: 'shape-1',
+      name: 'Canadienne',
+      displayOrder: 1,
+      isActive: true,
+    ),
     TentShape(id: 'shape-2', name: 'Tipi', displayOrder: 2, isActive: true),
+  ];
+}
+
+List<TentShape> _buildManyShapeOptionsMetadata() {
+  return [
+    for (var index = 1; index <= 12; index++)
+      TentShape(
+        id: 'shape-$index',
+        name: 'Type $index',
+        displayOrder: index,
+        isActive: true,
+      ),
   ];
 }
 
