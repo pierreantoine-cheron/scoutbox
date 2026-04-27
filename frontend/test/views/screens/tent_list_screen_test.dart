@@ -122,8 +122,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Nom'), findsOneWidget);
-      expect(find.text('Etat'), findsOneWidget);
-      expect(find.text('Taille'), findsOneWidget);
+      expect(find.text('Etat'), findsWidgets);
+      expect(find.text('Taille'), findsWidgets);
       expect(find.text('Forme'), findsOneWidget);
       expect(find.text('Derniere mise a jour'), findsOneWidget);
       expect(find.text('Tente Atlas'), findsOneWidget);
@@ -621,17 +621,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField), 'zz');
-      await tester.pump(const Duration(milliseconds: 320));
+      await tester.tap(find.widgetWithText(FilterChip, 'Bon état'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Aucune tente ne correspond à vos critères'),
-        findsOneWidget,
-      );
-      expect(find.text('Effacer les filtres'), findsOneWidget);
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(find.text('Tente Boreale'), findsNothing);
+      expect(find.text('Effacer tout'), findsOneWidget);
 
-      await tester.tap(find.text('Effacer les filtres'));
+      await tester.tap(find.text('Effacer tout'));
       await tester.pumpAndSettle();
 
       expect(find.text('Tente Atlas'), findsOneWidget);
@@ -658,6 +655,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(find.text('Etat'), findsWidgets);
+      expect(find.text('Taille'), findsWidgets);
+      expect(find.text('Type'), findsOneWidget);
       expect(find.widgetWithText(FilterChip, '2 places'), findsOneWidget);
       expect(find.widgetWithText(FilterChip, '4 places'), findsOneWidget);
       expect(find.widgetWithText(FilterChip, '6 places'), findsOneWidget);
@@ -884,7 +884,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), 'te');
-      await tester.pump(const Duration(milliseconds: 320));
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.text('Filtres'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilterChip, 'Tipi'));

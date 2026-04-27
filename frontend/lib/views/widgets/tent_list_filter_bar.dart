@@ -55,45 +55,45 @@ class TentListFilterBar extends StatelessWidget {
               onSearchChanged: onSearchChanged,
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final state in TentOverallState.values)
-                  FilterChip(
-                    label: Text(state.toFrenchLabel()),
-                    selected: selectedStates.contains(state),
-                    onSelected: (_) => onToggleState(state),
-                  ),
-                if (isDesktop) ...[
-                  for (final size in availableSizes)
+            if (isDesktop)
+              _DesktopFilterSections(
+                selectedStates: selectedStates,
+                selectedSizes: selectedSizes,
+                selectedShapeIds: selectedShapeIds,
+                availableSizes: availableSizes,
+                availableShapeOptions: availableShapeOptions,
+                isFilteredMode: isFilteredMode,
+                onToggleState: onToggleState,
+                onToggleSize: onToggleSize,
+                onToggleShape: onToggleShape,
+                onClearAll: onClearAll,
+                sizeLabelBuilder: _sizeLabel,
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final state in TentOverallState.values)
                     FilterChip(
-                      label: Text(_sizeLabel(size)),
-                      selected: selectedSizes.contains(size),
-                      onSelected: (_) => onToggleSize(size),
+                      label: Text(state.toFrenchLabel()),
+                      selected: selectedStates.contains(state),
+                      onSelected: (_) => onToggleState(state),
                     ),
-                  for (final option in availableShapeOptions)
-                    FilterChip(
-                      label: Text(option.label),
-                      selected: selectedShapeIds.contains(option.id),
-                      onSelected: (_) => onToggleShape(option.id),
-                    ),
-                ] else ...[
                   if (_hasSecondaryFilters)
                     FilledButton.tonalIcon(
                       onPressed: () => _openMobileFilters(context),
                       icon: const Icon(Icons.tune),
                       label: Text(_mobileFiltersLabel()),
                     ),
+                  if (isFilteredMode)
+                    ActionChip(
+                      avatar: const Icon(Icons.clear_all),
+                      label: const Text('Effacer tout'),
+                      onPressed: onClearAll,
+                    ),
                 ],
-                if (isFilteredMode)
-                  ActionChip(
-                    avatar: const Icon(Icons.clear_all),
-                    label: const Text('Effacer tout'),
-                    onPressed: onClearAll,
-                  ),
-              ],
-            ),
+              ),
           ],
         ),
       ),
@@ -219,6 +219,110 @@ class TentListFilterBar extends StatelessWidget {
     }
 
     return '$size places';
+  }
+}
+
+class _DesktopFilterSections extends StatelessWidget {
+  final Set<TentOverallState> selectedStates;
+  final Set<int> selectedSizes;
+  final Set<String> selectedShapeIds;
+  final List<int> availableSizes;
+  final List<TentTypeFilterOption> availableShapeOptions;
+  final bool isFilteredMode;
+  final ValueChanged<TentOverallState> onToggleState;
+  final ValueChanged<int> onToggleSize;
+  final ValueChanged<String> onToggleShape;
+  final VoidCallback onClearAll;
+  final String Function(int size) sizeLabelBuilder;
+
+  const _DesktopFilterSections({
+    required this.selectedStates,
+    required this.selectedSizes,
+    required this.selectedShapeIds,
+    required this.availableSizes,
+    required this.availableShapeOptions,
+    required this.isFilteredMode,
+    required this.onToggleState,
+    required this.onToggleSize,
+    required this.onToggleShape,
+    required this.onClearAll,
+    required this.sizeLabelBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel(label: 'Etat'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final state in TentOverallState.values)
+              FilterChip(
+                label: Text(state.toFrenchLabel()),
+                selected: selectedStates.contains(state),
+                onSelected: (_) => onToggleState(state),
+              ),
+          ],
+        ),
+        if (availableSizes.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const _SectionLabel(label: 'Taille'),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final size in availableSizes)
+                FilterChip(
+                  label: Text(sizeLabelBuilder(size)),
+                  selected: selectedSizes.contains(size),
+                  onSelected: (_) => onToggleSize(size),
+                ),
+            ],
+          ),
+        ],
+        if (availableShapeOptions.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const _SectionLabel(label: 'Type'),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final option in availableShapeOptions)
+                FilterChip(
+                  label: Text(option.label),
+                  selected: selectedShapeIds.contains(option.id),
+                  onSelected: (_) => onToggleShape(option.id),
+                ),
+            ],
+          ),
+        ],
+        if (isFilteredMode) ...[
+          const SizedBox(height: 12),
+          ActionChip(
+            avatar: const Icon(Icons.clear_all),
+            label: const Text('Effacer tout'),
+            onPressed: onClearAll,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(label, style: const TextStyle(fontWeight: FontWeight.w600));
   }
 }
 
