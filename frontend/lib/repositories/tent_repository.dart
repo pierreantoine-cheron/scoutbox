@@ -70,6 +70,26 @@ class TentRepository {
     }
   }
 
+  Future<Tent> getTent(String id) async {
+    try {
+      final response = await ApiClient.instance.get('${ApiRoutes.tents}/$id');
+      return Tent.fromJson(_readEnvelopeMap(response.data));
+    } on DioException catch (e) {
+      throw _toRepositoryException(
+        e,
+        fallbackMessage: 'Impossible de charger le détail de la tente.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message: 'Réponse du serveur invalide lors du chargement du détail.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message: 'Réponse du serveur invalide lors du chargement du détail.',
+      );
+    }
+  }
+
   Future<Tent> createTent({
     required String name,
     required int size,

@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import 'part.dart';
+
 enum TentOverallState {
   good,
   needsRepair,
@@ -49,7 +51,9 @@ class Tent {
   final String? tentShapeName;
   final TentOverallState overallState;
   final String? comments;
+  final DateTime? createdAt;
   final DateTime? updatedAt;
+  final List<Part> parts;
 
   const Tent({
     required this.id,
@@ -59,7 +63,9 @@ class Tent {
     this.tentShapeName,
     required this.overallState,
     required this.comments,
+    this.createdAt,
     this.updatedAt,
+    this.parts = const [],
   });
 
   factory Tent.fromJson(Map<String, dynamic> json) {
@@ -73,7 +79,9 @@ class Tent {
         json['overallState'] as String,
       ),
       comments: json['comments'] as String?,
+      createdAt: _parseUpdatedAt(json['createdAt']),
       updatedAt: _parseUpdatedAt(json['updatedAt']),
+      parts: _parseParts(json['parts']),
     );
   }
 
@@ -96,5 +104,19 @@ class Tent {
     }
 
     return null;
+  }
+
+  static List<Part> _parseParts(Object? value) {
+    if (value == null) {
+      return const [];
+    }
+
+    if (value is List<dynamic>) {
+      return value
+          .map((part) => Part.fromJson(part as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw const FormatException('Tent parts field is not a list');
   }
 }

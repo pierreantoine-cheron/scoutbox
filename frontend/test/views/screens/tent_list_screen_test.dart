@@ -302,7 +302,7 @@ void main() {
       expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
     });
 
-    testWidgets('opens detail stub from desktop row tap', (
+    testWidgets('opens detail screen from desktop row tap', (
       WidgetTester tester,
     ) async {
       await _setViewportSize(tester, const Size(1200, 900));
@@ -310,6 +310,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            tentRepositoryProvider.overrideWithValue(
+              _TentListAndShapesTestRepository(),
+            ),
             tentListProvider.overrideWith(
               () => _TentListTestNotifier(_buildSampleTents()),
             ),
@@ -345,7 +348,7 @@ void main() {
       expect(notifier.refreshCallCount, equals(1));
     });
 
-    testWidgets('renders cards and opens detail stub on tap on mobile', (
+    testWidgets('renders cards and opens detail screen on tap on mobile', (
       WidgetTester tester,
     ) async {
       await _setViewportSize(tester, const Size(600, 900));
@@ -353,6 +356,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            tentRepositoryProvider.overrideWithValue(
+              _TentListAndShapesTestRepository(),
+            ),
             tentListProvider.overrideWith(
               () => _TentListTestNotifier(_buildSampleTents()),
             ),
@@ -1160,6 +1166,21 @@ class _TentListAndShapesTestRepository extends TentRepository {
   @override
   Future<List<Tent>> getTents() async {
     return const [];
+  }
+
+  @override
+  Future<Tent> getTent(String id) async {
+    return Tent(
+      id: id,
+      name: 'Tente Atlas',
+      size: 6,
+      tentShapeId: 'shape-1',
+      tentShapeName: 'Canadienne',
+      overallState: TentOverallState.good,
+      comments: null,
+      createdAt: DateTime.utc(2026, 4, 10, 9),
+      updatedAt: DateTime.utc(2026, 4, 12, 18, 30),
+    );
   }
 }
 

@@ -145,6 +145,121 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.Equal(shapeId, createdTent.TentShapeId);
         Assert.Equal(shapeName, createdTent.TentShapeName);
         Assert.Equal("Good", createdTent.OverallState);
+        Assert.Empty(createdTent.Parts);
+    }
+
+    [Fact]
+    public async Task GetTentById_ReturnsDetailEnvelope_WithOrderedParts()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shape = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .FirstAsync();
+
+            var partKinds = await db.PartKinds
+                .OrderBy(x => x.DisplayOrder)
+                .ThenBy(x => x.Id)
+                .Take(2)
+                .ToListAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = $"Tente Detail {Guid.NewGuid():N}",
+                Size = 4,
+                TentShapeId = shape.Id,
+                OverallState = TentOverallState.NeedsRepair,
+                Comments = "Commentaire détail",
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+
+            db.Parts.Add(new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tentId,
+                PartKindId = partKinds[1].Id,
+                State = PartState.Unusable,
+                Comments = "Partie 2",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+
+            db.Parts.Add(new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tentId,
+                PartKindId = partKinds[0].Id,
+                State = PartState.Good,
+                Comments = "Partie 1",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync($"/api/tents/{tentId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.Equal(tentId, payload.Data.Id);
+        Assert.Equal(2, payload.Data.Parts.Count);
+
+        for (int i = 1; i < payload.Data.Parts.Count; i++)
+        {
+            var previous = payload.Data.Parts[i - 1];
+            var current = payload.Data.Parts[i];
+            var isOrdered = previous.DisplayOrder < current.DisplayOrder
+                || (previous.DisplayOrder == current.DisplayOrder
+                    && previous.PartKindId.CompareTo(current.PartKindId) <= 0);
+            Assert.True(isOrdered, "Parts are not ordered by DisplayOrder then PartKindId");
+        }
+    }
+
+    [Fact]
+    public async Task GetTentById_WithUnknownId_ReturnsNotFoundErrorCode()
+    {
+        await EnsureTestUserExistsAsync();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync($"/api/tents/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TENT_NOT_FOUND", payload.Code);
+    }
+
+    [Fact]
+    public async Task GetTentById_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.GetAsync($"/api/tents/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]

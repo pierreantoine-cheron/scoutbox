@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/tent.dart';
+import 'state_badge.dart';
 
 class TentCard extends StatelessWidget {
   final Tent tent;
@@ -37,7 +38,7 @@ class TentCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _StateBadge(state: tent.overallState),
+                    StateBadge.forTent(context, tent.overallState),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -74,46 +75,6 @@ class TentCard extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StateBadge extends StatelessWidget {
-  final TentOverallState state;
-
-  const _StateBadge({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final (background, foreground) = switch (state) {
-      TentOverallState.good => (
-        colorScheme.primaryContainer,
-        colorScheme.onPrimaryContainer,
-      ),
-      TentOverallState.needsRepair => (
-        Colors.orange.shade100,
-        Colors.orange.shade900,
-      ),
-      TentOverallState.unusable => (
-        colorScheme.errorContainer,
-        colorScheme.onErrorContainer,
-      ),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        state.toFrenchLabel(),
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: foreground,
-          fontWeight: FontWeight.w600,
         ),
       ),
     );

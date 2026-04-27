@@ -26,6 +26,18 @@ public class TentsController : ControllerBase
         return Ok(new { data = tents });
     }
 
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetTentById([FromRoute] Guid id)
+    {
+        var tent = await _tentService.GetTentByIdAsync(id);
+        if (tent == null)
+        {
+            return NotFound(new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
+        }
+
+        return Ok(new { data = tent });
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateTent([FromBody] CreateTentRequest request)
     {

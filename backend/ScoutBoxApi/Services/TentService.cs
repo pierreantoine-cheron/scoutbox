@@ -52,6 +52,49 @@ public class TentService
         ).ToListAsync();
     }
 
+    public async Task<TentDto?> GetTentByIdAsync(Guid id)
+    {
+        var tent = await _db.Tents
+            .AsNoTracking()
+            .Include(t => t.TentShape)
+            .Include(t => t.Parts)
+                .ThenInclude(p => p.PartKind)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (tent == null)
+        {
+            return null;
+        }
+
+        var partDtos = tent.Parts
+            .OrderBy(p => p.PartKind.DisplayOrder)
+            .ThenBy(p => p.PartKindId)
+            .Select(p => new PartDto(
+                p.Id,
+                p.PartKindId,
+                p.PartKind.Name,
+                p.PartKind.DisplayOrder,
+                p.State.ToString(),
+                p.Comments,
+                p.CreatedAt,
+                p.UpdatedAt
+            ))
+            .ToList();
+
+        return new TentDto(
+            tent.Id,
+            tent.Name,
+            tent.Size,
+            tent.TentShapeId,
+            tent.TentShape.Name,
+            tent.OverallState.ToString(),
+            tent.Comments,
+            tent.CreatedAt,
+            tent.UpdatedAt,
+            partDtos
+        );
+    }
+
     public async Task<(TentDto? Response, ErrorResponse? Error)> CreateTentAsync(Guid userId, CreateTentRequest request)
     {
         var rawName = request.Name ?? string.Empty;

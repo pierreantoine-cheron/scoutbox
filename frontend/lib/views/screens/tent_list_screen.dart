@@ -11,6 +11,7 @@ import '../widgets/tent_card.dart';
 import '../widgets/tent_data_table.dart';
 import '../widgets/tent_list_filter_bar.dart';
 import 'tent_creation_screen.dart';
+import 'tent_detail_screen.dart';
 
 class TentListScreen extends ConsumerStatefulWidget {
   const TentListScreen({super.key});
@@ -179,7 +180,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: TentDataTable(
                 tents: visibleTents,
-                onOpenTent: (tent) => _openTentDetailStub(context, tent),
+                onOpenTent: (tent) => _openTentDetail(context, tent),
               ),
             ),
           ),
@@ -213,7 +214,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
                 final tent = visibleTents[tentIndex];
                 return TentCard(
                   tent: tent,
-                  onTap: () => _openTentDetailStub(context, tent),
+                  onTap: () => _openTentDetail(context, tent),
                 );
               },
             ),
@@ -269,7 +270,8 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
           tent.tentShapeId: tent.tentShapeName!.trim(),
     };
 
-    final shapeMetadata = ref.watch(tentShapesProvider).asData?.value ?? const [];
+    final shapeMetadata =
+        ref.watch(tentShapesProvider).asData?.value ?? const [];
     final options = <TentTypeFilterOption>[];
     final includedIds = <String>{};
 
@@ -282,8 +284,8 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
       includedIds.add(shape.id);
     }
 
-    final missingIds = rawShapeIds.where((id) => !includedIds.contains(id)).toList()
-      ..sort();
+    final missingIds =
+        rawShapeIds.where((id) => !includedIds.contains(id)).toList()..sort();
 
     for (final shapeId in missingIds) {
       options.add(
@@ -332,11 +334,9 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
     return 'Les données affichées peuvent être anciennes. $detail';
   }
 
-  Future<void> _openTentDetailStub(BuildContext context, Tent tent) async {
+  Future<void> _openTentDetail(BuildContext context, Tent tent) async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => TentDetailStubScreen(tentName: tent.name),
-      ),
+      MaterialPageRoute(builder: (_) => TentDetailScreen(tentId: tent.id)),
     );
   }
 
@@ -551,28 +551,6 @@ class _SkeletonLine extends StatelessWidget {
         decoration: BoxDecoration(
           color: baseColor,
           borderRadius: BorderRadius.circular(999),
-        ),
-      ),
-    );
-  }
-}
-
-class TentDetailStubScreen extends StatelessWidget {
-  final String tentName;
-
-  const TentDetailStubScreen({super.key, required this.tentName});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Détail de la tente')),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Le détail des tentes sera bientot disponible',
-            textAlign: TextAlign.center,
-          ),
         ),
       ),
     );
