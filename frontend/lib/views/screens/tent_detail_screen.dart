@@ -187,14 +187,12 @@ class _EditableNameField extends ConsumerStatefulWidget {
 class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
-  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.tent.name);
     _focusNode = FocusNode();
-    _focusNode.addListener(_onFocusChange);
   }
 
   @override
@@ -207,18 +205,9 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (_isSubmitting) return;
-    if (!_focusNode.hasFocus &&
-        widget.editState.editingField == EditableField.name) {
-      _handleCancel();
-    }
   }
 
   bool get _isEditing => widget.editState.editingField == EditableField.name;
@@ -227,7 +216,7 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
       widget.editState.savingField == EditableField.name &&
       widget.editState.editingField == EditableField.name;
 
-  Future<void> _handleConfirm() async {
+  void _handleConfirm() {
     final notifier = ref.read(tentEditProvider.notifier);
     final name = _controller.text.trim();
 
@@ -241,20 +230,13 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
       return;
     }
 
-    _isSubmitting = true;
-    _focusNode.unfocus();
-
-    await notifier.updateField(
+    notifier.updateField(
       tentId: widget.tentId,
       name: name,
       size: widget.tent.size,
       overallState: widget.tent.overallState,
       comments: widget.tent.comments,
     );
-
-    if (mounted) {
-      _isSubmitting = false;
-    }
   }
 
   void _handleCancel() {
@@ -372,14 +354,12 @@ class _EditableSizeField extends ConsumerStatefulWidget {
 class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
-  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.tent.size.toString());
     _focusNode = FocusNode();
-    _focusNode.addListener(_onFocusChange);
   }
 
   @override
@@ -392,18 +372,9 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (_isSubmitting) return;
-    if (!_focusNode.hasFocus &&
-        widget.editState.editingField == EditableField.size) {
-      _handleCancel();
-    }
   }
 
   bool get _isEditing => widget.editState.editingField == EditableField.size;
@@ -412,17 +383,14 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
       widget.editState.savingField == EditableField.size &&
       widget.editState.editingField == EditableField.size;
 
-  Future<void> _handleConfirm() async {
+  void _handleConfirm() {
     final size = int.tryParse(_controller.text.trim());
     if (size == null || size <= 0 || size > ValidationConstants.tentMaxSize) {
       setState(() {});
       return;
     }
 
-    _isSubmitting = true;
-    _focusNode.unfocus();
-
-    await ref
+    ref
         .read(tentEditProvider.notifier)
         .updateField(
           tentId: widget.tentId,
@@ -431,10 +399,6 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
           overallState: widget.tent.overallState,
           comments: widget.tent.comments,
         );
-
-    if (mounted) {
-      _isSubmitting = false;
-    }
   }
 
   void _handleCancel() {
@@ -661,14 +625,12 @@ class _CommentsSection extends ConsumerStatefulWidget {
 class _CommentsSectionState extends ConsumerState<_CommentsSection> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
-  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.tent.comments ?? '');
     _focusNode = FocusNode();
-    _focusNode.addListener(_onFocusChange);
   }
 
   @override
@@ -681,18 +643,9 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (_isSubmitting) return;
-    if (!_focusNode.hasFocus &&
-        widget.editState.editingField == EditableField.comments) {
-      _handleCancel();
-    }
   }
 
   bool get _isEditing =>
@@ -702,17 +655,14 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
       widget.editState.savingField == EditableField.comments &&
       widget.editState.editingField == EditableField.comments;
 
-  Future<void> _handleConfirm() async {
+  void _handleConfirm() {
     final trimmed = _controller.text.trim();
     if (trimmed.length > ValidationConstants.tentCommentsMaxLength) {
       setState(() {});
       return;
     }
 
-    _isSubmitting = true;
-    _focusNode.unfocus();
-
-    await ref
+    ref
         .read(tentEditProvider.notifier)
         .updateField(
           tentId: widget.tentId,
@@ -721,10 +671,6 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
           overallState: widget.tent.overallState,
           comments: trimmed.isEmpty ? null : trimmed,
         );
-
-    if (mounted) {
-      _isSubmitting = false;
-    }
   }
 
   void _handleCancel() {
