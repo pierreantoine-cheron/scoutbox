@@ -197,6 +197,9 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
 
         expect(repo.updateCallCount, equals(1));
+        expect(find.text('Tente Renommée'), findsOneWidget);
+        expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);
+        expect(find.byTooltip('Valider'), findsNothing);
       },
     );
 
@@ -227,6 +230,43 @@ void main() {
         find.textContaining('Impossible de mettre à jour la tente'),
         findsOneWidget,
       );
+      expect(find.text('Réessayer'), findsOneWidget);
+      expect(find.byTooltip('Valider'), findsOneWidget);
+    });
+
+    testWidgets('retry resubmits the failed attempted value', (tester) async {
+      final repo = _FlakyUpdateTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+
+      final textField = find.byType(TextField);
+      await tester.enterText(textField.first, 'Tente Retentée');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Valider'));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Réessayer'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Réessayer'));
+      await tester.tap(find.text('Réessayer'));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(repo.updateCallCount, equals(2));
+      expect(find.text('Tente Retentée'), findsOneWidget);
+      expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);
     });
 
     testWidgets('parts remain read-only when fields are edited inline', (
@@ -324,6 +364,30 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.arrow_drop_down), findsOneWidget);
+    });
+
+    testWidgets('selecting the current overall state does not update', (
+      tester,
+    ) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.arrow_drop_down));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Bon état').last);
+      await tester.pumpAndSettle();
+
+      expect(repo.updateCallCount, equals(0));
+      expect(find.byIcon(Icons.arrow_drop_down), findsWidgets);
     });
   });
 }
@@ -463,6 +527,50 @@ class _FailingUpdateTentRepository extends TentRepository {
   }) async {
     throw const TentRepositoryException(
       message: 'Impossible de mettre à jour la tente.',
+    );
+  }
+}
+
+class _FlakyUpdateTentRepository extends _EditableTentRepository {
+  @override
+  Future<Tent> updateTent({
+    required String id,
+    required String name,
+    required int size,
+    required TentOverallState overallState,
+    String? comments,
+  }) async {
+    updateCallCount++;
+    if (updateCallCount == 1) {
+      throw const TentRepositoryException(
+        message: 'Impossible de mettre à jour la tente.',
+      );
+    }
+
+    _currentName = name;
+    _currentSize = size;
+    _currentState = overallState;
+    _currentComments = comments;
+    return Tent(
+      id: id,
+      name: name,
+      size: size,
+      tentShapeId: 'shape-1',
+      tentShapeName: 'Canadienne',
+      overallState: overallState,
+      comments: comments,
+      createdAt: DateTime.utc(2026, 4, 10, 9),
+      updatedAt: DateTime.utc(2026, 4, 13, 10),
+      parts: const [
+        Part(
+          id: 'part-1',
+          partKindId: 'kind-1',
+          partKindName: 'Toile extérieure',
+          displayOrder: 1,
+          state: PartState.good,
+          comments: null,
+        ),
+      ],
     );
   }
 }

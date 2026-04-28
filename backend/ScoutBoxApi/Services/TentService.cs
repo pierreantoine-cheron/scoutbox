@@ -253,13 +253,14 @@ public class TentService
     {
         var rawName = request.Name ?? string.Empty;
         var normalizedName = rawName.Trim();
+        var normalizedComments = string.IsNullOrWhiteSpace(request.Comments) ? null : request.Comments.Trim();
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
             return (null, new ErrorResponse("Tent name is required", "TENT_NAME_REQUIRED"), false);
         }
 
-        if (rawName.Length > MaxTentNameLength)
+        if (normalizedName.Length > MaxTentNameLength)
         {
             return (null, new ErrorResponse("Tent name exceeds maximum length", "TENT_UPDATE_FAILED"), false);
         }
@@ -275,7 +276,7 @@ public class TentService
             return (null, new ErrorResponse("Tent overall state is invalid", "INVALID_TENT_STATE"), false);
         }
 
-        if (request.Comments != null && request.Comments.Length > MaxTentCommentsLength)
+        if (normalizedComments != null && normalizedComments.Length > MaxTentCommentsLength)
         {
             return (null, new ErrorResponse("Tent comments exceed maximum length", "TENT_UPDATE_FAILED"), false);
         }
@@ -304,23 +305,23 @@ public class TentService
         var oldOverallState = tent.OverallState;
         var oldComments = tent.Comments;
 
-        var now = DateTime.UtcNow;
-        tent.Name = normalizedName;
-        tent.Size = request.Size;
-        tent.OverallState = overallState;
-        tent.Comments = string.IsNullOrWhiteSpace(request.Comments) ? null : request.Comments.Trim();
-        tent.UpdatedAt = now;
-        tent.UpdatedByUserId = userId;
-
         var changedFields = new List<string>();
-        if (oldName != tent.Name) changedFields.Add("name");
-        if (oldSize != tent.Size) changedFields.Add("size");
-        if (oldOverallState != tent.OverallState) changedFields.Add("overallState");
-        var commentsChanged = oldComments != tent.Comments;
+        if (oldName != normalizedName) changedFields.Add("name");
+        if (oldSize != request.Size) changedFields.Add("size");
+        if (oldOverallState != overallState) changedFields.Add("overallState");
+        var commentsChanged = oldComments != normalizedComments;
         if (commentsChanged) changedFields.Add("comments");
 
         if (changedFields.Count > 0)
         {
+            var now = DateTime.UtcNow;
+            tent.Name = normalizedName;
+            tent.Size = request.Size;
+            tent.OverallState = overallState;
+            tent.Comments = normalizedComments;
+            tent.UpdatedAt = now;
+            tent.UpdatedByUserId = userId;
+
             _auditService.RecordEvent(
                 AuditActions.TentUpdated,
                 userId,

@@ -1150,6 +1150,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Guid tentId;
         var existingName = $"Tente No Change {Guid.NewGuid():N}";
+        var originalUpdatedAt = DateTime.UtcNow.AddDays(-1);
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
@@ -1168,8 +1169,8 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 TentShapeId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
+                CreatedAt = originalUpdatedAt,
+                UpdatedAt = originalUpdatedAt,
                 CreatedByUserId = CustomApiFactory.TestUserId,
                 UpdatedByUserId = CustomApiFactory.TestUserId
             });
@@ -1199,7 +1200,63 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
             var auditCountAfter = await db.AuditEvents.CountAsync();
             Assert.Equal(auditCountBefore, auditCountAfter);
+
+            var tent = await db.Tents.FindAsync(tentId);
+            Assert.NotNull(tent);
+            Assert.Equal(originalUpdatedAt, tent.UpdatedAt);
         }
+    }
+
+    [Fact]
+    public async Task UpdateTent_WithTrimmedValuesAtMaxLength_AcceptsRequest()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = $"Tente Trim Source {Guid.NewGuid():N}",
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var maxLengthName = new string('N', 100);
+        var maxLengthComments = new string('C', 500);
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = $" {maxLengthName} ",
+            size = 4,
+            overallState = "Good",
+            comments = $" {maxLengthComments} "
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.Equal(maxLengthName, payload.Data.Name);
+        Assert.Equal(maxLengthComments, payload.Data.Comments);
     }
 
     [Fact]

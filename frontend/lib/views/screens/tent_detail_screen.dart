@@ -78,6 +78,11 @@ class _DetailContent extends ConsumerWidget {
                 const SizedBox(height: 12),
                 _FieldErrorBanner(
                   message: editState.fieldError!,
+                  onRetry: editState.pendingRetry == null
+                      ? null
+                      : () => ref
+                            .read(tentEditProvider.notifier)
+                            .retryLastUpdate(),
                   onDismiss: () =>
                       ref.read(tentEditProvider.notifier).clearError(),
                 ),
@@ -175,6 +180,7 @@ class _EditableNameField extends ConsumerStatefulWidget {
 class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -201,6 +207,7 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
   }
 
   void _onFocusChange() {
+    if (_isSubmitting) return;
     if (!_focusNode.hasFocus &&
         widget.editState.editingField == EditableField.name) {
       _handleCancel();
@@ -213,7 +220,7 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
       widget.editState.savingField == EditableField.name &&
       widget.editState.editingField == EditableField.name;
 
-  void _handleConfirm() {
+  Future<void> _handleConfirm() async {
     final notifier = ref.read(tentEditProvider.notifier);
     final name = _controller.text.trim();
 
@@ -227,15 +234,20 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
       return;
     }
 
+    _isSubmitting = true;
     _focusNode.unfocus();
 
-    notifier.updateField(
+    await notifier.updateField(
       tentId: widget.tentId,
       name: name,
       size: widget.tent.size,
       overallState: widget.tent.overallState,
       comments: widget.tent.comments,
     );
+
+    if (mounted) {
+      _isSubmitting = false;
+    }
   }
 
   void _handleCancel() {
@@ -324,6 +336,10 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
               size: 20,
               color: theme.colorScheme.outline,
             ),
+            if (widget.editState.lastSavedField == EditableField.name) ...[
+              const SizedBox(width: 8),
+              const _SyncIndicator(),
+            ],
           ],
         ),
       ),
@@ -349,6 +365,7 @@ class _EditableSizeField extends ConsumerStatefulWidget {
 class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -375,6 +392,7 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
   }
 
   void _onFocusChange() {
+    if (_isSubmitting) return;
     if (!_focusNode.hasFocus &&
         widget.editState.editingField == EditableField.size) {
       _handleCancel();
@@ -387,16 +405,17 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
       widget.editState.savingField == EditableField.size &&
       widget.editState.editingField == EditableField.size;
 
-  void _handleConfirm() {
+  Future<void> _handleConfirm() async {
     final size = int.tryParse(_controller.text.trim());
     if (size == null || size <= 0 || size > ValidationConstants.tentMaxSize) {
       setState(() {});
       return;
     }
 
+    _isSubmitting = true;
     _focusNode.unfocus();
 
-    ref
+    await ref
         .read(tentEditProvider.notifier)
         .updateField(
           tentId: widget.tentId,
@@ -405,6 +424,10 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
           overallState: widget.tent.overallState,
           comments: widget.tent.comments,
         );
+
+    if (mounted) {
+      _isSubmitting = false;
+    }
   }
 
   void _handleCancel() {
@@ -493,6 +516,10 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
               size: 16,
               color: Theme.of(context).colorScheme.outline,
             ),
+            if (widget.editState.lastSavedField == EditableField.size) ...[
+              const SizedBox(width: 4),
+              const _SyncIndicator(),
+            ],
           ],
         ),
       ),
@@ -537,10 +564,15 @@ class _EditableOverallStateSelector extends ConsumerWidget {
             value: state,
             label: state.toFrenchLabel(),
             leadingIcon: Icon(icon, color: foreground, size: 20),
+            style: MenuItemButton.styleFrom(backgroundColor: background),
           );
         }).toList(),
         onSelected: (state) {
           if (state == null) return;
+          if (state == tent.overallState) {
+            notifier.cancelEditing();
+            return;
+          }
           notifier.updateField(
             tentId: tentId,
             name: tent.name,
@@ -569,6 +601,10 @@ class _EditableOverallStateSelector extends ConsumerWidget {
               size: 20,
               color: Theme.of(context).colorScheme.outline,
             ),
+            if (editState.lastSavedField == EditableField.overallState) ...[
+              const SizedBox(width: 4),
+              const _SyncIndicator(),
+            ],
           ],
         ),
       ),
@@ -618,6 +654,7 @@ class _CommentsSection extends ConsumerStatefulWidget {
 class _CommentsSectionState extends ConsumerState<_CommentsSection> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -644,6 +681,7 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
   }
 
   void _onFocusChange() {
+    if (_isSubmitting) return;
     if (!_focusNode.hasFocus &&
         widget.editState.editingField == EditableField.comments) {
       _handleCancel();
@@ -657,16 +695,17 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
       widget.editState.savingField == EditableField.comments &&
       widget.editState.editingField == EditableField.comments;
 
-  void _handleConfirm() {
+  Future<void> _handleConfirm() async {
     final trimmed = _controller.text.trim();
     if (trimmed.length > ValidationConstants.tentCommentsMaxLength) {
       setState(() {});
       return;
     }
 
+    _isSubmitting = true;
     _focusNode.unfocus();
 
-    ref
+    await ref
         .read(tentEditProvider.notifier)
         .updateField(
           tentId: widget.tentId,
@@ -675,6 +714,10 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
           overallState: widget.tent.overallState,
           comments: trimmed.isEmpty ? null : trimmed,
         );
+
+    if (mounted) {
+      _isSubmitting = false;
+    }
   }
 
   void _handleCancel() {
@@ -774,6 +817,11 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
                         size: 20,
                         color: Theme.of(context).colorScheme.outline,
                       ),
+                      if (widget.editState.lastSavedField ==
+                          EditableField.comments) ...[
+                        const SizedBox(width: 8),
+                        const _SyncIndicator(),
+                      ],
                     ],
                   ),
                 ),
@@ -896,9 +944,14 @@ class _AuditSection extends StatelessWidget {
 
 class _FieldErrorBanner extends StatelessWidget {
   final String message;
+  final VoidCallback? onRetry;
   final VoidCallback onDismiss;
 
-  const _FieldErrorBanner({required this.message, required this.onDismiss});
+  const _FieldErrorBanner({
+    required this.message,
+    required this.onRetry,
+    required this.onDismiss,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -921,6 +974,22 @@ class _FieldErrorBanner extends StatelessWidget {
                 ),
               ),
             ),
+            if (onRetry != null) ...[
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: Icon(
+                  Icons.refresh,
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
+                label: Text(
+                  'Réessayer',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+            ],
             IconButton(
               icon: Icon(
                 Icons.close,
@@ -931,6 +1000,20 @@ class _FieldErrorBanner extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SyncIndicator extends StatelessWidget {
+  const _SyncIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+
+    return Tooltip(
+      message: 'Synchronisé',
+      child: Icon(Icons.cloud_done_outlined, size: 18, color: color),
     );
   }
 }

@@ -21,6 +21,14 @@ class TentEditNotifier extends _$TentEditNotifier {
     required TentOverallState overallState,
     String? comments,
   }) async {
+    final retryRequest = PendingTentUpdate(
+      tentId: tentId,
+      name: name,
+      size: size,
+      overallState: overallState,
+      comments: comments,
+    );
+
     state = state.copyWith(
       savingField: _determineSavingField(
         state.editingField,
@@ -30,6 +38,9 @@ class TentEditNotifier extends _$TentEditNotifier {
         comments: comments,
         baseTent: state.baseTent,
       ),
+      pendingRetry: retryRequest,
+      clearLastSavedField: true,
+      clearFieldError: true,
     );
 
     try {
@@ -48,39 +59,62 @@ class TentEditNotifier extends _$TentEditNotifier {
 
       state = state.copyWith(
         baseTent: updatedTent,
-        editingField: null,
-        savingField: null,
-        fieldError: null,
+        lastSavedField: state.savingField,
+        clearEditingField: true,
+        clearSavingField: true,
+        clearFieldError: true,
+        clearPendingRetry: true,
       );
     } on TentRepositoryException catch (e) {
-      state = state.copyWith(savingField: null, fieldError: e.message);
+      state = state.copyWith(
+        fieldError: e.message,
+        clearSavingField: true,
+        pendingRetry: retryRequest,
+      );
     } catch (_) {
       state = state.copyWith(
-        savingField: null,
         fieldError: 'Impossible de mettre à jour la tente. Réessayez.',
+        clearSavingField: true,
+        pendingRetry: retryRequest,
       );
     }
+  }
+
+  Future<void> retryLastUpdate() async {
+    final request = state.pendingRetry;
+    if (request == null) return;
+
+    await updateField(
+      tentId: request.tentId,
+      name: request.name,
+      size: request.size,
+      overallState: request.overallState,
+      comments: request.comments,
+    );
   }
 
   void startEditing(EditableField field, Tent tent) {
     state = state.copyWith(
       editingField: field,
       baseTent: tent,
-      savingField: null,
-      fieldError: null,
+      clearSavingField: true,
+      clearFieldError: true,
+      clearPendingRetry: true,
+      clearLastSavedField: true,
     );
   }
 
   void cancelEditing() {
     state = state.copyWith(
-      editingField: null,
-      savingField: null,
-      fieldError: null,
+      clearEditingField: true,
+      clearSavingField: true,
+      clearFieldError: true,
+      clearPendingRetry: true,
     );
   }
 
   void clearError() {
-    state = state.copyWith(fieldError: null);
+    state = state.copyWith(clearFieldError: true);
   }
 
   EditableField? _determineSavingField(
@@ -107,33 +141,63 @@ class TentEditNotifier extends _$TentEditNotifier {
 class TentEditState {
   final EditableField? editingField;
   final EditableField? savingField;
+  final EditableField? lastSavedField;
   final Tent? baseTent;
   final String? fieldError;
+  final PendingTentUpdate? pendingRetry;
 
   const TentEditState({
     this.editingField,
     this.savingField,
+    this.lastSavedField,
     this.baseTent,
     this.fieldError,
+    this.pendingRetry,
   });
 
   TentEditState copyWith({
     EditableField? editingField,
     EditableField? savingField,
+    EditableField? lastSavedField,
     Tent? baseTent,
     String? fieldError,
+    PendingTentUpdate? pendingRetry,
     bool clearEditingField = false,
     bool clearSavingField = false,
+    bool clearLastSavedField = false,
     bool clearBaseTent = false,
     bool clearFieldError = false,
+    bool clearPendingRetry = false,
   }) {
     return TentEditState(
       editingField: clearEditingField
           ? null
           : editingField ?? this.editingField,
       savingField: clearSavingField ? null : savingField ?? this.savingField,
+      lastSavedField: clearLastSavedField
+          ? null
+          : lastSavedField ?? this.lastSavedField,
       baseTent: clearBaseTent ? null : baseTent ?? this.baseTent,
       fieldError: clearFieldError ? null : fieldError ?? this.fieldError,
+      pendingRetry: clearPendingRetry
+          ? null
+          : pendingRetry ?? this.pendingRetry,
     );
   }
+}
+
+class PendingTentUpdate {
+  final String tentId;
+  final String name;
+  final int size;
+  final TentOverallState overallState;
+  final String? comments;
+
+  const PendingTentUpdate({
+    required this.tentId,
+    required this.name,
+    required this.size,
+    required this.overallState,
+    this.comments,
+  });
 }
