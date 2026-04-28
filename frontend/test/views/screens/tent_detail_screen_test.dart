@@ -269,6 +269,41 @@ void main() {
       expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);
     });
 
+    testWidgets('subsequent edits keep previously saved field values', (
+      tester,
+    ) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Tente Renommée');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Valider'));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      await tester.tap(find.text('6 places'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '8');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Valider'));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(repo.updateCallCount, equals(2));
+      expect(find.text('Tente Renommée'), findsOneWidget);
+      expect(find.text('8 places'), findsOneWidget);
+    });
+
     testWidgets('parts remain read-only when fields are edited inline', (
       tester,
     ) async {

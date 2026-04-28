@@ -52,6 +52,9 @@ class _DetailContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final editState = ref.watch(tentEditProvider);
+    final displayedTent = editState.baseTent?.id == tentId
+        ? editState.baseTent!
+        : tent;
     final isWide = MediaQuery.sizeOf(context).width >= 900;
 
     return Align(
@@ -63,17 +66,21 @@ class _DetailContent extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _HeaderSection(tentId: tentId, tent: tent, editState: editState),
-              const SizedBox(height: 16),
-              _CommentsSection(
+              _HeaderSection(
                 tentId: tentId,
-                tent: tent,
+                tent: displayedTent,
                 editState: editState,
               ),
               const SizedBox(height: 16),
-              _PartsSection(parts: tent.parts),
+              _CommentsSection(
+                tentId: tentId,
+                tent: displayedTent,
+                editState: editState,
+              ),
               const SizedBox(height: 16),
-              _AuditSection(tent: tent),
+              _PartsSection(parts: displayedTent.parts),
+              const SizedBox(height: 16),
+              _AuditSection(tent: displayedTent),
               if (editState.fieldError != null) ...[
                 const SizedBox(height: 12),
                 _FieldErrorBanner(
