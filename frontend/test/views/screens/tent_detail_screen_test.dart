@@ -83,6 +83,249 @@ void main() {
       expect(find.textContaining('Aucun commentaire'), findsWidgets);
     });
   });
+
+  group('TentDetailScreen inline editing', () {
+    testWidgets('shows edit icons on editable fields', (tester) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.edit_outlined), findsWidgets);
+    });
+
+    testWidgets('opens name field editor on tap', (tester) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Valider'), findsOneWidget);
+      expect(find.byTooltip('Annuler'), findsOneWidget);
+    });
+
+    testWidgets('cancelling name edit with no changes returns to read-only', (
+      tester,
+    ) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Annuler'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(repo.updateCallCount, equals(0));
+    });
+
+    testWidgets('cancelling name edit with changes discards local value', (
+      tester,
+    ) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+
+      final textField = find.byType(TextField);
+      await tester.enterText(textField.first, 'Nouveau nom');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Annuler'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tente Atlas'), findsOneWidget);
+      expect(repo.updateCallCount, equals(0));
+    });
+
+    testWidgets(
+      'confirming valid name edit updates field and shows new value',
+      (tester) async {
+        final repo = _EditableTentRepository();
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+            child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Tente Atlas'));
+        await tester.pumpAndSettle();
+
+        final textField = find.byType(TextField);
+        await tester.enterText(textField.first, 'Tente Renommée');
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byTooltip('Valider'));
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(repo.updateCallCount, equals(1));
+      },
+    );
+
+    testWidgets('update failure shows inline error banner', (tester) async {
+      final repo = _FailingUpdateTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+
+      final textField = find.byType(TextField);
+      await tester.enterText(textField.first, 'Tente Erreur');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Valider'));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(
+        find.textContaining('Impossible de mettre à jour la tente'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('parts remain read-only when fields are edited inline', (
+      tester,
+    ) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Éléments'), findsOneWidget);
+      expect(find.text('Toile extérieure'), findsOneWidget);
+    });
+
+    testWidgets('archive button remains disabled', (tester) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final archiveButton = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Archiver'),
+      );
+
+      expect(archiveButton.onPressed, isNull);
+    });
+
+    testWidgets('comments field shows character counter when editing', (
+      tester,
+    ) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Une tente de test.'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('/500'), findsWidgets);
+    });
+
+    testWidgets('size field opens editor on tap', (tester) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('6 places'));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Valider'), findsOneWidget);
+      expect(find.byTooltip('Annuler'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Annuler'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('overall state shows dropdown arrow', (tester) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.arrow_drop_down), findsOneWidget);
+    });
+  });
 }
 
 Tent _buildTent() {
@@ -136,5 +379,90 @@ class _SwitchingTentRepository extends TentRepository {
       );
     }
     return _buildTent();
+  }
+}
+
+class _EditableTentRepository extends TentRepository {
+  int updateCallCount = 0;
+  String _currentName = 'Tente Atlas';
+  int _currentSize = 6;
+  TentOverallState _currentState = TentOverallState.good;
+  String? _currentComments = 'Une tente de test.';
+
+  @override
+  Future<Tent> getTent(String id) async => Tent(
+    id: id,
+    name: _currentName,
+    size: _currentSize,
+    tentShapeId: 'shape-1',
+    tentShapeName: 'Canadienne',
+    overallState: _currentState,
+    comments: _currentComments,
+    createdAt: DateTime.utc(2026, 4, 10, 9),
+    updatedAt: DateTime.utc(2026, 4, 12, 18, 30),
+    parts: const [
+      Part(
+        id: 'part-1',
+        partKindId: 'kind-1',
+        partKindName: 'Toile extérieure',
+        displayOrder: 1,
+        state: PartState.good,
+        comments: null,
+      ),
+    ],
+  );
+
+  @override
+  Future<Tent> updateTent({
+    required String id,
+    required String name,
+    required int size,
+    required TentOverallState overallState,
+    String? comments,
+  }) async {
+    updateCallCount++;
+    _currentName = name;
+    _currentSize = size;
+    _currentState = overallState;
+    _currentComments = comments;
+    return Tent(
+      id: id,
+      name: name,
+      size: size,
+      tentShapeId: 'shape-1',
+      tentShapeName: 'Canadienne',
+      overallState: overallState,
+      comments: comments,
+      createdAt: DateTime.utc(2026, 4, 10, 9),
+      updatedAt: DateTime.utc(2026, 4, 13, 10),
+      parts: const [
+        Part(
+          id: 'part-1',
+          partKindId: 'kind-1',
+          partKindName: 'Toile extérieure',
+          displayOrder: 1,
+          state: PartState.good,
+          comments: null,
+        ),
+      ],
+    );
+  }
+}
+
+class _FailingUpdateTentRepository extends TentRepository {
+  @override
+  Future<Tent> getTent(String id) async => _buildTent();
+
+  @override
+  Future<Tent> updateTent({
+    required String id,
+    required String name,
+    required int size,
+    required TentOverallState overallState,
+    String? comments,
+  }) async {
+    throw const TentRepositoryException(
+      message: 'Impossible de mettre à jour la tente.',
+    );
   }
 }

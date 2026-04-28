@@ -12,11 +12,13 @@ public class TentService
     private const int MaxTentSize = 100;
 
     private readonly ScoutBoxDbContext _db;
+    private readonly IAuditService _auditService;
     private readonly ILogger<TentService> _logger;
 
-    public TentService(ScoutBoxDbContext db, ILogger<TentService> logger)
+    public TentService(ScoutBoxDbContext db, IAuditService auditService, ILogger<TentService> logger)
     {
         _db = db;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -245,6 +247,138 @@ public class TentService
             _logger.LogError(ex, "Failed to create tent {TentName} with shape {TentShapeId} for user {UserId}", normalizedName, request.TentShapeId, userId);
             throw;
         }
+    }
+
+    public async Task<(TentDto? Response, ErrorResponse? Error, bool NotFound)> UpdateTentAsync(Guid id, Guid userId, UpdateTentRequest request)
+    {
+        var rawName = request.Name ?? string.Empty;
+        var normalizedName = rawName.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
+        {
+            return (null, new ErrorResponse("Tent name is required", "TENT_NAME_REQUIRED"), false);
+        }
+
+        if (rawName.Length > MaxTentNameLength)
+        {
+            return (null, new ErrorResponse("Tent name exceeds maximum length", "TENT_UPDATE_FAILED"), false);
+        }
+
+        if (request.Size <= 0 || request.Size > MaxTentSize)
+        {
+            return (null, new ErrorResponse("Tent size must be between 1 and 100", "INVALID_TENT_SIZE"), false);
+        }
+
+        if (!Enum.TryParse<TentOverallState>(request.OverallState, true, out var overallState)
+            || !Enum.IsDefined(overallState))
+        {
+            return (null, new ErrorResponse("Tent overall state is invalid", "INVALID_TENT_STATE"), false);
+        }
+
+        if (request.Comments != null && request.Comments.Length > MaxTentCommentsLength)
+        {
+            return (null, new ErrorResponse("Tent comments exceed maximum length", "TENT_UPDATE_FAILED"), false);
+        }
+
+        var tent = await _db.Tents
+            .Include(t => t.TentShape)
+            .Include(t => t.Parts)
+                .ThenInclude(p => p.PartKind)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (tent == null)
+        {
+            return (null, null, true);
+        }
+
+        var hasDuplicateName = await _db.Tents
+            .AnyAsync(t => t.Name.ToLower() == normalizedName.ToLower() && t.Id != id);
+
+        if (hasDuplicateName)
+        {
+            return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"), false);
+        }
+
+        var oldName = tent.Name;
+        var oldSize = tent.Size;
+        var oldOverallState = tent.OverallState;
+        var oldComments = tent.Comments;
+
+        var now = DateTime.UtcNow;
+        tent.Name = normalizedName;
+        tent.Size = request.Size;
+        tent.OverallState = overallState;
+        tent.Comments = string.IsNullOrWhiteSpace(request.Comments) ? null : request.Comments.Trim();
+        tent.UpdatedAt = now;
+        tent.UpdatedByUserId = userId;
+
+        var changedFields = new List<string>();
+        if (oldName != tent.Name) changedFields.Add("name");
+        if (oldSize != tent.Size) changedFields.Add("size");
+        if (oldOverallState != tent.OverallState) changedFields.Add("overallState");
+        var commentsChanged = oldComments != tent.Comments;
+        if (commentsChanged) changedFields.Add("comments");
+
+        if (changedFields.Count > 0)
+        {
+            _auditService.RecordEvent(
+                AuditActions.TentUpdated,
+                userId,
+                targetEntityType: "Tent",
+                targetEntityId: id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["changedFields"] = changedFields,
+                    ["oldName"] = oldName,
+                    ["newName"] = tent.Name,
+                    ["oldSize"] = oldSize,
+                    ["newSize"] = tent.Size,
+                    ["oldOverallState"] = oldOverallState.ToString(),
+                    ["newOverallState"] = tent.OverallState.ToString(),
+                    ["commentsChanged"] = commentsChanged
+                }
+            );
+        }
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsDuplicateTentNameViolation(ex))
+        {
+            _logger.LogWarning(ex, "Duplicate tent name blocked by DB constraint on update: {TentName}", normalizedName);
+            return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"), false);
+        }
+
+        var partDtos = tent.Parts
+            .OrderBy(p => p.PartKind.DisplayOrder)
+            .ThenBy(p => p.PartKindId)
+            .Select(p => new PartDto(
+                p.Id,
+                p.PartKindId,
+                p.PartKind.Name,
+                p.PartKind.DisplayOrder,
+                p.State.ToString(),
+                p.Comments,
+                p.CreatedAt,
+                p.UpdatedAt
+            ))
+            .ToList();
+
+        var dto = new TentDto(
+            tent.Id,
+            tent.Name,
+            tent.Size,
+            tent.TentShapeId,
+            tent.TentShape.Name,
+            tent.OverallState.ToString(),
+            tent.Comments,
+            tent.CreatedAt,
+            tent.UpdatedAt,
+            partDtos
+        );
+
+        return (dto, null, false);
     }
 
     private static bool IsDuplicateTentNameViolation(DbUpdateException exception)

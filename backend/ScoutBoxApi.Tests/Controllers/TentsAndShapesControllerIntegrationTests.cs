@@ -966,6 +966,644 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public DateTime UpdatedAt { get; set; }
     }
 
+    // --- Story 2.8: Update tent tests ---
+
+    [Fact]
+    public async Task UpdateTent_WithValidPayload_ReturnsUpdatedTentEnvelope()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        Guid shapeId;
+        var createdAt = DateTime.UtcNow.AddDays(-1);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = "Tente A Modifier",
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = "Commentaire avant",
+                CreatedAt = createdAt,
+                UpdatedAt = createdAt,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = "Tente A Modifiée",
+            size = 8,
+            overallState = "NeedsRepair",
+            comments = "Commentaire après"
+        };
+
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.Equal(tentId, payload.Data.Id);
+        Assert.Equal("Tente A Modifiée", payload.Data.Name);
+        Assert.Equal(8, payload.Data.Size);
+        Assert.Equal("NeedsRepair", payload.Data.OverallState);
+        Assert.Equal("Commentaire après", payload.Data.Comments);
+        Assert.Equal(shapeId, payload.Data.TentShapeId);
+        Assert.NotNull(payload.Data.TentShapeName);
+        Assert.True(payload.Data.UpdatedAt > createdAt);
+    }
+
+    [Fact]
+    public async Task UpdateTent_BlankComments_StoredAsNull()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = $"Tente Comments Test {Guid.NewGuid():N}",
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = "Existing comment",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = "Tente Comments Test Updated",
+            size = 4,
+            overallState = "Good",
+            comments = "   "
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.Null(payload.Data.Comments);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var tent = await db.Tents.FindAsync(tentId);
+            Assert.Null(tent!.Comments);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTent_UpdatesAuditFields()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        var originalUpdatedAt = DateTime.UtcNow.AddDays(-2);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = $"Tente Audit Test {Guid.NewGuid():N}",
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = originalUpdatedAt,
+                UpdatedAt = originalUpdatedAt,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = "Tente Audit Test New",
+            size = 6,
+            overallState = "NeedsRepair",
+            comments = "Audit update"
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var tent = await db.Tents.FindAsync(tentId);
+            Assert.NotNull(tent);
+            Assert.Equal(CustomApiFactory.TestUserId, tent.UpdatedByUserId);
+            Assert.True(tent.UpdatedAt > originalUpdatedAt);
+
+            var audit = await db.AuditEvents
+                .FirstOrDefaultAsync(a => a.TargetEntityId == tentId && a.Action == "tent_updated");
+            Assert.NotNull(audit);
+            Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
+            Assert.Equal("Tent", audit.TargetEntityType);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTent_NoChanges_DoesNotCreateAuditEvent()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        var existingName = $"Tente No Change {Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = existingName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        int auditCountBefore;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            auditCountBefore = await db.AuditEvents.CountAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = existingName,
+            size = 4,
+            overallState = "Good",
+            comments = (string?)null
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var auditCountAfter = await db.AuditEvents.CountAsync();
+            Assert.Equal(auditCountBefore, auditCountAfter);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTent_WithParts_ReturnsPartsOrdered()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        var existingName = $"Tente Parts Update {Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shape = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .FirstAsync();
+
+            var partKinds = await db.PartKinds
+                .OrderBy(x => x.DisplayOrder)
+                .ThenBy(x => x.Id)
+                .Take(3)
+                .ToListAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = existingName,
+                Size = 4,
+                TentShapeId = shape.Id,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+
+            db.Parts.Add(new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tentId,
+                PartKindId = partKinds[2].Id,
+                State = PartState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            db.Parts.Add(new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tentId,
+                PartKindId = partKinds[0].Id,
+                State = PartState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = $"{existingName} Modified",
+            size = 4,
+            overallState = "Good",
+            comments = (string?)null
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.Equal(2, payload.Data.Parts.Count);
+
+        for (int i = 1; i < payload.Data.Parts.Count; i++)
+        {
+            var previous = payload.Data.Parts[i - 1];
+            var current = payload.Data.Parts[i];
+            var isOrdered = previous.DisplayOrder < current.DisplayOrder
+                || (previous.DisplayOrder == current.DisplayOrder
+                    && previous.PartKindId.CompareTo(current.PartKindId) <= 0);
+            Assert.True(isOrdered, "Parts are not ordered by DisplayOrder then PartKindId");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTent_WithUnknownId_ReturnsNotFound()
+    {
+        await EnsureTestUserExistsAsync();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{Guid.NewGuid()}", new
+        {
+            name = "Tent",
+            size = 4,
+            overallState = "Good",
+            comments = (string?)null
+        });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TENT_NOT_FOUND", payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdateTent_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.PutAsJsonAsync($"/api/tents/{Guid.NewGuid()}", new
+        {
+            name = "Tent",
+            size = 4,
+            overallState = "Good",
+            comments = (string?)null
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateTent_WithDuplicateName_ReturnsTentNameExistsError()
+    {
+        await EnsureTestUserExistsAsync();
+
+        var duplicateName = $"Tente Dupliquee Update {Guid.NewGuid():N}";
+        Guid tentId;
+        Guid otherTentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            otherTentId = Guid.NewGuid();
+
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = $"Original Name {Guid.NewGuid():N}",
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+
+            db.Tents.Add(new Tent
+            {
+                Id = otherTentId,
+                Name = duplicateName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = duplicateName,
+            size = 4,
+            overallState = "Good",
+            comments = (string?)null
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TENT_NAME_EXISTS", payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdateTent_SameNameAsCurrent_IsAllowed()
+    {
+        await EnsureTestUserExistsAsync();
+
+        var tentName = $"Tente Same Name {Guid.NewGuid():N}";
+        Guid tentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = tentName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = tentName,
+            size = 8,
+            overallState = "NeedsRepair",
+            comments = "Updated"
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.Equal(tentName, payload.Data.Name);
+        Assert.Equal(8, payload.Data.Size);
+    }
+
+    [Theory]
+    [InlineData("", 4, "TENT_NAME_REQUIRED")]
+    [InlineData("   ", 4, "TENT_NAME_REQUIRED")]
+    [InlineData("Tente", 0, "INVALID_TENT_SIZE")]
+    [InlineData("Tente", -1, "INVALID_TENT_SIZE")]
+    [InlineData("Tente", 101, "INVALID_TENT_SIZE")]
+    public async Task UpdateTent_WithInvalidPayload_ReturnsErrorCode(string name, int size, string expectedCode)
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        var originalName = $"Tente Invalid Update {Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = originalName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name,
+            size,
+            overallState = "Good",
+            comments = (string?)null
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal(expectedCode, payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdateTent_WithInvalidOverallState_ReturnsInvalidTentStateError()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        var originalName = $"Tente Invalid State Update {Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = originalName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = originalName,
+            size = 4,
+            overallState = "BrokenBeyondRepair",
+            comments = (string?)null
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("INVALID_TENT_STATE", payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdateTent_WithTooLongComments_ReturnsError()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        var originalName = $"Tente Long Comments {Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = originalName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var longComments = new string('x', 501);
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = originalName,
+            size = 4,
+            overallState = "Good",
+            comments = longComments
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TENT_UPDATE_FAILED", payload.Code);
+    }
+
     private sealed class ErrorPayload
     {
         public string Error { get; set; } = string.Empty;

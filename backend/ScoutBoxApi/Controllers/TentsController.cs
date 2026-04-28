@@ -51,4 +51,23 @@ public class TentsController : ControllerBase
 
         return Ok(new { data = response });
     }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateTent([FromRoute] Guid id, [FromBody] UpdateTentRequest request)
+    {
+        var userId = _currentUserAccessor.GetValidatedUserId();
+        var (response, error, notFound) = await _tentService.UpdateTentAsync(id, userId, request);
+
+        if (notFound)
+        {
+            return NotFound(new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
+        }
+
+        if (error != null)
+        {
+            return BadRequest(error);
+        }
+
+        return Ok(new { data = response });
+    }
 }

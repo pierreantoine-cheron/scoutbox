@@ -90,6 +90,43 @@ class TentRepository {
     }
   }
 
+  Future<Tent> updateTent({
+    required String id,
+    required String name,
+    required int size,
+    required TentOverallState overallState,
+    String? comments,
+  }) async {
+    try {
+      final response = await ApiClient.instance.put(
+        '${ApiRoutes.tents}/$id',
+        data: {
+          'name': name,
+          'size': size,
+          'overallState': overallState.toApiValue(),
+          'comments': comments,
+        },
+      );
+
+      return Tent.fromJson(_readEnvelopeMap(response.data));
+    } on DioException catch (e) {
+      throw _toRepositoryException(
+        e,
+        fallbackMessage: 'Impossible de mettre à jour la tente. Réessayez.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors de la mise à jour de la tente.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors de la mise à jour de la tente.',
+      );
+    }
+  }
+
   Future<Tent> createTent({
     required String name,
     required int size,
@@ -175,6 +212,14 @@ class TentRepository {
     switch (code) {
       case 'TENT_NOT_FOUND':
         return 'Tente introuvable.';
+      case 'TENT_NAME_REQUIRED':
+        return 'Le nom de la tente est requis.';
+      case 'TENT_NAME_EXISTS':
+        return 'Une tente avec ce nom existe déjà.';
+      case 'INVALID_TENT_SIZE':
+        return 'La taille doit être comprise entre 1 et 100.';
+      case 'INVALID_TENT_STATE':
+        return "L'état de la tente est invalide.";
       default:
         return null;
     }
