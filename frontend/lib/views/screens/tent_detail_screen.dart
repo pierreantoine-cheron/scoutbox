@@ -512,11 +512,9 @@ class _EditableOverallStateSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(tentEditProvider.notifier);
-    final isEditing = editState.editingField == EditableField.overallState;
-    final isSaving =
-        editState.savingField == EditableField.overallState && isEditing;
+    final isSaving = editState.savingField == EditableField.overallState;
 
-    if (isEditing && isSaving) {
+    if (isSaving) {
       return const SizedBox(
         width: 160,
         height: 32,
@@ -524,60 +522,86 @@ class _EditableOverallStateSelector extends ConsumerWidget {
       );
     }
 
-    if (isEditing) {
-      return DropdownMenu<TentOverallState>(
-        initialSelection: tent.overallState,
-        label: const Text('État'),
-        dropdownMenuEntries: TentOverallState.values.map((state) {
+    return PopupMenuButton<TentOverallState>(
+      tooltip: '',
+      padding: EdgeInsets.zero,
+      splashRadius: 1,
+      offset: const Offset(0, 40),
+      onSelected: (state) {
+        if (state == tent.overallState) return;
+        notifier.updateField(
+          tentId: tentId,
+          name: tent.name,
+          size: tent.size,
+          overallState: state,
+          comments: tent.comments,
+        );
+      },
+      itemBuilder: (context) {
+        return TentOverallState.values.map((state) {
           final (IconData icon, Color background, Color foreground) =
               _stateColors(context, state);
-          return DropdownMenuEntry<TentOverallState>(
+          final isCurrent = state == tent.overallState;
+          return PopupMenuItem<TentOverallState>(
             value: state,
-            label: state.toFrenchLabel(),
-            leadingIcon: Icon(icon, color: foreground, size: 20),
-            style: MenuItemButton.styleFrom(backgroundColor: background),
-          );
-        }).toList(),
-        onSelected: (state) {
-          if (state == null) return;
-          if (state == tent.overallState) {
-            notifier.cancelEditing();
-            return;
-          }
-          notifier.updateField(
-            tentId: tentId,
-            name: tent.name,
-            size: tent.size,
-            overallState: state,
-            comments: tent.comments,
-          );
-        },
-      );
-    }
-
-    return InkWell(
-      onTap: () {
-        notifier.startEditing(EditableField.overallState, tent);
-      },
-      borderRadius: BorderRadius.circular(4),
-      child: Padding(
-        padding: const EdgeInsets.all(2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            StateBadge.forTent(context, tent.overallState),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 20,
-              color: Theme.of(context).colorScheme.outline,
+            enabled: !isCurrent,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: background,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, size: 16, color: foreground),
+                      const SizedBox(width: 6),
+                      Text(
+                        state.toFrenchLabel(),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: foreground,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isCurrent)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(
+                      Icons.check,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+              ],
             ),
-            if (editState.lastSavedField == EditableField.overallState) ...[
-              const SizedBox(width: 4),
-              const _SyncIndicator(),
-            ],
+          );
+        }).toList();
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          StateBadge.forTent(context, tent.overallState),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.arrow_drop_down,
+            size: 20,
+            color: Theme.of(context).colorScheme.outline,
+          ),
+          if (editState.lastSavedField == EditableField.overallState) ...[
+            const SizedBox(width: 4),
+            const _SyncIndicator(),
           ],
-        ),
+        ],
       ),
     );
   }
