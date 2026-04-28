@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,25 +12,67 @@ import '../../repositories/tent_repository.dart';
 import '../../utils/constants.dart';
 import '../widgets/state_badge.dart';
 
-class TentDetailScreen extends ConsumerWidget {
+class TentDetailScreen extends ConsumerStatefulWidget {
   final String tentId;
 
   const TentDetailScreen({super.key, required this.tentId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tentAsync = ref.watch(tentDetailProvider(tentId));
+  ConsumerState<TentDetailScreen> createState() => _TentDetailScreenState();
+}
+
+class _TentDetailScreenState extends ConsumerState<TentDetailScreen> {
+  bool _showSyncCheck = false;
+  DateTime? _lastSeenSaveTime;
+  Timer? _fadeTimer;
+
+  @override
+  void dispose() {
+    _fadeTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tentAsync = ref.watch(tentDetailProvider(widget.tentId));
+    final editState = ref.watch(tentEditProvider);
+
+    if (editState.lastSaveTime != null &&
+        editState.lastSaveTime != _lastSeenSaveTime) {
+      _lastSeenSaveTime = editState.lastSaveTime;
+      _showSyncCheck = true;
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Détail de la tente')),
+      appBar: AppBar(
+        title: const Text('Détail de la tente'),
+        actions: [
+          AnimatedOpacity(
+            opacity: _showSyncCheck ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 400),
+            onEnd: () {
+              if (_showSyncCheck) {
+                _fadeTimer?.cancel();
+                _fadeTimer = Timer(const Duration(milliseconds: 1600), () {
+                  if (mounted) setState(() => _showSyncCheck = false);
+                });
+              }
+            },
+            child: const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: Icon(Icons.cloud_done, color: Colors.green),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: tentAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => _DetailErrorState(
             message: _toErrorMessage(error),
-            onRetry: () => ref.invalidate(tentDetailProvider(tentId)),
+            onRetry: () => ref.invalidate(tentDetailProvider(widget.tentId)),
           ),
-          data: (tent) => _DetailContent(tentId: tentId, tent: tent),
+          data: (tent) => _DetailContent(tentId: widget.tentId, tent: tent),
         ),
       ),
     );
@@ -325,10 +369,6 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
               size: 20,
               color: theme.colorScheme.outline,
             ),
-            if (widget.editState.lastSavedField == EditableField.name) ...[
-              const SizedBox(width: 8),
-              const _SyncIndicator(),
-            ],
           ],
         ),
       ),
@@ -487,10 +527,6 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
               size: 16,
               color: Theme.of(context).colorScheme.outline,
             ),
-            if (widget.editState.lastSavedField == EditableField.size) ...[
-              const SizedBox(width: 4),
-              const _SyncIndicator(),
-            ],
           ],
         ),
       ),
@@ -597,10 +633,6 @@ class _EditableOverallStateSelector extends ConsumerWidget {
             size: 20,
             color: Theme.of(context).colorScheme.outline,
           ),
-          if (editState.lastSavedField == EditableField.overallState) ...[
-            const SizedBox(width: 4),
-            const _SyncIndicator(),
-          ],
         ],
       ),
     );
@@ -794,11 +826,6 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
                         size: 20,
                         color: Theme.of(context).colorScheme.outline,
                       ),
-                      if (widget.editState.lastSavedField ==
-                          EditableField.comments) ...[
-                        const SizedBox(width: 8),
-                        const _SyncIndicator(),
-                      ],
                     ],
                   ),
                 ),
@@ -977,20 +1004,6 @@ class _FieldErrorBanner extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SyncIndicator extends StatelessWidget {
-  const _SyncIndicator();
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.primary;
-
-    return Tooltip(
-      message: 'Synchronisé',
-      child: Icon(Icons.cloud_done_outlined, size: 18, color: color),
     );
   }
 }

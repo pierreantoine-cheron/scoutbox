@@ -39,7 +39,6 @@ class TentEditNotifier extends _$TentEditNotifier {
         baseTent: state.baseTent,
       ),
       pendingRetry: retryRequest,
-      clearLastSavedField: true,
       clearFieldError: true,
     );
 
@@ -59,7 +58,7 @@ class TentEditNotifier extends _$TentEditNotifier {
 
       state = state.copyWith(
         baseTent: updatedTent,
-        lastSavedField: state.savingField,
+        lastSaveTime: DateTime.now(),
         clearEditingField: true,
         clearSavingField: true,
         clearFieldError: true,
@@ -100,7 +99,6 @@ class TentEditNotifier extends _$TentEditNotifier {
       clearSavingField: true,
       clearFieldError: true,
       clearPendingRetry: true,
-      clearLastSavedField: true,
     );
   }
 
@@ -141,30 +139,29 @@ class TentEditNotifier extends _$TentEditNotifier {
 class TentEditState {
   final EditableField? editingField;
   final EditableField? savingField;
-  final EditableField? lastSavedField;
   final Tent? baseTent;
   final String? fieldError;
   final PendingTentUpdate? pendingRetry;
+  final DateTime? lastSaveTime;
 
   const TentEditState({
     this.editingField,
     this.savingField,
-    this.lastSavedField,
     this.baseTent,
     this.fieldError,
     this.pendingRetry,
+    this.lastSaveTime,
   });
 
   TentEditState copyWith({
     EditableField? editingField,
     EditableField? savingField,
-    EditableField? lastSavedField,
     Tent? baseTent,
     String? fieldError,
     PendingTentUpdate? pendingRetry,
+    DateTime? lastSaveTime,
     bool clearEditingField = false,
     bool clearSavingField = false,
-    bool clearLastSavedField = false,
     bool clearBaseTent = false,
     bool clearFieldError = false,
     bool clearPendingRetry = false,
@@ -174,14 +171,12 @@ class TentEditState {
           ? null
           : editingField ?? this.editingField,
       savingField: clearSavingField ? null : savingField ?? this.savingField,
-      lastSavedField: clearLastSavedField
-          ? null
-          : lastSavedField ?? this.lastSavedField,
       baseTent: clearBaseTent ? null : baseTent ?? this.baseTent,
       fieldError: clearFieldError ? null : fieldError ?? this.fieldError,
       pendingRetry: clearPendingRetry
           ? null
           : pendingRetry ?? this.pendingRetry,
+      lastSaveTime: lastSaveTime ?? this.lastSaveTime,
     );
   }
 }

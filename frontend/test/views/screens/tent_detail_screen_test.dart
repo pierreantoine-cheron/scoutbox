@@ -198,7 +198,7 @@ void main() {
 
         expect(repo.updateCallCount, equals(1));
         expect(find.text('Tente Renommée'), findsOneWidget);
-        expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);
+        expect(find.byIcon(Icons.cloud_done), findsOneWidget);
         expect(find.byTooltip('Valider'), findsNothing);
       },
     );
@@ -266,7 +266,7 @@ void main() {
 
       expect(repo.updateCallCount, equals(2));
       expect(find.text('Tente Retentée'), findsOneWidget);
-      expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.cloud_done), findsOneWidget);
     });
 
     testWidgets('subsequent edits keep previously saved field values', (
