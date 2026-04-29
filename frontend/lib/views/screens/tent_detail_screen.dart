@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +8,7 @@ import '../../providers/tent_detail_provider.dart';
 import '../../providers/tent_edit_provider.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/constants.dart';
+import '../widgets/fading_cloud_done_icon.dart';
 import '../widgets/state_badge.dart';
 
 class TentDetailScreen extends ConsumerStatefulWidget {
@@ -22,15 +21,8 @@ class TentDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _TentDetailScreenState extends ConsumerState<TentDetailScreen> {
-  bool _showSyncCheck = false;
+  int _syncTrigger = 0;
   DateTime? _lastSeenSaveTime;
-  Timer? _fadeTimer;
-
-  @override
-  void dispose() {
-    _fadeTimer?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,29 +32,14 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen> {
     if (editState.lastSaveTime != null &&
         editState.lastSaveTime != _lastSeenSaveTime) {
       _lastSeenSaveTime = editState.lastSaveTime;
-      _showSyncCheck = true;
+      _syncTrigger++;
     }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Détail de la tente'),
         actions: [
-          AnimatedOpacity(
-            opacity: _showSyncCheck ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 400),
-            onEnd: () {
-              if (_showSyncCheck) {
-                _fadeTimer?.cancel();
-                _fadeTimer = Timer(const Duration(milliseconds: 1600), () {
-                  if (mounted) setState(() => _showSyncCheck = false);
-                });
-              }
-            },
-            child: const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.cloud_done, color: Colors.green),
-            ),
-          ),
+          FadingCloudDoneIcon(trigger: _syncTrigger),
         ],
       ),
       body: SafeArea(

@@ -9,6 +9,7 @@ import '../../models/tent_shape.dart';
 import '../../providers/tent_creation_provider.dart';
 import '../../providers/tent_shapes_provider.dart';
 import '../../utils/constants.dart';
+import '../widgets/fading_cloud_done_icon.dart';
 import '../widgets/tent_shape_selection_grid.dart';
 
 class TentCreationScreen extends ConsumerStatefulWidget {
@@ -27,8 +28,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
   int _currentStep = 0;
   bool _didAttemptSubmit = false;
   bool _isRetryingShapes = false;
-  bool _showSuccessIndicator = false;
-  Timer? _fadeTimer;
+  int _successTrigger = 0;
   Timer? _popTimer;
 
   @override
@@ -42,7 +42,6 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
 
   @override
   void dispose() {
-    _fadeTimer?.cancel();
     _popTimer?.cancel();
     _nameController.dispose();
     _sizeController.dispose();
@@ -72,24 +71,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
         appBar: AppBar(
           title: const Text('Créer une tente'),
           actions: [
-            AnimatedOpacity(
-              opacity: _showSuccessIndicator ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 400),
-              onEnd: () {
-                if (_showSuccessIndicator) {
-                  _fadeTimer?.cancel();
-                  _fadeTimer = Timer(const Duration(milliseconds: 1600), () {
-                    if (mounted) {
-                      setState(() => _showSuccessIndicator = false);
-                    }
-                  });
-                }
-              },
-              child: const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Icon(Icons.cloud_done, color: Colors.green),
-              ),
-            ),
+            FadingCloudDoneIcon(trigger: _successTrigger),
           ],
         ),
         body: GestureDetector(
@@ -292,7 +274,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
       return;
     }
 
-    setState(() => _showSuccessIndicator = true);
+    setState(() => _successTrigger++);
     _popTimer?.cancel();
     _popTimer = Timer(const Duration(milliseconds: 800), () {
       if (mounted) Navigator.of(context).pop<Tent>(createdTent);

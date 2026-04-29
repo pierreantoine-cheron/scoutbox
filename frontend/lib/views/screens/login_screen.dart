@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
+import '../widgets/fading_cloud_done_icon.dart';
 import '../widgets/password_form_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -28,8 +27,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool _rememberUsername = false;
   bool _hasSubmitted = false;
-  bool _showSuccessIndicator = false;
-  Timer? _fadeTimer;
+  int _logoutSuccessTrigger = 0;
 
   @override
   void initState() {
@@ -43,7 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final message = ref.read(authProvider).logoutSuccessMessage;
       if (message != null) {
         ref.read(authProvider.notifier).consumeLogoutSuccessMessage();
-        setState(() => _showSuccessIndicator = true);
+        setState(() => _logoutSuccessTrigger++);
       }
     });
   }
@@ -73,7 +71,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _fadeTimer?.cancel();
     _serverController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
@@ -95,7 +92,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (next.logoutSuccessMessage != null &&
           previous?.logoutSuccessMessage != next.logoutSuccessMessage) {
         ref.read(authProvider.notifier).consumeLogoutSuccessMessage();
-        setState(() => _showSuccessIndicator = true);
+        setState(() => _logoutSuccessTrigger++);
       }
     });
 
@@ -103,22 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       appBar: AppBar(
         title: const Text('Connexion'),
         actions: [
-          AnimatedOpacity(
-            opacity: _showSuccessIndicator ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 400),
-            onEnd: () {
-              if (_showSuccessIndicator) {
-                _fadeTimer?.cancel();
-                _fadeTimer = Timer(const Duration(milliseconds: 1600), () {
-                  if (mounted) setState(() => _showSuccessIndicator = false);
-                });
-              }
-            },
-            child: const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.cloud_done, color: Colors.green),
-            ),
-          ),
+          FadingCloudDoneIcon(trigger: _logoutSuccessTrigger),
         ],
       ),
       body: Form(
