@@ -82,7 +82,7 @@ void main() {
       );
     });
 
-    testWidgets('shows and consumes logout success message', (
+    testWidgets('shows success indicator after logout', (
       WidgetTester tester,
     ) async {
       final container = ProviderContainer(
@@ -101,7 +101,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Déconnexion réussie'), findsOneWidget);
+      expect(find.byIcon(Icons.cloud_done), findsOneWidget);
       expect(container.read(authProvider).logoutSuccessMessage, isNull);
     });
   });

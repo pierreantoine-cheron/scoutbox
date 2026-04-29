@@ -115,7 +115,7 @@ void main() {
       expect(find.text('Conserver ce brouillon'), findsOneWidget);
     });
 
-    testWidgets('shows success snackbar after successful creation', (
+    testWidgets('shows success indicator after successful creation', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -144,7 +144,7 @@ void main() {
       await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
       await tester.pump();
 
-      expect(find.text('Tente créée avec succès'), findsOneWidget);
+      expect(find.byIcon(Icons.cloud_done), findsOneWidget);
     });
 
     testWidgets('filters non-digit characters in size field', (

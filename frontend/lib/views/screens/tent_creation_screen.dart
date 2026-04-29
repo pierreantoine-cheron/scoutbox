@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +27,9 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
   int _currentStep = 0;
   bool _didAttemptSubmit = false;
   bool _isRetryingShapes = false;
+  bool _showSuccessIndicator = false;
+  Timer? _fadeTimer;
+  Timer? _popTimer;
 
   @override
   void initState() {
@@ -37,6 +42,8 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
 
   @override
   void dispose() {
+    _fadeTimer?.cancel();
+    _popTimer?.cancel();
     _nameController.dispose();
     _sizeController.dispose();
     _commentsController.dispose();
@@ -62,7 +69,29 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Créer une tente')),
+        appBar: AppBar(
+          title: const Text('Créer une tente'),
+          actions: [
+            AnimatedOpacity(
+              opacity: _showSuccessIndicator ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 400),
+              onEnd: () {
+                if (_showSuccessIndicator) {
+                  _fadeTimer?.cancel();
+                  _fadeTimer = Timer(const Duration(milliseconds: 1600), () {
+                    if (mounted) {
+                      setState(() => _showSuccessIndicator = false);
+                    }
+                  });
+                }
+              },
+              child: const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(Icons.cloud_done, color: Colors.green),
+              ),
+            ),
+          ],
+        ),
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => FocusScope.of(context).unfocus(),
@@ -263,11 +292,11 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Tente créée avec succès')));
-
-    Navigator.of(context).pop<Tent>(createdTent);
+    setState(() => _showSuccessIndicator = true);
+    _popTimer?.cancel();
+    _popTimer = Timer(const Duration(milliseconds: 800), () {
+      if (mounted) Navigator.of(context).pop<Tent>(createdTent);
+    });
   }
 
   void _syncControllersFromState(TentCreationState creationState) {
