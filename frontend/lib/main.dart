@@ -47,8 +47,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
             : null,
         title: appBarConfig.title,
         actions: [
-          if (appBarConfig.actions != null) ...appBarConfig.actions!,
           FadingCloudDoneIcon(trigger: successTrigger),
+          if (appBarConfig.actions != null) ...appBarConfig.actions!,
         ],
       ),
       floatingActionButton: appBarConfig.fab,
