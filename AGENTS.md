@@ -273,6 +273,7 @@ public class UploadRequest
 - New DTO: `backend/ScoutBoxApi/Models/DTOs/`
 - New Flutter screen: `frontend/lib/views/screens/`
 - New provider: `frontend/lib/providers/` (run build_runner after)
+- New reusable widget: `frontend/lib/views/widgets/`
 - New service: `frontend/lib/services/`
 
 ## Environment Setup
