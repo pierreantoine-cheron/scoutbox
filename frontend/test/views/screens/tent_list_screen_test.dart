@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:client/providers/auth_provider.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/models/tent_shape.dart';
+import 'package:client/providers/app_bar_config_provider.dart';
 import 'package:client/providers/tent_list_provider.dart';
 import 'package:client/providers/tent_shapes_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
@@ -31,7 +32,7 @@ void main() {
               ]),
             ),
           ],
-          child: const MaterialApp(home: TentListScreen()),
+          child: const MaterialApp(home: _TentListTestShell()),
         ),
       );
       await tester.pumpAndSettle();
@@ -46,7 +47,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Se déconnecter ?'), findsNothing);
-    }, skip: true);
+    });
 
     testWidgets('disables logout button while loading', (
       WidgetTester tester,
@@ -63,7 +64,7 @@ void main() {
               () => _TentListTestNotifier(const []),
             ),
           ],
-          child: const MaterialApp(home: TentListScreen()),
+          child: const MaterialApp(home: _TentListTestShell()),
         ),
       );
       await tester.pumpAndSettle();
@@ -75,7 +76,7 @@ void main() {
         ),
       );
       expect(iconButton.onPressed, isNull);
-    }, skip: true);
+    });
 
     testWidgets('opens tent creation screen from empty-state action', (
       WidgetTester tester,
@@ -91,7 +92,7 @@ void main() {
             ),
             tentShapesProvider.overrideWith(() => _TentShapesTestNotifier()),
           ],
-          child: const MaterialApp(home: TentListScreen()),
+          child: const MaterialApp(home: _TentListTestShell()),
         ),
       );
       await tester.pumpAndSettle();
@@ -336,7 +337,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentListProvider.overrideWith(() => notifier)],
-          child: const MaterialApp(home: TentListScreen()),
+          child: const MaterialApp(home: _TentListTestShell()),
         ),
       );
       await tester.pumpAndSettle();
@@ -345,7 +346,7 @@ void main() {
       await tester.pump();
 
       expect(notifier.refreshCallCount, equals(1));
-    }, skip: true);
+    });
 
     testWidgets('renders cards and opens detail screen on tap on mobile', (
       WidgetTester tester,
@@ -362,7 +363,7 @@ void main() {
               () => _TentListTestNotifier(_buildSampleTents()),
             ),
           ],
-          child: const MaterialApp(home: TentListScreen()),
+          child: const MaterialApp(home: _TentListTestShell()),
         ),
       );
       await tester.pumpAndSettle();
@@ -1021,7 +1022,7 @@ void main() {
             ),
             tentShapesProvider.overrideWith(() => _TentShapesTestNotifier()),
           ],
-          child: const MaterialApp(home: TentListScreen()),
+          child: const MaterialApp(home: _TentListTestShell()),
         ),
       );
       await tester.pumpAndSettle();
@@ -1029,9 +1030,24 @@ void main() {
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
 
-      expect(find.text('Créer une tente'), findsOneWidget);
-    }, skip: true);
+      expect(find.text('Étape 1 : choisissez une forme'), findsOneWidget);
+    });
   });
+}
+
+class _TentListTestShell extends ConsumerWidget {
+  const _TentListTestShell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appBarConfig = ref.watch(appBarConfigProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: appBarConfig.title, actions: appBarConfig.actions),
+      floatingActionButton: appBarConfig.fab,
+      body: const TentListScreen(),
+    );
+  }
 }
 
 Future<void> _setViewportSize(WidgetTester tester, Size size) async {

@@ -39,6 +39,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     super.didChangeDependencies();
     _routeObserver ??= ref.read(routeObserverProvider);
     _routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    _scheduleConfigUpdate();
   }
 
   @override
@@ -70,37 +71,39 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     final authState = ref.read(authProvider);
     final tentsState = ref.read(tentListProvider);
 
-    ref.read(appBarConfigProvider.notifier).set(AppBarConfig(
-      screenId: 'tent_list',
-      title: const Text('ScoutBox - Tentes'),
-      actions: [
-        if (isDesktop)
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Actualiser la liste',
-            onPressed: tentsState.isLoading
-                ? null
-                : () => ref.read(tentListProvider.notifier).refresh(),
+    ref
+        .read(appBarConfigProvider.notifier)
+        .set(
+          AppBarConfig(
+            screenId: 'tent_list',
+            title: const Text('ScoutBox - Tentes'),
+            actions: [
+              if (isDesktop)
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Actualiser la liste',
+                  onPressed: tentsState.isLoading
+                      ? null
+                      : () => ref.read(tentListProvider.notifier).refresh(),
+                ),
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: authState.isLoading
+                    ? null
+                    : () => _showLogoutConfirmationDialog(context, ref),
+              ),
+            ],
+            fab: FloatingActionButton(
+              onPressed: () => _openTentCreation(context),
+              tooltip: 'Ajouter une tente',
+              child: const Icon(Icons.add),
+            ),
           ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: authState.isLoading
-              ? null
-              : () => _showLogoutConfirmationDialog(context, ref),
-        ),
-      ],
-      fab: FloatingActionButton(
-        onPressed: () => _openTentCreation(context),
-        tooltip: 'Ajouter une tente',
-        child: const Icon(Icons.add),
-      ),
-    ));
+        );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 768;
-    final authState = ref.watch(authProvider);
     final tentsState = ref.watch(tentListProvider);
     final filterState = ref.watch(tentListFilterProvider);
     final filteredTents = ref.watch(filteredTentListProvider);
@@ -110,6 +113,14 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     ref.listen(
       tentListFilterProvider.select((state) => state.searchText),
       (_, searchText) => _syncSearchController(searchText),
+    );
+    ref.listen(
+      authProvider.select((state) => state.isLoading),
+      (_, _) => _scheduleConfigUpdate(),
+    );
+    ref.listen(
+      tentListProvider.select((state) => state.isLoading),
+      (_, _) => _scheduleConfigUpdate(),
     );
 
     return Material(

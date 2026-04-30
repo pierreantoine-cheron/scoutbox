@@ -18,10 +18,16 @@ class AppBarConfig {
 
   @override
   bool operator ==(Object other) =>
-      other is AppBarConfig && other.screenId == screenId;
+      other is AppBarConfig &&
+      other.screenId == screenId &&
+      other.title == title &&
+      other.actions == actions &&
+      other.fab == fab &&
+      other.showBackButton == showBackButton;
 
   @override
-  int get hashCode => screenId.hashCode;
+  int get hashCode =>
+      Object.hash(screenId, title, actions, fab, showBackButton);
 }
 
 class AppBarConfigNotifier extends Notifier<AppBarConfig> {
@@ -35,5 +41,5 @@ class AppBarConfigNotifier extends Notifier<AppBarConfig> {
 
 final appBarConfigProvider =
     NotifierProvider<AppBarConfigNotifier, AppBarConfig>(
-  AppBarConfigNotifier.new,
-);
+      AppBarConfigNotifier.new,
+    );
