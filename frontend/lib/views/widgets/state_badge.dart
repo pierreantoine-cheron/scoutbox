@@ -83,7 +83,7 @@ class StateBadge extends StatelessWidget {
     return Semantics(
       label: label,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(999),
@@ -91,11 +91,11 @@ class StateBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: foreground),
+            Icon(icon, size: 18, color: foreground),
             const SizedBox(width: 6),
             Text(
               label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: foreground,
                 fontWeight: FontWeight.w600,
               ),
