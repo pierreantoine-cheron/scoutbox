@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/app_bar_config_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/auth_validators.dart';
@@ -63,9 +64,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Inscription')),
-      body: Form(
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(
+          screenId: 'register',
+          title: Text('Inscription'),
+        ));
+      }
+    });
+
+    return Material(
+      child: Form(
         key: _formKey,
         child: AutofillGroup(
           child: ListView(
@@ -189,8 +198,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ],
           ),
         ),
-      ),
-    );
+    ));
   }
 
   Future<void> _submit() async {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:client/models/part.dart';
 import 'package:client/models/tent.dart';
+import 'package:client/providers/success_indicator_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/views/screens/tent_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -175,10 +176,14 @@ void main() {
       'confirming valid name edit updates field and shows new value',
       (tester) async {
         final repo = _EditableTentRepository();
+        final container = ProviderContainer(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+        );
+        addTearDown(container.dispose);
 
         await tester.pumpWidget(
-          ProviderScope(
-            overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          UncontrolledProviderScope(
+            container: container,
             child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
           ),
         );
@@ -198,7 +203,7 @@ void main() {
 
         expect(repo.updateCallCount, equals(1));
         expect(find.text('Tente Renommée'), findsOneWidget);
-        expect(find.byIcon(Icons.cloud_done), findsOneWidget);
+        expect(container.read(successIndicatorProvider), equals(1));
         expect(find.byTooltip('Valider'), findsNothing);
       },
     );
@@ -236,10 +241,14 @@ void main() {
 
     testWidgets('retry resubmits the failed attempted value', (tester) async {
       final repo = _FlakyUpdateTentRepository();
+      final container = ProviderContainer(
+        overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+      );
+      addTearDown(container.dispose);
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+        UncontrolledProviderScope(
+          container: container,
           child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
         ),
       );
@@ -266,7 +275,7 @@ void main() {
 
       expect(repo.updateCallCount, equals(2));
       expect(find.text('Tente Retentée'), findsOneWidget);
-      expect(find.byIcon(Icons.cloud_done), findsOneWidget);
+      expect(container.read(successIndicatorProvider), equals(1));
     });
 
     testWidgets('subsequent edits keep previously saved field values', (

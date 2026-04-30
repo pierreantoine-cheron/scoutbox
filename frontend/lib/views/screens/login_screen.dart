@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/app_bar_config_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/success_indicator_provider.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
-import '../widgets/fading_cloud_done_icon.dart';
 import '../widgets/password_form_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -27,7 +28,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool _rememberUsername = false;
   bool _hasSubmitted = false;
-  int _logoutSuccessTrigger = 0;
 
   @override
   void initState() {
@@ -41,7 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final message = ref.read(authProvider).logoutSuccessMessage;
       if (message != null) {
         ref.read(authProvider.notifier).consumeLogoutSuccessMessage();
-        setState(() => _logoutSuccessTrigger++);
+        ref.read(successIndicatorProvider.notifier).fire();
       }
     });
   }
@@ -92,18 +92,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (next.logoutSuccessMessage != null &&
           previous?.logoutSuccessMessage != next.logoutSuccessMessage) {
         ref.read(authProvider.notifier).consumeLogoutSuccessMessage();
-        setState(() => _logoutSuccessTrigger++);
+        ref.read(successIndicatorProvider.notifier).fire();
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Connexion'),
-        actions: [
-          FadingCloudDoneIcon(trigger: _logoutSuccessTrigger),
-        ],
-      ),
-      body: Form(
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(
+          screenId: 'login',
+          title: Text('Connexion'),
+        ));
+      }
+    });
+
+    return Material(
+      child: Form(
         key: _formKey,
         child: AutofillGroup(
           child: ListView(
@@ -206,8 +209,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ],
           ),
         ),
-      ),
-    );
+    ));
   }
 
   Future<void> _submit() async {

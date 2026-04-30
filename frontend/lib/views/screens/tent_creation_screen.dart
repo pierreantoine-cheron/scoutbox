@@ -1,15 +1,14 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tent.dart';
 import '../../models/tent_shape.dart';
+import '../../providers/app_bar_config_provider.dart';
+import '../../providers/route_observer_provider.dart';
 import '../../providers/tent_creation_provider.dart';
 import '../../providers/tent_shapes_provider.dart';
 import '../../utils/constants.dart';
-import '../widgets/fading_cloud_done_icon.dart';
 import '../widgets/tent_shape_selection_grid.dart';
 
 class TentCreationScreen extends ConsumerStatefulWidget {
@@ -19,7 +18,8 @@ class TentCreationScreen extends ConsumerStatefulWidget {
   ConsumerState<TentCreationScreen> createState() => _TentCreationScreenState();
 }
 
-class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
+class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
+    with RouteAware {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _sizeController = TextEditingController();
@@ -28,8 +28,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
   int _currentStep = 0;
   bool _didAttemptSubmit = false;
   bool _isRetryingShapes = false;
-  int _successTrigger = 0;
-  Timer? _popTimer;
+  RouteObserver<ModalRoute<dynamic>>? _routeObserver;
 
   @override
   void initState() {
@@ -41,12 +40,32 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _routeObserver ??= ref.read(routeObserverProvider);
+    _routeObserver!.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
   void dispose() {
-    _popTimer?.cancel();
+    _routeObserver?.unsubscribe(this);
     _nameController.dispose();
     _sizeController.dispose();
     _commentsController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPush() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(
+          screenId: 'tent_creation',
+          title: Text('Créer une tente'),
+          showBackButton: true,
+        ));
+      }
+    });
   }
 
   @override
@@ -55,7 +74,8 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
     final creationState = ref.watch(tentCreationProvider);
     _syncControllersFromState(creationState);
 
-    return PopScope(
+    return Material(
+      child: PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) {
@@ -67,27 +87,19 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
           Navigator.of(context).pop();
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Créer une tente'),
-          actions: [
-            FadingCloudDoneIcon(trigger: _successTrigger),
-          ],
-        ),
-        body: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: _currentStep == 0
-                  ? _buildShapeStep(context, shapesState, creationState)
-                  : _buildDetailsStep(context, creationState),
-            ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: _currentStep == 0
+                ? _buildShapeStep(context, shapesState, creationState)
+                : _buildDetailsStep(context, creationState),
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildShapeStep(
@@ -274,11 +286,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen> {
       return;
     }
 
-    setState(() => _successTrigger++);
-    _popTimer?.cancel();
-    _popTimer = Timer(const Duration(milliseconds: 800), () {
-      if (mounted) Navigator.of(context).pop<Tent>(createdTent);
-    });
+    Navigator.of(context).pop<Tent>(createdTent);
   }
 
   void _syncControllersFromState(TentCreationState creationState) {

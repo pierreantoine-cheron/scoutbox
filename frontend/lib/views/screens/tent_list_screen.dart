@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tent.dart';
+import '../../providers/app_bar_config_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/route_observer_provider.dart';
+import '../../providers/success_indicator_provider.dart';
 import '../../providers/tent_filter_provider.dart';
 import '../../providers/tent_list_provider.dart';
 import '../../providers/tent_shapes_provider.dart';
@@ -20,8 +23,10 @@ class TentListScreen extends ConsumerStatefulWidget {
   ConsumerState<TentListScreen> createState() => _TentListScreenState();
 }
 
-class _TentListScreenState extends ConsumerState<TentListScreen> {
+class _TentListScreenState extends ConsumerState<TentListScreen>
+    with RouteAware {
   late final TextEditingController _searchController;
+  RouteObserver<ModalRoute<dynamic>>? _routeObserver;
 
   @override
   void initState() {
@@ -30,9 +35,66 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _routeObserver ??= ref.read(routeObserverProvider);
+    _routeObserver!.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
   void dispose() {
+    _routeObserver?.unsubscribe(this);
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPush() {
+    _scheduleConfigUpdate();
+  }
+
+  @override
+  void didPopNext() {
+    _scheduleConfigUpdate();
+  }
+
+  void _scheduleConfigUpdate() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _setAppBarConfig();
+    });
+  }
+
+  void _setAppBarConfig() {
+    if (!mounted) return;
+    final isDesktop = MediaQuery.sizeOf(context).width >= 768;
+    final authState = ref.read(authProvider);
+    final tentsState = ref.read(tentListProvider);
+
+    ref.read(appBarConfigProvider.notifier).set(AppBarConfig(
+      screenId: 'tent_list',
+      title: const Text('ScoutBox - Tentes'),
+      actions: [
+        if (isDesktop)
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Actualiser la liste',
+            onPressed: tentsState.isLoading
+                ? null
+                : () => ref.read(tentListProvider.notifier).refresh(),
+          ),
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: authState.isLoading
+              ? null
+              : () => _showLogoutConfirmationDialog(context, ref),
+        ),
+      ],
+      fab: FloatingActionButton(
+        onPressed: () => _openTentCreation(context),
+        tooltip: 'Ajouter une tente',
+        child: const Icon(Icons.add),
+      ),
+    ));
   }
 
   @override
@@ -50,27 +112,8 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
       (_, searchText) => _syncSearchController(searchText),
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('ScoutBox - Tentes'),
-        actions: [
-          if (isDesktop)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Actualiser la liste',
-              onPressed: tentsState.isLoading
-                  ? null
-                  : () => ref.read(tentListProvider.notifier).refresh(),
-            ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: authState.isLoading
-                ? null
-                : () => _showLogoutConfirmationDialog(context, ref),
-          ),
-        ],
-      ),
-      body: SafeArea(
+    return Material(
+      child: SafeArea(
         child: tentsState.when(
           loading: _buildLoadingState,
           error: (error, _) => _buildErrorState(error),
@@ -82,11 +125,6 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
             filterState: filterState,
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openTentCreation(context),
-        tooltip: 'Ajouter une tente',
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -319,6 +357,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen> {
       return;
     }
 
+    ref.read(successIndicatorProvider.notifier).fire();
     ref.read(tentListProvider.notifier).showTent(createdTent);
     await ref.read(tentListProvider.notifier).refresh();
   }

@@ -4,11 +4,13 @@ import 'package:intl/intl.dart';
 
 import '../../models/part.dart';
 import '../../models/tent.dart';
+import '../../providers/app_bar_config_provider.dart';
+import '../../providers/route_observer_provider.dart';
+import '../../providers/success_indicator_provider.dart';
 import '../../providers/tent_detail_provider.dart';
 import '../../providers/tent_edit_provider.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/constants.dart';
-import '../widgets/fading_cloud_done_icon.dart';
 import '../widgets/state_badge.dart';
 
 class TentDetailScreen extends ConsumerStatefulWidget {
@@ -20,9 +22,36 @@ class TentDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<TentDetailScreen> createState() => _TentDetailScreenState();
 }
 
-class _TentDetailScreenState extends ConsumerState<TentDetailScreen> {
-  int _syncTrigger = 0;
+class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
+    with RouteAware {
   DateTime? _lastSeenSaveTime;
+  RouteObserver<ModalRoute<dynamic>>? _routeObserver;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _routeObserver ??= ref.read(routeObserverProvider);
+    _routeObserver!.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    _routeObserver?.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPush() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(
+          screenId: 'tent_detail',
+          title: Text('Détail de la tente'),
+          showBackButton: true,
+        ));
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,27 +61,22 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen> {
     if (editState.lastSaveTime != null &&
         editState.lastSaveTime != _lastSeenSaveTime) {
       _lastSeenSaveTime = editState.lastSaveTime;
-      _syncTrigger++;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(successIndicatorProvider.notifier).fire();
+      });
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Détail de la tente'),
-        actions: [
-          FadingCloudDoneIcon(trigger: _syncTrigger),
-        ],
-      ),
-      body: SafeArea(
-        child: tentAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => _DetailErrorState(
-            message: _toErrorMessage(error),
-            onRetry: () => ref.invalidate(tentDetailProvider(widget.tentId)),
-          ),
-          data: (tent) => _DetailContent(tentId: widget.tentId, tent: tent),
+    return Material(
+      child: SafeArea(
+      child: tentAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => _DetailErrorState(
+          message: _toErrorMessage(error),
+          onRetry: () => ref.invalidate(tentDetailProvider(widget.tentId)),
         ),
+        data: (tent) => _DetailContent(tentId: widget.tentId, tent: tent),
       ),
-    );
+    ));
   }
 
   String _toErrorMessage(Object error) {

@@ -1,14 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'providers/app_bar_config_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/route_observer_provider.dart';
+import 'providers/success_indicator_provider.dart';
 import 'views/screens/login_screen.dart';
 import 'views/screens/register_screen.dart';
 import 'views/screens/tent_list_screen.dart';
+import 'views/widgets/fading_cloud_done_icon.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: ScoutBoxApp()));
+}
+
+class AuthGate extends ConsumerStatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  ConsumerState<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<AuthGate> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
+
+  @override
+  void initState() {
+    super.initState();
+    _routeObserver = ref.read(routeObserverProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final appBarConfig = ref.watch(appBarConfigProvider);
+    final successTrigger = ref.watch(successIndicatorProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: appBarConfig.showBackButton
+            ? BackButton(
+                onPressed: () => _navigatorKey.currentState?.pop(),
+              )
+            : null,
+        title: appBarConfig.title,
+        actions: [
+          if (appBarConfig.actions != null) ...appBarConfig.actions!,
+          FadingCloudDoneIcon(trigger: successTrigger),
+        ],
+      ),
+      floatingActionButton: appBarConfig.fab,
+      body: authState.isAuthenticated
+          ? Navigator(
+              key: _navigatorKey,
+              observers: [_routeObserver],
+              onGenerateInitialRoutes: (navigator, initialRoute) {
+                return [
+                  MaterialPageRoute(builder: (_) => const TentListScreen()),
+                ];
+              },
+            )
+          : authState.showLoginScreen
+              ? const LoginScreen()
+              : const RegisterScreen(),
+    );
+  }
 }
 
 class ScoutBoxApp extends ConsumerStatefulWidget {
@@ -102,24 +160,5 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
       ),
       home: const AuthGate(),
     );
-  }
-}
-
-class AuthGate extends ConsumerWidget {
-  const AuthGate({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-
-    if (authState.isAuthenticated) {
-      return const TentListScreen();
-    }
-
-    if (authState.showLoginScreen) {
-      return const LoginScreen();
-    }
-
-    return const RegisterScreen();
   }
 }

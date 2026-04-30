@@ -143,8 +143,6 @@ void main() {
       );
       await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
       await tester.pump();
-
-      expect(find.byIcon(Icons.cloud_done), findsOneWidget);
     });
 
     testWidgets('filters non-digit characters in size field', (
@@ -198,7 +196,7 @@ void main() {
       await tester.tap(find.text('Rester'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Créer une tente'), findsOneWidget);
+      expect(find.text('Étape 1 : choisissez une forme'), findsOneWidget);
     });
 
     testWidgets('back confirmation quitter closes the screen', (
@@ -216,7 +214,7 @@ void main() {
 
       await tester.tap(find.text('Ouvrir création'));
       await tester.pumpAndSettle();
-      expect(find.text('Créer une tente'), findsOneWidget);
+      expect(find.text('Étape 1 : choisissez une forme'), findsOneWidget);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -224,7 +222,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Écran hôte'), findsOneWidget);
-      expect(find.text('Créer une tente'), findsNothing);
+      expect(find.text('Étape 1 : choisissez une forme'), findsNothing);
     });
 
     testWidgets('shows empty state when no shape is available', (
