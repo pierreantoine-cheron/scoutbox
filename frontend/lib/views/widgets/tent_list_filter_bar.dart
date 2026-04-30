@@ -59,64 +59,58 @@ class TentListFilterBar extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                  Wrap(
+                    spacing: 24,
+                    runSpacing: 16,
+                    children: [
+                      _DesktopCategory(
+                        label: 'Etat',
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final state in TentOverallState.values)
+                              FilterChip(
+                                label: Text(state.toFrenchLabel()),
+                                selected: selectedStates.contains(state),
+                                onSelected: (_) => onToggleState(state),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (availableSizes.isNotEmpty)
                         _DesktopCategory(
-                          label: 'Etat',
+                          label: 'Taille',
                           child: Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              for (final state in TentOverallState.values)
+                              for (final size in availableSizes)
                                 FilterChip(
-                                  label: Text(state.toFrenchLabel()),
-                                  selected: selectedStates.contains(state),
-                                  onSelected: (_) => onToggleState(state),
+                                  label: Text(_sizeLabel(size)),
+                                  selected: selectedSizes.contains(size),
+                                  onSelected: (_) => onToggleSize(size),
                                 ),
                             ],
                           ),
                         ),
-                        if (availableSizes.isNotEmpty) ...[
-                          const SizedBox(width: 24),
-                          _DesktopCategory(
-                            label: 'Taille',
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final size in availableSizes)
-                                  FilterChip(
-                                    label: Text(_sizeLabel(size)),
-                                    selected: selectedSizes.contains(size),
-                                    onSelected: (_) => onToggleSize(size),
-                                  ),
-                              ],
-                            ),
+                      if (availableShapeOptions.isNotEmpty)
+                        _DesktopCategory(
+                          label: 'Type',
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final option in availableShapeOptions)
+                                FilterChip(
+                                  label: Text(option.label),
+                                  selected: selectedShapeIds.contains(option.id),
+                                  onSelected: (_) => onToggleShape(option.id),
+                                ),
+                            ],
                           ),
-                        ],
-                        if (availableShapeOptions.isNotEmpty) ...[
-                          const SizedBox(width: 24),
-                          _DesktopCategory(
-                            label: 'Type',
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final option in availableShapeOptions)
-                                  FilterChip(
-                                    label: Text(option.label),
-                                    selected: selectedShapeIds.contains(option.id),
-                                    onSelected: (_) => onToggleShape(option.id),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                   if (isFilteredMode) ...[
                     const SizedBox(height: 12),
