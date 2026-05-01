@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/models.dart';
 import '../repositories/tent_repository.dart';
+import '../services/error_localizer.dart';
 import '../utils/constants.dart';
 
 part 'tent_creation_provider.g.dart';
@@ -126,7 +127,7 @@ class TentCreationNotifier extends _$TentCreationNotifier {
     } on TentRepositoryException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        submitError: _mapErrorCodeToFrenchMessage(e.code),
+        submitError: ErrorLocalizer.localize(e.code),
       );
       return null;
     } catch (_) {
@@ -135,23 +136,6 @@ class TentCreationNotifier extends _$TentCreationNotifier {
         submitError: 'Erreur serveur. Réessayez.',
       );
       return null;
-    }
-  }
-
-  String _mapErrorCodeToFrenchMessage(String? code) {
-    switch (code) {
-      case ErrorCodes.tentNameRequired:
-        return 'Le nom de la tente est requis';
-      case ErrorCodes.tentNameExists:
-        return 'Une tente avec ce nom existe déjà';
-      case ErrorCodes.invalidTentSize:
-        return 'La taille doit être un nombre positif';
-      case ErrorCodes.invalidTentShape:
-        return 'La forme de tente sélectionnée est invalide';
-      case ErrorCodes.invalidTentState:
-        return 'L\'état global de la tente est invalide';
-      default:
-        return 'Erreur serveur. Réessayez.';
     }
   }
 }

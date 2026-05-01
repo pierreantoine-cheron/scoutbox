@@ -1,3 +1,5 @@
+import '../utils/date_time_parser.dart';
+
 enum PartState {
   good,
   needsRepair,
@@ -62,20 +64,8 @@ class Part {
       displayOrder: json['displayOrder'] as int,
       state: PartState.fromApiValue(json['state'] as String),
       comments: json['comments'] as String?,
-      createdAt: _parseDateTime(json['createdAt']),
-      updatedAt: _parseDateTime(json['updatedAt']),
+      createdAt: DateTimeParser.parseNullable(json['createdAt']),
+      updatedAt: DateTimeParser.parseNullable(json['updatedAt']),
     );
-  }
-
-  static DateTime? _parseDateTime(Object? value) {
-    if (value is String && value.isNotEmpty) {
-      return DateTime.parse(value);
-    }
-
-    if (value is DateTime) {
-      return value;
-    }
-
-    return null;
   }
 }

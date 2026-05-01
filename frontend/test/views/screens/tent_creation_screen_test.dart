@@ -269,7 +269,7 @@ void main() {
       );
 
       repo.fail = false;
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Réessayer'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Réessayer'));
       await tester.pumpAndSettle();
 
       expect(find.text('Canadienne'), findsOneWidget);

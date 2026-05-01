@@ -6,7 +6,7 @@ import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/constants.dart';
-import '../widgets/state_badge.dart';
+import '../widgets/widgets.dart';
 
 class TentDetailScreen extends ConsumerStatefulWidget {
   final String tentId;
@@ -89,7 +89,7 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
       child: SafeArea(
         child: tentAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => _DetailErrorState(
+          error: (error, _) => AsyncErrorView(
             message: _toErrorMessage(error),
             onRetry: () => ref.invalidate(tentDetailProvider(widget.tentId)),
           ),
@@ -1011,38 +1011,6 @@ class _FieldErrorBanner extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onErrorContainer,
               ),
               onPressed: onDismiss,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DetailErrorState extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _DetailErrorState({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
             ),
           ],
         ),

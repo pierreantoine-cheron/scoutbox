@@ -53,6 +53,7 @@ class ErrorCodes {
   static const String invalidTentShape = 'INVALID_TENT_SHAPE';
   static const String invalidTentState = 'INVALID_TENT_STATE';
   static const String tentCreateFailed = 'TENT_CREATE_FAILED';
+  static const String tentNotFound = 'TENT_NOT_FOUND';
 }
 
 // API timeouts

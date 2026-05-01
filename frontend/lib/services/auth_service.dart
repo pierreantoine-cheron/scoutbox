@@ -6,6 +6,7 @@ import '../utils/app_config.dart';
 import '../utils/constants.dart';
 import '../utils/design_constants.dart';
 import 'api_client.dart';
+import 'error_localizer.dart';
 import 'secure_storage_service.dart';
 
 /// Maps backend error codes to user-friendly error messages in French
@@ -13,37 +14,8 @@ import 'secure_storage_service.dart';
 /// Internal API error messages (english) should remain as-is
 /// User-facing error messages (french) should be returned to UI
 ///
-/// For unknown error codes:
-/// - Beta channel: returns backend message (if available) for diagnostics
-/// - Release channel: returns generic French fallback for safety
-String _getErrorMessage(String code, String defaultMessage) {
-  switch (code) {
-    case ErrorCodes.invalidInvite:
-      return "Code d'invitation invalide, expiré ou déjà utilisé";
-    case ErrorCodes.usernameExists:
-      return "Ce nom d'utilisateur est déjà pris";
-    case ErrorCodes.duplicateCode:
-      return "Ce code d'invitation existe déjà";
-    case ErrorCodes.codeGenerationFailed:
-      return "Impossible de générer un code d'invitation. Veuillez réessayer.";
-    case ErrorCodes.invalidRefreshToken:
-      return 'Session expirée. Veuillez vous reconnecter.';
-    case ErrorCodes.invalidCredentials:
-      return 'Identifiants incorrects. Veuillez réessayer.';
-    case ErrorCodes.unauthorized:
-      return 'Accès non autorisé';
-    case ErrorCodes.internalError:
-      return 'Une erreur interne est survenue. Veuillez réessayer plus tard.';
-    default:
-      // Unknown error code: channel-aware handling
-      if (AppConfig.showUnknownBackendDetails && defaultMessage.isNotEmpty) {
-        // Beta: show backend message for diagnostics
-        return defaultMessage;
-      }
-      // Release: generic French fallback
-      return 'Une erreur est survenue. Veuillez réessayer.';
-  }
-}
+/// Localized via ErrorLocalizer — one central source of truth.
+
 
 /// Result of a token refresh operation
 class RefreshResult {
@@ -255,9 +227,9 @@ class AuthService {
         final errorResponse = ErrorResponse.fromJson(
           e.response!.data as Map<String, dynamic>,
         );
-        final userMessage = _getErrorMessage(
+        final userMessage = ErrorLocalizer.localize(
           errorResponse.code,
-          errorResponse.error,
+          fallback: errorResponse.error,
         );
         return AuthResult.failure(error: userMessage, code: errorResponse.code);
       } catch (_) {

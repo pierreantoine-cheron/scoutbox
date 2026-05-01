@@ -152,8 +152,11 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   }
 
   Widget _buildErrorState(Object error) {
-    return TentListInlineErrorState(
-      error: error,
+    final message = error is TentRepositoryException
+        ? error.message
+        : 'Impossible de charger les tentes. Réessayez.';
+    return AsyncErrorView(
+      message: message,
       onRetry: () => ref.read(tentListProvider.notifier).retry(),
     );
   }
@@ -497,43 +500,6 @@ class _FilteredEmptyState extends StatelessWidget {
             onPressed: onClearFilters,
             child: const Text('Effacer les filtres'),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class TentListInlineErrorState extends StatelessWidget {
-  final Object error;
-  final Future<void> Function() onRetry;
-
-  const TentListInlineErrorState({
-    super.key,
-    required this.error,
-    required this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final message = error is TentRepositoryException
-        ? (error as TentRepositoryException).message
-        : 'Impossible de charger les tentes. Réessayez.';
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Center(
-          child: Text(
-            message,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        ),
-        const SizedBox(height: 12),
-        FilledButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh),
-          label: const Text('Réessayer'),
         ),
       ],
     );

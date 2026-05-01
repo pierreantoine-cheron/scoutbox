@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../utils/constants.dart';
-import '../widgets/tent_shape_selection_grid.dart';
+import '../widgets/widgets.dart';
 
 class TentCreationScreen extends ConsumerStatefulWidget {
   const TentCreationScreen({super.key});
@@ -128,7 +128,8 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
         Expanded(
           child: shapesState.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => _ShapesErrorView(
+            error: (_, _) => AsyncErrorView(
+              message: 'Impossible de charger les formes de tentes.',
               isRetrying: _isRetryingShapes,
               onRetry: _retryShapes,
             ),
@@ -382,36 +383,6 @@ class _ShapesEmptyView extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: Text('Aucune forme de tente disponible pour le moment.'),
-    );
-  }
-}
-
-class _ShapesErrorView extends StatelessWidget {
-  final bool isRetrying;
-  final VoidCallback onRetry;
-
-  const _ShapesErrorView({required this.isRetrying, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('Impossible de charger les formes de tentes.'),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: isRetrying ? null : onRetry,
-            child: isRetrying
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Réessayer'),
-          ),
-        ],
-      ),
     );
   }
 }

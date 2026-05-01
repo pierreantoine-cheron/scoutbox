@@ -132,7 +132,7 @@ void main() {
       );
       await expectCodeMessage(
         ErrorCodes.invalidTentSize,
-        'La taille doit être un nombre positif',
+        'La taille doit être comprise entre 1 et 100',
       );
       await expectCodeMessage(
         ErrorCodes.invalidTentShape,
@@ -140,7 +140,7 @@ void main() {
       );
       await expectCodeMessage(
         ErrorCodes.invalidTentState,
-        'L\'état global de la tente est invalide',
+        "L'état de la tente est invalide",
       );
     });
 

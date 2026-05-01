@@ -1,3 +1,4 @@
+import '../utils/date_time_parser.dart';
 import '../utils/design_constants.dart';
 
 /// Data model matching backend AuthResponse DTO
@@ -25,30 +26,15 @@ class AuthResponse {
     return AuthResponse(
       accessToken: json['accessToken'] as String,
       refreshToken: json['refreshToken'] as String,
-      accessTokenExpires: _parseRequiredDateTime(
-        value: accessTokenExpiresRaw,
+      accessTokenExpires: DateTimeParser.parseRequired(
+        accessTokenExpiresRaw,
         fieldName: 'accessTokenExpires',
       ),
-      refreshTokenExpires: _parseRequiredDateTime(
-        value: refreshTokenExpiresRaw,
+      refreshTokenExpires: DateTimeParser.parseRequired(
+        refreshTokenExpiresRaw,
         fieldName: 'refreshTokenExpires',
       ),
     );
-  }
-
-  static DateTime _parseRequiredDateTime({
-    required Object? value,
-    required String fieldName,
-  }) {
-    if (value is! String) {
-      throw FormatException('$fieldName must be a valid ISO-8601 string');
-    }
-
-    try {
-      return DateTime.parse(value);
-    } on FormatException {
-      throw FormatException('$fieldName must be a valid ISO-8601 string');
-    }
   }
 
   Map<String, dynamic> toJson() {

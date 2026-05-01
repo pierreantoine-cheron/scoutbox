@@ -11,6 +11,7 @@ import 'package:client/providers/tent_list_provider.dart';
 import 'package:client/providers/tent_shapes_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/views/screens/tent_list_screen.dart';
+import 'package:client/views/widgets/async_error_view.dart';
 
 void main() {
   group('TentListScreen', () {
@@ -451,11 +452,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: TentListInlineErrorState(
-              error: const TentRepositoryException(
-                code: 'INTERNAL_ERROR',
-                message: 'Erreur serveur. Réessayez.',
-              ),
+            body: AsyncErrorView(
+              message: 'Erreur serveur. Réessayez.',
               onRetry: () async {
                 retryCallCount++;
               },

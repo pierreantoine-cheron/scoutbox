@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../utils/date_time_parser.dart';
 import 'part.dart';
 
 enum TentOverallState {
@@ -82,8 +83,8 @@ class Tent {
       ),
       isArchived: json['isArchived'] as bool? ?? false,
       comments: json['comments'] as String?,
-      createdAt: _parseUpdatedAt(json['createdAt']),
-      updatedAt: _parseUpdatedAt(json['updatedAt']),
+      createdAt: DateTimeParser.parseNullable(json['createdAt']),
+      updatedAt: DateTimeParser.parseNullable(json['updatedAt']),
       parts: _parseParts(json['parts']),
     );
   }
@@ -95,18 +96,6 @@ class Tent {
     }
 
     return formatter.format(value.toLocal());
-  }
-
-  static DateTime? _parseUpdatedAt(Object? value) {
-    if (value is String && value.isNotEmpty) {
-      return DateTime.parse(value);
-    }
-
-    if (value is DateTime) {
-      return value;
-    }
-
-    return null;
   }
 
   static List<Part> _parseParts(Object? value) {

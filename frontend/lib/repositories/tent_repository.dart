@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/models.dart';
 import '../services/api_client.dart';
+import '../services/error_localizer.dart';
 import '../utils/constants.dart';
 
 part 'tent_repository.g.dart';
@@ -224,28 +225,11 @@ class TentRepository {
       final error = responseData['error'] as String?;
       return TentRepositoryException(
         code: code,
-        message: _localizedMessageForCode(code) ?? error ?? fallbackMessage,
+        message: ErrorLocalizer.localize(code, fallback: error),
       );
     }
 
     return TentRepositoryException(message: fallbackMessage);
-  }
-
-  String? _localizedMessageForCode(String? code) {
-    switch (code) {
-      case 'TENT_NOT_FOUND':
-        return 'Tente introuvable.';
-      case 'TENT_NAME_REQUIRED':
-        return 'Le nom de la tente est requis.';
-      case 'TENT_NAME_EXISTS':
-        return 'Une tente avec ce nom existe déjà.';
-      case 'INVALID_TENT_SIZE':
-        return 'La taille doit être comprise entre 1 et 100.';
-      case 'INVALID_TENT_STATE':
-        return "L'état de la tente est invalide.";
-      default:
-        return null;
-    }
   }
 }
 
