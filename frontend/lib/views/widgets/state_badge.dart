@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/models.dart';
+import '../../utils/app_colors.dart';
 
 class StateBadgeStyle {
   final String label;
@@ -21,6 +22,7 @@ StateBadgeStyle tentStateBadgeStyle(
   TentOverallState state,
 ) {
   final colorScheme = Theme.of(context).colorScheme;
+  final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
   final (icon, background, foreground) = switch (state) {
     TentOverallState.good => (
       Icons.check_circle_outline,
@@ -29,8 +31,8 @@ StateBadgeStyle tentStateBadgeStyle(
     ),
     TentOverallState.needsRepair => (
       Icons.build_circle_outlined,
-      Colors.orange.shade100,
-      Colors.orange.shade900,
+      semanticColors.warningContainer,
+      semanticColors.onWarningContainer,
     ),
     TentOverallState.unusable => (
       Icons.cancel_outlined,
@@ -49,6 +51,7 @@ StateBadgeStyle tentStateBadgeStyle(
 
 StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
   final colorScheme = Theme.of(context).colorScheme;
+  final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
   final (icon, background, foreground) = switch (state) {
     PartState.good => (
       Icons.check_circle_outline,
@@ -57,8 +60,8 @@ StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
     ),
     PartState.needsRepair => (
       Icons.build_circle_outlined,
-      Colors.orange.shade100,
-      Colors.orange.shade900,
+      semanticColors.warningContainer,
+      semanticColors.onWarningContainer,
     ),
     PartState.missing => (
       Icons.remove_circle_outline,

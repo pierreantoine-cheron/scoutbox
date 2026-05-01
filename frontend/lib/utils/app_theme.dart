@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 class AppTheme {
   AppTheme._();
 
   static ThemeData theme(BuildContext context) {
     return ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+      colorScheme: ColorScheme.fromSeed(seedColor: AppColors.scoutGreen),
+      extensions: const [
+        AppSemanticColors(
+          success: AppColors.success,
+          warningContainer: AppColors.warningContainer,
+          onWarningContainer: AppColors.onWarningContainer,
+        ),
+      ],
       useMaterial3: true,
       appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -28,7 +37,14 @@ class AppTheme {
 
   static ThemeData minimal() {
     return ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+      colorScheme: ColorScheme.fromSeed(seedColor: AppColors.scoutGreen),
+      extensions: const [
+        AppSemanticColors(
+          success: AppColors.success,
+          warningContainer: AppColors.warningContainer,
+          onWarningContainer: AppColors.onWarningContainer,
+        ),
+      ],
       useMaterial3: true,
     );
   }
