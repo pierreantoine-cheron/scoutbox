@@ -11,10 +11,12 @@ public class TokenService
     private const int MinimumJwtKeyLength = 32;
     private const string JwtKeyPlaceholder = "__SET_JWT_KEY_IN_ENV__";
 
-    // Token lifetime constants
-    public const int AccessTokenLifetimeMinutes = 15;
-    public const int RefreshTokenLifetimeDays = 180;
+    // Token lifetime defaults (overridable via appsettings.json Jwt section)
+    private const int DefaultAccessTokenLifetimeMinutes = 15;
+    private const int DefaultRefreshTokenLifetimeDays = 180;
 
+    private readonly int _accessTokenLifetimeMinutes;
+    private readonly int _refreshTokenLifetimeDays;
     private readonly string _jwtKey;
     private readonly string _jwtIssuer;
     private readonly string _jwtAudience;
@@ -25,7 +27,13 @@ public class TokenService
         _jwtKey = settings.Key;
         _jwtIssuer = settings.Issuer;
         _jwtAudience = settings.Audience;
+
+        _accessTokenLifetimeMinutes = configuration.GetValue("Jwt:AccessTokenLifetimeMinutes", DefaultAccessTokenLifetimeMinutes);
+        _refreshTokenLifetimeDays = configuration.GetValue("Jwt:RefreshTokenLifetimeDays", DefaultRefreshTokenLifetimeDays);
     }
+
+    public int AccessTokenLifetimeMinutes => _accessTokenLifetimeMinutes;
+    public int RefreshTokenLifetimeDays => _refreshTokenLifetimeDays;
 
     public static (string Key, string Issuer, string Audience) GetValidatedJwtSettings(IConfiguration configuration)
     {
@@ -61,7 +69,7 @@ public class TokenService
             issuer: _jwtIssuer,
             audience: _jwtAudience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(AccessTokenLifetimeMinutes),
+            expires: DateTime.UtcNow.AddMinutes(_accessTokenLifetimeMinutes),
             signingCredentials: credentials
         );
 

@@ -78,26 +78,11 @@ public class ScoutBoxDbContext : DbContext
 
         foreach (var entry in entities)
         {
-            string? nameValue = null;
-            string entityType = entry.Entity.GetType().Name;
-
-            switch (entry.Entity)
+            if (entry.Entity is IHasName namedEntity)
             {
-                case Tent tent:
-                    nameValue = tent.Name;
-                    break;
-                case TentShape shape:
-                    nameValue = shape.Name;
-                    break;
-                case PartKind partKind:
-                    nameValue = partKind.Name;
-                    break;
-            }
-
-            if (nameValue is not null)
-            {
-                if (string.IsNullOrWhiteSpace(nameValue))
+                if (string.IsNullOrWhiteSpace(namedEntity.Name))
                 {
+                    var entityType = entry.Entity.GetType().Name;
                     throw new InvalidOperationException($"{entityType}.Name cannot be empty or whitespace-only.");
                 }
             }

@@ -9,13 +9,15 @@ public class AuthService
 {
     private readonly ScoutBoxDbContext _db;
     private readonly TokenService _tokenService;
+    private readonly InviteService _inviteService;
     private readonly IAuditService _auditService;
     private readonly ILogger<AuthService> _logger;
 
-    public AuthService(ScoutBoxDbContext db, TokenService tokenService, IAuditService auditService, ILogger<AuthService> logger)
+    public AuthService(ScoutBoxDbContext db, TokenService tokenService, InviteService inviteService, IAuditService auditService, ILogger<AuthService> logger)
     {
         _db = db;
         _tokenService = tokenService;
+        _inviteService = inviteService;
         _auditService = auditService;
         _logger = logger;
     }
@@ -59,10 +61,8 @@ public class AuthService
             return (null, new ErrorResponse("This username already exists", "USERNAME_EXISTS"));
         }
 
-        // Consume invite (only difference is how it's consumed)
-        var inviteConsumed = isRelational
-            ? await TryConsumeInviteRelationalAsync(request.InviteCode, userId, now)
-            : await TryConsumeInviteNonRelationalAsync(request.InviteCode, userId, now);
+        // Consume invite
+        var inviteConsumed = await _inviteService.TryConsumeInviteAsync(request.InviteCode, userId, now);
 
         if (!inviteConsumed)
         {
@@ -103,61 +103,7 @@ public class AuthService
 
     public async Task<(InviteResponse? Response, ErrorResponse? Error)> CreateInviteAsync(Guid createdByUserId, CreateInviteRequest request)
     {
-        if (request.ExpiresInDays is < 1 or > 365)
-        {
-            return (null, new ErrorResponse("Invite expiration must be between 1 and 365 days", "INVALID_EXPIRES_IN_DAYS"));
-        }
-
-        string? code;
-
-        if (!string.IsNullOrEmpty(request.Code))
-        {
-            if (await _db.Invites.AnyAsync(i => i.Code == request.Code))
-            {
-                return (null, new ErrorResponse("This invite code already exists", "DUPLICATE_CODE"));
-            }
-            code = request.Code;
-        }
-        else
-        {
-            code = await GenerateAvailableCodeAsync();
-
-            if (code == null)
-            {
-                return (null, new ErrorResponse("Unable to generate an available invite code. Please provide a custom code.", "CODE_GENERATION_FAILED"));
-            }
-        }
-
-        var invite = new Invite
-        {
-            Id = Guid.NewGuid(),
-            Code = code,
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(request.ExpiresInDays),
-            IsUsed = false,
-            CreatedByUserId = createdByUserId
-        };
-
-        await _db.Invites.AddAsync(invite);
-
-        // Record audit event for invite creation
-        _auditService.RecordEvent(
-            AuditActions.InviteCreated,
-            createdByUserId,
-            nameof(Invite),
-            invite.Id,
-            new Dictionary<string, object?>
-            {
-                ["code"] = code,
-                ["expiresInDays"] = request.ExpiresInDays,
-                ["isCustomCode"] = !string.IsNullOrEmpty(request.Code)
-            });
-
-        await _db.SaveChangesAsync();
-
-        _logger.LogInformation("Invite created: {Code} by user {UserId}", code, createdByUserId);
-
-        return (new InviteResponse(invite.Id, invite.Code, invite.ExpiresAt, invite.IsUsed), null);
+        return await _inviteService.CreateInviteAsync(createdByUserId, request);
     }
 
     public async Task<(AuthResponse? Response, ErrorResponse? Error)> LoginAsync(LoginRequest request)
@@ -204,7 +150,7 @@ public class AuthService
             Id = Guid.NewGuid(),
             Token = refreshTokenHash,
             UserId = userId,
-            ExpiresAt = now.AddDays(TokenService.RefreshTokenLifetimeDays),
+            ExpiresAt = now.AddDays(_tokenService.RefreshTokenLifetimeDays),
             CreatedAt = now,
             IsRevoked = false
         });
@@ -222,25 +168,8 @@ public class AuthService
         return (new AuthResponse(
             accessToken,
             refreshToken,
-            now.AddMinutes(TokenService.AccessTokenLifetimeMinutes),
-            now.AddDays(TokenService.RefreshTokenLifetimeDays)), null);
-    }
-
-    private async Task<string?> GenerateAvailableCodeAsync(int maxAttempts = 3)
-    {
-        for (int attempt = 0; attempt < maxAttempts; attempt++)
-        {
-            var code = TokenService.GenerateRandomCode(9);
-
-            if (!await _db.Invites.AnyAsync(i => i.Code == code))
-            {
-                return code;
-            }
-
-            _logger.LogWarning("Generated invite code collision on attempt {Attempt}: {Code}", attempt + 1, code);
-        }
-
-        return null;
+            now.AddMinutes(_tokenService.AccessTokenLifetimeMinutes),
+            now.AddDays(_tokenService.RefreshTokenLifetimeDays)), null);
     }
 
     public async Task<(AuthResponse? Response, ErrorResponse? Error)> RefreshTokenAsync(string refreshToken)
@@ -292,7 +221,7 @@ public class AuthService
             Id = Guid.NewGuid(),
             Token = newRefreshTokenHash,
             UserId = user.Id,
-            ExpiresAt = now.AddDays(TokenService.RefreshTokenLifetimeDays),
+            ExpiresAt = now.AddDays(_tokenService.RefreshTokenLifetimeDays),
             CreatedAt = now,
             IsRevoked = false
         });
@@ -313,37 +242,8 @@ public class AuthService
         return (new AuthResponse(
             newAccessToken,
             newRefreshToken,
-            now.AddMinutes(TokenService.AccessTokenLifetimeMinutes),
-            now.AddDays(TokenService.RefreshTokenLifetimeDays)), null);
-    }
-
-    private async Task<bool> TryConsumeInviteRelationalAsync(string inviteCode, Guid userId, DateTime consumedAt)
-    {
-        var affectedRows = await _db.Invites
-            .Where(i => i.Code == inviteCode && !i.IsUsed && i.ExpiresAt > consumedAt)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(i => i.IsUsed, true)
-                .SetProperty(i => i.UsedByUserId, userId)
-                .SetProperty(i => i.UsedAt, consumedAt));
-
-        return affectedRows == 1;
-    }
-
-    private async Task<bool> TryConsumeInviteNonRelationalAsync(string inviteCode, Guid userId, DateTime consumedAt)
-    {
-        var invite = await _db.Invites
-            .FirstOrDefaultAsync(i => i.Code == inviteCode);
-
-        if (invite == null || invite.IsUsed || invite.ExpiresAt <= consumedAt)
-        {
-            return false;
-        }
-
-        invite.IsUsed = true;
-        invite.UsedByUserId = userId;
-        invite.UsedAt = consumedAt;
-
-        return true;
+            now.AddMinutes(_tokenService.AccessTokenLifetimeMinutes),
+            now.AddDays(_tokenService.RefreshTokenLifetimeDays)), null);
     }
 
     public async Task<(LogoutResponse? Response, ErrorResponse? Error)> LogoutAsync(Guid userId, string? refreshToken)

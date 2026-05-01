@@ -1,6 +1,6 @@
 namespace ScoutBoxApi.Models.Entities;
 
-public class TentShape
+public class TentShape : IHasName
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

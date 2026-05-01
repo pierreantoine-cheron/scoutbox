@@ -32,17 +32,23 @@ public class AuthControllerTests : IDisposable
 
         _db = new ScoutBoxDbContext(options);
 
-        var configMock = new Mock<IConfiguration>();
-        configMock.Setup(x => x["Jwt:Key"]).Returns("test-key-that-is-32-characters-long");
-        configMock.Setup(x => x["Jwt:Issuer"]).Returns("TestIssuer");
-        configMock.Setup(x => x["Jwt:Audience"]).Returns("TestAudience");
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new[]
+            {
+                new KeyValuePair<string, string?>("Jwt:Key", "test-key-that-is-32-characters-long"),
+                new KeyValuePair<string, string?>("Jwt:Issuer", "TestIssuer"),
+                new KeyValuePair<string, string?>("Jwt:Audience", "TestAudience"),
+            })
+            .Build();
 
         var authServiceLoggerMock = new Mock<ILogger<AuthService>>();
         var auditServiceLoggerMock = new Mock<ILogger<AuditService>>();
+        var inviteServiceLoggerMock = new Mock<ILogger<InviteService>>();
 
-        _tokenService = new TokenService(configMock.Object);
+        _tokenService = new TokenService(config);
         var auditService = new AuditService(_db, auditServiceLoggerMock.Object);
-        _authService = new AuthService(_db, _tokenService, auditService, authServiceLoggerMock.Object);
+        var inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object);
+        _authService = new AuthService(_db, _tokenService, inviteService, auditService, authServiceLoggerMock.Object);
 
         // Create HttpContextAccessor for CurrentUserAccessor
         _httpContextAccessor = new HttpContextAccessor();

@@ -26,6 +26,7 @@ builder.Services.AddSwaggerGen();
 // Add application services
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<InviteService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IAuditService, AuditService>();
