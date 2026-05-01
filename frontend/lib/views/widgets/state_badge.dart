@@ -3,6 +3,84 @@ import 'package:flutter/material.dart';
 import '../../models/part.dart';
 import '../../models/tent.dart';
 
+class StateBadgeStyle {
+  final String label;
+  final IconData icon;
+  final Color background;
+  final Color foreground;
+
+  const StateBadgeStyle({
+    required this.label,
+    required this.icon,
+    required this.background,
+    required this.foreground,
+  });
+}
+
+StateBadgeStyle tentStateBadgeStyle(
+  BuildContext context,
+  TentOverallState state,
+) {
+  final colorScheme = Theme.of(context).colorScheme;
+  final (icon, background, foreground) = switch (state) {
+    TentOverallState.good => (
+      Icons.check_circle_outline,
+      colorScheme.primaryContainer,
+      colorScheme.onPrimaryContainer,
+    ),
+    TentOverallState.needsRepair => (
+      Icons.build_circle_outlined,
+      Colors.orange.shade100,
+      Colors.orange.shade900,
+    ),
+    TentOverallState.unusable => (
+      Icons.cancel_outlined,
+      colorScheme.errorContainer,
+      colorScheme.onErrorContainer,
+    ),
+  };
+
+  return StateBadgeStyle(
+    label: state.toFrenchLabel(),
+    icon: icon,
+    background: background,
+    foreground: foreground,
+  );
+}
+
+StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
+  final colorScheme = Theme.of(context).colorScheme;
+  final (icon, background, foreground) = switch (state) {
+    PartState.good => (
+      Icons.check_circle_outline,
+      colorScheme.primaryContainer,
+      colorScheme.onPrimaryContainer,
+    ),
+    PartState.needsRepair => (
+      Icons.build_circle_outlined,
+      Colors.orange.shade100,
+      Colors.orange.shade900,
+    ),
+    PartState.missing => (
+      Icons.remove_circle_outline,
+      colorScheme.secondaryContainer,
+      colorScheme.onSecondaryContainer,
+    ),
+    PartState.unusable => (
+      Icons.cancel_outlined,
+      colorScheme.errorContainer,
+      colorScheme.onErrorContainer,
+    ),
+  };
+
+  return StateBadgeStyle(
+    label: state.toFrenchLabel(),
+    icon: icon,
+    background: background,
+    foreground: foreground,
+  );
+}
+
 class StateBadge extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -18,63 +96,24 @@ class StateBadge extends StatelessWidget {
   });
 
   factory StateBadge.forTent(BuildContext context, TentOverallState state) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final (icon, background, foreground) = switch (state) {
-      TentOverallState.good => (
-        Icons.check_circle_outline,
-        colorScheme.primaryContainer,
-        colorScheme.onPrimaryContainer,
-      ),
-      TentOverallState.needsRepair => (
-        Icons.build_circle_outlined,
-        Colors.orange.shade100,
-        Colors.orange.shade900,
-      ),
-      TentOverallState.unusable => (
-        Icons.cancel_outlined,
-        colorScheme.errorContainer,
-        colorScheme.onErrorContainer,
-      ),
-    };
+    final style = tentStateBadgeStyle(context, state);
 
     return StateBadge(
-      label: state.toFrenchLabel(),
-      icon: icon,
-      background: background,
-      foreground: foreground,
+      label: style.label,
+      icon: style.icon,
+      background: style.background,
+      foreground: style.foreground,
     );
   }
 
   factory StateBadge.forPart(BuildContext context, PartState state) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final (icon, background, foreground) = switch (state) {
-      PartState.good => (
-        Icons.check_circle_outline,
-        colorScheme.primaryContainer,
-        colorScheme.onPrimaryContainer,
-      ),
-      PartState.needsRepair => (
-        Icons.build_circle_outlined,
-        Colors.orange.shade100,
-        Colors.orange.shade900,
-      ),
-      PartState.missing => (
-        Icons.remove_circle_outline,
-        colorScheme.secondaryContainer,
-        colorScheme.onSecondaryContainer,
-      ),
-      PartState.unusable => (
-        Icons.cancel_outlined,
-        colorScheme.errorContainer,
-        colorScheme.onErrorContainer,
-      ),
-    };
+    final style = partStateBadgeStyle(context, state);
 
     return StateBadge(
-      label: state.toFrenchLabel(),
-      icon: icon,
-      background: background,
-      foreground: foreground,
+      label: style.label,
+      icon: style.icon,
+      background: style.background,
+      foreground: style.foreground,
     );
   }
 

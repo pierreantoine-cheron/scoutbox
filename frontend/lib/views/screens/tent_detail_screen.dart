@@ -350,7 +350,164 @@ class _ArchiveTentButtonState extends ConsumerState<_ArchiveTentButton> {
   }
 }
 
-class _EditableNameField extends ConsumerStatefulWidget {
+class _InlineEditText extends StatefulWidget {
+  final String value;
+  final bool isEditing;
+  final bool isSaving;
+  final bool isEnabled;
+  final String? labelText;
+  final String? hintText;
+  final TextInputType? keyboardType;
+  final int? maxLength;
+  final int? minLines;
+  final int? maxLines;
+  final double? editorWidth;
+  final bool dense;
+  final String? Function(String value) validator;
+  final void Function(String value) onConfirm;
+  final VoidCallback onStartEditing;
+  final VoidCallback onCancel;
+  final Widget Function(BuildContext context, VoidCallback startEditing)
+  readOnlyBuilder;
+
+  const _InlineEditText({
+    required this.value,
+    required this.isEditing,
+    required this.isSaving,
+    required this.isEnabled,
+    required this.validator,
+    required this.onConfirm,
+    required this.onStartEditing,
+    required this.onCancel,
+    required this.readOnlyBuilder,
+    this.labelText,
+    this.hintText,
+    this.keyboardType,
+    this.maxLength,
+    this.minLines,
+    this.maxLines,
+    this.editorWidth,
+    this.dense = false,
+  });
+
+  @override
+  State<_InlineEditText> createState() => _InlineEditTextState();
+}
+
+class _InlineEditTextState extends State<_InlineEditText> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void didUpdateWidget(_InlineEditText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.isEditing && widget.value != _controller.text) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _startEditing() {
+    _controller.text = widget.value;
+    widget.onStartEditing();
+    _focusNode.requestFocus();
+  }
+
+  void _cancelEditing() {
+    _controller.text = widget.value;
+    widget.onCancel();
+  }
+
+  void _confirm() {
+    final error = widget.validator(_controller.text);
+    if (error != null) {
+      setState(() {});
+      return;
+    }
+
+    widget.onConfirm(_controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.isEditing) {
+      return widget.readOnlyBuilder(
+        context,
+        widget.isEnabled ? _startEditing : () {},
+      );
+    }
+
+    if (widget.isSaving) {
+      return widget.editorWidth == null
+          ? const LinearProgressIndicator()
+          : SizedBox(
+              width: widget.editorWidth,
+              child: const LinearProgressIndicator(),
+            );
+    }
+
+    final error = widget.validator(_controller.text);
+    final textField = TextField(
+      controller: _controller,
+      focusNode: _focusNode,
+      keyboardType: widget.keyboardType,
+      maxLength: widget.maxLength,
+      minLines: widget.minLines,
+      maxLines: widget.maxLines,
+      decoration: InputDecoration(
+        labelText: widget.labelText,
+        hintText: widget.hintText,
+        errorText: error,
+        border: const OutlineInputBorder(),
+        isDense: widget.dense,
+      ),
+      textInputAction: TextInputAction.done,
+      onChanged: (_) => setState(() {}),
+      onSubmitted: (_) => _confirm(),
+    );
+
+    final field = widget.editorWidth == null
+        ? Expanded(child: textField)
+        : SizedBox(width: widget.editorWidth, child: textField);
+
+    return Row(
+      mainAxisSize: widget.editorWidth == null
+          ? MainAxisSize.max
+          : MainAxisSize.min,
+      children: [
+        field,
+        SizedBox(width: widget.dense ? 0 : 8),
+        IconButton(
+          icon: const Icon(Icons.check),
+          tooltip: 'Valider',
+          visualDensity: widget.dense ? VisualDensity.compact : null,
+          onPressed: error == null ? _confirm : null,
+        ),
+        IconButton(
+          icon: const Icon(Icons.close),
+          tooltip: 'Annuler',
+          visualDensity: widget.dense ? VisualDensity.compact : null,
+          onPressed: _cancelEditing,
+        ),
+      ],
+    );
+  }
+}
+
+class _EditableNameField extends ConsumerWidget {
   final String tentId;
   final Tent tent;
   final TentEditState editState;
@@ -362,158 +519,68 @@ class _EditableNameField extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_EditableNameField> createState() => _EditableNameFieldState();
-}
-
-class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.tent.name);
-    _focusNode = FocusNode();
-  }
-
-  @override
-  void didUpdateWidget(_EditableNameField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.editState.editingField != EditableField.name) {
-      _controller.text = widget.tent.name;
-    }
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  bool get _isEditing => widget.editState.editingField == EditableField.name;
-
-  bool get _isSaving =>
-      widget.editState.savingField == EditableField.name &&
-      widget.editState.editingField == EditableField.name;
-
-  void _handleConfirm() {
-    final notifier = ref.read(tentEditProvider(widget.tentId).notifier);
-    final name = _controller.text.trim();
-
-    if (name.isEmpty) {
-      setState(() {});
-      return;
-    }
-
-    if (name.length > ValidationConstants.tentNameMaxLength) {
-      setState(() {});
-      return;
-    }
-
-    notifier.updateField(
-      tentId: widget.tentId,
-      name: name,
-      size: widget.tent.size,
-      overallState: widget.tent.overallState,
-      comments: widget.tent.comments,
-    );
-  }
-
-  void _handleCancel() {
-    _controller.text = widget.tent.name;
-    ref.read(tentEditProvider(widget.tentId).notifier).cancelEditing();
-  }
-
-  void _startEditing() {
-    _controller.text = widget.tent.name;
-    ref
-        .read(tentEditProvider(widget.tentId).notifier)
-        .startEditing(EditableField.name, widget.tent);
-    _focusNode.requestFocus();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    if (_isEditing) {
-      String? error;
-      final trimmed = _controller.text.trim();
-      if (trimmed.isEmpty) {
-        error = 'Le nom de la tente est requis.';
-      } else if (trimmed.length > ValidationConstants.tentNameMaxLength) {
-        error =
-            'Le nom ne peut pas dépasser ${ValidationConstants.tentNameMaxLength} caractères.';
-      }
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_isSaving)
-            const LinearProgressIndicator()
-          else ...[
-            Row(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _InlineEditText(
+      value: tent.name,
+      isEditing: editState.editingField == EditableField.name,
+      isSaving:
+          editState.savingField == EditableField.name &&
+          editState.editingField == EditableField.name,
+      isEnabled: !tent.isArchived,
+      labelText: 'Nom',
+      hintText: 'Nom de la tente',
+      validator: _validateName,
+      onStartEditing: () => ref
+          .read(tentEditProvider(tentId).notifier)
+          .startEditing(EditableField.name, tent),
+      onCancel: () =>
+          ref.read(tentEditProvider(tentId).notifier).cancelEditing(),
+      onConfirm: (name) => ref
+          .read(tentEditProvider(tentId).notifier)
+          .updateField(
+            tentId: tentId,
+            name: name,
+            size: tent.size,
+            overallState: tent.overallState,
+            comments: tent.comments,
+          ),
+      readOnlyBuilder: (context, startEditing) {
+        final theme = Theme.of(context);
+        return InkWell(
+          onTap: tent.isArchived ? null : startEditing,
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    decoration: InputDecoration(
-                      labelText: 'Nom',
-                      hintText: 'Nom de la tente',
-                      errorText: error,
-                      border: const OutlineInputBorder(),
-                    ),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _handleConfirm(),
-                  ),
+                  child: Text(tent.name, style: theme.textTheme.headlineSmall),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.check),
-                  tooltip: 'Valider',
-                  onPressed: error == null ? _handleConfirm : null,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  tooltip: 'Annuler',
-                  onPressed: _handleCancel,
+                Icon(
+                  Icons.edit_outlined,
+                  size: 20,
+                  color: theme.colorScheme.outline,
                 ),
               ],
             ),
-          ],
-        ],
-      );
-    }
-
-    return InkWell(
-      onTap: widget.tent.isArchived ? null : _startEditing,
-      borderRadius: BorderRadius.circular(4),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                widget.tent.name,
-                style: theme.textTheme.headlineSmall,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              Icons.edit_outlined,
-              size: 20,
-              color: theme.colorScheme.outline,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
+  }
+
+  String? _validateName(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return 'Le nom de la tente est requis.';
+    if (trimmed.length > ValidationConstants.tentNameMaxLength) {
+      return 'Le nom ne peut pas dépasser ${ValidationConstants.tentNameMaxLength} caractères.';
+    }
+    return null;
   }
 }
 
-class _EditableSizeField extends ConsumerStatefulWidget {
+class _EditableSizeField extends ConsumerWidget {
   final String tentId;
   final Tent tent;
   final TentEditState editState;
@@ -525,149 +592,71 @@ class _EditableSizeField extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_EditableSizeField> createState() => _EditableSizeFieldState();
-}
-
-class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.tent.size.toString());
-    _focusNode = FocusNode();
-  }
-
-  @override
-  void didUpdateWidget(_EditableSizeField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.editState.editingField != EditableField.size) {
-      _controller.text = widget.tent.size.toString();
-    }
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  bool get _isEditing => widget.editState.editingField == EditableField.size;
-
-  bool get _isSaving =>
-      widget.editState.savingField == EditableField.size &&
-      widget.editState.editingField == EditableField.size;
-
-  void _handleConfirm() {
-    final size = int.tryParse(_controller.text.trim());
-    if (size == null || size <= 0 || size > ValidationConstants.tentMaxSize) {
-      setState(() {});
-      return;
-    }
-
-    ref
-        .read(tentEditProvider(widget.tentId).notifier)
-        .updateField(
-          tentId: widget.tentId,
-          name: widget.tent.name,
-          size: size,
-          overallState: widget.tent.overallState,
-          comments: widget.tent.comments,
-        );
-  }
-
-  void _handleCancel() {
-    _controller.text = widget.tent.size.toString();
-    ref.read(tentEditProvider(widget.tentId).notifier).cancelEditing();
-  }
-
-  void _startEditing() {
-    _controller.text = widget.tent.size.toString();
-    ref
-        .read(tentEditProvider(widget.tentId).notifier)
-        .startEditing(EditableField.size, widget.tent);
-    _focusNode.requestFocus();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isEditing) {
-      String? error;
-      final raw = _controller.text.trim();
-      final size = int.tryParse(raw);
-      if (raw.isEmpty || size == null) {
-        error = 'La taille doit être un nombre positif.';
-      } else if (size <= 0) {
-        error = 'La taille doit être un nombre positif.';
-      } else if (size > ValidationConstants.tentMaxSize) {
-        error =
-            'La taille doit être comprise entre 1 et ${ValidationConstants.tentMaxSize}.';
-      }
-
-      return _isSaving
-          ? const SizedBox(width: 120, child: LinearProgressIndicator())
-          : Row(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _InlineEditText(
+      value: tent.size.toString(),
+      isEditing: editState.editingField == EditableField.size,
+      isSaving:
+          editState.savingField == EditableField.size &&
+          editState.editingField == EditableField.size,
+      isEnabled: !tent.isArchived,
+      labelText: 'Taille',
+      hintText: 'Nombre de places',
+      keyboardType: TextInputType.number,
+      editorWidth: 120,
+      dense: true,
+      validator: _validateSize,
+      onStartEditing: () => ref
+          .read(tentEditProvider(tentId).notifier)
+          .startEditing(EditableField.size, tent),
+      onCancel: () =>
+          ref.read(tentEditProvider(tentId).notifier).cancelEditing(),
+      onConfirm: (value) => ref
+          .read(tentEditProvider(tentId).notifier)
+          .updateField(
+            tentId: tentId,
+            name: tent.name,
+            size: int.parse(value),
+            overallState: tent.overallState,
+            comments: tent.comments,
+          ),
+      readOnlyBuilder: (context, startEditing) {
+        return InkWell(
+          onTap: tent.isArchived ? null : startEditing,
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: 120,
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Taille',
-                      hintText: 'Nombre de places',
-                      errorText: error,
-                      border: const OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _handleConfirm(),
-                  ),
+                _InfoChip(
+                  icon: Icons.people_outline,
+                  label: tent.size == 1 ? '1 place' : '${tent.size} places',
                 ),
-                IconButton(
-                  icon: const Icon(Icons.check),
-                  tooltip: 'Valider',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: error == null ? _handleConfirm : null,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  tooltip: 'Annuler',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: _handleCancel,
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.edit_outlined,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.outline,
                 ),
               ],
-            );
-    }
-
-    return InkWell(
-      onTap: widget.tent.isArchived ? null : _startEditing,
-      borderRadius: BorderRadius.circular(4),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _InfoChip(
-              icon: Icons.people_outline,
-              label: widget.tent.size == 1
-                  ? '1 place'
-                  : '${widget.tent.size} places',
             ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.edit_outlined,
-              size: 16,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
+  }
+
+  String? _validateSize(String value) {
+    final raw = value.trim();
+    final size = int.tryParse(raw);
+    if (raw.isEmpty || size == null || size <= 0) {
+      return 'La taille doit être un nombre positif.';
+    }
+    if (size > ValidationConstants.tentMaxSize) {
+      return 'La taille doit être comprise entre 1 et ${ValidationConstants.tentMaxSize}.';
+    }
+    return null;
   }
 }
 
@@ -712,8 +701,7 @@ class _EditableOverallStateSelector extends ConsumerWidget {
       },
       itemBuilder: (context) {
         return TentOverallState.values.map((state) {
-          final (IconData icon, Color background, Color foreground) =
-              _stateColors(context, state);
+          final style = tentStateBadgeStyle(context, state);
           final isCurrent = state == tent.overallState;
           return PopupMenuItem<TentOverallState>(
             value: state,
@@ -727,19 +715,19 @@ class _EditableOverallStateSelector extends ConsumerWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: background,
+                    color: style.background,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(icon, size: 16, color: foreground),
+                      Icon(style.icon, size: 16, color: style.foreground),
                       const SizedBox(width: 6),
                       Text(
-                        state.toFrenchLabel(),
+                        style.label,
                         style: Theme.of(context).textTheme.labelMedium
                             ?.copyWith(
-                              color: foreground,
+                              color: style.foreground,
                               fontWeight: FontWeight.w600,
                             ),
                       ),
@@ -774,33 +762,9 @@ class _EditableOverallStateSelector extends ConsumerWidget {
       ),
     );
   }
-
-  (IconData, Color, Color) _stateColors(
-    BuildContext context,
-    TentOverallState state,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return switch (state) {
-      TentOverallState.good => (
-        Icons.check_circle_outline,
-        colorScheme.primaryContainer,
-        colorScheme.onPrimaryContainer,
-      ),
-      TentOverallState.needsRepair => (
-        Icons.build_circle_outlined,
-        Colors.orange.shade100,
-        Colors.orange.shade900,
-      ),
-      TentOverallState.unusable => (
-        Icons.cancel_outlined,
-        colorScheme.errorContainer,
-        colorScheme.onErrorContainer,
-      ),
-    };
-  }
 }
 
-class _CommentsSection extends ConsumerStatefulWidget {
+class _CommentsSection extends ConsumerWidget {
   final String tentId;
   final Tent tent;
   final TentEditState editState;
@@ -812,77 +776,10 @@ class _CommentsSection extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_CommentsSection> createState() => _CommentsSectionState();
-}
-
-class _CommentsSectionState extends ConsumerState<_CommentsSection> {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.tent.comments ?? '');
-    _focusNode = FocusNode();
-  }
-
-  @override
-  void didUpdateWidget(_CommentsSection oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.editState.editingField != EditableField.comments) {
-      _controller.text = widget.tent.comments ?? '';
-    }
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  bool get _isEditing =>
-      widget.editState.editingField == EditableField.comments;
-
-  bool get _isSaving =>
-      widget.editState.savingField == EditableField.comments &&
-      widget.editState.editingField == EditableField.comments;
-
-  void _handleConfirm() {
-    final trimmed = _controller.text.trim();
-    if (trimmed.length > ValidationConstants.tentCommentsMaxLength) {
-      setState(() {});
-      return;
-    }
-
-    ref
-        .read(tentEditProvider(widget.tentId).notifier)
-        .updateField(
-          tentId: widget.tentId,
-          name: widget.tent.name,
-          size: widget.tent.size,
-          overallState: widget.tent.overallState,
-          comments: trimmed.isEmpty ? null : trimmed,
-        );
-  }
-
-  void _handleCancel() {
-    _controller.text = widget.tent.comments ?? '';
-    ref.read(tentEditProvider(widget.tentId).notifier).cancelEditing();
-  }
-
-  void _startEditing() {
-    _controller.text = widget.tent.comments ?? '';
-    ref
-        .read(tentEditProvider(widget.tentId).notifier)
-        .startEditing(EditableField.comments, widget.tent);
-    _focusNode.requestFocus();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final length = _isEditing ? _controller.text.length : 0;
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isEditing = editState.editingField == EditableField.comments;
+    final isSaving =
+        editState.savingField == EditableField.comments && isEditing;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -897,77 +794,53 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                if (_isEditing && !_isSaving)
-                  Text(
-                    '$length/${ValidationConstants.tentCommentsMaxLength}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: length > ValidationConstants.tentCommentsMaxLength
-                          ? Theme.of(context).colorScheme.error
-                          : null,
-                    ),
-                  ),
               ],
             ),
             const SizedBox(height: 8),
-            if (_isEditing) ...[
-              if (_isSaving)
-                const LinearProgressIndicator()
-              else ...[
-                TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  maxLength: ValidationConstants.tentCommentsMaxLength,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: 'Ajouter un commentaire...',
-                    border: OutlineInputBorder(),
+            _InlineEditText(
+              value: tent.comments ?? '',
+              isEditing: isEditing,
+              isSaving: isSaving,
+              isEnabled: !tent.isArchived,
+              hintText: 'Ajouter un commentaire...',
+              maxLength: ValidationConstants.tentCommentsMaxLength,
+              minLines: 2,
+              maxLines: 4,
+              validator: _validateComments,
+              onStartEditing: () => ref
+                  .read(tentEditProvider(tentId).notifier)
+                  .startEditing(EditableField.comments, tent),
+              onCancel: () =>
+                  ref.read(tentEditProvider(tentId).notifier).cancelEditing(),
+              onConfirm: (value) => ref
+                  .read(tentEditProvider(tentId).notifier)
+                  .updateField(
+                    tentId: tentId,
+                    name: tent.name,
+                    size: tent.size,
+                    overallState: tent.overallState,
+                    comments: value.isEmpty ? null : value,
                   ),
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _handleConfirm(),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: _handleCancel,
-                      icon: const Icon(Icons.close),
-                      label: const Text('Annuler'),
+              readOnlyBuilder: (context, startEditing) {
+                return InkWell(
+                  onTap: tent.isArchived ? null : startEditing,
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(_displayText(tent.comments))),
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    FilledButton.icon(
-                      onPressed: () {
-                        if (_controller.text.length <=
-                            ValidationConstants.tentCommentsMaxLength) {
-                          _handleConfirm();
-                        }
-                      },
-                      icon: const Icon(Icons.check),
-                      label: const Text('Valider'),
-                    ),
-                  ],
-                ),
-              ],
-            ] else ...[
-              InkWell(
-                onTap: widget.tent.isArchived ? null : _startEditing,
-                borderRadius: BorderRadius.circular(4),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(_displayText(widget.tent.comments))),
-                      Icon(
-                        Icons.edit_outlined,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ],
                   ),
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -980,6 +853,13 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
       return 'Aucun commentaire';
     }
     return normalized;
+  }
+
+  String? _validateComments(String value) {
+    if (value.trim().length > ValidationConstants.tentCommentsMaxLength) {
+      return 'Le commentaire ne peut pas dépasser ${ValidationConstants.tentCommentsMaxLength} caractères.';
+    }
+    return null;
   }
 }
 
