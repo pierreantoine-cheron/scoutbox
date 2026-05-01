@@ -5,6 +5,7 @@ import '../models/auth_response.dart';
 import '../utils/app_config.dart';
 import '../utils/constants.dart';
 import '../utils/design_constants.dart';
+import '../repositories/auth_repository.dart';
 import 'api_client.dart';
 import 'error_localizer.dart';
 import 'secure_storage_service.dart';
@@ -68,6 +69,8 @@ enum RefreshFailureType {
 /// - Token refresh with single-flight control
 /// - Logout
 class AuthService {
+  final AuthRepository _authRepository = const AuthRepository();
+
   // Single-flight refresh control - shared across concurrent requests
   Future<RefreshResult>? _ongoingRefresh;
 
@@ -99,37 +102,23 @@ class AuthService {
     ApiClient.initialize(serverUrl);
 
     try {
-      final response = await ApiClient.instance.post(
-        ApiRoutes.register,
-        data: {
-          'inviteCode': inviteCode,
-          'username': username,
-          'password': password,
-        },
+      final authResponse = await _authRepository.register(
+        serverUrl: serverUrl,
+        inviteCode: inviteCode,
+        username: username,
+        password: password,
       );
 
-      if (response.statusCode == 200) {
-        final authResponse = AuthResponse.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+      await SecureStorageService.saveTokens(
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
+        accessTokenExpires: authResponse.accessTokenExpires,
+        refreshTokenExpires: authResponse.refreshTokenExpires,
+      );
+      await SecureStorageService.saveServerUrl(serverUrl);
+      _cachedAccessToken = authResponse.accessToken;
 
-        // Save tokens and expiration dates
-        await SecureStorageService.saveTokens(
-          accessToken: authResponse.accessToken,
-          refreshToken: authResponse.refreshToken,
-          accessTokenExpires: authResponse.accessTokenExpires,
-          refreshTokenExpires: authResponse.refreshTokenExpires,
-        );
-        await SecureStorageService.saveServerUrl(serverUrl);
-        _cachedAccessToken = authResponse.accessToken;
-
-        return AuthResult.success(authResponse: authResponse);
-      } else {
-        return AuthResult.failure(
-          error:
-              'Erreur inattendue (${response.statusCode}). Veuillez réessayer.',
-        );
-      }
+      return AuthResult.success(authResponse: authResponse);
     } on DioException catch (e) {
       return _mapDioExceptionToAuthResult(
         e,
@@ -153,20 +142,10 @@ class AuthService {
     ApiClient.initialize(serverUrl);
 
     try {
-      final response = await ApiClient.instance.post(
-        ApiRoutes.login,
-        data: {'username': username, 'password': password},
-      );
-
-      if (response.statusCode != 200) {
-        return AuthResult.failure(
-          error:
-              'Erreur inattendue (${response.statusCode}). Veuillez réessayer.',
-        );
-      }
-
-      final authResponse = AuthResponse.fromJson(
-        response.data as Map<String, dynamic>,
+      final authResponse = await _authRepository.login(
+        serverUrl: serverUrl,
+        username: username,
+        password: password,
       );
 
       // Save auth data with error handling - don't fail login if preference storage fails
@@ -314,10 +293,7 @@ class AuthService {
   /// Call backend logout endpoint
   Future<void> _callBackendLogout(String refreshToken) async {
     try {
-      await ApiClient.instance.post(
-        ApiRoutes.logout,
-        data: {'refreshToken': refreshToken},
-      );
+      await _authRepository.logout(refreshToken);
     } on DioException catch (e) {
       // Auth failures (401, 400 with invalid token) are expected
       // if token already expired or was revoked
@@ -411,19 +387,10 @@ class AuthService {
     }
 
     try {
-      final response = await ApiClient.instance.post(
-        ApiRoutes.refresh,
-        data: {'refreshToken': refreshToken},
-      );
+      final authResponse = await _authRepository.refreshToken(refreshToken);
 
-      if (response.statusCode == 200) {
-        final authResponse = AuthResponse.fromJson(
-          response.data as Map<String, dynamic>,
-        );
-
-        // Persist new tokens atomically
-        try {
-          await SecureStorageService.saveTokens(
+      try {
+        await SecureStorageService.saveTokens(
             accessToken: authResponse.accessToken,
             refreshToken: authResponse.refreshToken,
             accessTokenExpires: authResponse.accessTokenExpires,
@@ -451,12 +418,6 @@ class AuthService {
             failureType: RefreshFailureType.storageFailure,
           );
         }
-      } else {
-        return RefreshResult.failure(
-          error: 'Session expirée. Veuillez vous reconnecter.',
-          failureType: RefreshFailureType.invalidToken,
-        );
-      }
     } on DioException catch (e) {
       // Classify failure type for differentiated handling
       final failureType = _classifyRefreshFailure(e);
