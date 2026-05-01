@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'providers/app_bar_config_provider.dart';
-import 'providers/auth_provider.dart';
-import 'providers/route_observer_provider.dart';
-import 'providers/success_indicator_provider.dart';
+import 'providers/providers.dart';
 import 'views/screens/login_screen.dart';
 import 'views/screens/register_screen.dart';
 import 'views/screens/tent_list_screen.dart';

@@ -1,3 +1,5 @@
+import '../utils/design_constants.dart';
+
 /// Data model matching backend AuthResponse DTO
 ///
 /// Backend C# definition:
@@ -66,7 +68,7 @@ class AuthResponse {
   /// [tolerance] - Duration to subtract from expiry to account for device clock drift
   /// Default is 30 seconds as recommended for mobile devices.
   bool isAccessTokenExpiredWithTolerance({
-    Duration tolerance = const Duration(seconds: 30),
+    Duration tolerance = DesignConstants.clockSkewTolerance,
   }) {
     final effectiveExpiry = accessTokenExpires.subtract(tolerance);
     return DateTime.now().isAfter(effectiveExpiry);
@@ -77,7 +79,7 @@ class AuthResponse {
   /// [tolerance] - Duration to subtract from expiry to account for device clock drift
   /// Default is 30 seconds as recommended for mobile devices.
   bool isRefreshTokenExpiredWithTolerance({
-    Duration tolerance = const Duration(seconds: 30),
+    Duration tolerance = DesignConstants.clockSkewTolerance,
   }) {
     final effectiveExpiry = refreshTokenExpires.subtract(tolerance);
     return DateTime.now().isAfter(effectiveExpiry);
@@ -88,7 +90,7 @@ class AuthResponse {
   /// Returns true if token expires within [window] duration from now.
   /// Useful for proactive refresh decisions.
   bool isAccessTokenExpiringSoon({
-    Duration window = const Duration(minutes: 5),
+    Duration window = DesignConstants.tokenRefreshWindow,
   }) {
     final refreshThreshold = accessTokenExpires.subtract(window);
     return DateTime.now().isAfter(refreshThreshold);

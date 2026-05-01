@@ -2,17 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tent.dart';
-import '../../providers/app_bar_config_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/route_observer_provider.dart';
-import '../../providers/success_indicator_provider.dart';
-import '../../providers/tent_filter_provider.dart';
-import '../../providers/tent_list_provider.dart';
-import '../../providers/tent_shapes_provider.dart';
+import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
-import '../widgets/tent_card.dart';
-import '../widgets/tent_data_table.dart';
-import '../widgets/tent_list_filter_bar.dart';
+import '../widgets/widgets.dart';
 import 'tent_creation_screen.dart';
 import 'tent_detail_screen.dart';
 

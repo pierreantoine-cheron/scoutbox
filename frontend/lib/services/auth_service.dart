@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../models/auth_response.dart';
 import '../utils/app_config.dart';
 import '../utils/constants.dart';
+import '../utils/design_constants.dart';
 import 'api_client.dart';
 import 'secure_storage_service.dart';
 
@@ -549,8 +550,8 @@ class AuthService {
   /// Returns true if token expires within [refreshWindow] (default 5 minutes)
   /// with optional [clockSkewTolerance] (default 30 seconds) for device clock drift.
   Future<bool> needsProactiveRefresh({
-    Duration refreshWindow = const Duration(minutes: 5),
-    Duration clockSkewTolerance = const Duration(seconds: 30),
+    Duration refreshWindow = DesignConstants.tokenRefreshWindow,
+    Duration clockSkewTolerance = DesignConstants.clockSkewTolerance,
   }) async {
     try {
       final authResponse = await _getStoredAuthResponse();

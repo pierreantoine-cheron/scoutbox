@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../utils/design_constants.dart';
+
 class FadingCloudDoneIcon extends StatefulWidget {
   final int trigger;
 
@@ -13,7 +15,7 @@ class FadingCloudDoneIcon extends StatefulWidget {
     super.key,
     required this.trigger,
     this.fadeDuration = const Duration(milliseconds: 400),
-    this.visibleDuration = const Duration(milliseconds: 1600),
+    this.visibleDuration = DesignConstants.fadeDoneIconDuration,
   });
 
   @override

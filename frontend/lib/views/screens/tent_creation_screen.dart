@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/tent.dart';
-import '../../models/tent_shape.dart';
-import '../../providers/app_bar_config_provider.dart';
-import '../../providers/route_observer_provider.dart';
-import '../../providers/tent_creation_provider.dart';
-import '../../providers/tent_shapes_provider.dart';
+import '../../models/models.dart';
+import '../../providers/providers.dart';
 import '../../utils/constants.dart';
 import '../widgets/tent_shape_selection_grid.dart';
 

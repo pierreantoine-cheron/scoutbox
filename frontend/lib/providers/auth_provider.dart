@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../services/auth_service.dart';
-import '../services/api_client.dart';
+import '../services/services.dart';
 
 part 'auth_provider.g.dart';
 

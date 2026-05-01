@@ -2,14 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../models/part.dart';
-import '../../models/tent.dart';
-import '../../providers/app_bar_config_provider.dart';
-import '../../providers/route_observer_provider.dart';
-import '../../providers/success_indicator_provider.dart';
-import '../../providers/tent_detail_provider.dart';
-import '../../providers/tent_edit_provider.dart';
-import '../../providers/tent_list_provider.dart';
+import '../../models/models.dart';
+import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/constants.dart';
 import '../widgets/state_badge.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../models/part.dart';
-import '../../models/tent.dart';
+import '../../models/models.dart';
 
 class StateBadgeStyle {
   final String label;

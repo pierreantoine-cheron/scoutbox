@@ -1,7 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../models/tent.dart';
-import '../models/tent_shape.dart';
+import '../models/models.dart';
 import '../repositories/tent_repository.dart';
 import '../utils/constants.dart';
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/tent.dart';
+import '../utils/design_constants.dart';
 
 part 'tent_filter_provider.g.dart';
 
@@ -67,7 +68,7 @@ class TentListFilterNotifier extends _$TentListFilterNotifier {
     }
 
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+    _searchDebounce = Timer(DesignConstants.searchDebounce, () {
       state = state.copyWith(effectiveSearchText: normalized.toLowerCase());
     });
   }

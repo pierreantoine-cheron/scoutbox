@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/app_bar_config_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/success_indicator_provider.dart';
+import '../../providers/providers.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
