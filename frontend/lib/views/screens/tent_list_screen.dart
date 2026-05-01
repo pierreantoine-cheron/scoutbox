@@ -67,6 +67,9 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
 
   void _setAppBarConfig() {
     if (!mounted) return;
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
+
     final isDesktop = MediaQuery.sizeOf(context).width >= 768;
     final authState = ref.read(authProvider);
     final tentsState = ref.read(tentListProvider);

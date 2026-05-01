@@ -33,6 +33,7 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
     super.didChangeDependencies();
     _routeObserver ??= ref.read(routeObserverProvider);
     _routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    _scheduleConfigUpdate();
   }
 
   @override
@@ -43,19 +44,29 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
 
   @override
   void didPush() {
+    _scheduleConfigUpdate();
+  }
+
+  void _scheduleConfigUpdate() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref
-            .read(appBarConfigProvider.notifier)
-            .set(
-              const AppBarConfig(
-                screenId: 'tent_detail',
-                title: Text('Détail de la tente'),
-                showBackButton: true,
-              ),
-            );
-      }
+      if (mounted) _setAppBarConfig();
     });
+  }
+
+  void _setAppBarConfig() {
+    if (!mounted) return;
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
+
+    ref
+        .read(appBarConfigProvider.notifier)
+        .set(
+          const AppBarConfig(
+            screenId: 'tent_detail',
+            title: Text('Détail de la tente'),
+            showBackButton: true,
+          ),
+        );
   }
 
   @override
