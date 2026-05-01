@@ -93,6 +93,14 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.Equal(shapeId, payload.Data.TentShapeId);
         Assert.Equal("Good", payload.Data.OverallState);
         Assert.Equal("Commentaire", payload.Data.Comments);
+
+        using var auditScope = _factory.Services.CreateScope();
+        var auditDb = auditScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var audit = await auditDb.AuditEvents
+            .FirstOrDefaultAsync(a => a.TargetEntityId == payload.Data.Id && a.Action == "tent_created");
+        Assert.NotNull(audit);
+        Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
+        Assert.Equal("Tent", audit.TargetEntityType);
     }
 
     [Fact]

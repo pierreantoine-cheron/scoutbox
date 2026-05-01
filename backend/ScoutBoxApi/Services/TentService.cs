@@ -70,64 +70,21 @@ public class TentService
             return null;
         }
 
-        var partDtos = tent.Parts
-            .OrderBy(p => p.PartKind.DisplayOrder)
-            .ThenBy(p => p.PartKindId)
-            .Select(p => new PartDto(
-                p.Id,
-                p.PartKindId,
-                p.PartKind.Name,
-                p.PartKind.DisplayOrder,
-                p.State.ToString(),
-                p.Comments,
-                p.CreatedAt,
-                p.UpdatedAt
-            ))
-            .ToList();
-
-        return new TentDto(
-            tent.Id,
-            tent.Name,
-            tent.Size,
-            tent.TentShapeId,
-            tent.TentShape.Name,
-            tent.OverallState.ToString(),
-            tent.IsArchived,
-            tent.Comments,
-            tent.CreatedAt,
-            tent.UpdatedAt,
-            partDtos
-        );
+        return ToTentDto(tent, ToPartDtos(tent.Parts));
     }
 
     public async Task<(TentDto? Response, ErrorResponse? Error)> CreateTentAsync(Guid userId, CreateTentRequest request)
     {
-        var rawName = request.Name ?? string.Empty;
-        var normalizedName = rawName.Trim();
-
-        if (string.IsNullOrWhiteSpace(normalizedName))
+        var validationError = ValidateTentRequest(
+            request.Name,
+            request.Size,
+            request.OverallState,
+            request.Comments,
+            failureCode: "TENT_CREATE_FAILED",
+            out var validated);
+        if (validationError != null)
         {
-            return (null, new ErrorResponse("Tent name is required", "TENT_NAME_REQUIRED"));
-        }
-
-        if (rawName.Length > MaxTentNameLength)
-        {
-            return (null, new ErrorResponse("Tent name exceeds maximum length", "TENT_CREATE_FAILED"));
-        }
-
-        if (request.Size <= 0)
-        {
-            return (null, new ErrorResponse("Tent size must be a positive integer", "INVALID_TENT_SIZE"));
-        }
-
-        if (request.Size > MaxTentSize)
-        {
-            return (null, new ErrorResponse("Tent size exceeds maximum allowed value", "INVALID_TENT_SIZE"));
-        }
-
-        if (request.Comments != null && request.Comments.Length > MaxTentCommentsLength)
-        {
-            return (null, new ErrorResponse("Tent comments exceed maximum length", "TENT_CREATE_FAILED"));
+            return (null, validationError);
         }
 
         var shape = await _db.TentShapes
@@ -141,18 +98,9 @@ public class TentService
             return (null, new ErrorResponse("Tent shape does not exist", "INVALID_TENT_SHAPE"));
         }
 
-        var hasDuplicateName = await _db.Tents
-            .AnyAsync(tent => tent.Name.ToLower() == normalizedName.ToLower());
-
-        if (hasDuplicateName)
+        if (await HasDuplicateTentNameAsync(validated.Name))
         {
             return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"));
-        }
-
-        if (!Enum.TryParse<TentOverallState>(request.OverallState, true, out var overallState)
-            || !Enum.IsDefined(overallState))
-        {
-            return (null, new ErrorResponse("Tent overall state is invalid", "INVALID_TENT_STATE"));
         }
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
@@ -163,11 +111,11 @@ public class TentService
             var tent = new Tent
             {
                 Id = Guid.NewGuid(),
-                Name = normalizedName,
-                Size = request.Size,
+                Name = validated.Name,
+                Size = validated.Size,
                 TentShapeId = request.TentShapeId,
-                OverallState = overallState,
-                Comments = string.IsNullOrWhiteSpace(request.Comments) ? null : request.Comments.Trim(),
+                OverallState = validated.OverallState,
+                Comments = validated.Comments,
                 CreatedAt = now,
                 UpdatedAt = now,
                 CreatedByUserId = userId,
@@ -190,6 +138,7 @@ public class TentService
                     Id = Guid.NewGuid(),
                     TentId = tent.Id,
                     PartKindId = shapePart.PartKindId,
+                    PartKind = shapePart.PartKind,
                     State = PartState.Good,
                     Comments = null,
                     CreatedAt = now,
@@ -201,6 +150,21 @@ public class TentService
                 createdParts.Add(part);
             }
 
+            _auditService.RecordEvent(
+                AuditActions.TentCreated,
+                userId,
+                targetEntityType: "Tent",
+                targetEntityId: tent.Id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["name"] = tent.Name,
+                    ["size"] = tent.Size,
+                    ["overallState"] = tent.OverallState.ToString(),
+                    ["tentShapeId"] = tent.TentShapeId,
+                    ["partCount"] = createdParts.Count
+                }
+            );
+
             try
             {
                 await _db.SaveChangesAsync();
@@ -208,81 +172,34 @@ public class TentService
             catch (DbUpdateException ex) when (IsDuplicateTentNameViolation(ex))
             {
                 await transaction.RollbackAsync();
-                _logger.LogWarning(ex, "Duplicate tent name blocked by DB constraint: {TentName}", normalizedName);
+                _logger.LogWarning(ex, "Duplicate tent name blocked by DB constraint: {TentName}", validated.Name);
                 return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"));
             }
 
             await transaction.CommitAsync();
 
-            var partDtos = createdParts
-                .OrderBy(p => p.PartKind.DisplayOrder)
-                .ThenBy(p => p.PartKindId)
-                .Select(p => new PartDto(
-                    p.Id,
-                    p.PartKindId,
-                    p.PartKind.Name,
-                    p.PartKind.DisplayOrder,
-                    p.State.ToString(),
-                    p.Comments,
-                    p.CreatedAt,
-                    p.UpdatedAt
-                ))
-                .ToList();
-
-            var dto = new TentDto(
-                tent.Id,
-                tent.Name,
-                tent.Size,
-                tent.TentShapeId,
-                shape.Name,
-                tent.OverallState.ToString(),
-                tent.IsArchived,
-                tent.Comments,
-                tent.CreatedAt,
-                tent.UpdatedAt,
-                partDtos
-            );
-
-            return (dto, null);
+            return (ToTentDto(tent, ToPartDtos(createdParts), shape.Name), null);
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            _logger.LogError(ex, "Failed to create tent {TentName} with shape {TentShapeId} for user {UserId}", normalizedName, request.TentShapeId, userId);
+            _logger.LogError(ex, "Failed to create tent {TentName} with shape {TentShapeId} for user {UserId}", validated.Name, request.TentShapeId, userId);
             throw;
         }
     }
 
     public async Task<(TentDto? Response, ErrorResponse? Error, bool NotFound)> UpdateTentAsync(Guid id, Guid userId, UpdateTentRequest request)
     {
-        var rawName = request.Name ?? string.Empty;
-        var normalizedName = rawName.Trim();
-        var normalizedComments = string.IsNullOrWhiteSpace(request.Comments) ? null : request.Comments.Trim();
-
-        if (string.IsNullOrWhiteSpace(normalizedName))
+        var validationError = ValidateTentRequest(
+            request.Name,
+            request.Size,
+            request.OverallState,
+            request.Comments,
+            failureCode: "TENT_UPDATE_FAILED",
+            out var validated);
+        if (validationError != null)
         {
-            return (null, new ErrorResponse("Tent name is required", "TENT_NAME_REQUIRED"), false);
-        }
-
-        if (normalizedName.Length > MaxTentNameLength)
-        {
-            return (null, new ErrorResponse("Tent name exceeds maximum length", "TENT_UPDATE_FAILED"), false);
-        }
-
-        if (request.Size <= 0 || request.Size > MaxTentSize)
-        {
-            return (null, new ErrorResponse("Tent size must be between 1 and 100", "INVALID_TENT_SIZE"), false);
-        }
-
-        if (!Enum.TryParse<TentOverallState>(request.OverallState, true, out var overallState)
-            || !Enum.IsDefined(overallState))
-        {
-            return (null, new ErrorResponse("Tent overall state is invalid", "INVALID_TENT_STATE"), false);
-        }
-
-        if (normalizedComments != null && normalizedComments.Length > MaxTentCommentsLength)
-        {
-            return (null, new ErrorResponse("Tent comments exceed maximum length", "TENT_UPDATE_FAILED"), false);
+            return (null, validationError, false);
         }
 
         var tent = await _db.Tents
@@ -296,10 +213,7 @@ public class TentService
             return (null, null, true);
         }
 
-        var hasDuplicateName = await _db.Tents
-            .AnyAsync(t => t.Name.ToLower() == normalizedName.ToLower() && t.Id != id);
-
-        if (hasDuplicateName)
+        if (await HasDuplicateTentNameAsync(validated.Name, id))
         {
             return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"), false);
         }
@@ -310,19 +224,19 @@ public class TentService
         var oldComments = tent.Comments;
 
         var changedFields = new List<string>();
-        if (oldName != normalizedName) changedFields.Add("name");
-        if (oldSize != request.Size) changedFields.Add("size");
-        if (oldOverallState != overallState) changedFields.Add("overallState");
-        var commentsChanged = oldComments != normalizedComments;
+        if (oldName != validated.Name) changedFields.Add("name");
+        if (oldSize != validated.Size) changedFields.Add("size");
+        if (oldOverallState != validated.OverallState) changedFields.Add("overallState");
+        var commentsChanged = oldComments != validated.Comments;
         if (commentsChanged) changedFields.Add("comments");
 
         if (changedFields.Count > 0)
         {
             var now = DateTime.UtcNow;
-            tent.Name = normalizedName;
-            tent.Size = request.Size;
-            tent.OverallState = overallState;
-            tent.Comments = normalizedComments;
+            tent.Name = validated.Name;
+            tent.Size = validated.Size;
+            tent.OverallState = validated.OverallState;
+            tent.Comments = validated.Comments;
             tent.UpdatedAt = now;
             tent.UpdatedByUserId = userId;
 
@@ -351,40 +265,11 @@ public class TentService
         }
         catch (DbUpdateException ex) when (IsDuplicateTentNameViolation(ex))
         {
-            _logger.LogWarning(ex, "Duplicate tent name blocked by DB constraint on update: {TentName}", normalizedName);
+            _logger.LogWarning(ex, "Duplicate tent name blocked by DB constraint on update: {TentName}", validated.Name);
             return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"), false);
         }
 
-        var partDtos = tent.Parts
-            .OrderBy(p => p.PartKind.DisplayOrder)
-            .ThenBy(p => p.PartKindId)
-            .Select(p => new PartDto(
-                p.Id,
-                p.PartKindId,
-                p.PartKind.Name,
-                p.PartKind.DisplayOrder,
-                p.State.ToString(),
-                p.Comments,
-                p.CreatedAt,
-                p.UpdatedAt
-            ))
-            .ToList();
-
-        var dto = new TentDto(
-            tent.Id,
-            tent.Name,
-            tent.Size,
-            tent.TentShapeId,
-            tent.TentShape.Name,
-            tent.OverallState.ToString(),
-            tent.IsArchived,
-            tent.Comments,
-            tent.CreatedAt,
-            tent.UpdatedAt,
-            partDtos
-        );
-
-        return (dto, null, false);
+        return (ToTentDto(tent, ToPartDtos(tent.Parts)), null, false);
     }
 
     public async Task<(TentDto? Response, bool NotFound)> ArchiveTentAsync(Guid id, Guid userId)
@@ -422,7 +307,61 @@ public class TentService
             await _db.SaveChangesAsync();
         }
 
-        var partDtos = tent.Parts
+        return (ToTentDto(tent, ToPartDtos(tent.Parts)), false);
+    }
+
+    private async Task<bool> HasDuplicateTentNameAsync(string normalizedName, Guid? excludedTentId = null)
+    {
+        return await _db.Tents.AnyAsync(tent =>
+            tent.Name.ToLower() == normalizedName.ToLower()
+            && (excludedTentId == null || tent.Id != excludedTentId));
+    }
+
+    private static ErrorResponse? ValidateTentRequest(
+        string? name,
+        int size,
+        string? overallStateValue,
+        string? comments,
+        string failureCode,
+        out ValidatedTentRequest validated)
+    {
+        var normalizedName = (name ?? string.Empty).Trim();
+        var normalizedComments = string.IsNullOrWhiteSpace(comments) ? null : comments.Trim();
+        validated = new ValidatedTentRequest(normalizedName, size, default, normalizedComments);
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
+        {
+            return new ErrorResponse("Tent name is required", "TENT_NAME_REQUIRED");
+        }
+
+        if (normalizedName.Length > MaxTentNameLength)
+        {
+            return new ErrorResponse("Tent name exceeds maximum length", failureCode);
+        }
+
+        if (size <= 0 || size > MaxTentSize)
+        {
+            return new ErrorResponse("Tent size must be between 1 and 100", "INVALID_TENT_SIZE");
+        }
+
+        if (!Enum.TryParse<TentOverallState>(overallStateValue, true, out var overallState)
+            || !Enum.IsDefined(overallState))
+        {
+            return new ErrorResponse("Tent overall state is invalid", "INVALID_TENT_STATE");
+        }
+
+        if (normalizedComments != null && normalizedComments.Length > MaxTentCommentsLength)
+        {
+            return new ErrorResponse("Tent comments exceed maximum length", failureCode);
+        }
+
+        validated = new ValidatedTentRequest(normalizedName, size, overallState, normalizedComments);
+        return null;
+    }
+
+    private static List<PartDto> ToPartDtos(IEnumerable<Part> parts)
+    {
+        return parts
             .OrderBy(p => p.PartKind.DisplayOrder)
             .ThenBy(p => p.PartKindId)
             .Select(p => new PartDto(
@@ -436,22 +375,23 @@ public class TentService
                 p.UpdatedAt
             ))
             .ToList();
+    }
 
-        var dto = new TentDto(
+    private static TentDto ToTentDto(Tent tent, IReadOnlyList<PartDto> parts, string? shapeName = null)
+    {
+        return new TentDto(
             tent.Id,
             tent.Name,
             tent.Size,
             tent.TentShapeId,
-            tent.TentShape.Name,
+            shapeName ?? tent.TentShape?.Name,
             tent.OverallState.ToString(),
             tent.IsArchived,
             tent.Comments,
             tent.CreatedAt,
             tent.UpdatedAt,
-            partDtos
+            parts
         );
-
-        return (dto, false);
     }
 
     private static bool IsDuplicateTentNameViolation(DbUpdateException exception)
@@ -460,4 +400,10 @@ public class TentService
         return message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase)
             && message.Contains("Tents.Name", StringComparison.OrdinalIgnoreCase);
     }
+
+    private sealed record ValidatedTentRequest(
+        string Name,
+        int Size,
+        TentOverallState OverallState,
+        string? Comments);
 }
