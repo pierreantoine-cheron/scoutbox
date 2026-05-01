@@ -7,6 +7,7 @@ public record TentDto(
     Guid TentShapeId,
     string? TentShapeName,
     string OverallState,
+    bool IsArchived,
     string? Comments,
     DateTime CreatedAt,
     DateTime UpdatedAt,

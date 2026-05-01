@@ -163,6 +163,30 @@ class TentRepository {
     }
   }
 
+  Future<Tent> archiveTent(String id) async {
+    try {
+      final response = await ApiClient.instance.put(
+        '${ApiRoutes.tents}/$id/archive',
+      );
+      return Tent.fromJson(_readEnvelopeMap(response.data));
+    } on DioException catch (e) {
+      throw _toRepositoryException(
+        e,
+        fallbackMessage: 'Impossible d\'archiver la tente. Réessayez.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors de l\'archivage de la tente.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors de l\'archivage de la tente.',
+      );
+    }
+  }
+
   List<dynamic> _readEnvelopeList(Object? responseData) {
     final envelope = _asMap(responseData);
     final data = envelope['data'];

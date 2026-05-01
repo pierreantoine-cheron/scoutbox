@@ -948,6 +948,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public Guid TentShapeId { get; set; }
         public string? TentShapeName { get; set; }
         public string OverallState { get; set; } = string.Empty;
+        public bool IsArchived { get; set; }
         public string? Comments { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
@@ -1659,6 +1660,155 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
         Assert.NotNull(payload);
         Assert.Equal("TENT_UPDATE_FAILED", payload.Code);
+    }
+
+    [Fact]
+    public async Task ArchiveTent_WithValidTent_SetsIsArchivedAndReturnsEnvelope()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = $"Archive-{Guid.NewGuid():N}",
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                CreatedAt = DateTime.UtcNow.AddHours(-1),
+                UpdatedAt = DateTime.UtcNow.AddHours(-1),
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsync($"/api/tents/{tentId}/archive", null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload);
+        Assert.True(payload.Data.IsArchived);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var tent = await db.Tents.FirstAsync(t => t.Id == tentId);
+            Assert.True(tent.IsArchived);
+            Assert.Equal(CustomApiFactory.TestUserId, tent.UpdatedByUserId);
+            Assert.Single(await db.AuditEvents.Where(a => a.Action == "tent_archived" && a.TargetEntityId == tentId).ToListAsync());
+        }
+    }
+
+    [Fact]
+    public async Task ArchiveTent_WhenAlreadyArchived_IsIdempotent()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        DateTime firstUpdatedAt;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+            firstUpdatedAt = DateTime.UtcNow.AddMinutes(-10);
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = $"Archive-idempotent-{Guid.NewGuid():N}",
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                IsArchived = true,
+                CreatedAt = firstUpdatedAt,
+                UpdatedAt = firstUpdatedAt,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsync($"/api/tents/{tentId}/archive", null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var tent = await db.Tents.FirstAsync(t => t.Id == tentId);
+            Assert.Equal(firstUpdatedAt, tent.UpdatedAt);
+            Assert.Empty(await db.AuditEvents.Where(a => a.Action == "tent_archived" && a.TargetEntityId == tentId).ToListAsync());
+        }
+    }
+
+    [Fact]
+    public async Task GetTents_ExcludesArchivedTents()
+    {
+        await EnsureTestUserExistsAsync();
+        string archivedName = $"Archived-{Guid.NewGuid():N}";
+        string activeName = $"Active-{Guid.NewGuid():N}";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+
+            db.Tents.Add(new Tent
+            {
+                Id = Guid.NewGuid(), Name = archivedName, Size = 4, TentShapeId = shapeId, OverallState = TentOverallState.Good,
+                IsArchived = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId, UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            db.Tents.Add(new Tent
+            {
+                Id = Guid.NewGuid(), Name = activeName, Size = 4, TentShapeId = shapeId, OverallState = TentOverallState.Good,
+                IsArchived = false, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId, UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync("/api/tents");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentApiDto>>>();
+        Assert.DoesNotContain(payload.Data, t => t.Name == archivedName);
+        Assert.Contains(payload.Data, t => t.Name == activeName);
+    }
+
+    [Fact]
+    public async Task ArchiveTent_WithUnknownId_ReturnsNotFound()
+    {
+        await EnsureTestUserExistsAsync();
+        using var client = CreateAuthenticatedClient();
+
+        var response = await client.PutAsync($"/api/tents/{Guid.NewGuid()}/archive", null);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.Equal("TENT_NOT_FOUND", payload.Code);
+    }
+
+    [Fact]
+    public async Task ArchiveTent_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.PutAsync($"/api/tents/{Guid.NewGuid()}/archive", null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     private sealed class ErrorPayload

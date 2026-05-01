@@ -9,6 +9,7 @@ import '../../providers/route_observer_provider.dart';
 import '../../providers/success_indicator_provider.dart';
 import '../../providers/tent_detail_provider.dart';
 import '../../providers/tent_edit_provider.dart';
+import '../../providers/tent_list_provider.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/constants.dart';
 import '../widgets/state_badge.dart';
@@ -44,11 +45,15 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
   void didPush() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(
-          screenId: 'tent_detail',
-          title: Text('Détail de la tente'),
-          showBackButton: true,
-        ));
+        ref
+            .read(appBarConfigProvider.notifier)
+            .set(
+              const AppBarConfig(
+                screenId: 'tent_detail',
+                title: Text('Détail de la tente'),
+                showBackButton: true,
+              ),
+            );
       }
     });
   }
@@ -68,15 +73,16 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
 
     return Material(
       child: SafeArea(
-      child: tentAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _DetailErrorState(
-          message: _toErrorMessage(error),
-          onRetry: () => ref.invalidate(tentDetailProvider(widget.tentId)),
+        child: tentAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => _DetailErrorState(
+            message: _toErrorMessage(error),
+            onRetry: () => ref.invalidate(tentDetailProvider(widget.tentId)),
+          ),
+          data: (tent) => _DetailContent(tentId: widget.tentId, tent: tent),
         ),
-        data: (tent) => _DetailContent(tentId: widget.tentId, tent: tent),
       ),
-    ));
+    );
   }
 
   String _toErrorMessage(Object error) {
@@ -171,33 +177,42 @@ class _HeaderSection extends ConsumerWidget {
               tent: tent,
               editState: editState,
             ),
+            if (tent.isArchived) ...[
+              const SizedBox(height: 8),
+              const Chip(
+                avatar: Icon(Icons.archive_outlined),
+                label: Text('Archivée'),
+              ),
+            ],
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _EditableOverallStateSelector(
-                  tentId: tentId,
-                  tent: tent,
-                  editState: editState,
+            Opacity(
+              opacity: tent.isArchived ? 0.55 : 1,
+              child: IgnorePointer(
+                ignoring: tent.isArchived,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _EditableOverallStateSelector(
+                      tentId: tentId,
+                      tent: tent,
+                      editState: editState,
+                    ),
+                    _EditableSizeField(
+                      tentId: tentId,
+                      tent: tent,
+                      editState: editState,
+                    ),
+                    _InfoChip(
+                      icon: Icons.terrain_outlined,
+                      label: _shapeLabel(tent.tentShapeName),
+                    ),
+                  ],
                 ),
-                _EditableSizeField(
-                  tentId: tentId,
-                  tent: tent,
-                  editState: editState,
-                ),
-                _InfoChip(
-                  icon: Icons.terrain_outlined,
-                  label: _shapeLabel(tent.tentShapeName),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: null,
-              icon: const Icon(Icons.archive_outlined),
-              label: const Text('Archiver'),
-            ),
+            _ArchiveTentButton(tentId: tentId, isArchived: tent.isArchived),
           ],
         ),
       ),
@@ -211,6 +226,101 @@ class _HeaderSection extends ConsumerWidget {
     }
 
     return normalized;
+  }
+}
+
+class _ArchiveTentButton extends ConsumerStatefulWidget {
+  final String tentId;
+  final bool isArchived;
+
+  const _ArchiveTentButton({required this.tentId, required this.isArchived});
+
+  @override
+  ConsumerState<_ArchiveTentButton> createState() => _ArchiveTentButtonState();
+}
+
+class _ArchiveTentButtonState extends ConsumerState<_ArchiveTentButton> {
+  bool _isArchiving = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: widget.isArchived || _isArchiving ? null : _onArchivePressed,
+      icon: _isArchiving
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.archive_outlined),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Theme.of(context).colorScheme.error,
+      ),
+      label: const Text('Archiver'),
+    );
+  }
+
+  Future<void> _onArchivePressed() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Archiver la tente'),
+        content: const Text(
+          'Archiver cette tente ? Elle n\'apparaîtra plus dans la liste mais restera dans l\'historique.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isArchiving = true;
+    });
+
+    try {
+      final archivedTent = await ref
+          .read(tentRepositoryProvider)
+          .archiveTent(widget.tentId);
+      ref.read(tentListProvider.notifier).hideTent(archivedTent.id);
+      ref.read(successIndicatorProvider.notifier).fire();
+
+      if (mounted) {
+        Navigator.of(context).maybePop();
+      }
+    } catch (_) {
+      if (mounted) {
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            content: const Text('Impossible d\'archiver la tente. Réessayez.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isArchiving = false;
+        });
+      }
+    }
   }
 }
 
@@ -352,7 +462,7 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
     }
 
     return InkWell(
-      onTap: _startEditing,
+      onTap: widget.tent.isArchived ? null : _startEditing,
       borderRadius: BorderRadius.circular(4),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -509,7 +619,7 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
     }
 
     return InkWell(
-      onTap: _startEditing,
+      onTap: widget.tent.isArchived ? null : _startEditing,
       borderRadius: BorderRadius.circular(4),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
@@ -815,7 +925,7 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
               ],
             ] else ...[
               InkWell(
-                onTap: _startEditing,
+                onTap: widget.tent.isArchived ? null : _startEditing,
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),

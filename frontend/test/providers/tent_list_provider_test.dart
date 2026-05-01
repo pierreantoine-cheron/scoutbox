@@ -161,6 +161,42 @@ void main() {
       );
       expect(container.read(tentListRefreshIssueProvider), isNull);
     });
+
+    test('hideTent removes tent from current list', () async {
+      final repository = _TentListRepositoryStub(
+        tents: const [
+          Tent(
+            id: 't1',
+            name: 'Tente A',
+            size: 4,
+            tentShapeId: 'shape-1',
+            tentShapeName: 'Canadienne',
+            overallState: TentOverallState.good,
+            comments: null,
+          ),
+          Tent(
+            id: 't2',
+            name: 'Tente B',
+            size: 6,
+            tentShapeId: 'shape-2',
+            tentShapeName: 'Tipi',
+            overallState: TentOverallState.needsRepair,
+            comments: null,
+          ),
+        ],
+      );
+      final container = ProviderContainer(
+        overrides: [tentRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(tentListProvider.future);
+      container.read(tentListProvider.notifier).hideTent('t1');
+
+      final tents = container.read(tentListProvider).requireValue;
+      expect(tents, hasLength(1));
+      expect(tents.first.id, equals('t2'));
+    });
   });
 }
 

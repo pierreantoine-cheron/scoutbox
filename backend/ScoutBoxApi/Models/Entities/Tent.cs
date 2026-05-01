@@ -12,6 +12,7 @@ public class Tent
     public DateTime UpdatedAt { get; set; }
     public Guid CreatedByUserId { get; set; }
     public Guid UpdatedByUserId { get; set; }
+    public bool IsArchived { get; set; }
 
     public TentShape TentShape { get; set; } = null!;
     public User CreatedByUser { get; set; } = null!;

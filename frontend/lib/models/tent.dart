@@ -50,6 +50,7 @@ class Tent {
   final String tentShapeId;
   final String? tentShapeName;
   final TentOverallState overallState;
+  final bool isArchived;
   final String? comments;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -62,6 +63,7 @@ class Tent {
     required this.tentShapeId,
     this.tentShapeName,
     required this.overallState,
+    this.isArchived = false,
     required this.comments,
     this.createdAt,
     this.updatedAt,
@@ -78,6 +80,7 @@ class Tent {
       overallState: TentOverallState.fromApiValue(
         json['overallState'] as String,
       ),
+      isArchived: json['isArchived'] as bool? ?? false,
       comments: json['comments'] as String?,
       createdAt: _parseUpdatedAt(json['createdAt']),
       updatedAt: _parseUpdatedAt(json['updatedAt']),

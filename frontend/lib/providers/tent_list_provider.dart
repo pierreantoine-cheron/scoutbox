@@ -110,4 +110,15 @@ class TentListNotifier extends _$TentListNotifier {
     ];
     state = AsyncValue.data(nextTents);
   }
+
+  void hideTent(String tentId) {
+    if (!state.hasValue) {
+      return;
+    }
+
+    final nextTents = state.requireValue
+        .where((tent) => tent.id != tentId)
+        .toList(growable: false);
+    state = AsyncValue.data(nextTents);
+  }
 }

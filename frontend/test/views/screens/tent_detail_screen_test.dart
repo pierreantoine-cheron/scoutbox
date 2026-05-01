@@ -334,7 +334,7 @@ void main() {
       expect(find.text('Toile extérieure'), findsOneWidget);
     });
 
-    testWidgets('archive button remains disabled', (tester) async {
+    testWidgets('archive button is enabled for active tent', (tester) async {
       final repo = _EditableTentRepository();
 
       await tester.pumpWidget(
@@ -350,7 +350,74 @@ void main() {
         find.widgetWithText(OutlinedButton, 'Archiver'),
       );
 
-      expect(archiveButton.onPressed, isNull);
+      expect(archiveButton.onPressed, isNotNull);
+    });
+
+    testWidgets('archive confirmation can be canceled without API call', (
+      tester,
+    ) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Archiver'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Archiver la tente'), findsOneWidget);
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+
+      expect(repo.archiveCallCount, equals(0));
+    });
+
+    testWidgets('archive confirms and calls repository once', (tester) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Archiver'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirmer'));
+      await tester.pumpAndSettle();
+
+      expect(repo.archiveCallCount, equals(1));
+    });
+
+    testWidgets('archive failure keeps user on detail and shows error', (
+      tester,
+    ) async {
+      final repo = _ArchiveFailingTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Archiver'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirmer'));
+      await tester.pump();
+
+      expect(
+        find.text('Impossible d\'archiver la tente. Réessayez.'),
+        findsOneWidget,
+      );
+      expect(find.text('Tente Atlas'), findsOneWidget);
     });
 
     testWidgets('comments field shows character counter when editing', (
@@ -492,6 +559,7 @@ class _SwitchingTentRepository extends TentRepository {
 
 class _EditableTentRepository extends TentRepository {
   int updateCallCount = 0;
+  int archiveCallCount = 0;
   String _currentName = 'Tente Atlas';
   int _currentSize = 6;
   TentOverallState _currentState = TentOverallState.good;
@@ -553,6 +621,42 @@ class _EditableTentRepository extends TentRepository {
           comments: null,
         ),
       ],
+    );
+  }
+
+  @override
+  Future<Tent> archiveTent(String id) async {
+    archiveCallCount++;
+    return Tent(
+      id: id,
+      name: _currentName,
+      size: _currentSize,
+      tentShapeId: 'shape-1',
+      tentShapeName: 'Canadienne',
+      overallState: _currentState,
+      isArchived: true,
+      comments: _currentComments,
+      createdAt: DateTime.utc(2026, 4, 10, 9),
+      updatedAt: DateTime.utc(2026, 4, 13, 10),
+      parts: const [
+        Part(
+          id: 'part-1',
+          partKindId: 'kind-1',
+          partKindName: 'Toile extérieure',
+          displayOrder: 1,
+          state: PartState.good,
+          comments: null,
+        ),
+      ],
+    );
+  }
+}
+
+class _ArchiveFailingTentRepository extends _EditableTentRepository {
+  @override
+  Future<Tent> archiveTent(String id) async {
+    throw const TentRepositoryException(
+      message: 'Impossible d\'archiver la tente. Réessayez.',
     );
   }
 }

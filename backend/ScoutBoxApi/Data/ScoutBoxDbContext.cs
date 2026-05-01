@@ -198,6 +198,7 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.UpdatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId).IsRequired();
             entity.Property(e => e.UpdatedByUserId).IsRequired();
+            entity.Property(e => e.IsArchived).IsRequired().HasDefaultValue(false);
 
             entity.HasOne(e => e.TentShape)
                 .WithMany(e => e.Tents)
@@ -218,6 +219,7 @@ public class ScoutBoxDbContext : DbContext
             entity.HasIndex(e => e.TentShapeId);
             entity.HasIndex(e => e.CreatedByUserId);
             entity.HasIndex(e => e.UpdatedByUserId);
+            entity.HasIndex(e => e.IsArchived);
             entity.HasIndex(e => e.Name).IsUnique();
         });
 

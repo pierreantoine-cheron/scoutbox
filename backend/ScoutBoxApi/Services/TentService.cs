@@ -36,6 +36,7 @@ public class TentService
     {
         return await (
             from tent in _db.Tents.AsNoTracking()
+            where !tent.IsArchived
             join shape in _db.TentShapes.AsNoTracking() on tent.TentShapeId equals shape.Id into shapeJoin
             from shape in shapeJoin.DefaultIfEmpty()
             orderby tent.UpdatedAt descending, tent.CreatedAt descending, tent.Id descending
@@ -46,6 +47,7 @@ public class TentService
                 tent.TentShapeId,
                 shape != null ? shape.Name : null,
                 tent.OverallState.ToString(),
+                tent.IsArchived,
                 tent.Comments,
                 tent.CreatedAt,
                 tent.UpdatedAt,
@@ -90,6 +92,7 @@ public class TentService
             tent.TentShapeId,
             tent.TentShape.Name,
             tent.OverallState.ToString(),
+            tent.IsArchived,
             tent.Comments,
             tent.CreatedAt,
             tent.UpdatedAt,
@@ -233,6 +236,7 @@ public class TentService
                 tent.TentShapeId,
                 shape.Name,
                 tent.OverallState.ToString(),
+                tent.IsArchived,
                 tent.Comments,
                 tent.CreatedAt,
                 tent.UpdatedAt,
@@ -373,6 +377,7 @@ public class TentService
             tent.TentShapeId,
             tent.TentShape.Name,
             tent.OverallState.ToString(),
+            tent.IsArchived,
             tent.Comments,
             tent.CreatedAt,
             tent.UpdatedAt,
@@ -380,6 +385,73 @@ public class TentService
         );
 
         return (dto, null, false);
+    }
+
+    public async Task<(TentDto? Response, bool NotFound)> ArchiveTentAsync(Guid id, Guid userId)
+    {
+        var tent = await _db.Tents
+            .Include(t => t.TentShape)
+            .Include(t => t.Parts)
+                .ThenInclude(p => p.PartKind)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (tent == null)
+        {
+            return (null, true);
+        }
+
+        if (!tent.IsArchived)
+        {
+            tent.IsArchived = true;
+            tent.UpdatedAt = DateTime.UtcNow;
+            tent.UpdatedByUserId = userId;
+
+            _auditService.RecordEvent(
+                AuditActions.TentArchived,
+                userId,
+                targetEntityType: "Tent",
+                targetEntityId: id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["archived"] = true,
+                    ["previousIsArchived"] = false,
+                    ["tentName"] = tent.Name
+                }
+            );
+
+            await _db.SaveChangesAsync();
+        }
+
+        var partDtos = tent.Parts
+            .OrderBy(p => p.PartKind.DisplayOrder)
+            .ThenBy(p => p.PartKindId)
+            .Select(p => new PartDto(
+                p.Id,
+                p.PartKindId,
+                p.PartKind.Name,
+                p.PartKind.DisplayOrder,
+                p.State.ToString(),
+                p.Comments,
+                p.CreatedAt,
+                p.UpdatedAt
+            ))
+            .ToList();
+
+        var dto = new TentDto(
+            tent.Id,
+            tent.Name,
+            tent.Size,
+            tent.TentShapeId,
+            tent.TentShape.Name,
+            tent.OverallState.ToString(),
+            tent.IsArchived,
+            tent.Comments,
+            tent.CreatedAt,
+            tent.UpdatedAt,
+            partDtos
+        );
+
+        return (dto, false);
     }
 
     private static bool IsDuplicateTentNameViolation(DbUpdateException exception)
