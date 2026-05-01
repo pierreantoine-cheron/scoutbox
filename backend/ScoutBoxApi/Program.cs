@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using ScoutBoxApi.Data;
 using ScoutBoxApi.Filters;
 using ScoutBoxApi.Models.DTOs;
+using ScoutBoxApi.Repositories;
 using ScoutBoxApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +32,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAuditHistoryService, AuditHistoryService>();
+builder.Services.AddScoped<ITentRepository, TentRepository>();
 builder.Services.AddScoped<TentService>();
 
 var dataProtectionKeysRoot = builder.Configuration["Storage:DataProtectionKeysRoot"]

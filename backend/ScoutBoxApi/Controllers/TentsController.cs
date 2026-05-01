@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ScoutBoxApi.Filters;
 using ScoutBoxApi.Models.DTOs;
 using ScoutBoxApi.Services;
 
@@ -11,12 +12,10 @@ namespace ScoutBoxApi.Controllers;
 public class TentsController : ControllerBase
 {
     private readonly TentService _tentService;
-    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public TentsController(TentService tentService, ICurrentUserAccessor currentUserAccessor)
+    public TentsController(TentService tentService)
     {
         _tentService = tentService;
-        _currentUserAccessor = currentUserAccessor;
     }
 
     [HttpGet]
@@ -39,16 +38,18 @@ public class TentsController : ControllerBase
     }
 
     [HttpPost]
+    [ValidateUser]
     public async Task<IActionResult> CreateTent([FromBody] CreateTentRequest request)
     {
-        var userId = _currentUserAccessor.GetValidatedUserId();
+        var userId = HttpContext.GetUserId();
         return this.OkDataOrBadRequest(await _tentService.CreateTentAsync(userId, request));
     }
 
     [HttpPut("{id:guid}")]
+    [ValidateUser]
     public async Task<IActionResult> UpdateTent([FromRoute] Guid id, [FromBody] UpdateTentRequest request)
     {
-        var userId = _currentUserAccessor.GetValidatedUserId();
+        var userId = HttpContext.GetUserId();
         var (response, error, notFound) = await _tentService.UpdateTentAsync(id, userId, request);
 
         if (notFound)
@@ -65,9 +66,10 @@ public class TentsController : ControllerBase
     }
 
     [HttpPut("{id:guid}/archive")]
+    [ValidateUser]
     public async Task<IActionResult> ArchiveTent([FromRoute] Guid id)
     {
-        var userId = _currentUserAccessor.GetValidatedUserId();
+        var userId = HttpContext.GetUserId();
         var (response, notFound) = await _tentService.ArchiveTentAsync(id, userId);
 
         if (notFound)

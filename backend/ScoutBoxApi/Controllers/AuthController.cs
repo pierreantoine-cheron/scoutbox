@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using ScoutBoxApi.Filters;
 using ScoutBoxApi.Models.DTOs;
 using ScoutBoxApi.Services;
 
@@ -12,12 +13,10 @@ namespace ScoutBoxApi.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
-    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public AuthController(AuthService authService, ICurrentUserAccessor currentUserAccessor)
+    public AuthController(AuthService authService)
     {
         _authService = authService;
-        _currentUserAccessor = currentUserAccessor;
     }
 
     [HttpPost("register")]
@@ -42,9 +41,10 @@ public class AuthController : ControllerBase
 
     [HttpPost("invites")]
     [Authorize]
+    [ValidateUser]
     public async Task<IActionResult> CreateInvite([FromBody] CreateInviteRequest request)
     {
-        var userId = _currentUserAccessor.GetValidatedUserId();
+        var userId = HttpContext.GetUserId();
         return this.OkOrBadRequest(await _authService.CreateInviteAsync(userId, request));
     }
 
@@ -56,6 +56,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("logout")]
     [Authorize]
+    [ValidateUser]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest? request)
     {
         if (request == null)
@@ -63,7 +64,7 @@ public class AuthController : ControllerBase
             return BadRequest(new ErrorResponse("Refresh token is required", "INVALID_REFRESH_TOKEN"));
         }
 
-        var userId = _currentUserAccessor.GetValidatedUserId();
+        var userId = HttpContext.GetUserId();
         return this.OkOrBadRequest(await _authService.LogoutAsync(userId, request.RefreshToken));
     }
 }

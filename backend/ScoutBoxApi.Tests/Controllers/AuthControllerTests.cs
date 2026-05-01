@@ -22,7 +22,6 @@ public class AuthControllerTests : IDisposable
     private readonly AuthController _controller;
     private readonly AuthService _authService;
     private readonly TokenService _tokenService;
-    private readonly HttpContextAccessor _httpContextAccessor;
 
     public AuthControllerTests()
     {
@@ -50,11 +49,7 @@ public class AuthControllerTests : IDisposable
         var inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object);
         _authService = new AuthService(_db, _tokenService, inviteService, auditService, authServiceLoggerMock.Object);
 
-        // Create HttpContextAccessor for CurrentUserAccessor
-        _httpContextAccessor = new HttpContextAccessor();
-        var currentUserAccessor = new CurrentUserAccessor(_httpContextAccessor);
-
-        _controller = new AuthController(_authService, currentUserAccessor);
+        _controller = new AuthController(_authService);
     }
 
     public void Dispose()
@@ -73,7 +68,6 @@ public class AuthControllerTests : IDisposable
         var principal = new ClaimsPrincipal(identity);
 
         var httpContext = new DefaultHttpContext { User = principal };
-        _httpContextAccessor.HttpContext = httpContext;
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
