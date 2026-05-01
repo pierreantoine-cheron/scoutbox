@@ -65,6 +65,28 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomApiFactory>
         Assert.NotNull(payload);
         Assert.True(payload.Errors.ContainsKey("ExpiresInDays"));
     }
+
+    [Fact]
+    public async Task Register_WithInvalidPayload_ReturnsApiValidationError()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.PostAsJsonAsync("/api/auth/register", new
+        {
+            inviteCode = "INVITE-123",
+            username = new string('u', 51),
+            password = "password123"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        Assert.NotNull(payload);
+        Assert.True(payload.Errors.ContainsKey("Username"));
+    }
 }
 
 public sealed class CustomApiFactory : WebApplicationFactory<Program>

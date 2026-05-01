@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -367,12 +368,11 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
     }
 
     [Theory]
-    [InlineData("", 6, "TENT_NAME_REQUIRED")]
-    [InlineData("   ", 6, "TENT_NAME_REQUIRED")]
-    [InlineData("Tente", 0, "INVALID_TENT_SIZE")]
-    [InlineData("Tente", -1, "INVALID_TENT_SIZE")]
-    [InlineData("Tente", 101, "INVALID_TENT_SIZE")]
-    public async Task CreateTent_WithInvalidPayload_ReturnsErrorCode(string name, int size, string expectedCode)
+    [InlineData("", 6, "Name")]
+    [InlineData("Tente", 0, "Size")]
+    [InlineData("Tente", -1, "Size")]
+    [InlineData("Tente", 101, "Size")]
+    public async Task CreateTent_WithInvalidDto_ReturnsApiValidationError(string name, int size, string expectedField)
     {
         await EnsureTestUserExistsAsync();
 
@@ -401,10 +401,77 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        var payload = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
         Assert.NotNull(payload);
-        Assert.False(string.IsNullOrWhiteSpace(payload.Error));
-        Assert.Equal(expectedCode, payload.Code);
+        Assert.True(payload.Errors.ContainsKey(expectedField));
+    }
+
+    [Fact]
+    public async Task CreateTent_WithWhitespaceName_ReturnsApiValidationError()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var request = new
+        {
+            name = "   ",
+            size = 6,
+            tentShapeId = shapeId,
+            overallState = "Good",
+            comments = "test"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/tents", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        Assert.NotNull(payload);
+        Assert.True(payload.Errors.ContainsKey("Name"));
+    }
+
+    [Fact]
+    public async Task CreateTent_WithTooLongComments_ReturnsApiValidationError()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync("/api/tents", new
+        {
+            name = "Tente Long Comments",
+            size = 6,
+            tentShapeId = shapeId,
+            overallState = "Good",
+            comments = new string('x', 501)
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        Assert.NotNull(payload);
+        Assert.True(payload.Errors.ContainsKey("Comments"));
     }
 
     [Fact]
@@ -1509,12 +1576,11 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
     }
 
     [Theory]
-    [InlineData("", 4, "TENT_NAME_REQUIRED")]
-    [InlineData("   ", 4, "TENT_NAME_REQUIRED")]
-    [InlineData("Tente", 0, "INVALID_TENT_SIZE")]
-    [InlineData("Tente", -1, "INVALID_TENT_SIZE")]
-    [InlineData("Tente", 101, "INVALID_TENT_SIZE")]
-    public async Task UpdateTent_WithInvalidPayload_ReturnsErrorCode(string name, int size, string expectedCode)
+    [InlineData("", 4, "Name")]
+    [InlineData("Tente", 0, "Size")]
+    [InlineData("Tente", -1, "Size")]
+    [InlineData("Tente", 101, "Size")]
+    public async Task UpdateTent_WithInvalidDto_ReturnsApiValidationError(string name, int size, string expectedField)
     {
         await EnsureTestUserExistsAsync();
 
@@ -1557,9 +1623,58 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        var payload = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
         Assert.NotNull(payload);
-        Assert.Equal(expectedCode, payload.Code);
+        Assert.True(payload.Errors.ContainsKey(expectedField));
+    }
+
+    [Fact]
+    public async Task UpdateTent_WithWhitespaceName_ReturnsApiValidationError()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        var originalName = $"Tente Whitespace Update {Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var shapeId = await db.TentShapes
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => x.Id)
+                .FirstAsync();
+
+            tentId = Guid.NewGuid();
+            db.Tents.Add(new Tent
+            {
+                Id = tentId,
+                Name = originalName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                Comments = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+        {
+            name = "   ",
+            size = 4,
+            overallState = "Good",
+            comments = (string?)null
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        Assert.NotNull(payload);
+        Assert.True(payload.Errors.ContainsKey("Name"));
     }
 
     [Fact]
@@ -1657,9 +1772,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        var payload = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
         Assert.NotNull(payload);
-        Assert.Equal("TENT_UPDATE_FAILED", payload.Code);
+        Assert.True(payload.Errors.ContainsKey("Comments"));
     }
 
     [Fact]
@@ -1764,15 +1879,29 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
             db.Tents.Add(new Tent
             {
-                Id = Guid.NewGuid(), Name = archivedName, Size = 4, TentShapeId = shapeId, OverallState = TentOverallState.Good,
-                IsArchived = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
-                CreatedByUserId = CustomApiFactory.TestUserId, UpdatedByUserId = CustomApiFactory.TestUserId
+                Id = Guid.NewGuid(),
+                Name = archivedName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                IsArchived = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
             });
             db.Tents.Add(new Tent
             {
-                Id = Guid.NewGuid(), Name = activeName, Size = 4, TentShapeId = shapeId, OverallState = TentOverallState.Good,
-                IsArchived = false, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
-                CreatedByUserId = CustomApiFactory.TestUserId, UpdatedByUserId = CustomApiFactory.TestUserId
+                Id = Guid.NewGuid(),
+                Name = activeName,
+                Size = 4,
+                TentShapeId = shapeId,
+                OverallState = TentOverallState.Good,
+                IsArchived = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
             });
             await db.SaveChangesAsync();
         }
@@ -1782,6 +1911,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentApiDto>>>();
+        Assert.NotNull(payload);
         Assert.DoesNotContain(payload.Data, t => t.Name == archivedName);
         Assert.Contains(payload.Data, t => t.Name == activeName);
     }
@@ -1796,6 +1926,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
         var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
         Assert.Equal("TENT_NOT_FOUND", payload.Code);
     }
 
