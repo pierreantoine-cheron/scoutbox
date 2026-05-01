@@ -42,14 +42,7 @@ public class TentsController : ControllerBase
     public async Task<IActionResult> CreateTent([FromBody] CreateTentRequest request)
     {
         var userId = _currentUserAccessor.GetValidatedUserId();
-        var (response, error) = await _tentService.CreateTentAsync(userId, request);
-
-        if (error != null)
-        {
-            return BadRequest(error);
-        }
-
-        return Ok(new { data = response });
+        return this.OkDataOrBadRequest(await _tentService.CreateTentAsync(userId, request));
     }
 
     [HttpPut("{id:guid}")]

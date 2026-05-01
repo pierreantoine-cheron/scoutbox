@@ -23,14 +23,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var (response, error) = await _authService.RegisterAsync(request);
-
-        if (error != null)
-        {
-            return BadRequest(error);
-        }
-
-        return Ok(response);
+        return this.OkOrBadRequest(await _authService.RegisterAsync(request));
     }
 
     [HttpPost("login")]
@@ -52,28 +45,13 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> CreateInvite([FromBody] CreateInviteRequest request)
     {
         var userId = _currentUserAccessor.GetValidatedUserId();
-
-        var (response, error) = await _authService.CreateInviteAsync(userId, request);
-
-        if (error != null)
-        {
-            return BadRequest(error);
-        }
-
-        return Ok(response);
+        return this.OkOrBadRequest(await _authService.CreateInviteAsync(userId, request));
     }
 
     [HttpPost("refresh")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
-        var (response, error) = await _authService.RefreshTokenAsync(request.RefreshToken);
-
-        if (error != null)
-        {
-            return BadRequest(error);
-        }
-
-        return Ok(response);
+        return this.OkOrBadRequest(await _authService.RefreshTokenAsync(request.RefreshToken));
     }
 
     [HttpPost("logout")]
@@ -86,16 +64,6 @@ public class AuthController : ControllerBase
         }
 
         var userId = _currentUserAccessor.GetValidatedUserId();
-
-        var (response, error) = await _authService.LogoutAsync(userId, request.RefreshToken);
-
-        if (error != null)
-        {
-            // Return 400 for validation errors (e.g., missing refresh token)
-            // The client should still perform local cleanup
-            return BadRequest(error);
-        }
-
-        return Ok(response);
+        return this.OkOrBadRequest(await _authService.LogoutAsync(userId, request.RefreshToken));
     }
 }

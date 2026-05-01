@@ -5,8 +5,6 @@ namespace ScoutBoxApi.Data;
 
 public class ScoutBoxDbContext : DbContext
 {
-    private static readonly DateTime TentSeedTimestampUtc = new(2026, 4, 4, 0, 0, 0, DateTimeKind.Utc);
-
     public ScoutBoxDbContext(DbContextOptions<ScoutBoxDbContext> options) : base(options)
     {
     }
@@ -25,7 +23,6 @@ public class ScoutBoxDbContext : DbContext
     {
         base.OnConfiguring(optionsBuilder);
 
-        // Configure data seeding - creates admin invite on first run
         optionsBuilder.UseSeeding((context, _) =>
         {
             SeedAdminInvite(context);
@@ -33,11 +30,32 @@ public class ScoutBoxDbContext : DbContext
 
         optionsBuilder.UseAsyncSeeding(async (context, _, cancellationToken) =>
         {
-            await Task.Run(() => SeedAdminInvite(context), cancellationToken);
+            await SeedAdminInviteAsync(context, cancellationToken);
         });
     }
 
     private static void SeedAdminInvite(DbContext context)
+    {
+        if (!context.Set<Invite>().Any())
+        {
+            var adminInvite = new Invite
+            {
+                Id = Guid.NewGuid(),
+                Code = "ADMIN-SETUP",
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                IsUsed = false,
+                CreatedByUserId = null
+            };
+            context.Set<Invite>().Add(adminInvite);
+            context.SaveChanges();
+
+            Console.WriteLine($"[SETUP] Admin invite created: {adminInvite.Code}");
+            Console.WriteLine($"[SETUP] Use this code to register the first user.");
+        }
+    }
+
+    private static async Task SeedAdminInviteAsync(DbContext context, CancellationToken cancellationToken)
     {
         // Only create admin invite if no invites exist (first-time setup)
         if (!context.Set<Invite>().Any())
@@ -52,7 +70,7 @@ public class ScoutBoxDbContext : DbContext
                 CreatedByUserId = null
             };
             context.Set<Invite>().Add(adminInvite);
-            context.SaveChanges();
+            await context.SaveChangesAsync(cancellationToken);
 
             Console.WriteLine($"[SETUP] Admin invite created: {adminInvite.Code}");
             Console.WriteLine($"[SETUP] Use this code to register the first user.");
@@ -293,64 +311,7 @@ public class ScoutBoxDbContext : DbContext
             entity.HasIndex(e => e.UpdatedByUserId);
         });
 
-        SeedTentReferenceData(modelBuilder);
-    }
-
-    private static void SeedTentReferenceData(ModelBuilder modelBuilder)
-    {
-        var partKinds = new[]
-        {
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000101"), Name = "toit", IsStandard = true, DisplayOrder = 1, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000102"), Name = "double toit", IsStandard = true, DisplayOrder = 2, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000103"), Name = "fetiere", IsStandard = true, DisplayOrder = 3, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000104"), Name = "piquets", IsStandard = true, DisplayOrder = 4, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000105"), Name = "tapis de sol", IsStandard = true, DisplayOrder = 5, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000106"), Name = "sac", IsStandard = true, DisplayOrder = 6, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
-            new PartKind { Id = Guid.Parse("00000000-0000-0000-0000-000000000107"), Name = "sardines", IsStandard = true, DisplayOrder = 7, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc }
-        };
-
-        var tentShapes = new[]
-        {
-            new TentShape { Id = Guid.Parse("00000000-0000-0000-0000-000000000201"), Name = "Canadienne", Description = "Tente legere a double pente.", IsActive = true, DisplayOrder = 1, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
-            new TentShape { Id = Guid.Parse("00000000-0000-0000-0000-000000000202"), Name = "Cabanon", Description = "Tente spacieuse avec murs droits.", IsActive = true, DisplayOrder = 2, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
-            new TentShape { Id = Guid.Parse("00000000-0000-0000-0000-000000000203"), Name = "Tipi", Description = "Structure conique monomat.", IsActive = true, DisplayOrder = 3, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc },
-            new TentShape { Id = Guid.Parse("00000000-0000-0000-0000-000000000204"), Name = "Marabout", Description = "Grande tente collective.", IsActive = true, DisplayOrder = 4, CreatedAt = TentSeedTimestampUtc, UpdatedAt = TentSeedTimestampUtc }
-        };
-
-        var tentShapeParts = new[]
-        {
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000301"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000101") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000302"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000102") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000303"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000103") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000304"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000104") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000305"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000105") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000306"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000106") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000307"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000201"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000107") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000308"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000101") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000309"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000102") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000310"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000103") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000311"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000104") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000312"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000105") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000313"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000106") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000314"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000202"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000107") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000315"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000101") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000316"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000102") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000317"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000103") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000318"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000104") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000319"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000105") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000320"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000106") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000321"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000203"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000107") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000322"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000101") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000323"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000102") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000324"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000103") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000325"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000104") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000326"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000105") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000327"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000106") },
-            new TentShapePart { Id = Guid.Parse("00000000-0000-0000-0000-000000000328"), TentShapeId = Guid.Parse("00000000-0000-0000-0000-000000000204"), PartKindId = Guid.Parse("00000000-0000-0000-0000-000000000107") }
-        };
-
-        modelBuilder.Entity<PartKind>().HasData(partKinds);
-        modelBuilder.Entity<TentShape>().HasData(tentShapes);
-        modelBuilder.Entity<TentShapePart>().HasData(tentShapeParts);
+        modelBuilder.SeedTentReferenceData();
     }
 }
+
