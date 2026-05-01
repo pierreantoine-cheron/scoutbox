@@ -27,6 +27,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     with RouteAware {
   late final TextEditingController _searchController;
   RouteObserver<ModalRoute<dynamic>>? _routeObserver;
+  ModalRoute<dynamic>? _subscribedRoute;
 
   @override
   void initState() {
@@ -38,13 +39,21 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _routeObserver ??= ref.read(routeObserverProvider);
-    _routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    final route = ModalRoute.of(context);
+    if (route != null && route != _subscribedRoute) {
+      if (_subscribedRoute != null) {
+        _routeObserver!.unsubscribe(this);
+      }
+      _routeObserver!.subscribe(this, route);
+      _subscribedRoute = route;
+    }
     _scheduleConfigUpdate();
   }
 
   @override
   void dispose() {
     _routeObserver?.unsubscribe(this);
+    _subscribedRoute = null;
     _searchController.dispose();
     super.dispose();
   }

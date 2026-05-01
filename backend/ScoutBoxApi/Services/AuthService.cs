@@ -66,6 +66,16 @@ public class AuthService
 
         if (!inviteConsumed)
         {
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync();
+            }
+            else
+            {
+                _db.Users.Remove(user);
+                await _db.SaveChangesAsync();
+            }
+
             _logger.LogWarning("Invalid or expired invite code attempted: {InviteCode}", request.InviteCode);
             return (null, new ErrorResponse("Invalid or expired invite code", "INVALID_INVITE"));
         }

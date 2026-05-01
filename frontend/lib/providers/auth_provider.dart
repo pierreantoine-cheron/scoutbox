@@ -69,6 +69,10 @@ class AuthNotifier extends _$AuthNotifier {
     required String username,
     required String password,
   }) async {
+    if (state.isLoading) {
+      return;
+    }
+
     state = state.copyWith(isLoading: true, error: null);
 
     try {

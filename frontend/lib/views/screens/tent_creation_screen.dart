@@ -29,6 +29,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
   bool _didAttemptSubmit = false;
   bool _isRetryingShapes = false;
   RouteObserver<ModalRoute<dynamic>>? _routeObserver;
+  ModalRoute<dynamic>? _subscribedRoute;
 
   @override
   void initState() {
@@ -43,12 +44,20 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _routeObserver ??= ref.read(routeObserverProvider);
-    _routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    final route = ModalRoute.of(context);
+    if (route != null && route != _subscribedRoute) {
+      if (_subscribedRoute != null) {
+        _routeObserver!.unsubscribe(this);
+      }
+      _routeObserver!.subscribe(this, route);
+      _subscribedRoute = route;
+    }
   }
 
   @override
   void dispose() {
     _routeObserver?.unsubscribe(this);
+    _subscribedRoute = null;
     _nameController.dispose();
     _sizeController.dispose();
     _commentsController.dispose();
@@ -59,11 +68,15 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
   void didPush() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(
-          screenId: 'tent_creation',
-          title: Text('Créer une tente'),
-          showBackButton: true,
-        ));
+        ref
+            .read(appBarConfigProvider.notifier)
+            .set(
+              const AppBarConfig(
+                screenId: 'tent_creation',
+                title: Text('Créer une tente'),
+                showBackButton: true,
+              ),
+            );
       }
     });
   }
@@ -76,30 +89,31 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
 
     return Material(
       child: PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) {
-          return;
-        }
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) async {
+          if (didPop) {
+            return;
+          }
 
-        final shouldLeave = await _confirmDiscardDraft();
-        if (shouldLeave && context.mounted) {
-          Navigator.of(context).pop();
-        }
-      },
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: _currentStep == 0
-                ? _buildShapeStep(context, shapesState, creationState)
-                : _buildDetailsStep(context, creationState),
+          final shouldLeave = await _confirmDiscardDraft();
+          if (shouldLeave && context.mounted) {
+            Navigator.of(context).pop();
+          }
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _currentStep == 0
+                  ? _buildShapeStep(context, shapesState, creationState)
+                  : _buildDetailsStep(context, creationState),
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildShapeStep(

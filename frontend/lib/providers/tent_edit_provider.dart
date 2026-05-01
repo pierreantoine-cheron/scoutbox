@@ -12,7 +12,7 @@ enum EditableField { name, size, overallState, comments }
 @riverpod
 class TentEditNotifier extends _$TentEditNotifier {
   @override
-  TentEditState build() => const TentEditState();
+  TentEditState build(String tentId) => const TentEditState();
 
   Future<void> updateField({
     required String tentId,

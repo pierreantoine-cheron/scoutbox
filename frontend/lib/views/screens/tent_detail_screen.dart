@@ -27,18 +27,27 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
     with RouteAware {
   DateTime? _lastSeenSaveTime;
   RouteObserver<ModalRoute<dynamic>>? _routeObserver;
+  ModalRoute<dynamic>? _subscribedRoute;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _routeObserver ??= ref.read(routeObserverProvider);
-    _routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    final route = ModalRoute.of(context);
+    if (route != null && route != _subscribedRoute) {
+      if (_subscribedRoute != null) {
+        _routeObserver!.unsubscribe(this);
+      }
+      _routeObserver!.subscribe(this, route);
+      _subscribedRoute = route;
+    }
     _scheduleConfigUpdate();
   }
 
   @override
   void dispose() {
     _routeObserver?.unsubscribe(this);
+    _subscribedRoute = null;
     super.dispose();
   }
 
@@ -72,7 +81,7 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
   @override
   Widget build(BuildContext context) {
     final tentAsync = ref.watch(tentDetailProvider(widget.tentId));
-    final editState = ref.watch(tentEditProvider);
+    final editState = ref.watch(tentEditProvider(widget.tentId));
 
     if (editState.lastSaveTime != null &&
         editState.lastSaveTime != _lastSeenSaveTime) {
@@ -113,7 +122,7 @@ class _DetailContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final editState = ref.watch(tentEditProvider);
+    final editState = ref.watch(tentEditProvider(tentId));
     final displayedTent = editState.baseTent?.id == tentId
         ? editState.baseTent!
         : tent;
@@ -150,10 +159,10 @@ class _DetailContent extends ConsumerWidget {
                   onRetry: editState.pendingRetry == null
                       ? null
                       : () => ref
-                            .read(tentEditProvider.notifier)
+                            .read(tentEditProvider(tentId).notifier)
                             .retryLastUpdate(),
                   onDismiss: () =>
-                      ref.read(tentEditProvider.notifier).clearError(),
+                      ref.read(tentEditProvider(tentId).notifier).clearError(),
                 ),
               ],
             ],
@@ -389,7 +398,7 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
       widget.editState.editingField == EditableField.name;
 
   void _handleConfirm() {
-    final notifier = ref.read(tentEditProvider.notifier);
+    final notifier = ref.read(tentEditProvider(widget.tentId).notifier);
     final name = _controller.text.trim();
 
     if (name.isEmpty) {
@@ -413,13 +422,13 @@ class _EditableNameFieldState extends ConsumerState<_EditableNameField> {
 
   void _handleCancel() {
     _controller.text = widget.tent.name;
-    ref.read(tentEditProvider.notifier).cancelEditing();
+    ref.read(tentEditProvider(widget.tentId).notifier).cancelEditing();
   }
 
   void _startEditing() {
     _controller.text = widget.tent.name;
     ref
-        .read(tentEditProvider.notifier)
+        .read(tentEditProvider(widget.tentId).notifier)
         .startEditing(EditableField.name, widget.tent);
     _focusNode.requestFocus();
   }
@@ -559,7 +568,7 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
     }
 
     ref
-        .read(tentEditProvider.notifier)
+        .read(tentEditProvider(widget.tentId).notifier)
         .updateField(
           tentId: widget.tentId,
           name: widget.tent.name,
@@ -571,13 +580,13 @@ class _EditableSizeFieldState extends ConsumerState<_EditableSizeField> {
 
   void _handleCancel() {
     _controller.text = widget.tent.size.toString();
-    ref.read(tentEditProvider.notifier).cancelEditing();
+    ref.read(tentEditProvider(widget.tentId).notifier).cancelEditing();
   }
 
   void _startEditing() {
     _controller.text = widget.tent.size.toString();
     ref
-        .read(tentEditProvider.notifier)
+        .read(tentEditProvider(widget.tentId).notifier)
         .startEditing(EditableField.size, widget.tent);
     _focusNode.requestFocus();
   }
@@ -675,7 +684,7 @@ class _EditableOverallStateSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(tentEditProvider.notifier);
+    final notifier = ref.read(tentEditProvider(tentId).notifier);
     final isSaving = editState.savingField == EditableField.overallState;
 
     if (isSaving) {
@@ -847,7 +856,7 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
     }
 
     ref
-        .read(tentEditProvider.notifier)
+        .read(tentEditProvider(widget.tentId).notifier)
         .updateField(
           tentId: widget.tentId,
           name: widget.tent.name,
@@ -859,13 +868,13 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
 
   void _handleCancel() {
     _controller.text = widget.tent.comments ?? '';
-    ref.read(tentEditProvider.notifier).cancelEditing();
+    ref.read(tentEditProvider(widget.tentId).notifier).cancelEditing();
   }
 
   void _startEditing() {
     _controller.text = widget.tent.comments ?? '';
     ref
-        .read(tentEditProvider.notifier)
+        .read(tentEditProvider(widget.tentId).notifier)
         .startEditing(EditableField.comments, widget.tent);
     _focusNode.requestFocus();
   }

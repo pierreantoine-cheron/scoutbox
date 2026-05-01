@@ -114,6 +114,9 @@ public class AuthControllerTests : IDisposable
         var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
         Assert.Equal("INVALID_INVITE", error.Code);
         Assert.Equal("Invalid or expired invite code", error.Error);
+
+        var createdUser = await _db.Users.FirstOrDefaultAsync(u => u.Username == "testuser");
+        Assert.Null(createdUser);
     }
 
     [Fact]
