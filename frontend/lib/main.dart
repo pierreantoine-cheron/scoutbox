@@ -2,68 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'providers/providers.dart';
-import 'views/screens/login_screen.dart';
-import 'views/screens/register_screen.dart';
-import 'views/screens/tent_list_screen.dart';
-import 'views/widgets/fading_cloud_done_icon.dart';
+import 'utils/app_theme.dart';
+import 'views/screens/auth_gate.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: ScoutBoxApp()));
-}
-
-class AuthGate extends ConsumerStatefulWidget {
-  const AuthGate({super.key});
-
-  @override
-  ConsumerState<AuthGate> createState() => _AuthGateState();
-}
-
-class _AuthGateState extends ConsumerState<AuthGate> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
-  late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
-
-  @override
-  void initState() {
-    super.initState();
-    _routeObserver = ref.read(routeObserverProvider);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
-    final appBarConfig = ref.watch(appBarConfigProvider);
-    final successTrigger = ref.watch(successIndicatorProvider);
-
-    return Scaffold(
-      appBar: AppBar(
-        leading: appBarConfig.showBackButton
-            ? BackButton(
-                onPressed: () => _navigatorKey.currentState?.pop(),
-              )
-            : null,
-        title: appBarConfig.title,
-        actions: [
-          FadingCloudDoneIcon(trigger: successTrigger),
-          if (appBarConfig.actions != null) ...appBarConfig.actions!,
-        ],
-      ),
-      floatingActionButton: appBarConfig.fab,
-      body: authState.isAuthenticated
-          ? Navigator(
-              key: _navigatorKey,
-              observers: [_routeObserver],
-              onGenerateInitialRoutes: (navigator, initialRoute) {
-                return [
-                  MaterialPageRoute(builder: (_) => const TentListScreen()),
-                ];
-              },
-            )
-          : authState.showLoginScreen
-              ? const LoginScreen()
-              : const RegisterScreen(),
-    );
-  }
 }
 
 class ScoutBoxApp extends ConsumerStatefulWidget {
@@ -113,8 +57,7 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
   }
 
   Future<void> _handleAppResume() async {
-    final authNotifier = ref.read(authProvider.notifier);
-    await authNotifier.handleAppResume();
+    await ref.read(authProvider.notifier).handleAppResume();
   }
 
   @override
@@ -124,10 +67,7 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
     if (_isInitializing) {
       return MaterialApp(
         title: 'ScoutBox',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.minimal(),
         home: const Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
@@ -135,26 +75,7 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
     return MaterialApp(
       title: 'ScoutBox',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-      ),
+      theme: AppTheme.theme(context),
       home: const AuthGate(),
     );
   }

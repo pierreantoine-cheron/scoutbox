@@ -22,9 +22,6 @@ class ApiClient {
   // Single-flight refresh task shared by all concurrent requests
   static Future<RefreshResult>? _ongoingRefresh;
 
-  // Generation counter to invalidate in-progress refresh after reset
-  static int _refreshGeneration = 0;
-
   // Excluded paths that should never trigger refresh or have auth headers
   static final _authExcludedPaths = [
     ApiRoutes.login,
@@ -87,7 +84,6 @@ class ApiClient {
     _baseUrl = null;
     _hasAuthInterceptors = false;
     _ongoingRefresh = null;
-    _refreshGeneration++;
   }
 
   static Dio _createDio(String baseUrl) {
@@ -247,12 +243,13 @@ class ApiClient {
       return _ongoingRefresh!;
     }
 
-    final currentGeneration = _refreshGeneration;
     final refreshFuture = performRefresh();
     _ongoingRefresh = refreshFuture;
 
     return refreshFuture.whenComplete(() {
-      if (_refreshGeneration == currentGeneration) {
+      // Only clear if we still own the slot — reset() might have started a
+      // new refresh in a different generation
+      if (identical(_ongoingRefresh, refreshFuture)) {
         _ongoingRefresh = null;
       }
     });
