@@ -420,6 +420,33 @@ void main() {
       expect(find.text('Tente Atlas'), findsOneWidget);
     });
 
+    testWidgets('archived tent shows archiving chip and disables editing', (
+      tester,
+    ) async {
+      final repo = _ArchivedTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Archivée'), findsOneWidget);
+
+      final archiveButton = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Archiver'),
+      );
+      expect(archiveButton.onPressed, isNull);
+
+      // Tap name field — should not enter edit mode
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.check), findsNothing);
+    });
+
     testWidgets('comments field shows character counter when editing', (
       tester,
     ) async {
@@ -659,6 +686,32 @@ class _ArchiveFailingTentRepository extends _EditableTentRepository {
       message: 'Impossible d\'archiver la tente. Réessayez.',
     );
   }
+}
+
+class _ArchivedTentRepository extends TentRepository {
+  @override
+  Future<Tent> getTent(String id) async => Tent(
+    id: id,
+    name: 'Tente Atlas',
+    size: 6,
+    tentShapeId: 'shape-1',
+    tentShapeName: 'Canadienne',
+    overallState: TentOverallState.good,
+    isArchived: true,
+    comments: 'Une tente de test.',
+    createdAt: DateTime.utc(2026, 4, 10, 9),
+    updatedAt: DateTime.utc(2026, 4, 13, 10),
+    parts: const [
+      Part(
+        id: 'part-1',
+        partKindId: 'kind-1',
+        partKindName: 'Toile extérieure',
+        displayOrder: 1,
+        state: PartState.good,
+        comments: null,
+      ),
+    ],
+  );
 }
 
 class _FailingUpdateTentRepository extends TentRepository {

@@ -244,19 +244,22 @@ class _ArchiveTentButtonState extends ConsumerState<_ArchiveTentButton> {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: widget.isArchived || _isArchiving ? null : _onArchivePressed,
-      icon: _isArchiving
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.archive_outlined),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.error,
+    return Semantics(
+      label: 'Archiver la tente',
+      child: OutlinedButton.icon(
+        onPressed: widget.isArchived || _isArchiving ? null : _onArchivePressed,
+        icon: _isArchiving
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.archive_outlined),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.error,
+        ),
+        label: const Text('Archiver'),
       ),
-      label: const Text('Archiver'),
     );
   }
 
@@ -299,12 +302,15 @@ class _ArchiveTentButtonState extends ConsumerState<_ArchiveTentButton> {
       if (mounted) {
         Navigator.of(context).maybePop();
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
+        final message = e is TentRepositoryException
+            ? e.message
+            : 'Impossible d\'archiver la tente. Réessayez.';
         await showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
-            content: const Text('Impossible d\'archiver la tente. Réessayez.'),
+            content: Text(message),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
