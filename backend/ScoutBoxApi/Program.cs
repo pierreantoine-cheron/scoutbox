@@ -34,6 +34,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAuditHistoryService, AuditHistoryService>();
 builder.Services.AddScoped<ITentRepository, TentRepository>();
 builder.Services.AddScoped<TentService>();
+builder.Services.AddScoped<PartService>();
 
 var dataProtectionKeysRoot = builder.Configuration["Storage:DataProtectionKeysRoot"]
     ?? Path.Combine(AppContext.BaseDirectory, "data-protection-keys");

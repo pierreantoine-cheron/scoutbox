@@ -19,6 +19,19 @@ enum PartState {
     }
   }
 
+  String toApiValue() {
+    switch (this) {
+      case PartState.good:
+        return 'Good';
+      case PartState.needsRepair:
+        return 'NeedsRepair';
+      case PartState.missing:
+        return 'Missing';
+      case PartState.unusable:
+        return 'Unusable';
+    }
+  }
+
   static PartState fromApiValue(String value) {
     switch (value) {
       case 'Good':

@@ -187,6 +187,34 @@ class TentRepository {
     }
   }
 
+  Future<Part> updatePartState({
+    required String id,
+    required PartState state,
+  }) async {
+    try {
+      final response = await ApiClient.instance.put(
+        '${ApiRoutes.parts}/$id',
+        data: {'state': state.toApiValue()},
+      );
+      return Part.fromJson(_readEnvelopeMap(response.data));
+    } on DioException catch (e) {
+      throw _toRepositoryException(
+        e,
+        fallbackMessage: 'Impossible de mettre à jour l\'élément. Réessayez.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors de la mise à jour de l\'élément.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors de la mise à jour de l\'élément.',
+      );
+    }
+  }
+
   List<dynamic> _readEnvelopeList(Object? responseData) {
     final envelope = _asMap(responseData);
     final data = envelope['data'];

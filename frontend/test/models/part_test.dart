@@ -2,6 +2,15 @@ import 'package:client/models/part.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('PartState.toApiValue', () {
+    test('returns exact backend enum values', () {
+      expect(PartState.good.toApiValue(), 'Good');
+      expect(PartState.needsRepair.toApiValue(), 'NeedsRepair');
+      expect(PartState.missing.toApiValue(), 'Missing');
+      expect(PartState.unusable.toApiValue(), 'Unusable');
+    });
+  });
+
   group('Part.fromJson', () {
     test('parses all backend states', () {
       final good = Part.fromJson({

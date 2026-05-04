@@ -38,5 +38,9 @@ class ErrorLocalizer {
     ErrorCodes.invalidTentState: "L'état de la tente est invalide",
     ErrorCodes.tentCreateFailed: 'Erreur serveur. Réessayez',
     ErrorCodes.tentNotFound: 'Tente introuvable',
+    ErrorCodes.partNotFound: 'Élément introuvable.',
+    ErrorCodes.invalidPartState: "L'état de l'élément est invalide.",
+    ErrorCodes.tentArchived:
+        'Cette tente est archivée et ne peut plus être modifiée.',
   };
 }

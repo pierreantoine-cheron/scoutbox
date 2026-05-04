@@ -4,6 +4,7 @@ class ApiRoutes {
   static const String health = '/api/health';
   static const String authBase = '/api/auth';
   static const String tents = '/api/tents';
+  static const String parts = '/api/parts';
   static const String tentShapes = '/api/tent-shapes';
 
   // Auth endpoints
@@ -54,6 +55,9 @@ class ErrorCodes {
   static const String invalidTentState = 'INVALID_TENT_STATE';
   static const String tentCreateFailed = 'TENT_CREATE_FAILED';
   static const String tentNotFound = 'TENT_NOT_FOUND';
+  static const String partNotFound = 'PART_NOT_FOUND';
+  static const String invalidPartState = 'INVALID_PART_STATE';
+  static const String tentArchived = 'TENT_ARCHIVED';
 }
 
 // API timeouts

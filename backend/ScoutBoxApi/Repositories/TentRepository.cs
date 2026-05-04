@@ -68,6 +68,14 @@ public class TentRepository : ITentRepository
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
+    public async Task<Part?> GetPartByIdForUpdateAsync(Guid id)
+    {
+        return await _db.Parts
+            .Include(p => p.PartKind)
+            .Include(p => p.Tent)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+
     public async Task<TentShape?> GetActiveTentShapeByIdAsync(Guid id)
     {
         return await _db.TentShapes

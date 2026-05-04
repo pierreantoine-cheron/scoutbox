@@ -143,7 +143,11 @@ class _DetailContent extends ConsumerWidget {
                 editState: editState,
               ),
               const SizedBox(height: 16),
-              _PartsSection(parts: displayedTent.parts),
+              _PartsSection(
+                tentId: tentId,
+                parts: displayedTent.parts,
+                isArchived: displayedTent.isArchived,
+              ),
               const SizedBox(height: 16),
               _AuditSection(tent: displayedTent),
               if (editState.fieldError != null) ...[
@@ -857,13 +861,19 @@ class _CommentsSection extends ConsumerWidget {
   }
 }
 
-class _PartsSection extends StatelessWidget {
+class _PartsSection extends ConsumerWidget {
+  final String tentId;
   final List<Part> parts;
+  final bool isArchived;
 
-  const _PartsSection({required this.parts});
+  const _PartsSection({
+    required this.tentId,
+    required this.parts,
+    required this.isArchived,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -878,7 +888,13 @@ class _PartsSection extends StatelessWidget {
                 child: Text('Aucun élément associé à cette tente.'),
               )
             else
-              ...parts.map((part) => _PartTile(part: part)),
+              ...parts.map(
+                (part) => _PartTile(
+                  tentId: tentId,
+                  part: part,
+                  isArchived: isArchived,
+                ),
+              ),
           ],
         ),
       ),
@@ -886,28 +902,89 @@ class _PartsSection extends StatelessWidget {
   }
 }
 
-class _PartTile extends StatelessWidget {
+class _PartTile extends ConsumerWidget {
+  final String tentId;
   final Part part;
+  final bool isArchived;
 
-  const _PartTile({required this.part});
+  const _PartTile({
+    required this.tentId,
+    required this.part,
+    required this.isArchived,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final comments = part.comments?.trim();
     final displayComments = comments == null || comments.isEmpty
         ? 'Aucun commentaire'
         : comments;
+    final notifier = ref.read(partUpdateProvider(tentId).notifier);
+    final displayedState = notifier.resolveDisplayedState(part);
+    final isSaving = notifier.isSaving(part.id);
+    final inlineError = notifier.errorFor(part.id);
 
     return Semantics(
       button: true,
-      label: '${part.partKindName}, ${part.state.toFrenchLabel()}',
+      label: '${part.partKindName}, ${displayedState.toFrenchLabel()}',
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         title: Text(part.partKindName),
-        subtitle: Text(part.state.toFrenchLabel()),
-        trailing: StateBadge.forPart(context, part.state),
+        subtitle: Text(displayedState.toFrenchLabel()),
+        trailing: PopupMenuButton<PartState>(
+          enabled: !isArchived && !isSaving,
+          tooltip: 'Modifier l\'état de ${part.partKindName}',
+          onSelected: (newState) async {
+            await notifier.updatePartState(
+              partId: part.id,
+              previousState: displayedState,
+              newState: newState,
+            );
+            if (!context.mounted) {
+              return;
+            }
+            if (notifier.errorFor(part.id) == null) {
+              ref.read(successIndicatorProvider.notifier).fire();
+            }
+          },
+          itemBuilder: (context) {
+            return PartState.values
+                .map(
+                  (state) => CheckedPopupMenuItem<PartState>(
+                    value: state,
+                    checked: state == displayedState,
+                    child: Row(
+                      children: [
+                        Icon(partStateBadgeStyle(context, state).icon),
+                        const SizedBox(width: 8),
+                        Text(state.toFrenchLabel()),
+                      ],
+                    ),
+                  ),
+                )
+                .toList();
+          },
+          child: Opacity(
+            opacity: isArchived ? 0.55 : 1,
+            child: StateBadge.forPart(context, displayedState),
+          ),
+        ),
         children: [
+          if (isSaving) const LinearProgressIndicator(),
+          if (inlineError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(child: Text(inlineError)),
+                  TextButton(
+                    onPressed: () => notifier.retry(part.id),
+                    child: const Text('Réessayer'),
+                  ),
+                ],
+              ),
+            ),
           Align(
             alignment: Alignment.centerLeft,
             child: Text('Commentaires: $displayComments'),

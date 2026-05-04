@@ -22,7 +22,7 @@ StateBadgeStyle tentStateBadgeStyle(
   TentOverallState state,
 ) {
   final colorScheme = Theme.of(context).colorScheme;
-  final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
+  final semanticColors = Theme.of(context).extension<AppSemanticColors>();
   final (icon, background, foreground) = switch (state) {
     TentOverallState.good => (
       Icons.check_circle_outline,
@@ -31,8 +31,8 @@ StateBadgeStyle tentStateBadgeStyle(
     ),
     TentOverallState.needsRepair => (
       Icons.build_circle_outlined,
-      semanticColors.warningContainer,
-      semanticColors.onWarningContainer,
+      semanticColors?.warningContainer ?? colorScheme.tertiaryContainer,
+      semanticColors?.onWarningContainer ?? colorScheme.onTertiaryContainer,
     ),
     TentOverallState.unusable => (
       Icons.cancel_outlined,
@@ -51,7 +51,7 @@ StateBadgeStyle tentStateBadgeStyle(
 
 StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
   final colorScheme = Theme.of(context).colorScheme;
-  final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
+  final semanticColors = Theme.of(context).extension<AppSemanticColors>();
   final (icon, background, foreground) = switch (state) {
     PartState.good => (
       Icons.check_circle_outline,
@@ -60,8 +60,8 @@ StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
     ),
     PartState.needsRepair => (
       Icons.build_circle_outlined,
-      semanticColors.warningContainer,
-      semanticColors.onWarningContainer,
+      semanticColors?.warningContainer ?? colorScheme.tertiaryContainer,
+      semanticColors?.onWarningContainer ?? colorScheme.onTertiaryContainer,
     ),
     PartState.missing => (
       Icons.remove_circle_outline,

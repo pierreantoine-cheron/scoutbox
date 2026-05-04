@@ -445,6 +445,10 @@ void main() {
       await tester.tap(find.text('Tente Atlas'));
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.check), findsNothing);
+
+      await tester.tap(find.byType(PopupMenuButton<PartState>).first);
+      await tester.pumpAndSettle();
+      expect(find.text('À réparer'), findsNothing);
     });
 
     testWidgets('comments field shows character counter when editing', (
@@ -541,8 +545,8 @@ Tent _buildTent() {
     comments: 'Une tente de test.',
     createdAt: DateTime.utc(2026, 4, 10, 9),
     updatedAt: DateTime.utc(2026, 4, 12, 18, 30),
-    parts: const [
-      Part(
+    parts: [
+      const Part(
         id: 'part-1',
         partKindId: 'kind-1',
         partKindName: 'Toile extérieure',
@@ -587,6 +591,7 @@ class _SwitchingTentRepository extends TentRepository {
 class _EditableTentRepository extends TentRepository {
   int updateCallCount = 0;
   int archiveCallCount = 0;
+  PartState _currentPartState = PartState.good;
   String _currentName = 'Tente Atlas';
   int _currentSize = 6;
   TentOverallState _currentState = TentOverallState.good;
@@ -628,7 +633,7 @@ class _EditableTentRepository extends TentRepository {
     _currentSize = size;
     _currentState = overallState;
     _currentComments = comments;
-    return Tent(
+      return Tent(
       id: id,
       name: name,
       size: size,
@@ -638,16 +643,34 @@ class _EditableTentRepository extends TentRepository {
       comments: comments,
       createdAt: DateTime.utc(2026, 4, 10, 9),
       updatedAt: DateTime.utc(2026, 4, 13, 10),
-      parts: const [
+      parts: [
         Part(
           id: 'part-1',
           partKindId: 'kind-1',
           partKindName: 'Toile extérieure',
           displayOrder: 1,
-          state: PartState.good,
+          state: _currentPartState,
           comments: null,
         ),
       ],
+    );
+  }
+
+  @override
+  Future<Part> updatePartState({
+    required String id,
+    required PartState state,
+  }) async {
+    _currentPartState = state;
+    return Part(
+      id: id,
+      partKindId: 'kind-1',
+      partKindName: 'Toile extérieure',
+      displayOrder: 1,
+      state: state,
+      comments: null,
+      createdAt: DateTime.utc(2026, 4, 10, 9),
+      updatedAt: DateTime.utc(2026, 4, 13, 10),
     );
   }
 
