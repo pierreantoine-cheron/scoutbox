@@ -141,6 +141,26 @@ import '../providers/auth_provider.dart';
 - Final locals by default (enforced by linter)
 - use commas to help format Widgets and functions
 
+**Colors and Theme:**
+- Do not use direct Flutter `Colors.*` values in widgets or screens
+- Use `Theme.of(context).colorScheme` for Material roles such as `primary`, `surface`, `error`, `outline`, and container/on-container pairs
+- Use `frontend/lib/utils/app_colors.dart` for ScoutBox-specific semantic colors through `AppSemanticColors`
+- Add new app palette values to `AppColors`, expose semantic widget colors through `AppSemanticColors`, and register them in `AppTheme`
+- Keep `ColorScheme.fromSeed` seeded from `AppColors.scoutGreen`; do not hardcode seed colors in `ThemeData`
+
+```dart
+final colorScheme = Theme.of(context).colorScheme;
+final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
+
+Container(
+  color: semanticColors.warningContainer,
+  child: Text(
+    'À réparer',
+    style: TextStyle(color: semanticColors.onWarningContainer),
+  ),
+);
+```
+
 **State Management (Riverpod):**
 ```dart
 @riverpod
