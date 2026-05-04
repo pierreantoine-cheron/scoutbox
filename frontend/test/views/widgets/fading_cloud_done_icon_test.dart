@@ -10,7 +10,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.minimal(),
-          home: Scaffold(body: FadingCloudDoneIcon(trigger: 0)),
+          home: const Scaffold(body: FadingCloudDoneIcon(trigger: 0)),
         ),
       );
 
@@ -21,7 +21,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.minimal(),
-          home: Scaffold(body: FadingCloudDoneIcon(trigger: 0)),
+          home: const Scaffold(body: FadingCloudDoneIcon(trigger: 0)),
         ),
       );
 
@@ -35,14 +35,14 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.minimal(),
-          home: Scaffold(body: FadingCloudDoneIcon(trigger: 0)),
+          home: const Scaffold(body: FadingCloudDoneIcon(trigger: 0)),
         ),
       );
 
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.minimal(),
-          home: Scaffold(body: FadingCloudDoneIcon(trigger: 1)),
+          home: const Scaffold(body: FadingCloudDoneIcon(trigger: 1)),
         ),
       );
 
@@ -56,7 +56,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.minimal(),
-          home: Scaffold(body: FadingCloudDoneIcon(trigger: 0)),
+          home: const Scaffold(body: FadingCloudDoneIcon(trigger: 0)),
         ),
       );
 

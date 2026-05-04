@@ -919,10 +919,11 @@ class _PartTile extends ConsumerWidget {
     final displayComments = comments == null || comments.isEmpty
         ? 'Aucun commentaire'
         : comments;
+    final updateState = ref.watch(partUpdateProvider(tentId));
     final notifier = ref.read(partUpdateProvider(tentId).notifier);
-    final displayedState = notifier.resolveDisplayedState(part);
-    final isSaving = notifier.isSaving(part.id);
-    final inlineError = notifier.errorFor(part.id);
+    final displayedState = updateState.resolveDisplayedState(part);
+    final isSaving = updateState.isSaving(part.id);
+    final inlineError = updateState.errorFor(part.id);
 
     return Semantics(
       button: true,
@@ -936,7 +937,11 @@ class _PartTile extends ConsumerWidget {
           enabled: !isArchived && !isSaving,
           tooltip: 'Modifier l\'état de ${part.partKindName}',
           onSelected: (newState) async {
-            await notifier.updatePartState(
+            if (newState == displayedState) {
+              return;
+            }
+
+            final result = await notifier.updatePartState(
               partId: part.id,
               previousState: displayedState,
               newState: newState,
@@ -944,26 +949,42 @@ class _PartTile extends ConsumerWidget {
             if (!context.mounted) {
               return;
             }
-            if (notifier.errorFor(part.id) == null) {
+            if (result == PartUpdateResult.success) {
               ref.read(successIndicatorProvider.notifier).fire();
             }
           },
           itemBuilder: (context) {
-            return PartState.values
-                .map(
-                  (state) => CheckedPopupMenuItem<PartState>(
-                    value: state,
-                    checked: state == displayedState,
-                    child: Row(
-                      children: [
-                        Icon(partStateBadgeStyle(context, state).icon),
-                        const SizedBox(width: 8),
-                        Text(state.toFrenchLabel()),
-                      ],
+            return PartState.values.map((state) {
+              final style = partStateBadgeStyle(context, state);
+              return CheckedPopupMenuItem<PartState>(
+                value: state,
+                checked: state == displayedState,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: style.background,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Icon(
+                        style.icon,
+                        size: 18,
+                        color: style.foreground,
+                      ),
                     ),
-                  ),
-                )
-                .toList();
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        style.label,
+                        style: TextStyle(color: style.foreground),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList();
           },
           child: Opacity(
             opacity: isArchived ? 0.55 : 1,

@@ -11,20 +11,30 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
   @override
   PartUpdateState build(String tentId) => const PartUpdateState();
 
-  Future<void> updatePartState({
+  Future<PartUpdateResult> updatePartState({
     required String partId,
     required PartState previousState,
     required PartState newState,
   }) async {
+    if (previousState == newState) {
+      return PartUpdateResult.noChange;
+    }
+
     final requestVersion = (state.requestVersions[partId] ?? 0) + 1;
+    final sourceState =
+        state.pendingUpdates[partId]?.sourceState ??
+        state.confirmedSourceStates[partId] ??
+        previousState;
     final nextVersions = Map<String, int>.from(state.requestVersions)
       ..[partId] = requestVersion;
-    final nextPending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)
-      ..[partId] = PendingPartUpdate(
-        previousState: previousState,
-        selectedState: newState,
-        requestVersion: requestVersion,
-      );
+    final nextPending =
+        Map<String, PendingPartUpdate>.from(state.pendingUpdates)
+          ..[partId] = PendingPartUpdate(
+            previousState: previousState,
+            selectedState: newState,
+            requestVersion: requestVersion,
+            sourceState: sourceState,
+          );
     final nextErrors = Map<String, String>.from(state.errors)..remove(partId);
     final nextFailed = Map<String, PendingPartUpdate>.from(
       state.lastFailedRequests,
@@ -42,18 +52,22 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
           .read(tentRepositoryProvider)
           .updatePartState(id: partId, state: newState);
       if (!ref.mounted) {
-        return;
+        return PartUpdateResult.stale;
       }
 
       final latestVersion = state.requestVersions[partId];
       if (latestVersion != requestVersion) {
-        return;
+        return PartUpdateResult.stale;
       }
 
+      final completedRequest = state.pendingUpdates[partId];
       final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)
         ..remove(partId);
       final confirmed = Map<String, PartState>.from(state.confirmedStates)
         ..[partId] = updatedPart.state;
+      final confirmedSources = Map<String, PartState>.from(
+        state.confirmedSourceStates,
+      )..[partId] = completedRequest?.sourceState ?? previousState;
       final failed = Map<String, PendingPartUpdate>.from(
         state.lastFailedRequests,
       )..remove(partId);
@@ -61,17 +75,19 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
       state = state.copyWith(
         pendingUpdates: pending,
         confirmedStates: confirmed,
+        confirmedSourceStates: confirmedSources,
         lastFailedRequests: failed,
       );
 
       ref.invalidate(tentDetailProvider(tentId));
+      return PartUpdateResult.success;
     } on TentRepositoryException catch (e) {
       if (!ref.mounted) {
-        return;
+        return PartUpdateResult.stale;
       }
       final latestVersion = state.requestVersions[partId];
       if (latestVersion != requestVersion) {
-        return;
+        return PartUpdateResult.stale;
       }
 
       final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)
@@ -79,28 +95,34 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
       final errors = Map<String, String>.from(state.errors)
         ..[partId] = e.message;
       final confirmed = Map<String, PartState>.from(state.confirmedStates)
-        ..[partId] = previousState;
-      final failed = Map<String, PendingPartUpdate>.from(
-        state.lastFailedRequests,
-      )..[partId] = PendingPartUpdate(
-          previousState: previousState,
-          selectedState: newState,
-          requestVersion: requestVersion,
-        );
+        ..remove(partId);
+      final confirmedSources = Map<String, PartState>.from(
+        state.confirmedSourceStates,
+      )..remove(partId);
+      final failed =
+          Map<String, PendingPartUpdate>.from(state.lastFailedRequests)
+            ..[partId] = PendingPartUpdate(
+              previousState: previousState,
+              selectedState: newState,
+              requestVersion: requestVersion,
+              sourceState: sourceState,
+            );
 
       state = state.copyWith(
         pendingUpdates: pending,
         errors: errors,
         confirmedStates: confirmed,
+        confirmedSourceStates: confirmedSources,
         lastFailedRequests: failed,
       );
+      return PartUpdateResult.failure;
     } catch (_) {
       if (!ref.mounted) {
-        return;
+        return PartUpdateResult.stale;
       }
       final latestVersion = state.requestVersions[partId];
       if (latestVersion != requestVersion) {
-        return;
+        return PartUpdateResult.stale;
       }
 
       final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)
@@ -108,21 +130,27 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
       final errors = Map<String, String>.from(state.errors)
         ..[partId] = 'Impossible de mettre à jour l\'élément. Réessayez.';
       final confirmed = Map<String, PartState>.from(state.confirmedStates)
-        ..[partId] = previousState;
-      final failed = Map<String, PendingPartUpdate>.from(
-        state.lastFailedRequests,
-      )..[partId] = PendingPartUpdate(
-          previousState: previousState,
-          selectedState: newState,
-          requestVersion: requestVersion,
-        );
+        ..remove(partId);
+      final confirmedSources = Map<String, PartState>.from(
+        state.confirmedSourceStates,
+      )..remove(partId);
+      final failed =
+          Map<String, PendingPartUpdate>.from(state.lastFailedRequests)
+            ..[partId] = PendingPartUpdate(
+              previousState: previousState,
+              selectedState: newState,
+              requestVersion: requestVersion,
+              sourceState: sourceState,
+            );
 
       state = state.copyWith(
         pendingUpdates: pending,
         errors: errors,
         confirmedStates: confirmed,
+        confirmedSourceStates: confirmedSources,
         lastFailedRequests: failed,
       );
+      return PartUpdateResult.failure;
     }
   }
 
@@ -139,28 +167,18 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
     );
   }
 
-  PartState resolveDisplayedState(Part part) {
-    final pending = state.pendingUpdates[part.id];
-    if (pending != null) {
-      return pending.selectedState;
-    }
-
-    return state.confirmedStates[part.id] ?? part.state;
-  }
-
-  bool isSaving(String partId) => state.pendingUpdates.containsKey(partId);
-
-  String? errorFor(String partId) => state.errors[partId];
-
   PendingPartUpdate? failedRequestFor(String partId) =>
       state.lastFailedRequests[partId];
 }
+
+enum PartUpdateResult { success, failure, stale, noChange }
 
 class PartUpdateState {
   final Map<String, PendingPartUpdate> pendingUpdates;
   final Map<String, int> requestVersions;
   final Map<String, String> errors;
   final Map<String, PartState> confirmedStates;
+  final Map<String, PartState> confirmedSourceStates;
   final Map<String, PendingPartUpdate> lastFailedRequests;
 
   const PartUpdateState({
@@ -168,6 +186,7 @@ class PartUpdateState {
     this.requestVersions = const {},
     this.errors = const {},
     this.confirmedStates = const {},
+    this.confirmedSourceStates = const {},
     this.lastFailedRequests = const {},
   });
 
@@ -176,6 +195,7 @@ class PartUpdateState {
     Map<String, int>? requestVersions,
     Map<String, String>? errors,
     Map<String, PartState>? confirmedStates,
+    Map<String, PartState>? confirmedSourceStates,
     Map<String, PendingPartUpdate>? lastFailedRequests,
   }) {
     return PartUpdateState(
@@ -183,19 +203,45 @@ class PartUpdateState {
       requestVersions: requestVersions ?? this.requestVersions,
       errors: errors ?? this.errors,
       confirmedStates: confirmedStates ?? this.confirmedStates,
+      confirmedSourceStates:
+          confirmedSourceStates ?? this.confirmedSourceStates,
       lastFailedRequests: lastFailedRequests ?? this.lastFailedRequests,
     );
   }
+
+  PartState resolveDisplayedState(Part part) {
+    final pending = pendingUpdates[part.id];
+    if (pending != null) {
+      return pending.selectedState;
+    }
+
+    final confirmed = confirmedStates[part.id];
+    if (confirmed == null || part.state == confirmed) {
+      return part.state;
+    }
+
+    if (part.state != confirmedSourceStates[part.id]) {
+      return part.state;
+    }
+
+    return confirmed;
+  }
+
+  bool isSaving(String partId) => pendingUpdates.containsKey(partId);
+
+  String? errorFor(String partId) => errors[partId];
 }
 
 class PendingPartUpdate {
   final PartState previousState;
   final PartState selectedState;
   final int requestVersion;
+  final PartState sourceState;
 
   const PendingPartUpdate({
     required this.previousState,
     required this.selectedState,
     required this.requestVersion,
+    required this.sourceState,
   });
 }

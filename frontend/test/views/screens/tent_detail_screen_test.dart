@@ -531,6 +531,73 @@ void main() {
       expect(repo.updateCallCount, equals(0));
       expect(find.byIcon(Icons.arrow_drop_down), findsWidgets);
     });
+
+    testWidgets('part state selection updates row and fires success feedback', (
+      tester,
+    ) async {
+      final repo = _EditableTentRepository();
+      final container = ProviderContainer(
+        overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(PopupMenuButton<PartState>).first);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.ancestor(
+          of: find.text('À réparer').last,
+          matching: find.byType(CheckedPopupMenuItem<PartState>),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(repo.partUpdateCallCount, equals(1));
+      expect(find.text('À réparer'), findsWidgets);
+      expect(container.read(successIndicatorProvider), equals(1));
+    });
+
+    testWidgets(
+      'selecting the current part state does not update or fire success',
+      (tester) async {
+        final repo = _EditableTentRepository();
+        final container = ProviderContainer(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byType(PopupMenuButton<PartState>).first);
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.ancestor(
+            of: find.text('Bon état').last,
+            matching: find.byType(CheckedPopupMenuItem<PartState>),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(repo.partUpdateCallCount, equals(0));
+        expect(container.read(successIndicatorProvider), equals(0));
+      },
+    );
   });
 }
 
@@ -591,6 +658,7 @@ class _SwitchingTentRepository extends TentRepository {
 class _EditableTentRepository extends TentRepository {
   int updateCallCount = 0;
   int archiveCallCount = 0;
+  int partUpdateCallCount = 0;
   PartState _currentPartState = PartState.good;
   String _currentName = 'Tente Atlas';
   int _currentSize = 6;
@@ -608,13 +676,13 @@ class _EditableTentRepository extends TentRepository {
     comments: _currentComments,
     createdAt: DateTime.utc(2026, 4, 10, 9),
     updatedAt: DateTime.utc(2026, 4, 12, 18, 30),
-    parts: const [
+    parts: [
       Part(
         id: 'part-1',
         partKindId: 'kind-1',
         partKindName: 'Toile extérieure',
         displayOrder: 1,
-        state: PartState.good,
+        state: _currentPartState,
         comments: null,
       ),
     ],
@@ -633,7 +701,7 @@ class _EditableTentRepository extends TentRepository {
     _currentSize = size;
     _currentState = overallState;
     _currentComments = comments;
-      return Tent(
+    return Tent(
       id: id,
       name: name,
       size: size,
@@ -661,6 +729,7 @@ class _EditableTentRepository extends TentRepository {
     required String id,
     required PartState state,
   }) async {
+    partUpdateCallCount++;
     _currentPartState = state;
     return Part(
       id: id,

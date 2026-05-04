@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -89,6 +90,54 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         using var client = CreateAuthenticatedClient();
 
         var response = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "good" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("INVALID_PART_STATE", payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdatePartState_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        var (partId, _, _, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "Missing" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"state\":null}")]
+    [InlineData("{\"state\":\"\"}")]
+    [InlineData("{\"state\":\"   \"}")]
+    public async Task UpdatePartState_WithInvalidStateShape_ReturnsInvalidPartState(string body)
+    {
+        var (partId, _, _, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
+        using var client = CreateAuthenticatedClient();
+        using var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+        var response = await client.PutAsync($"/api/parts/{partId}", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("INVALID_PART_STATE", payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdatePartState_WithNullBody_ReturnsInvalidPartState()
+    {
+        var (partId, _, _, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
+        using var client = CreateAuthenticatedClient();
+        using var content = new StringContent("null", Encoding.UTF8, "application/json");
+
+        var response = await client.PutAsync($"/api/parts/{partId}", content);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
