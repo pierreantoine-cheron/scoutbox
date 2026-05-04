@@ -672,23 +672,15 @@ class _EditableOverallStateSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(tentEditProvider(tentId).notifier);
-    final isSaving = editState.savingField == EditableField.overallState;
 
-    if (isSaving) {
-      return const SizedBox(
-        width: 160,
-        height: 32,
-        child: LinearProgressIndicator(),
-      );
-    }
-
-    return PopupMenuButton<TentOverallState>(
-      tooltip: '',
-      padding: EdgeInsets.zero,
-      splashRadius: 1,
-      offset: const Offset(0, 40),
+    return StateSelector<TentOverallState>(
+      values: TentOverallState.values,
+      selectedValue: tent.overallState,
+      enabled: !tent.isArchived,
+      isSaving: editState.savingField == EditableField.overallState,
+      styleFor: tentStateBadgeStyle,
+      selectedBadgeBuilder: StateBadge.forTent,
       onSelected: (state) {
-        if (state == tent.overallState) return;
         notifier.updateField(
           tentId: tentId,
           name: tent.name,
@@ -697,67 +689,6 @@ class _EditableOverallStateSelector extends ConsumerWidget {
           comments: tent.comments,
         );
       },
-      itemBuilder: (context) {
-        return TentOverallState.values.map((state) {
-          final style = tentStateBadgeStyle(context, state);
-          final isCurrent = state == tent.overallState;
-          return PopupMenuItem<TentOverallState>(
-            value: state,
-            enabled: !isCurrent,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: style.background,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(style.icon, size: 16, color: style.foreground),
-                      const SizedBox(width: 6),
-                      Text(
-                        style.label,
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: style.foreground,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isCurrent)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Icon(
-                      Icons.check,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-              ],
-            ),
-          );
-        }).toList();
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          StateBadge.forTent(context, tent.overallState),
-          const SizedBox(width: 4),
-          Icon(
-            Icons.arrow_drop_down,
-            size: 20,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -933,14 +864,15 @@ class _PartTile extends ConsumerWidget {
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         title: Text(part.partKindName),
         subtitle: Text(displayedState.toFrenchLabel()),
-        trailing: PopupMenuButton<PartState>(
+        trailing: StateSelector<PartState>(
+          values: PartState.values,
+          selectedValue: displayedState,
           enabled: !isArchived && !isSaving,
+          isSaving: isSaving,
           tooltip: 'Modifier l\'état de ${part.partKindName}',
+          styleFor: partStateBadgeStyle,
+          selectedBadgeBuilder: StateBadge.forPart,
           onSelected: (newState) async {
-            if (newState == displayedState) {
-              return;
-            }
-
             final result = await notifier.updatePartState(
               partId: part.id,
               previousState: displayedState,
@@ -953,46 +885,8 @@ class _PartTile extends ConsumerWidget {
               ref.read(successIndicatorProvider.notifier).fire();
             }
           },
-          itemBuilder: (context) {
-            return PartState.values.map((state) {
-              final style = partStateBadgeStyle(context, state);
-              return CheckedPopupMenuItem<PartState>(
-                value: state,
-                checked: state == displayedState,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: style.background,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Icon(
-                        style.icon,
-                        size: 18,
-                        color: style.foreground,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        style.label,
-                        style: TextStyle(color: style.foreground),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList();
-          },
-          child: Opacity(
-            opacity: isArchived ? 0.55 : 1,
-            child: StateBadge.forPart(context, displayedState),
-          ),
         ),
         children: [
-          if (isSaving) const LinearProgressIndicator(),
           if (inlineError != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),

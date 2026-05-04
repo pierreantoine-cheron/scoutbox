@@ -505,7 +505,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.arrow_drop_down), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_drop_down), findsWidgets);
     });
 
     testWidgets('selecting the current overall state does not update', (
@@ -522,7 +522,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.arrow_drop_down));
+      await tester.tap(find.byType(PopupMenuButton<TentOverallState>));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Bon état').last);
@@ -555,7 +555,7 @@ void main() {
       await tester.tap(
         find.ancestor(
           of: find.text('À réparer').last,
-          matching: find.byType(CheckedPopupMenuItem<PartState>),
+          matching: find.byType(PopupMenuItem<PartState>),
         ),
       );
       await tester.pump();
@@ -589,7 +589,7 @@ void main() {
         await tester.tap(
           find.ancestor(
             of: find.text('Bon état').last,
-            matching: find.byType(CheckedPopupMenuItem<PartState>),
+            matching: find.byType(PopupMenuItem<PartState>),
           ),
         );
         await tester.pumpAndSettle();

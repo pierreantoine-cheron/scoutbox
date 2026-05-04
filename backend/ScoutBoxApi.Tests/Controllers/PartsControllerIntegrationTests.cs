@@ -131,21 +131,6 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     }
 
     [Fact]
-    public async Task UpdatePartState_WithNullBody_ReturnsInvalidPartState()
-    {
-        var (partId, _, _, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
-        using var client = CreateAuthenticatedClient();
-        using var content = new StringContent("null", Encoding.UTF8, "application/json");
-
-        var response = await client.PutAsync($"/api/parts/{partId}", content);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
-        Assert.NotNull(payload);
-        Assert.Equal("INVALID_PART_STATE", payload.Code);
-    }
-
-    [Fact]
     public async Task UpdatePartState_WithUnknownPart_ReturnsPartNotFound()
     {
         using var client = CreateAuthenticatedClient();

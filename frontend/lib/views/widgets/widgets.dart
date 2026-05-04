@@ -2,6 +2,7 @@ export 'async_error_view.dart';
 export 'fading_cloud_done_icon.dart';
 export 'password_form_field.dart';
 export 'state_badge.dart';
+export 'state_selector.dart';
 export 'tent_card.dart';
 export 'tent_data_table.dart';
 export 'tent_list_filter_bar.dart';
