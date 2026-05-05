@@ -677,7 +677,6 @@ class _EditableOverallStateSelector extends ConsumerWidget {
       values: TentOverallState.values,
       selectedValue: tent.overallState,
       enabled: !tent.isArchived,
-      isSaving: editState.savingField == EditableField.overallState,
       styleFor: tentStateBadgeStyle,
       selectedBadgeBuilder: StateBadge.forTent,
       onSelected: (state) {
@@ -893,7 +892,6 @@ class _PartTileState extends ConsumerState<_PartTile> {
                       values: PartState.values,
                       selectedValue: displayedState,
                       enabled: !widget.isArchived && !isSaving,
-                      isSaving: isSaving,
                       tooltip: 'Modifier l\'état de ${part.partKindName}',
                       styleFor: partStateBadgeStyle,
                       selectedBadgeBuilder: StateBadge.forPart,

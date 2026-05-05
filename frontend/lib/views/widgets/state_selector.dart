@@ -6,7 +6,6 @@ class StateSelector<T> extends StatelessWidget {
   final List<T> values;
   final T selectedValue;
   final bool enabled;
-  final bool isSaving;
   final String tooltip;
   final StateBadgeStyle Function(BuildContext context, T value) styleFor;
   final Widget Function(BuildContext context, T value) selectedBadgeBuilder;
@@ -20,20 +19,11 @@ class StateSelector<T> extends StatelessWidget {
     required this.selectedBadgeBuilder,
     required this.onSelected,
     this.enabled = true,
-    this.isSaving = false,
     this.tooltip = '',
   });
 
   @override
   Widget build(BuildContext context) {
-    if (isSaving) {
-      return const SizedBox(
-        width: 160,
-        height: 32,
-        child: LinearProgressIndicator(),
-      );
-    }
-
     return PopupMenuButton<T>(
       enabled: enabled,
       tooltip: tooltip,
