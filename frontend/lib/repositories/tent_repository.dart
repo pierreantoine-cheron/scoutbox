@@ -190,11 +190,12 @@ class TentRepository {
   Future<Part> updatePartState({
     required String id,
     required PartState state,
+    required String? comments,
   }) async {
     try {
       final response = await ApiClient.instance.put(
         '${ApiRoutes.parts}/$id',
-        data: {'state': state.toApiValue()},
+        data: {'state': state.toApiValue(), 'comments': comments},
       );
       return Part.fromJson(_readEnvelopeMap(response.data));
     } on DioException catch (e) {

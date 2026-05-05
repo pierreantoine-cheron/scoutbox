@@ -22,6 +22,8 @@ void main() {
           partId: 'part-1',
           previousState: PartState.good,
           newState: PartState.needsRepair,
+          previousComments: null,
+          newComments: null,
         );
 
         var state = container.read(partUpdateProvider('tent-1'));
@@ -63,6 +65,8 @@ void main() {
         partId: 'part-1',
         previousState: PartState.good,
         newState: PartState.unusable,
+        previousComments: null,
+        newComments: null,
       );
 
       repository.failNext('Échec réseau.');
@@ -107,11 +111,15 @@ void main() {
         partId: 'part-1',
         previousState: PartState.good,
         newState: PartState.needsRepair,
+        previousComments: null,
+        newComments: null,
       );
       final second = notifier.updatePartState(
         partId: 'part-1',
         previousState: PartState.needsRepair,
         newState: PartState.missing,
+        previousComments: null,
+        newComments: null,
       );
 
       repository.completeAt(1, PartState.missing);
@@ -139,6 +147,8 @@ void main() {
         partId: 'part-1',
         previousState: PartState.good,
         newState: PartState.good,
+        previousComments: null,
+        newComments: null,
       );
 
       expect(result, PartUpdateResult.noChange);
@@ -162,8 +172,12 @@ class _ControlledPartRepository extends TentRepository {
   final requests = <_PartUpdateRequest>[];
 
   @override
-  Future<Part> updatePartState({required String id, required PartState state}) {
-    final request = _PartUpdateRequest(id, state);
+  Future<Part> updatePartState({
+    required String id,
+    required PartState state,
+    required String? comments,
+  }) {
+    final request = _PartUpdateRequest(id, state, comments);
     requests.add(request);
     return request.completer.future;
   }
@@ -179,7 +193,7 @@ class _ControlledPartRepository extends TentRepository {
         partKindName: 'Toile extérieure',
         displayOrder: 1,
         state: state,
-        comments: null,
+        comments: request.comments,
       ),
     );
   }
@@ -194,7 +208,8 @@ class _ControlledPartRepository extends TentRepository {
 class _PartUpdateRequest {
   final String id;
   final PartState state;
+  final String? comments;
   final Completer<Part> completer = Completer<Part>();
 
-  _PartUpdateRequest(this.id, this.state);
+  _PartUpdateRequest(this.id, this.state, this.comments);
 }

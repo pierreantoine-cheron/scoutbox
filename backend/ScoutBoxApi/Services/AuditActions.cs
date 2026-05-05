@@ -24,6 +24,7 @@ public static class AuditActions
 
     // Part management actions (for future stories)
     public const string PartStateChanged = "part_state_changed";
+    public const string PartCommentsChanged = "part_comments_changed";
     public const string PartAdded = "part_added";
     public const string PartRemoved = "part_removed";
 

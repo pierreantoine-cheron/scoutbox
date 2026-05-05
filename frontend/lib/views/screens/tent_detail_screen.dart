@@ -833,7 +833,7 @@ class _PartsSection extends ConsumerWidget {
   }
 }
 
-class _PartTile extends ConsumerWidget {
+class _PartTile extends ConsumerStatefulWidget {
   final String tentId;
   final Part part;
   final bool isArchived;
@@ -845,68 +845,171 @@ class _PartTile extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PartTile> createState() => _PartTileState();
+}
+
+class _PartTileState extends ConsumerState<_PartTile> {
+  bool _isEditingComments = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final part = widget.part;
     final comments = part.comments?.trim();
     final displayComments = comments == null || comments.isEmpty
         ? 'Aucun commentaire'
         : comments;
-    final updateState = ref.watch(partUpdateProvider(tentId));
-    final notifier = ref.read(partUpdateProvider(tentId).notifier);
+    final updateState = ref.watch(partUpdateProvider(widget.tentId));
+    final notifier = ref.read(partUpdateProvider(widget.tentId).notifier);
     final displayedState = updateState.resolveDisplayedState(part);
     final isSaving = updateState.isSaving(part.id);
     final inlineError = updateState.errorFor(part.id);
+    final theme = Theme.of(context);
 
     return Semantics(
-      button: true,
       label: '${part.partKindName}, ${displayedState.toFrenchLabel()}',
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        title: Text(part.partKindName),
-        subtitle: Text(displayedState.toFrenchLabel()),
-        trailing: StateSelector<PartState>(
-          values: PartState.values,
-          selectedValue: displayedState,
-          enabled: !isArchived && !isSaving,
-          isSaving: isSaving,
-          tooltip: 'Modifier l\'état de ${part.partKindName}',
-          styleFor: partStateBadgeStyle,
-          selectedBadgeBuilder: StateBadge.forPart,
-          onSelected: (newState) async {
-            final result = await notifier.updatePartState(
-              partId: part.id,
-              previousState: displayedState,
-              newState: newState,
-            );
-            if (!context.mounted) {
-              return;
-            }
-            if (result == PartUpdateResult.success) {
-              ref.read(successIndicatorProvider.notifier).fire();
-            }
-          },
-        ),
-        children: [
-          if (inlineError != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Expanded(child: Text(inlineError)),
-                  TextButton(
-                    onPressed: () => notifier.retry(part.id),
-                    child: const Text('Réessayer'),
-                  ),
-                ],
-              ),
-            ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text('Commentaires: $displayComments'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(12),
           ),
-        ],
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        part.partKindName,
+                        style: theme.textTheme.titleSmall,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    StateSelector<PartState>(
+                      values: PartState.values,
+                      selectedValue: displayedState,
+                      enabled: !widget.isArchived && !isSaving,
+                      isSaving: isSaving,
+                      tooltip: 'Modifier l\'état de ${part.partKindName}',
+                      styleFor: partStateBadgeStyle,
+                      selectedBadgeBuilder: StateBadge.forPart,
+                      onSelected: (newState) async {
+                        final result = await notifier.updatePartState(
+                          partId: part.id,
+                          previousState: displayedState,
+                          newState: newState,
+                          previousComments: part.comments,
+                          newComments: part.comments,
+                        );
+                        if (!context.mounted) {
+                          return;
+                        }
+                        if (result == PartUpdateResult.success) {
+                          ref.read(successIndicatorProvider.notifier).fire();
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (inlineError != null) ...[
+                  Row(
+                    children: [
+                      Expanded(child: Text(inlineError)),
+                      TextButton(
+                        onPressed: () => notifier.retry(part.id),
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                _InlineEditText(
+                  value: part.comments ?? '',
+                  isEditing: _isEditingComments,
+                  isSaving: isSaving && _isEditingComments,
+                  isEnabled: !widget.isArchived,
+                  hintText: 'Ajouter un commentaire...',
+                  maxLength: ValidationConstants.tentCommentsMaxLength,
+                  minLines: 1,
+                  maxLines: 3,
+                  dense: true,
+                  validator: _validateComments,
+                  onStartEditing: () => setState(() {
+                    _isEditingComments = true;
+                  }),
+                  onCancel: () => setState(() {
+                    _isEditingComments = false;
+                  }),
+                  onConfirm: (value) => _updateComments(
+                    notifier: notifier,
+                    displayedState: displayedState,
+                    value: value,
+                  ),
+                  readOnlyBuilder: (context, startEditing) {
+                    return InkWell(
+                      onTap: widget.isArchived ? null : startEditing,
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text('Commentaires: $displayComments'),
+                            ),
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: theme.colorScheme.outline,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
+  }
+
+  Future<void> _updateComments({
+    required PartUpdateNotifier notifier,
+    required PartState displayedState,
+    required String value,
+  }) async {
+    final result = await notifier.updatePartState(
+      partId: widget.part.id,
+      previousState: displayedState,
+      newState: displayedState,
+      previousComments: widget.part.comments,
+      newComments: value,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isEditingComments = false;
+    });
+
+    if (result == PartUpdateResult.success) {
+      ref.read(successIndicatorProvider.notifier).fire();
+    }
+  }
+
+  String? _validateComments(String value) {
+    if (value.trim().length > ValidationConstants.tentCommentsMaxLength) {
+      return 'Le commentaire ne peut pas dépasser ${ValidationConstants.tentCommentsMaxLength} caractères.';
+    }
+    return null;
   }
 }
 

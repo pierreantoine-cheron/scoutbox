@@ -84,6 +84,42 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     }
 
     [Fact]
+    public async Task UpdatePartState_WithComments_UpdatesCommentsAndReturnsEnvelope()
+    {
+        var (partId, _, _, oldUpdatedAt) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: "old");
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "Good", comments = "  nouveau commentaire  " });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<PartApiDto>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.Equal("Good", payload.Data.State);
+        Assert.Equal("nouveau commentaire", payload.Data.Comments);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var part = await db.Parts.FirstAsync(p => p.Id == partId);
+        Assert.Equal("nouveau commentaire", part.Comments);
+        Assert.True(part.UpdatedAt > oldUpdatedAt);
+    }
+
+    [Fact]
+    public async Task UpdatePartState_WithTooLongComments_ReturnsPartCommentsTooLong()
+    {
+        var (partId, _, _, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "Good", comments = new string('x', 501) });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("PART_COMMENTS_TOO_LONG", payload.Code);
+    }
+
+    [Fact]
     public async Task UpdatePartState_WithInvalidState_ReturnsInvalidPartState()
     {
         var (partId, _, _, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);

@@ -15,8 +15,13 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
     required String partId,
     required PartState previousState,
     required PartState newState,
+    required String? previousComments,
+    required String? newComments,
   }) async {
-    if (previousState == newState) {
+    final normalizedComments = _normalizeComments(newComments);
+    final normalizedPreviousComments = _normalizeComments(previousComments);
+    if (previousState == newState &&
+        normalizedPreviousComments == normalizedComments) {
       return PartUpdateResult.noChange;
     }
 
@@ -32,6 +37,8 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
           ..[partId] = PendingPartUpdate(
             previousState: previousState,
             selectedState: newState,
+            previousComments: normalizedPreviousComments,
+            selectedComments: normalizedComments,
             requestVersion: requestVersion,
             sourceState: sourceState,
           );
@@ -50,7 +57,11 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
     try {
       final updatedPart = await ref
           .read(tentRepositoryProvider)
-          .updatePartState(id: partId, state: newState);
+          .updatePartState(
+            id: partId,
+            state: newState,
+            comments: normalizedComments,
+          );
       if (!ref.mounted) {
         return PartUpdateResult.stale;
       }
@@ -104,6 +115,8 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
             ..[partId] = PendingPartUpdate(
               previousState: previousState,
               selectedState: newState,
+              previousComments: normalizedPreviousComments,
+              selectedComments: normalizedComments,
               requestVersion: requestVersion,
               sourceState: sourceState,
             );
@@ -139,6 +152,8 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
             ..[partId] = PendingPartUpdate(
               previousState: previousState,
               selectedState: newState,
+              previousComments: normalizedPreviousComments,
+              selectedComments: normalizedComments,
               requestVersion: requestVersion,
               sourceState: sourceState,
             );
@@ -164,11 +179,18 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
       partId: partId,
       previousState: pending.previousState,
       newState: pending.selectedState,
+      previousComments: pending.previousComments,
+      newComments: pending.selectedComments,
     );
   }
 
   PendingPartUpdate? failedRequestFor(String partId) =>
       state.lastFailedRequests[partId];
+}
+
+String? _normalizeComments(String? comments) {
+  final normalized = comments?.trim();
+  return normalized == null || normalized.isEmpty ? null : normalized;
 }
 
 enum PartUpdateResult { success, failure, stale, noChange }
@@ -235,12 +257,16 @@ class PartUpdateState {
 class PendingPartUpdate {
   final PartState previousState;
   final PartState selectedState;
+  final String? previousComments;
+  final String? selectedComments;
   final int requestVersion;
   final PartState sourceState;
 
   const PendingPartUpdate({
     required this.previousState,
     required this.selectedState,
+    required this.previousComments,
+    required this.selectedComments,
     required this.requestVersion,
     required this.sourceState,
   });

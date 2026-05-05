@@ -61,7 +61,7 @@ void main() {
       expect(repository.callCount, greaterThanOrEqualTo(2));
     });
 
-    testWidgets('expands part rows and shows fallback comments', (
+    testWidgets('shows part state and fallback comments without expanding', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -76,10 +76,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Toile extérieure'), findsOneWidget);
-
-      await tester.tap(find.text('Toile extérieure'));
-      await tester.pumpAndSettle();
-
       expect(find.text('Bon état'), findsWidgets);
       expect(find.textContaining('Aucun commentaire'), findsWidgets);
     });
@@ -728,6 +724,7 @@ class _EditableTentRepository extends TentRepository {
   Future<Part> updatePartState({
     required String id,
     required PartState state,
+    required String? comments,
   }) async {
     partUpdateCallCount++;
     _currentPartState = state;
@@ -737,7 +734,7 @@ class _EditableTentRepository extends TentRepository {
       partKindName: 'Toile extérieure',
       displayOrder: 1,
       state: state,
-      comments: null,
+      comments: comments,
       createdAt: DateTime.utc(2026, 4, 10, 9),
       updatedAt: DateTime.utc(2026, 4, 13, 10),
     );

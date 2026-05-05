@@ -6,6 +6,8 @@ namespace ScoutBoxApi.Services;
 
 public class PartService
 {
+    private const int MaxPartCommentsLength = 500;
+
     private static readonly IReadOnlyDictionary<string, PartState> SupportedStates =
         new Dictionary<string, PartState>(StringComparer.Ordinal)
         {
@@ -34,6 +36,12 @@ public class PartService
             return (null, new ErrorResponse("Part state is invalid", "INVALID_PART_STATE"), false);
         }
 
+        var requestedComments = NormalizeComments(request.Comments);
+        if (request.HasComments && requestedComments != null && requestedComments.Length > MaxPartCommentsLength)
+        {
+            return (null, new ErrorResponse("Part comments are too long", "PART_COMMENTS_TOO_LONG"), false);
+        }
+
         var part = await _repo.GetPartByIdForUpdateAsync(id);
         if (part == null)
         {
@@ -45,28 +53,49 @@ public class PartService
             return (null, new ErrorResponse("Cannot update part state for archived tent", "TENT_ARCHIVED"), false);
         }
 
-        if (part.State == newState)
+        var normalizedComments = request.HasComments ? requestedComments : part.Comments;
+
+        if (part.State == newState && part.Comments == normalizedComments)
         {
             return (ToPartDto(part), null, false);
         }
 
         var oldState = part.State;
+        var oldComments = part.Comments;
         part.State = newState;
+        part.Comments = normalizedComments;
         part.UpdatedAt = DateTime.UtcNow;
         part.UpdatedByUserId = userId;
 
-        _auditService.RecordEvent(
-            AuditActions.PartStateChanged,
-            userId,
-            targetEntityType: "Part",
-            targetEntityId: part.Id,
-            metadata: new Dictionary<string, object?>
-            {
-                ["tentId"] = part.TentId,
-                ["partKindId"] = part.PartKindId,
-                ["oldState"] = oldState.ToString(),
-                ["newState"] = part.State.ToString()
-            });
+        if (oldState != part.State)
+        {
+            _auditService.RecordEvent(
+                AuditActions.PartStateChanged,
+                userId,
+                targetEntityType: "Part",
+                targetEntityId: part.Id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["tentId"] = part.TentId,
+                    ["partKindId"] = part.PartKindId,
+                    ["oldState"] = oldState.ToString(),
+                    ["newState"] = part.State.ToString()
+                });
+        }
+
+        if (oldComments != part.Comments)
+        {
+            _auditService.RecordEvent(
+                AuditActions.PartCommentsChanged,
+                userId,
+                targetEntityType: "Part",
+                targetEntityId: part.Id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["tentId"] = part.TentId,
+                    ["partKindId"] = part.PartKindId
+                });
+        }
 
         await _repo.SaveChangesAsync();
         return (ToPartDto(part), null, false);
@@ -88,6 +117,12 @@ public class PartService
         }
 
         return SupportedStates.TryGetValue(normalized, out state);
+    }
+
+    private static string? NormalizeComments(string? comments)
+    {
+        var normalized = comments?.Trim();
+        return string.IsNullOrEmpty(normalized) ? null : normalized;
     }
 
     private static PartDto ToPartDto(Part part)
