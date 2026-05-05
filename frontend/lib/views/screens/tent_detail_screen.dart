@@ -351,7 +351,6 @@ class _ArchiveTentButtonState extends ConsumerState<_ArchiveTentButton> {
 class _InlineEditText extends StatefulWidget {
   final String value;
   final bool isEditing;
-  final bool isSaving;
   final bool isEnabled;
   final String? labelText;
   final String? hintText;
@@ -371,7 +370,6 @@ class _InlineEditText extends StatefulWidget {
   const _InlineEditText({
     required this.value,
     required this.isEditing,
-    required this.isSaving,
     required this.isEnabled,
     required this.validator,
     required this.onConfirm,
@@ -448,15 +446,6 @@ class _InlineEditTextState extends State<_InlineEditText> {
       );
     }
 
-    if (widget.isSaving) {
-      return widget.editorWidth == null
-          ? const LinearProgressIndicator()
-          : SizedBox(
-              width: widget.editorWidth,
-              child: const LinearProgressIndicator(),
-            );
-    }
-
     final error = widget.validator(_controller.text);
     final textField = TextField(
       controller: _controller,
@@ -521,9 +510,6 @@ class _EditableNameField extends ConsumerWidget {
     return _InlineEditText(
       value: tent.name,
       isEditing: editState.editingField == EditableField.name,
-      isSaving:
-          editState.savingField == EditableField.name &&
-          editState.editingField == EditableField.name,
       isEnabled: !tent.isArchived,
       labelText: 'Nom',
       hintText: 'Nom de la tente',
@@ -594,9 +580,6 @@ class _EditableSizeField extends ConsumerWidget {
     return _InlineEditText(
       value: tent.size.toString(),
       isEditing: editState.editingField == EditableField.size,
-      isSaving:
-          editState.savingField == EditableField.size &&
-          editState.editingField == EditableField.size,
       isEnabled: !tent.isArchived,
       labelText: 'Taille',
       hintText: 'Nombre de places',
@@ -706,8 +689,6 @@ class _CommentsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isEditing = editState.editingField == EditableField.comments;
-    final isSaving =
-        editState.savingField == EditableField.comments && isEditing;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -728,7 +709,6 @@ class _CommentsSection extends ConsumerWidget {
             _InlineEditText(
               value: tent.comments ?? '',
               isEditing: isEditing,
-              isSaving: isSaving,
               isEnabled: !tent.isArchived,
               hintText: 'Ajouter un commentaire...',
               maxLength: ValidationConstants.tentCommentsMaxLength,
@@ -860,7 +840,6 @@ class _PartTileState extends ConsumerState<_PartTile> {
     final updateState = ref.watch(partUpdateProvider(widget.tentId));
     final notifier = ref.read(partUpdateProvider(widget.tentId).notifier);
     final displayedState = updateState.resolveDisplayedState(part);
-    final isSaving = updateState.isSaving(part.id);
     final inlineError = updateState.errorFor(part.id);
     final theme = Theme.of(context);
 
@@ -891,7 +870,7 @@ class _PartTileState extends ConsumerState<_PartTile> {
                     StateSelector<PartState>(
                       values: PartState.values,
                       selectedValue: displayedState,
-                      enabled: !widget.isArchived && !isSaving,
+                      enabled: !widget.isArchived,
                       tooltip: 'Modifier l\'état de ${part.partKindName}',
                       styleFor: partStateBadgeStyle,
                       selectedBadgeBuilder: StateBadge.forPart,
@@ -929,7 +908,6 @@ class _PartTileState extends ConsumerState<_PartTile> {
                 _InlineEditText(
                   value: part.comments ?? '',
                   isEditing: _isEditingComments,
-                  isSaving: isSaving && _isEditingComments,
                   isEnabled: !widget.isArchived,
                   hintText: 'Ajouter un commentaire...',
                   maxLength: ValidationConstants.tentCommentsMaxLength,
