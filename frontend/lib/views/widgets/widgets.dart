@@ -1,5 +1,6 @@
 export 'async_error_view.dart';
 export 'fading_cloud_done_icon.dart';
+export 'inline_text_editor.dart';
 export 'password_form_field.dart';
 export 'state_badge.dart';
 export 'state_selector.dart';
