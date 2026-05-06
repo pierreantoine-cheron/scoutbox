@@ -106,9 +106,7 @@ void main() {
       expect(toggledState, TentOverallState.good);
     });
 
-    testWidgets('calls onClearAll when Effacer tout is tapped', (
-      tester,
-    ) async {
+    testWidgets('calls onClearAll when Effacer tout is tapped', (tester) async {
       var cleared = false;
 
       await tester.pumpWidget(
@@ -153,9 +151,7 @@ void main() {
       expect(find.text('Filtres'), findsOneWidget);
     });
 
-    testWidgets('shows search clear button when text entered', (
-      tester,
-    ) async {
+    testWidgets('shows search clear button when text entered', (tester) async {
       await tester.pumpWidget(buildBar());
 
       searchController.text = 'test';

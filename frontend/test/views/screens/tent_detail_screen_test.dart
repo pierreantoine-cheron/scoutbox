@@ -77,7 +77,7 @@ void main() {
 
       expect(find.text('Toile extérieure'), findsOneWidget);
       expect(find.text('Bon état'), findsWidgets);
-      expect(find.textContaining('Aucun commentaire'), findsWidgets);
+      expect(find.textContaining('Ajouter un commentaire'), findsWidgets);
     });
   });
 

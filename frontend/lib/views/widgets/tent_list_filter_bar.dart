@@ -104,7 +104,9 @@ class TentListFilterBar extends StatelessWidget {
                               for (final option in availableShapeOptions)
                                 FilterChip(
                                   label: Text(option.label),
-                                  selected: selectedShapeIds.contains(option.id),
+                                  selected: selectedShapeIds.contains(
+                                    option.id,
+                                  ),
                                   onSelected: (_) => onToggleShape(option.id),
                                 ),
                             ],

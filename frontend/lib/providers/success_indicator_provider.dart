@@ -11,5 +11,5 @@ class SuccessIndicatorNotifier extends Notifier<int> {
 
 final successIndicatorProvider =
     NotifierProvider<SuccessIndicatorNotifier, int>(
-  SuccessIndicatorNotifier.new,
-);
+      SuccessIndicatorNotifier.new,
+    );

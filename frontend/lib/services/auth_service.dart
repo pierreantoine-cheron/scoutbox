@@ -17,7 +17,6 @@ import 'secure_storage_service.dart';
 ///
 /// Localized via ErrorLocalizer — one central source of truth.
 
-
 /// Result of a token refresh operation
 class RefreshResult {
   final bool success;
@@ -391,33 +390,33 @@ class AuthService {
 
       try {
         await SecureStorageService.saveTokens(
-            accessToken: authResponse.accessToken,
-            refreshToken: authResponse.refreshToken,
-            accessTokenExpires: authResponse.accessTokenExpires,
-            refreshTokenExpires: authResponse.refreshTokenExpires,
-          );
-          _cachedAccessToken = authResponse.accessToken;
+          accessToken: authResponse.accessToken,
+          refreshToken: authResponse.refreshToken,
+          accessTokenExpires: authResponse.accessTokenExpires,
+          refreshTokenExpires: authResponse.refreshTokenExpires,
+        );
+        _cachedAccessToken = authResponse.accessToken;
 
-          return RefreshResult.success(authResponse: authResponse);
-        } catch (e) {
-          // Storage failure - attempt to clear tokens to avoid corrupted state
-          debugPrint('Failed to persist refreshed tokens: $e');
-          _cachedAccessToken = null;
-          try {
-            await SecureStorageService.deleteTokens();
-          } catch (deleteError) {
-            debugPrint(
-              'Failed to delete tokens after storage failure: $deleteError',
-            );
-            // Continue with failure result, don't cascade
-          }
-          return RefreshResult.failure(
-            error: AppConfig.isBetaChannel
-                ? 'Erreur de sauvegarde des tokens: $e'
-                : 'Session expirée. Veuillez vous reconnecter.',
-            failureType: RefreshFailureType.storageFailure,
+        return RefreshResult.success(authResponse: authResponse);
+      } catch (e) {
+        // Storage failure - attempt to clear tokens to avoid corrupted state
+        debugPrint('Failed to persist refreshed tokens: $e');
+        _cachedAccessToken = null;
+        try {
+          await SecureStorageService.deleteTokens();
+        } catch (deleteError) {
+          debugPrint(
+            'Failed to delete tokens after storage failure: $deleteError',
           );
+          // Continue with failure result, don't cascade
         }
+        return RefreshResult.failure(
+          error: AppConfig.isBetaChannel
+              ? 'Erreur de sauvegarde des tokens: $e'
+              : 'Session expirée. Veuillez vous reconnecter.',
+          failureType: RefreshFailureType.storageFailure,
+        );
+      }
     } on DioException catch (e) {
       // Classify failure type for differentiated handling
       final failureType = _classifyRefreshFailure(e);

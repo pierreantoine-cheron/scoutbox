@@ -100,7 +100,10 @@ void main() {
     });
 
     test('maps tent creation error codes to french messages', () async {
-      Future<void> expectCodeMessage(String? code, String expectedMessage) async {
+      Future<void> expectCodeMessage(
+        String? code,
+        String expectedMessage,
+      ) async {
         final container = ProviderContainer(
           overrides: [
             tentRepositoryProvider.overrideWithValue(
@@ -123,7 +126,10 @@ void main() {
         notifier.updateSize('6');
 
         await notifier.submit();
-        expect(container.read(tentCreationProvider).submitError, expectedMessage);
+        expect(
+          container.read(tentCreationProvider).submitError,
+          expectedMessage,
+        );
       }
 
       await expectCodeMessage(

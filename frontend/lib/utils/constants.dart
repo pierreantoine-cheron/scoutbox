@@ -5,7 +5,9 @@ class ApiRoutes {
   static const String authBase = '/api/auth';
   static const String tents = '/api/tents';
   static const String parts = '/api/parts';
+  static const String tentParts = '/api/tents';
   static const String tentShapes = '/api/tent-shapes';
+  static const String partKinds = '/api/part-kinds';
 
   // Auth endpoints
   static const String register = '$authBase/register';
@@ -58,6 +60,9 @@ class ErrorCodes {
   static const String partNotFound = 'PART_NOT_FOUND';
   static const String invalidPartState = 'INVALID_PART_STATE';
   static const String tentArchived = 'TENT_ARCHIVED';
+  static const String duplicatePart = 'DUPLICATE_PART';
+  static const String invalidPartKind = 'INVALID_PART_KIND';
+  static const String invalidRequest = 'INVALID_REQUEST';
 }
 
 // API timeouts

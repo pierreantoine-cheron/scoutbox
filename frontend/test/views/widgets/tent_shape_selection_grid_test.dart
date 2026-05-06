@@ -4,12 +4,7 @@ import 'package:client/models/tent_shape.dart';
 import 'package:client/views/widgets/tent_shape_selection_grid.dart';
 
 TentShape _shape({required String id, required String name}) {
-  return TentShape(
-    id: id,
-    name: name,
-    displayOrder: 1,
-    isActive: true,
-  );
+  return TentShape(id: id, name: name, displayOrder: 1, isActive: true);
 }
 
 void main() {
@@ -79,19 +74,14 @@ void main() {
     testWidgets('calls onSelect when shape is tapped', (tester) async {
       TentShape? selected;
       await tester.pumpWidget(
-        buildGrid(
-          shapes: shapes,
-          onSelect: (s) => selected = s,
-        ),
+        buildGrid(shapes: shapes, onSelect: (s) => selected = s),
       );
 
       await tester.tap(find.text('Tipi'));
       expect(selected?.name, 'Tipi');
     });
 
-    testWidgets('renders empty grid when shapes list is empty', (
-      tester,
-    ) async {
+    testWidgets('renders empty grid when shapes list is empty', (tester) async {
       await tester.pumpWidget(buildGrid(shapes: const []));
 
       expect(find.byType(InkWell), findsNothing);

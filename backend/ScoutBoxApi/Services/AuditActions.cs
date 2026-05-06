@@ -26,6 +26,7 @@ public static class AuditActions
     public const string PartStateChanged = "part_state_changed";
     public const string PartCommentsChanged = "part_comments_changed";
     public const string PartAdded = "part_added";
+    public const string PartDeleted = "part_deleted";
     public const string PartRemoved = "part_removed";
 
     // Photo management actions (for future stories)

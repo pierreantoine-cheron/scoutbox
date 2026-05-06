@@ -187,6 +187,81 @@ class TentRepository {
     }
   }
 
+  Future<List<Part>> addPartsToTent({
+    required String tentId,
+    required List<String> partKindIds,
+  }) async {
+    try {
+      final response = await ApiClient.instance.post(
+        '${ApiRoutes.tentParts}/$tentId/parts',
+        data: {'partKindIds': partKindIds},
+      );
+      final rawParts = _readEnvelopeList(response.data);
+      return rawParts
+          .map((part) => Part.fromJson(part as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _toRepositoryException(
+        e,
+        fallbackMessage: 'Impossible d\'ajouter les pièces. Réessayez.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message: 'Réponse du serveur invalide lors de l\'ajout des pièces.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message: 'Réponse du serveur invalide lors de l\'ajout des pièces.',
+      );
+    }
+  }
+
+  Future<void> removePart({required String partId}) async {
+    try {
+      await ApiClient.instance.delete('${ApiRoutes.parts}/$partId');
+    } on DioException catch (e) {
+      throw _toRepositoryException(
+        e,
+        fallbackMessage: 'Impossible de supprimer la pièce. Réessayez.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors de la suppression de la pièce.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors de la suppression de la pièce.',
+      );
+    }
+  }
+
+  Future<List<PartKind>> getPartKinds() async {
+    try {
+      final response = await ApiClient.instance.get(ApiRoutes.partKinds);
+      final rawKinds = _readEnvelopeList(response.data);
+      return rawKinds
+          .map((kind) => PartKind.fromJson(kind as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _toRepositoryException(
+        e,
+        fallbackMessage: 'Impossible de charger les types de pièces.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors du chargement des types de pièces.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors du chargement des types de pièces.',
+      );
+    }
+  }
+
   Future<Part> updatePartState({
     required String id,
     required PartState state,

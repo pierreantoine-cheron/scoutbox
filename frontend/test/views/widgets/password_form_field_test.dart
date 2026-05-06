@@ -87,9 +87,9 @@ void main() {
     testWidgets('has OutlineInputBorder', (tester) async {
       await tester.pumpWidget(buildField());
 
-      final decoration = tester.widget<InputDecorator>(
-        find.byType(InputDecorator),
-      ).decoration;
+      final decoration = tester
+          .widget<InputDecorator>(find.byType(InputDecorator))
+          .decoration;
       expect(decoration.border, isA<OutlineInputBorder>());
     });
 
@@ -97,9 +97,7 @@ void main() {
       await tester.pumpWidget(buildField());
 
       expect(
-        find.byWidgetPredicate(
-          (w) => w is TextField && w.obscureText == true,
-        ),
+        find.byWidgetPredicate((w) => w is TextField && w.obscureText == true),
         findsOneWidget,
       );
     });

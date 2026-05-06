@@ -11,9 +11,15 @@ public interface ITentRepository
     Task<Part?> GetPartByIdForUpdateAsync(Guid id);
     Task<TentShape?> GetActiveTentShapeByIdAsync(Guid id);
     Task<bool> HasDuplicateTentNameAsync(string normalizedName, Guid? excludedTentId = null);
+    Task<List<PartKind>> GetAllPartKindsAsync();
+    Task<int> GetMaxDisplayOrderForTentAsync(Guid tentId);
+    Task<Part?> GetPartByIdIncludingTentAsync(Guid id);
+    Task<List<Part>> GetPartsByIdsAsync(List<Guid> ids);
 
     void AddTent(Tent tent);
     void AddPart(Part part);
+    void AddParts(IEnumerable<Part> parts);
+    void RemovePart(Part part);
 
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();

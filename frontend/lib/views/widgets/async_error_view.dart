@@ -43,16 +43,10 @@ class AsyncErrorView extends StatelessWidget {
 
     if (centered) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: content,
-        ),
+        child: Padding(padding: const EdgeInsets.all(24), child: content),
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: content,
-    );
+    return Padding(padding: const EdgeInsets.all(24), child: content);
   }
 }

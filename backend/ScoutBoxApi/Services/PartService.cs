@@ -125,13 +125,130 @@ public class PartService
         return string.IsNullOrEmpty(normalized) ? null : normalized;
     }
 
+    public async Task<(List<PartDto>? Response, ErrorResponse? Error)> AddPartsToTentAsync(
+        Guid tentId,
+        List<Guid> partKindIds,
+        Guid userId)
+    {
+        if (partKindIds == null || partKindIds.Count == 0)
+        {
+            return (null, new ErrorResponse("Request must contain at least one partKindId", "INVALID_REQUEST"));
+        }
+
+        var tent = await _repo.GetTentByIdForUpdateAsync(tentId);
+        if (tent == null)
+        {
+            return (null, new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
+        }
+
+        if (tent.IsArchived)
+        {
+            return (null, new ErrorResponse("Cannot add parts to archived tent", "TENT_ARCHIVED"));
+        }
+
+        var allPartKinds = await _repo.GetAllPartKindsAsync();
+        var existingPartKindIds = tent.Parts.Select(p => p.PartKindId).ToHashSet();
+        var allPartKindIds = allPartKinds.Select(pk => pk.Id).ToHashSet();
+
+        var invalidIds = partKindIds.Where(id => !allPartKindIds.Contains(id)).ToList();
+        if (invalidIds.Count > 0)
+        {
+            return (null, new ErrorResponse("One or more PartKindIds are invalid", "INVALID_PART_KIND"));
+        }
+
+        var duplicateIds = partKindIds.Where(id => existingPartKindIds.Contains(id)).ToList();
+        if (duplicateIds.Count > 0)
+        {
+            return (null, new ErrorResponse("One or more parts already exist on this tent", "DUPLICATE_PART"));
+        }
+
+        var maxDisplayOrder = await _repo.GetMaxDisplayOrderForTentAsync(tentId);
+
+        var now = DateTime.UtcNow;
+        var newParts = new List<Part>();
+        var displayOrder = maxDisplayOrder;
+
+        foreach (var partKindId in partKindIds)
+        {
+            displayOrder++;
+            var part = new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tentId,
+                PartKindId = partKindId,
+                State = PartState.Good,
+                Comments = null,
+                DisplayOrder = displayOrder,
+                CreatedAt = now,
+                UpdatedAt = now,
+                CreatedByUserId = userId,
+                UpdatedByUserId = userId
+            };
+
+            newParts.Add(part);
+
+            _auditService.RecordEvent(
+                AuditActions.PartAdded,
+                userId,
+                targetEntityType: "Part",
+                targetEntityId: part.Id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["tentId"] = tentId,
+                    ["partKindId"] = partKindId,
+                    ["displayOrder"] = part.DisplayOrder
+                });
+        }
+
+        _repo.AddParts(newParts);
+        await _repo.SaveChangesAsync();
+
+        var partIds = newParts.Select(p => p.Id).ToList();
+        var savedParts = await _repo.GetPartsByIdsAsync(partIds);
+        var dtos = savedParts.Select(ToPartDto).ToList();
+        return (dtos, null);
+    }
+
+    public async Task<(ErrorResponse? Error, bool NotFound)> RemovePartAsync(Guid partId, Guid userId)
+    {
+        var part = await _repo.GetPartByIdIncludingTentAsync(partId);
+        if (part == null)
+        {
+            return (null, true);
+        }
+
+        if (part.Tent.IsArchived)
+        {
+            return (new ErrorResponse("Cannot remove part from archived tent", "TENT_ARCHIVED"), false);
+        }
+
+        var tentId = part.TentId;
+        var partKindId = part.PartKindId;
+
+        _auditService.RecordEvent(
+            AuditActions.PartDeleted,
+            userId,
+            targetEntityType: "Part",
+            targetEntityId: partId,
+            metadata: new Dictionary<string, object?>
+            {
+                ["tentId"] = tentId,
+                ["partKindId"] = partKindId
+            });
+
+        _repo.RemovePart(part);
+        await _repo.SaveChangesAsync();
+
+        return (null, false);
+    }
+
     private static PartDto ToPartDto(Part part)
     {
         return new PartDto(
             part.Id,
             part.PartKindId,
             part.PartKind.Name,
-            part.PartKind.DisplayOrder,
+            part.DisplayOrder,
             part.State.ToString(),
             part.Comments,
             part.CreatedAt,

@@ -33,9 +33,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     return Scaffold(
       appBar: AppBar(
         leading: appBarConfig.showBackButton
-            ? BackButton(
-                onPressed: () => _navigatorKey.currentState?.pop(),
-              )
+            ? BackButton(onPressed: () => _navigatorKey.currentState?.pop())
             : null,
         title: appBarConfig.title,
         actions: [
@@ -55,8 +53,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
               },
             )
           : authState.showLoginScreen
-              ? const LoginScreen()
-              : const RegisterScreen(),
+          ? const LoginScreen()
+          : const RegisterScreen(),
     );
   }
 }

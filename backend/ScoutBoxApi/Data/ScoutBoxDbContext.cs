@@ -279,6 +279,7 @@ public class ScoutBoxDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.State).HasConversion<int>().IsRequired();
             entity.Property(e => e.Comments).HasMaxLength(500);
+            entity.Property(e => e.DisplayOrder).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId).IsRequired();

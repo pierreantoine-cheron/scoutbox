@@ -625,7 +625,7 @@ class _CommentsSection extends ConsumerWidget {
   }
 }
 
-class _PartsSection extends ConsumerWidget {
+class _PartsSection extends ConsumerStatefulWidget {
   final String tentId;
   final List<Part> parts;
   final bool isArchived;
@@ -637,90 +637,214 @@ class _PartsSection extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PartsSection> createState() => _PartsSectionState();
+}
+
+class _PartsSectionState extends ConsumerState<_PartsSection> {
+  bool _isSelectionMode = false;
+  final Set<String> _selectedPartIds = {};
+  String? _editingCommentPartId;
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedPartIds.clear();
+    });
+  }
+
+  void _togglePartSelection(String partId) {
+    setState(() {
+      if (_selectedPartIds.contains(partId)) {
+        _selectedPartIds.remove(partId);
+        if (_selectedPartIds.isEmpty) _isSelectionMode = false;
+      } else {
+        _selectedPartIds.add(partId);
+      }
+    });
+  }
+
+  Future<void> _confirmDeleteSelected() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer ces pièces ?'),
+        content: Text(
+          '${_selectedPartIds.length} pièce(s) seront supprimées définitivement. Cette action est irréversible.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    for (final partId in _selectedPartIds.toList()) {
+      await ref
+          .read(partManagementProvider(widget.tentId).notifier)
+          .removePart(partId);
+    }
+    _exitSelectionMode();
+  }
+
+  void _startEditComment(Part part) {
+    setState(() {
+      _editingCommentPartId = part.id;
+      _commentController.text = part.comments ?? '';
+    });
+  }
+
+  void _cancelEditComment() {
+    setState(() {
+      _editingCommentPartId = null;
+      _commentController.clear();
+    });
+  }
+
+  Future<void> _saveComment(Part part) async {
+    final value = _commentController.text;
+    final normalized = value.trim().isEmpty ? null : value.trim();
+    if (normalized == part.comments?.trim() ||
+        (normalized == null && (part.comments?.trim().isEmpty ?? true))) {
+      _cancelEditComment();
+      return;
+    }
+
+    final notifier = ref.read(partUpdateProvider(widget.tentId).notifier);
+    final updateState = ref.read(partUpdateProvider(widget.tentId));
+    final displayedState = updateState.resolveDisplayedState(part);
+
+    final result = await notifier.updatePartState(
+      partId: part.id,
+      previousState: displayedState,
+      newState: displayedState,
+      previousComments: part.comments,
+      newComments: normalized,
+    );
+
+    if (!mounted) return;
+    if (result == PartUpdateResult.success) {
+      ref.read(successIndicatorProvider.notifier).fire();
+    }
+    _cancelEditComment();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Éléments', style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Éléments', style: theme.textTheme.titleMedium),
+                ),
+                if (!widget.isArchived && !_isSelectionMode)
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    tooltip: 'Ajouter une pièce',
+                    onPressed: _showAddPartDialog,
+                  ),
+                if (_isSelectionMode) ...[
+                  if (_selectedPartIds.isNotEmpty)
+                    IconButton(
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: theme.colorScheme.error,
+                      ),
+                      tooltip: 'Supprimer les pièces sélectionnées',
+                      onPressed: _confirmDeleteSelected,
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Annuler la sélection',
+                    onPressed: _exitSelectionMode,
+                  ),
+                ],
+              ],
+            ),
             const SizedBox(height: 8),
-            if (parts.isEmpty)
+            if (widget.parts.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Text('Aucun élément associé à cette tente.'),
               )
             else
-              ...parts.map(
-                (part) => _PartTile(
-                  tentId: tentId,
-                  part: part,
-                  isArchived: isArchived,
-                ),
-              ),
+              ...widget.parts.map((part) => _buildPartRow(part, theme)),
           ],
         ),
       ),
     );
   }
-}
 
-class _PartTile extends ConsumerStatefulWidget {
-  final String tentId;
-  final Part part;
-  final bool isArchived;
-
-  const _PartTile({
-    required this.tentId,
-    required this.part,
-    required this.isArchived,
-  });
-
-  @override
-  ConsumerState<_PartTile> createState() => _PartTileState();
-}
-
-class _PartTileState extends ConsumerState<_PartTile> {
-  bool _isEditingComments = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final part = widget.part;
-    final comments = part.comments?.trim();
-    final displayComments = comments == null || comments.isEmpty
-        ? 'Aucun commentaire'
-        : comments;
+  Widget _buildPartRow(Part part, ThemeData theme) {
+    final isSelected = _selectedPartIds.contains(part.id);
+    final isEditingThisComment = _editingCommentPartId == part.id;
     final updateState = ref.watch(partUpdateProvider(widget.tentId));
-    final notifier = ref.read(partUpdateProvider(widget.tentId).notifier);
     final displayedState = updateState.resolveDisplayedState(part);
     final inlineError = updateState.errorFor(part.id);
-    final theme = Theme.of(context);
+    final isRemoving = ref
+        .watch(partManagementProvider(widget.tentId))
+        .removingPartIds
+        .contains(part.id);
 
-    return Semantics(
-      label: '${part.partKindName}, ${displayedState.toFrenchLabel()}',
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border.all(color: theme.colorScheme.outlineVariant),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        part.partKindName,
-                        style: theme.textTheme.titleSmall,
-                      ),
+    return InkWell(
+      onLongPress: widget.isArchived
+          ? null
+          : () => setState(() {
+              _isSelectionMode = true;
+              _selectedPartIds.add(part.id);
+            }),
+      child: Opacity(
+        opacity: isRemoving ? 0.4 : 1,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (_isSelectionMode)
+                    Checkbox(
+                      value: isSelected,
+                      onChanged: (_) => _togglePartSelection(part.id),
                     ),
-                    const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      part.partKindName,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (_isSelectionMode) ...[
+                    StateBadge.forPart(context, displayedState),
+                    const SizedBox(width: 4),
+                  ] else
                     StateSelector<PartState>(
                       values: PartState.values,
                       selectedValue: displayedState,
@@ -729,6 +853,9 @@ class _PartTileState extends ConsumerState<_PartTile> {
                       styleFor: partStateBadgeStyle,
                       selectedBadgeBuilder: StateBadge.forPart,
                       onSelected: (newState) async {
+                        final notifier = ref.read(
+                          partUpdateProvider(widget.tentId).notifier,
+                        );
                         final result = await notifier.updatePartState(
                           partId: part.id,
                           previousState: displayedState,
@@ -736,110 +863,383 @@ class _PartTileState extends ConsumerState<_PartTile> {
                           previousComments: part.comments,
                           newComments: part.comments,
                         );
-                        if (!context.mounted) {
-                          return;
-                        }
+                        if (!context.mounted) return;
                         if (result == PartUpdateResult.success) {
                           ref.read(successIndicatorProvider.notifier).fire();
                         }
                       },
                     ),
-                  ],
+                ],
+              ),
+              if (!_isSelectionMode)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: isEditingThisComment
+                      ? _CommentEditor(
+                          controller: _commentController,
+                          onSave: () => _saveComment(part),
+                          onCancel: _cancelEditComment,
+                        )
+                      : InkWell(
+                          onTap: widget.isArchived
+                              ? null
+                              : () => _startEditComment(part),
+                          borderRadius: BorderRadius.circular(4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _displayComment(part.comments),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.outline,
+                                    fontStyle: _hasNoComment(part.comments)
+                                        ? FontStyle.italic
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                              if (!widget.isArchived) ...[
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.edit_outlined,
+                                  size: 14,
+                                  color: theme.colorScheme.outline,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                 ),
-                const SizedBox(height: 8),
-                if (inlineError != null) ...[
-                  Row(
+              if (inlineError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
                     children: [
-                      Expanded(child: Text(inlineError)),
+                      Expanded(
+                        child: Text(
+                          inlineError,
+                          style: TextStyle(
+                            color: theme.colorScheme.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
                       TextButton(
-                        onPressed: () => notifier.retry(part.id),
+                        onPressed: () => ref
+                            .read(partUpdateProvider(widget.tentId).notifier)
+                            .retry(part.id),
                         child: const Text('Réessayer'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                ],
-                InlineTextEditor(
-                  value: part.comments ?? '',
-                  isEditing: _isEditingComments,
-                  isEnabled: !widget.isArchived,
-                  hintText: 'Ajouter un commentaire...',
-                  maxLength: ValidationConstants.tentCommentsMaxLength,
-                  minLines: 1,
-                  maxLines: 3,
-                  dense: true,
-                  validator: _validateComments,
-                  onStartEditing: () => setState(() {
-                    _isEditingComments = true;
-                  }),
-                  onCancel: () => setState(() {
-                    _isEditingComments = false;
-                  }),
-                  onConfirm: (value) => _updateComments(
-                    notifier: notifier,
-                    displayedState: displayedState,
-                    value: value,
-                  ),
-                  readOnlyBuilder: (context, startEditing) {
-                    return InkWell(
-                      onTap: widget.isArchived ? null : startEditing,
-                      borderRadius: BorderRadius.circular(4),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text('Commentaires: $displayComments'),
-                            ),
-                            Icon(
-                              Icons.edit_outlined,
-                              size: 18,
-                              color: theme.colorScheme.outline,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Future<void> _updateComments({
-    required PartUpdateNotifier notifier,
-    required PartState displayedState,
-    required String value,
-  }) async {
-    final result = await notifier.updatePartState(
-      partId: widget.part.id,
-      previousState: displayedState,
-      newState: displayedState,
-      previousComments: widget.part.comments,
-      newComments: value,
-    );
-    if (!mounted) {
-      return;
+  String _displayComment(String? comments) {
+    final normalized = comments?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return 'Ajouter un commentaire';
     }
-
-    setState(() {
-      _isEditingComments = false;
-    });
-
-    if (result == PartUpdateResult.success) {
-      ref.read(successIndicatorProvider.notifier).fire();
-    }
+    return normalized;
   }
 
-  String? _validateComments(String value) {
-    if (value.trim().length > ValidationConstants.tentCommentsMaxLength) {
-      return 'Le commentaire ne peut pas dépasser ${ValidationConstants.tentCommentsMaxLength} caractères.';
+  bool _hasNoComment(String? comments) {
+    final normalized = comments?.trim();
+    return normalized == null || normalized.isEmpty;
+  }
+
+  void _showAddPartDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => _AddPartSheet(
+        tentId: widget.tentId,
+        existingPartKindIds: widget.parts.map((p) => p.partKindId).toSet(),
+      ),
+    );
+  }
+}
+
+class _CommentEditor extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onSave;
+  final VoidCallback onCancel;
+
+  const _CommentEditor({
+    required this.controller,
+    required this.onSave,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 180,
+      height: 32,
+      child: TextField(
+        controller: controller,
+        autofocus: true,
+        style: Theme.of(context).textTheme.bodySmall,
+        decoration: InputDecoration(
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 6,
+          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InkWell(
+                onTap: onSave,
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.done, size: 16),
+                ),
+              ),
+              InkWell(
+                onTap: onCancel,
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.close, size: 16),
+                ),
+              ),
+            ],
+          ),
+        ),
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => onSave(),
+      ),
+    );
+  }
+}
+
+class _AddPartSheet extends ConsumerStatefulWidget {
+  final String tentId;
+  final Set<String> existingPartKindIds;
+
+  const _AddPartSheet({
+    required this.tentId,
+    required this.existingPartKindIds,
+  });
+
+  @override
+  ConsumerState<_AddPartSheet> createState() => _AddPartSheetState();
+}
+
+class _AddPartSheetState extends ConsumerState<_AddPartSheet> {
+  final Set<String> _selectedIds = {};
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(partManagementProvider(widget.tentId).notifier).loadPartKinds();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(partManagementProvider(widget.tentId));
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Ajouter une pièce', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              hintText: 'Rechercher...',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 12),
+          if (state.isLoadingPartKinds)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 8),
+                    Text('Chargement des pièces…'),
+                  ],
+                ),
+              ),
+            )
+          else if (state.partKindsError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                state.partKindsError!,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+            )
+          else
+            _buildPartKindList(state, theme),
+          if (state.addError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              state.addError!,
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Annuler'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _selectedIds.isEmpty || state.isAdding
+                      ? null
+                      : _onConfirm,
+                  child: state.isAdding
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Ajouter'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPartKindList(PartManagementState state, ThemeData theme) {
+    final query = _searchController.text.trim().toLowerCase();
+    final partKinds = state.partKinds.where((pk) {
+      if (query.isEmpty) return true;
+      return pk.name.toLowerCase().contains(query);
+    }).toList();
+
+    final existingIds = widget.existingPartKindIds;
+
+    if (partKinds.isEmpty && query.isNotEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text(
+            'Aucun type de pièce trouvé',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
     }
-    return null;
+
+    final existingPartKinds = partKinds
+        .where((pk) => existingIds.contains(pk.id))
+        .toList();
+    final availablePartKinds = partKinds
+        .where((pk) => !existingIds.contains(pk.id))
+        .toList();
+
+    final allPresent = availablePartKinds.isEmpty && partKinds.isNotEmpty;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 360),
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          if (allPresent)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: Text(
+                  'Toutes les pièces sont déjà présentes sur cette tente.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ...availablePartKinds.map(
+            (pk) => CheckboxListTile(
+              value: _selectedIds.contains(pk.id),
+              onChanged: (checked) {
+                setState(() {
+                  if (checked == true) {
+                    _selectedIds.add(pk.id);
+                  } else {
+                    _selectedIds.remove(pk.id);
+                  }
+                });
+              },
+              title: Text(pk.name),
+              subtitle: Text('Ordre : ${pk.displayOrder}'),
+              controlAffinity: ListTileControlAffinity.leading,
+              dense: true,
+            ),
+          ),
+          if (existingPartKinds.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'Déjà présente',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            ...existingPartKinds.map(
+              (pk) => CheckboxListTile(
+                value: false,
+                onChanged: null,
+                title: Text(
+                  pk.name,
+                  style: TextStyle(color: theme.colorScheme.outline),
+                ),
+                subtitle: Text(
+                  'Ordre : ${pk.displayOrder}',
+                  style: TextStyle(color: theme.colorScheme.outline),
+                ),
+                controlAffinity: ListTileControlAffinity.leading,
+                dense: true,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onConfirm() async {
+    final success = await ref
+        .read(partManagementProvider(widget.tentId).notifier)
+        .addParts(_selectedIds.toList());
+    if (success && mounted) {
+      Navigator.of(context).pop();
+    }
   }
 }
 

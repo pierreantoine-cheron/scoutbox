@@ -65,10 +65,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(
-          screenId: 'register',
-          title: Text('Inscription'),
-        ));
+        ref
+            .read(appBarConfigProvider.notifier)
+            .set(
+              const AppBarConfig(
+                screenId: 'register',
+                title: Text('Inscription'),
+              ),
+            );
       }
     });
 
@@ -79,125 +83,131 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
-            TextFormField(
-              controller: _serverController,
-              focusNode: _serverFocusNode,
-              autovalidateMode: _hasSubmitted
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
-              decoration: const InputDecoration(
-                labelText: 'URL du serveur',
-                hintText: 'https://votre-serveur.com',
-                border: OutlineInputBorder(),
+              TextFormField(
+                controller: _serverController,
+                focusNode: _serverFocusNode,
+                autovalidateMode: _hasSubmitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                decoration: const InputDecoration(
+                  labelText: 'URL du serveur',
+                  hintText: 'https://votre-serveur.com',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+                enableSuggestions: false,
+                smartDashesType: SmartDashesType.disabled,
+                smartQuotesType: SmartQuotesType.disabled,
+                textInputAction: TextInputAction.next,
+                validator: AuthValidators.validateServerUrl,
               ),
-              keyboardType: TextInputType.url,
-              autocorrect: false,
-              enableSuggestions: false,
-              smartDashesType: SmartDashesType.disabled,
-              smartQuotesType: SmartQuotesType.disabled,
-              textInputAction: TextInputAction.next,
-              validator: AuthValidators.validateServerUrl,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _inviteController,
-              focusNode: _inviteFocusNode,
-              autovalidateMode: _hasSubmitted
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
-              decoration: const InputDecoration(
-                labelText: "Code d'invitation",
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _inviteController,
+                focusNode: _inviteFocusNode,
+                autovalidateMode: _hasSubmitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                decoration: const InputDecoration(
+                  labelText: "Code d'invitation",
+                  border: OutlineInputBorder(),
+                ),
+                maxLength: ValidationConstants.inviteCodeMaxLength,
+                textCapitalization: TextCapitalization.characters,
+                textInputAction: TextInputAction.next,
+                validator: AuthValidators.validateInviteCode,
               ),
-              maxLength: ValidationConstants.inviteCodeMaxLength,
-              textCapitalization: TextCapitalization.characters,
-              textInputAction: TextInputAction.next,
-              validator: AuthValidators.validateInviteCode,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _usernameController,
-              focusNode: _usernameFocusNode,
-              autovalidateMode: _hasSubmitted
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
-              decoration: const InputDecoration(
-                labelText: "Nom d'utilisateur",
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _usernameController,
+                focusNode: _usernameFocusNode,
+                autovalidateMode: _hasSubmitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                decoration: const InputDecoration(
+                  labelText: "Nom d'utilisateur",
+                  border: OutlineInputBorder(),
+                ),
+                autofillHints: const [AutofillHints.username],
+                maxLength: ValidationConstants.usernameMaxLength,
+                textInputAction: TextInputAction.next,
+                validator: AuthValidators.validateUsername,
               ),
-              autofillHints: const [AutofillHints.username],
-              maxLength: ValidationConstants.usernameMaxLength,
-              textInputAction: TextInputAction.next,
-              validator: AuthValidators.validateUsername,
-            ),
-            const SizedBox(height: 16),
-            PasswordFormField(
-              controller: _passwordController,
-              focusNode: _passwordFocusNode,
-              autovalidateMode: _hasSubmitted
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
-              labelText: 'Mot de passe',
-              autofillHints: const [AutofillHints.newPassword],
-              textInputAction: TextInputAction.next,
-              onEditingComplete: () {
-                _confirmPasswordFocusNode.requestFocus();
-              },
-              validator: AuthValidators.validatePassword,
-            ),
-            const SizedBox(height: 16),
-            PasswordFormField(
-              controller: _confirmPasswordController,
-              focusNode: _confirmPasswordFocusNode,
-              autovalidateMode: _hasSubmitted
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
-              labelText: 'Confirmer le mot de passe',
-              showPasswordTooltip: 'Afficher la confirmation',
-              hidePasswordTooltip: 'Masquer la confirmation',
-              autofillHints: const [AutofillHints.newPassword],
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submit(),
-              validator: (value) => AuthValidators.validatePasswordMatch(
-                value,
-                _passwordController.text,
+              const SizedBox(height: 16),
+              PasswordFormField(
+                controller: _passwordController,
+                focusNode: _passwordFocusNode,
+                autovalidateMode: _hasSubmitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                labelText: 'Mot de passe',
+                autofillHints: const [AutofillHints.newPassword],
+                textInputAction: TextInputAction.next,
+                onEditingComplete: () {
+                  _confirmPasswordFocusNode.requestFocus();
+                },
+                validator: AuthValidators.validatePassword,
               ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: authState.isLoading ? null : _submit,
-                child: authState.isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text("S'inscrire", style: TextStyle(fontSize: 16)),
-              ),
-            ),
-            TextButton(
-              onPressed: authState.isLoading
-                  ? null
-                  : () {
-                      ref.read(authProvider.notifier).showLoginScreen();
-                    },
-              child: const Text('Déjà un compte ? Se connecter'),
-            ),
-            if (authState.error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Text(
-                  authState.error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  textAlign: TextAlign.center,
+              const SizedBox(height: 16),
+              PasswordFormField(
+                controller: _confirmPasswordController,
+                focusNode: _confirmPasswordFocusNode,
+                autovalidateMode: _hasSubmitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                labelText: 'Confirmer le mot de passe',
+                showPasswordTooltip: 'Afficher la confirmation',
+                hidePasswordTooltip: 'Masquer la confirmation',
+                autofillHints: const [AutofillHints.newPassword],
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
+                validator: (value) => AuthValidators.validatePasswordMatch(
+                  value,
+                  _passwordController.text,
                 ),
               ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: authState.isLoading ? null : _submit,
+                  child: authState.isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          "S'inscrire",
+                          style: TextStyle(fontSize: 16),
+                        ),
+                ),
+              ),
+              TextButton(
+                onPressed: authState.isLoading
+                    ? null
+                    : () {
+                        ref.read(authProvider.notifier).showLoginScreen();
+                      },
+                child: const Text('Déjà un compte ? Se connecter'),
+              ),
+              if (authState.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    authState.error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
             ],
           ),
         ),
-    ));
+      ),
+    );
   }
 
   Future<void> _submit() async {

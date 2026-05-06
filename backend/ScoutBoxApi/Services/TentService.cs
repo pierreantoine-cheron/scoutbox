@@ -94,6 +94,7 @@ public class TentService
                     PartKind = shapePart.PartKind,
                     State = PartState.Good,
                     Comments = null,
+                    DisplayOrder = shapePart.PartKind.DisplayOrder,
                     CreatedAt = now,
                     UpdatedAt = now,
                     CreatedByUserId = userId,
@@ -288,13 +289,13 @@ public class TentService
     private static List<PartDto> ToPartDtos(IEnumerable<Part> parts)
     {
         return parts
-            .OrderBy(p => p.PartKind.DisplayOrder)
-            .ThenBy(p => p.PartKindId)
+            .OrderBy(p => p.DisplayOrder)
+            .ThenBy(p => p.CreatedAt)
             .Select(p => new PartDto(
                 p.Id,
                 p.PartKindId,
                 p.PartKind.Name,
-                p.PartKind.DisplayOrder,
+                p.DisplayOrder,
                 p.State.ToString(),
                 p.Comments,
                 p.CreatedAt,

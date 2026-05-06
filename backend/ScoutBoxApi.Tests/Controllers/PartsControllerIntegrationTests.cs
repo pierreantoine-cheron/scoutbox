@@ -198,6 +198,400 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         Assert.Equal(oldUpdatedAt, part.UpdatedAt);
     }
 
+    [Fact]
+    public async Task AddPartsToTent_WithValidPartKinds_AddsPartsAndReturnsEnvelope()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+
+        var userExists = await db.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == CustomApiFactory.TestUserId);
+        if (!userExists)
+        {
+            db.Users.Add(new User
+            {
+                Id = CustomApiFactory.TestUserId,
+                Username = "add_parts_test_user",
+                PasswordHash = "hash",
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var partKinds = await db.PartKinds.OrderBy(x => x.DisplayOrder).ToListAsync();
+
+        var tentId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+
+        db.Tents.Add(new Tent
+        {
+            Id = tentId,
+            Name = $"AddPartsTest-{Guid.NewGuid():N}",
+            Size = 4,
+            TentShapeId = shapeId,
+            OverallState = TentOverallState.Good,
+            IsArchived = false,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        });
+        await db.SaveChangesAsync();
+
+        var newPartKindIds = partKinds.Skip(2).Take(2).Select(pk => pk.Id).ToList();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = newPartKindIds });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<PartApiDto>>>();
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Data);
+        Assert.Equal(2, payload.Data.Count);
+
+        foreach (var dto in payload.Data)
+        {
+            Assert.NotEqual(Guid.Empty, dto.Id);
+            Assert.Equal("Good", dto.State);
+        }
+
+        var audit = await db.AuditEvents
+            .Where(a => a.Action == "part_added" && a.MetadataJson.Contains(tentId.ToString()))
+            .ToListAsync();
+        Assert.Equal(2, audit.Count);
+        Assert.All(audit, a => Assert.Contains("partKindId", a.MetadataJson));
+        Assert.All(audit, a => Assert.Contains("displayOrder", a.MetadataJson));
+    }
+
+    [Fact]
+    public async Task AddPartsToTent_WithDuplicatePartKind_ReturnsDuplicatePart()
+    {
+        var (partId, tentId, partKindId, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { partKindId } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("DUPLICATE_PART", payload.Code);
+    }
+
+    [Fact]
+    public async Task AddPartsToTent_WithInvalidPartKindId_ReturnsInvalidPartKind()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+
+        var tentId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        db.Tents.Add(new Tent
+        {
+            Id = tentId,
+            Name = $"InvalidPK-{Guid.NewGuid():N}",
+            Size = 4,
+            TentShapeId = shapeId,
+            OverallState = TentOverallState.Good,
+            IsArchived = false,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        });
+        await db.SaveChangesAsync();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { Guid.NewGuid() } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("INVALID_PART_KIND", payload.Code);
+    }
+
+    [Fact]
+    public async Task AddPartsToTent_ForArchivedTent_ReturnsTentArchived()
+    {
+        var (partId, tentId, partKindId, _) = await SeedPartAsync(isArchived: true, state: PartState.Good, comments: null);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var otherPartKind = await db.PartKinds.Where(pk => pk.Id != partKindId).Select(pk => pk.Id).FirstAsync();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { otherPartKind } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TENT_ARCHIVED", payload.Code);
+    }
+
+    [Fact]
+    public async Task AddPartsToTent_ForUnknownTent_ReturnsTentNotFound()
+    {
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync($"/api/tents/{Guid.NewGuid()}/parts", new { partKindIds = new[] { Guid.NewGuid() } });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TENT_NOT_FOUND", payload.Code);
+    }
+
+    [Fact]
+    public async Task AddPartsToTent_WithEmptyRequest_ReturnsInvalidRequest()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+
+        var tentId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        db.Tents.Add(new Tent
+        {
+            Id = tentId,
+            Name = $"EmptyReq-{Guid.NewGuid():N}",
+            Size = 4,
+            TentShapeId = shapeId,
+            OverallState = TentOverallState.Good,
+            IsArchived = false,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        });
+        await db.SaveChangesAsync();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new List<Guid>() });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("INVALID_REQUEST", payload.Code);
+    }
+
+    [Fact]
+    public async Task DeletePart_WithValidId_RemovesPartAndReturnsNoContent()
+    {
+        var (partId, tentId, partKindId, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
+
+        using var preScope = _factory.Services.CreateScope();
+        var preDb = preScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        Assert.True(await preDb.Parts.AnyAsync(p => p.Id == partId));
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.DeleteAsync($"/api/parts/{partId}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var postScope = _factory.Services.CreateScope();
+        var postDb = postScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        Assert.False(await postDb.Parts.AnyAsync(p => p.Id == partId));
+
+        var audit = await postDb.AuditEvents
+            .Where(a => a.Action == "part_deleted" && a.TargetEntityId == partId)
+            .FirstOrDefaultAsync();
+        Assert.NotNull(audit);
+        Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
+        Assert.Contains("tentId", audit.MetadataJson);
+        Assert.Contains("partKindId", audit.MetadataJson);
+    }
+
+    [Fact]
+    public async Task DeletePart_WithUnknownId_ReturnsPartNotFound()
+    {
+        using var client = CreateAuthenticatedClient();
+        var response = await client.DeleteAsync($"/api/parts/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("PART_NOT_FOUND", payload.Code);
+    }
+
+    [Fact]
+    public async Task DeletePart_ForArchivedTent_ReturnsTentArchived()
+    {
+        var (partId, _, _, _) = await SeedPartAsync(isArchived: true, state: PartState.Good, comments: null);
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.DeleteAsync($"/api/parts/{partId}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TENT_ARCHIVED", payload.Code);
+    }
+
+    [Fact]
+    public async Task DeletePart_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        var (partId, _, _, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.DeleteAsync($"/api/parts/{partId}");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddPartsToTent_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.PostAsJsonAsync($"/api/tents/{Guid.NewGuid()}/parts", new { partKindIds = new[] { Guid.NewGuid() } });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddPartsToTent_DisplayOrderIsIncremental()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+
+        var userExists = await db.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == CustomApiFactory.TestUserId);
+        if (!userExists)
+        {
+            db.Users.Add(new User
+            {
+                Id = CustomApiFactory.TestUserId,
+                Username = "display_order_test_user",
+                PasswordHash = "hash",
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var partKinds = await db.PartKinds.OrderBy(x => x.DisplayOrder).ToListAsync();
+
+        var tentId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+
+        db.Tents.Add(new Tent
+        {
+            Id = tentId,
+            Name = $"DisplayOrderTest-{Guid.NewGuid():N}",
+            Size = 4,
+            TentShapeId = shapeId,
+            OverallState = TentOverallState.Good,
+            IsArchived = false,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        });
+        await db.SaveChangesAsync();
+
+        var firstKindId = partKinds[0].Id;
+        var lastKindId = partKinds[^1].Id;
+
+        using var client = CreateAuthenticatedClient();
+        var firstResponse = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { firstKindId } });
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        var firstPayload = await firstResponse.Content.ReadFromJsonAsync<DataEnvelope<List<PartApiDto>>>();
+        Assert.NotNull(firstPayload);
+        Assert.NotNull(firstPayload.Data);
+        Assert.Single(firstPayload.Data);
+        var firstOrder = firstPayload.Data[0].DisplayOrder;
+
+        var secondResponse = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { lastKindId } });
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+        var secondPayload = await secondResponse.Content.ReadFromJsonAsync<DataEnvelope<List<PartApiDto>>>();
+        Assert.NotNull(secondPayload);
+        Assert.NotNull(secondPayload.Data);
+        Assert.Single(secondPayload.Data);
+        var secondOrder = secondPayload.Data[0].DisplayOrder;
+
+        Assert.True(secondOrder > firstOrder, "Second added part should have higher DisplayOrder than first");
+    }
+
+    [Fact]
+    public async Task DeletePart_RemovingAllParts_IsValid()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+
+        var userExists = await db.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == CustomApiFactory.TestUserId);
+        if (!userExists)
+        {
+            db.Users.Add(new User
+            {
+                Id = CustomApiFactory.TestUserId,
+                Username = "all_parts_test_user",
+                PasswordHash = "hash",
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var partKinds = await db.PartKinds.OrderBy(x => x.DisplayOrder).ToListAsync();
+
+        var tentId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+
+        db.Tents.Add(new Tent
+        {
+            Id = tentId,
+            Name = $"AllPartsTest-{Guid.NewGuid():N}",
+            Size = 4,
+            TentShapeId = shapeId,
+            OverallState = TentOverallState.Good,
+            IsArchived = false,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        });
+
+        var partIds = new List<Guid>();
+        foreach (var pk in partKinds)
+        {
+            var pid = Guid.NewGuid();
+            partIds.Add(pid);
+            db.Parts.Add(new Part
+            {
+                Id = pid,
+                TentId = tentId,
+                PartKindId = pk.Id,
+                State = PartState.Good,
+                Comments = null,
+                DisplayOrder = pk.DisplayOrder,
+                CreatedAt = now,
+                UpdatedAt = now,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+        }
+        await db.SaveChangesAsync();
+
+        using var client = CreateAuthenticatedClient();
+        foreach (var pid in partIds)
+        {
+            var deleteResponse = await client.DeleteAsync($"/api/parts/{pid}");
+            Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        }
+
+        using var postScope = _factory.Services.CreateScope();
+        var postDb = postScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var remainingParts = await postDb.Parts.Where(p => p.TentId == tentId).CountAsync();
+        Assert.Equal(0, remainingParts);
+    }
+
     private HttpClient CreateAuthenticatedClient()
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -254,6 +648,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             PartKindId = partKind.Id,
             State = state,
             Comments = comments,
+            DisplayOrder = partKind.DisplayOrder,
             CreatedAt = now,
             UpdatedAt = now,
             CreatedByUserId = CustomApiFactory.TestUserId,
@@ -272,6 +667,9 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     private sealed class PartApiDto
     {
         public Guid Id { get; set; }
+        public Guid PartKindId { get; set; }
+        public string PartKindName { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
         public string State { get; set; } = string.Empty;
         public string? Comments { get; set; }
     }

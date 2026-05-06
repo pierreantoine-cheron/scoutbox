@@ -111,10 +111,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: TentCard(
-              tent: _sampleTent(),
-              onTap: () => tapped = true,
-            ),
+            body: TentCard(tent: _sampleTent(), onTap: () => tapped = true),
           ),
         ),
       );

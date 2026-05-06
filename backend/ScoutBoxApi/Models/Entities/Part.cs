@@ -7,6 +7,7 @@ public class Part
     public Guid PartKindId { get; set; }
     public PartState State { get; set; }
     public string? Comments { get; set; }
+    public int DisplayOrder { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public Guid CreatedByUserId { get; set; }

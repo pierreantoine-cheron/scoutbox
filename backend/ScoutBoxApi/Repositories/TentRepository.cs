@@ -85,6 +85,38 @@ public class TentRepository : ITentRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<List<PartKind>> GetAllPartKindsAsync()
+    {
+        return await _db.PartKinds
+            .OrderBy(pk => pk.DisplayOrder)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetMaxDisplayOrderForTentAsync(Guid tentId)
+    {
+        var maxOrder = await _db.Parts
+            .Where(p => p.TentId == tentId)
+            .MaxAsync(p => (int?)p.DisplayOrder);
+
+        return maxOrder ?? 0;
+    }
+
+    public async Task<Part?> GetPartByIdIncludingTentAsync(Guid id)
+    {
+        return await _db.Parts
+            .Include(p => p.Tent)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+
+    public async Task<List<Part>> GetPartsByIdsAsync(List<Guid> ids)
+    {
+        return await _db.Parts
+            .AsNoTracking()
+            .Include(p => p.PartKind)
+            .Where(p => ids.Contains(p.Id))
+            .ToListAsync();
+    }
+
     public async Task<bool> HasDuplicateTentNameAsync(string normalizedName, Guid? excludedTentId = null)
     {
         return await _db.Tents.AnyAsync(tent =>
@@ -100,6 +132,16 @@ public class TentRepository : ITentRepository
     public void AddPart(Part part)
     {
         _db.Parts.Add(part);
+    }
+
+    public void AddParts(IEnumerable<Part> parts)
+    {
+        _db.Parts.AddRange(parts);
+    }
+
+    public void RemovePart(Part part)
+    {
+        _db.Parts.Remove(part);
     }
 
     public async Task BeginTransactionAsync()

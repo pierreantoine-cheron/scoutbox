@@ -42,5 +42,9 @@ class ErrorLocalizer {
     ErrorCodes.invalidPartState: "L'état de l'élément est invalide.",
     ErrorCodes.tentArchived:
         'Cette tente est archivée et ne peut plus être modifiée.',
+    ErrorCodes.duplicatePart: 'Cette pièce existe déjà sur cette tente.',
+    ErrorCodes.invalidPartKind: 'Type de pièce invalide.',
+    ErrorCodes.invalidRequest:
+        'Requête invalide. Vérifiez les données saisies.',
   };
 }

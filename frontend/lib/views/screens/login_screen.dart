@@ -96,10 +96,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(
-          screenId: 'login',
-          title: Text('Connexion'),
-        ));
+        ref
+            .read(appBarConfigProvider.notifier)
+            .set(
+              const AppBarConfig(screenId: 'login', title: Text('Connexion')),
+            );
       }
     });
 
@@ -110,104 +111,107 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-            TextFormField(
-              controller: _serverController,
-              focusNode: _serverFocusNode,
-              autovalidateMode: _hasSubmitted
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
-              decoration: const InputDecoration(
-                labelText: 'URL du serveur',
-                hintText: 'https://votre-serveur.com',
-                border: OutlineInputBorder(),
+              TextFormField(
+                controller: _serverController,
+                focusNode: _serverFocusNode,
+                autovalidateMode: _hasSubmitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                decoration: const InputDecoration(
+                  labelText: 'URL du serveur',
+                  hintText: 'https://votre-serveur.com',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+                enableSuggestions: false,
+                smartDashesType: SmartDashesType.disabled,
+                smartQuotesType: SmartQuotesType.disabled,
+                textInputAction: TextInputAction.next,
+                validator: AuthValidators.validateServerUrl,
               ),
-              keyboardType: TextInputType.url,
-              autocorrect: false,
-              enableSuggestions: false,
-              smartDashesType: SmartDashesType.disabled,
-              smartQuotesType: SmartQuotesType.disabled,
-              textInputAction: TextInputAction.next,
-              validator: AuthValidators.validateServerUrl,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _usernameController,
-              focusNode: _usernameFocusNode,
-              autovalidateMode: _hasSubmitted
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
-              decoration: const InputDecoration(
-                labelText: "Nom d'utilisateur",
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _usernameController,
+                focusNode: _usernameFocusNode,
+                autovalidateMode: _hasSubmitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                decoration: const InputDecoration(
+                  labelText: "Nom d'utilisateur",
+                  border: OutlineInputBorder(),
+                ),
+                autofillHints: const [AutofillHints.username],
+                maxLength: ValidationConstants.usernameMaxLength,
+                textInputAction: TextInputAction.next,
+                validator: AuthValidators.validateUsername,
               ),
-              autofillHints: const [AutofillHints.username],
-              maxLength: ValidationConstants.usernameMaxLength,
-              textInputAction: TextInputAction.next,
-              validator: AuthValidators.validateUsername,
-            ),
-            const SizedBox(height: 16),
-            PasswordFormField(
-              controller: _passwordController,
-              focusNode: _passwordFocusNode,
-              autovalidateMode: _hasSubmitted
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
-              labelText: 'Mot de passe',
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submit(),
-              validator: AuthValidators.validatePassword,
-            ),
-            const SizedBox(height: 8),
-            CheckboxListTile(
-              value: _rememberUsername,
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Se souvenir de moi'),
-              onChanged: authState.isLoading
-                  ? null
-                  : (value) {
-                      setState(() {
-                        _rememberUsername = value ?? false;
-                      });
-                    },
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: authState.isLoading ? null : _submit,
-                child: authState.isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text(
-                        'Se connecter',
-                        style: TextStyle(fontSize: 16),
-                      ),
+              const SizedBox(height: 16),
+              PasswordFormField(
+                controller: _passwordController,
+                focusNode: _passwordFocusNode,
+                autovalidateMode: _hasSubmitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                labelText: 'Mot de passe',
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
+                validator: AuthValidators.validatePassword,
               ),
-            ),
-            TextButton(
-              onPressed: authState.isLoading
-                  ? null
-                  : () {
-                      ref.read(authProvider.notifier).showRegisterScreen();
-                    },
-              child: const Text("Pas de compte ? S'inscrire"),
-            ),
-            if (authState.error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  authState.error!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                value: _rememberUsername,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Se souvenir de moi'),
+                onChanged: authState.isLoading
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _rememberUsername = value ?? false;
+                        });
+                      },
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: authState.isLoading ? null : _submit,
+                  child: authState.isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Se connecter',
+                          style: TextStyle(fontSize: 16),
+                        ),
                 ),
               ),
+              TextButton(
+                onPressed: authState.isLoading
+                    ? null
+                    : () {
+                        ref.read(authProvider.notifier).showRegisterScreen();
+                      },
+                child: const Text("Pas de compte ? S'inscrire"),
+              ),
+              if (authState.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    authState.error!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
-    ));
+      ),
+    );
   }
 
   Future<void> _submit() async {
@@ -232,5 +236,4 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       TextInput.finishAutofillContext(shouldSave: true);
     }
   }
-
 }

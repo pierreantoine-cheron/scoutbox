@@ -33,10 +33,7 @@ void main() {
         home: Scaffold(
           body: SizedBox(
             height: 400,
-            child: TentDataTable(
-              tents: tents,
-              onOpenTent: onTap ?? (_) {},
-            ),
+            child: TentDataTable(tents: tents, onOpenTent: onTap ?? (_) {}),
           ),
         ),
       );
@@ -44,7 +41,12 @@ void main() {
 
     testWidgets('renders table with header columns', (tester) async {
       await tester.pumpWidget(
-        buildTable(tents: [_tent(), _tent(id: 't-2', name: 'Tente B')]),
+        buildTable(
+          tents: [
+            _tent(),
+            _tent(id: 't-2', name: 'Tente B'),
+          ],
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -55,9 +57,7 @@ void main() {
     });
 
     testWidgets('renders tent names in rows', (tester) async {
-      await tester.pumpWidget(
-        buildTable(tents: [_tent(name: 'Tente Alpha')]),
-      );
+      await tester.pumpWidget(buildTable(tents: [_tent(name: 'Tente Alpha')]));
       await tester.pumpAndSettle();
 
       expect(find.text('Tente Alpha'), findsOneWidget);
@@ -75,45 +75,35 @@ void main() {
     });
 
     testWidgets('renders size as places', (tester) async {
-      await tester.pumpWidget(
-        buildTable(tents: [_tent(size: 3)]),
-      );
+      await tester.pumpWidget(buildTable(tents: [_tent(size: 3)]));
       await tester.pumpAndSettle();
 
       expect(find.text('3 places'), findsOneWidget);
     });
 
     testWidgets('renders "1 place" for size 1', (tester) async {
-      await tester.pumpWidget(
-        buildTable(tents: [_tent(size: 1)]),
-      );
+      await tester.pumpWidget(buildTable(tents: [_tent(size: 1)]));
       await tester.pumpAndSettle();
 
       expect(find.text('1 place'), findsOneWidget);
     });
 
     testWidgets('renders shape name', (tester) async {
-      await tester.pumpWidget(
-        buildTable(tents: [_tent(shapeName: 'Cabanon')]),
-      );
+      await tester.pumpWidget(buildTable(tents: [_tent(shapeName: 'Cabanon')]));
       await tester.pumpAndSettle();
 
       expect(find.text('Cabanon'), findsOneWidget);
     });
 
     testWidgets('renders "-" for missing shape name', (tester) async {
-      await tester.pumpWidget(
-        buildTable(tents: [_tent(shapeName: '')]),
-      );
+      await tester.pumpWidget(buildTable(tents: [_tent(shapeName: '')]));
       await tester.pumpAndSettle();
 
       expect(find.text('-'), findsAtLeast(1));
     });
 
     testWidgets('shows empty message when no tents', (tester) async {
-      await tester.pumpWidget(
-        buildTable(tents: const []),
-      );
+      await tester.pumpWidget(buildTable(tents: const []));
       await tester.pumpAndSettle();
 
       expect(find.text('Aucune tente disponible'), findsOneWidget);
