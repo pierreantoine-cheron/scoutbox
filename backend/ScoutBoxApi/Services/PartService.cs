@@ -135,6 +135,11 @@ public class PartService
             return (null, new ErrorResponse("Request must contain at least one partKindId", "INVALID_REQUEST"));
         }
 
+        if (partKindIds.Count != partKindIds.Distinct().Count())
+        {
+            return (null, new ErrorResponse("Request contains duplicate PartKindIds", "DUPLICATE_PART"));
+        }
+
         var tent = await _repo.GetTentByIdForUpdateAsync(tentId);
         if (tent == null)
         {
@@ -162,15 +167,11 @@ public class PartService
             return (null, new ErrorResponse("One or more parts already exist on this tent", "DUPLICATE_PART"));
         }
 
-        var maxDisplayOrder = await _repo.GetMaxDisplayOrderForTentAsync(tentId);
-
         var now = DateTime.UtcNow;
         var newParts = new List<Part>();
-        var displayOrder = maxDisplayOrder;
 
         foreach (var partKindId in partKindIds)
         {
-            displayOrder++;
             var part = new Part
             {
                 Id = Guid.NewGuid(),
@@ -178,7 +179,6 @@ public class PartService
                 PartKindId = partKindId,
                 State = PartState.Good,
                 Comments = null,
-                DisplayOrder = displayOrder,
                 CreatedAt = now,
                 UpdatedAt = now,
                 CreatedByUserId = userId,
@@ -195,8 +195,7 @@ public class PartService
                 metadata: new Dictionary<string, object?>
                 {
                     ["tentId"] = tentId,
-                    ["partKindId"] = partKindId,
-                    ["displayOrder"] = part.DisplayOrder
+                    ["partKindId"] = partKindId
                 });
         }
 
@@ -248,7 +247,7 @@ public class PartService
             part.Id,
             part.PartKindId,
             part.PartKind.Name,
-            part.DisplayOrder,
+            part.PartKind.DisplayOrder,
             part.State.ToString(),
             part.Comments,
             part.CreatedAt,

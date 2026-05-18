@@ -279,7 +279,6 @@ public class ScoutBoxDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.State).HasConversion<int>().IsRequired();
             entity.Property(e => e.Comments).HasMaxLength(500);
-            entity.Property(e => e.DisplayOrder).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId).IsRequired();
@@ -306,6 +305,7 @@ public class ScoutBoxDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(e => e.TentId);
+            entity.HasIndex(e => new { e.TentId, e.PartKindId }).IsUnique();
             entity.HasIndex(e => e.CreatedAt);
             entity.HasIndex(e => e.PartKindId);
             entity.HasIndex(e => e.CreatedByUserId);

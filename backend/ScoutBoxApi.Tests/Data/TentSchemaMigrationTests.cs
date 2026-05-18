@@ -140,6 +140,70 @@ public class TentSchemaMigrationTests : IDisposable
         Assert.Contains("FOREIGN KEY constraint failed", exception.Message);
     }
 
+    [Fact]
+    public async Task Constraints_RejectDuplicatePartKindOnSameTent()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "part_unique_owner",
+            PasswordHash = "hash",
+            CreatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        _db.Users.Add(user);
+
+        var shapeId = await _db.TentShapes
+            .OrderBy(x => x.DisplayOrder)
+            .Select(x => x.Id)
+            .FirstAsync();
+        var partKindId = await _db.PartKinds
+            .OrderBy(x => x.DisplayOrder)
+            .Select(x => x.Id)
+            .FirstAsync();
+
+        var tentId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        _db.Tents.Add(new Tent
+        {
+            Id = tentId,
+            Name = "Duplicate PartKind Tent",
+            OverallState = TentOverallState.Good,
+            Size = 6,
+            TentShapeId = shapeId,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = user.Id,
+            UpdatedByUserId = user.Id
+        });
+
+        _db.Parts.AddRange(
+            new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tentId,
+                PartKindId = partKindId,
+                State = PartState.Good,
+                CreatedAt = now,
+                UpdatedAt = now,
+                CreatedByUserId = user.Id,
+                UpdatedByUserId = user.Id
+            },
+            new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tentId,
+                PartKindId = partKindId,
+                State = PartState.Good,
+                CreatedAt = now,
+                UpdatedAt = now,
+                CreatedByUserId = user.Id,
+                UpdatedByUserId = user.Id
+            });
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
+    }
+
     public void Dispose()
     {
         _db.Dispose();

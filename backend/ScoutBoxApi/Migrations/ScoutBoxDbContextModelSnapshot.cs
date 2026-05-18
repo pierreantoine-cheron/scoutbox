@@ -122,9 +122,6 @@ namespace ScoutBoxApi.Migrations
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("INTEGER");
-
                     b.Property<Guid>("PartKindId")
                         .HasColumnType("TEXT");
 
@@ -149,6 +146,9 @@ namespace ScoutBoxApi.Migrations
                     b.HasIndex("PartKindId");
 
                     b.HasIndex("TentId");
+
+                    b.HasIndex("TentId", "PartKindId")
+                        .IsUnique();
 
                     b.HasIndex("UpdatedByUserId");
 

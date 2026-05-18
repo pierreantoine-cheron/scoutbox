@@ -257,11 +257,12 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         }
 
         var audit = await db.AuditEvents
-            .Where(a => a.Action == "part_added" && a.MetadataJson.Contains(tentId.ToString()))
+            .Where(a => a.Action == "part_added"
+                && a.MetadataJson != null
+                && a.MetadataJson.Contains(tentId.ToString()))
             .ToListAsync();
         Assert.Equal(2, audit.Count);
         Assert.All(audit, a => Assert.Contains("partKindId", a.MetadataJson));
-        Assert.All(audit, a => Assert.Contains("displayOrder", a.MetadataJson));
     }
 
     [Fact]
@@ -276,6 +277,41 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
         Assert.NotNull(payload);
         Assert.Equal("DUPLICATE_PART", payload.Code);
+    }
+
+    [Fact]
+    public async Task AddPartsToTent_WithDuplicatePartKindIdsInRequest_ReturnsDuplicatePart()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var partKindId = await db.PartKinds.Select(x => x.Id).FirstAsync();
+
+        var tentId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        db.Tents.Add(new Tent
+        {
+            Id = tentId,
+            Name = $"DuplicateRequest-{Guid.NewGuid():N}",
+            Size = 4,
+            TentShapeId = shapeId,
+            OverallState = TentOverallState.Good,
+            IsArchived = false,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        });
+        await db.SaveChangesAsync();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { partKindId, partKindId } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("DUPLICATE_PART", payload.Code);
+        Assert.False(await db.Parts.AnyAsync(p => p.TentId == tentId));
     }
 
     [Fact]
@@ -455,7 +491,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     }
 
     [Fact]
-    public async Task AddPartsToTent_DisplayOrderIsIncremental()
+    public async Task AddPartsToTent_ReturnsPartKindDisplayOrder()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
@@ -495,27 +531,25 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         });
         await db.SaveChangesAsync();
 
-        var firstKindId = partKinds[0].Id;
-        var lastKindId = partKinds[^1].Id;
+        var firstKind = partKinds[0];
+        var lastKind = partKinds[^1];
 
         using var client = CreateAuthenticatedClient();
-        var firstResponse = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { firstKindId } });
+        var firstResponse = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { firstKind.Id } });
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         var firstPayload = await firstResponse.Content.ReadFromJsonAsync<DataEnvelope<List<PartApiDto>>>();
         Assert.NotNull(firstPayload);
         Assert.NotNull(firstPayload.Data);
         Assert.Single(firstPayload.Data);
-        var firstOrder = firstPayload.Data[0].DisplayOrder;
+        Assert.Equal(firstKind.DisplayOrder, firstPayload.Data[0].DisplayOrder);
 
-        var secondResponse = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { lastKindId } });
+        var secondResponse = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { lastKind.Id } });
         Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
         var secondPayload = await secondResponse.Content.ReadFromJsonAsync<DataEnvelope<List<PartApiDto>>>();
         Assert.NotNull(secondPayload);
         Assert.NotNull(secondPayload.Data);
         Assert.Single(secondPayload.Data);
-        var secondOrder = secondPayload.Data[0].DisplayOrder;
-
-        Assert.True(secondOrder > firstOrder, "Second added part should have higher DisplayOrder than first");
+        Assert.Equal(lastKind.DisplayOrder, secondPayload.Data[0].DisplayOrder);
     }
 
     [Fact]
@@ -570,7 +604,6 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
                 PartKindId = pk.Id,
                 State = PartState.Good,
                 Comments = null,
-                DisplayOrder = pk.DisplayOrder,
                 CreatedAt = now,
                 UpdatedAt = now,
                 CreatedByUserId = CustomApiFactory.TestUserId,
@@ -648,7 +681,6 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             PartKindId = partKind.Id,
             State = state,
             Comments = comments,
-            DisplayOrder = partKind.DisplayOrder,
             CreatedAt = now,
             UpdatedAt = now,
             CreatedByUserId = CustomApiFactory.TestUserId,

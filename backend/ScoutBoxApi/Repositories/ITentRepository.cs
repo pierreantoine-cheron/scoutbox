@@ -12,7 +12,6 @@ public interface ITentRepository
     Task<TentShape?> GetActiveTentShapeByIdAsync(Guid id);
     Task<bool> HasDuplicateTentNameAsync(string normalizedName, Guid? excludedTentId = null);
     Task<List<PartKind>> GetAllPartKindsAsync();
-    Task<int> GetMaxDisplayOrderForTentAsync(Guid tentId);
     Task<Part?> GetPartByIdIncludingTentAsync(Guid id);
     Task<List<Part>> GetPartsByIdsAsync(List<Guid> ids);
 

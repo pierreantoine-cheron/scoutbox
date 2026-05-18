@@ -92,15 +92,6 @@ public class TentRepository : ITentRepository
             .ToListAsync();
     }
 
-    public async Task<int> GetMaxDisplayOrderForTentAsync(Guid tentId)
-    {
-        var maxOrder = await _db.Parts
-            .Where(p => p.TentId == tentId)
-            .MaxAsync(p => (int?)p.DisplayOrder);
-
-        return maxOrder ?? 0;
-    }
-
     public async Task<Part?> GetPartByIdIncludingTentAsync(Guid id)
     {
         return await _db.Parts
@@ -114,6 +105,8 @@ public class TentRepository : ITentRepository
             .AsNoTracking()
             .Include(p => p.PartKind)
             .Where(p => ids.Contains(p.Id))
+            .OrderBy(p => p.PartKind.DisplayOrder)
+            .ThenBy(p => p.PartKindId)
             .ToListAsync();
     }
 
