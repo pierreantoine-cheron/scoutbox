@@ -13,12 +13,14 @@ class PartManagementNotifier extends _$PartManagementNotifier {
   PartManagementState build(String tentId) => const PartManagementState();
 
   Future<List<PartKind>> loadPartKinds() async {
-    state = state.copyWith(isLoadingPartKinds: true, partKindsError: null);
+    state = state.copyWith(isLoadingPartKinds: true, clearPartKindsError: true);
     try {
       final kinds = await ref.read(tentRepositoryProvider).getPartKinds();
+      if (!ref.mounted) return kinds;
       state = state.copyWith(isLoadingPartKinds: false, partKinds: kinds);
       return kinds;
     } catch (e) {
+      if (!ref.mounted) return [];
       final message = e is TentRepositoryException
           ? e.message
           : 'Impossible de charger les types de pièces.';
@@ -33,20 +35,28 @@ class PartManagementNotifier extends _$PartManagementNotifier {
   Future<bool> addParts(List<String> partKindIds) async {
     if (partKindIds.isEmpty) return false;
 
-    state = state.copyWith(isAdding: true, addError: null);
+    final requestVersion = state.requestVersion + 1;
+    state = state.copyWith(
+      isAdding: true,
+      requestVersion: requestVersion,
+      clearAddError: true,
+    );
     try {
       await ref
           .read(tentRepositoryProvider)
           .addPartsToTent(tentId: tentId, partKindIds: partKindIds);
+      if (!ref.mounted || state.requestVersion != requestVersion) return false;
 
       ref.invalidate(tentDetailProvider(tentId));
       ref.read(successIndicatorProvider.notifier).fire();
       state = state.copyWith(isAdding: false);
       return true;
     } on TentRepositoryException catch (e) {
+      if (!ref.mounted || state.requestVersion != requestVersion) return false;
       state = state.copyWith(isAdding: false, addError: e.message);
       return false;
     } catch (_) {
+      if (!ref.mounted || state.requestVersion != requestVersion) return false;
       state = state.copyWith(
         isAdding: false,
         addError: 'Impossible d\'ajouter les pièces. Réessayez.',
@@ -56,12 +66,15 @@ class PartManagementNotifier extends _$PartManagementNotifier {
   }
 
   Future<bool> removePart(String partId) async {
+    final requestVersion = state.requestVersion + 1;
     state = state.copyWith(
+      requestVersion: requestVersion,
       removingPartIds: {...state.removingPartIds, partId},
-      removeError: null,
+      clearRemoveError: true,
     );
     try {
       await ref.read(tentRepositoryProvider).removePart(partId: partId);
+      if (!ref.mounted || state.requestVersion != requestVersion) return false;
 
       ref.invalidate(tentDetailProvider(tentId));
       ref.read(successIndicatorProvider.notifier).fire();
@@ -70,12 +83,14 @@ class PartManagementNotifier extends _$PartManagementNotifier {
       );
       return true;
     } on TentRepositoryException catch (e) {
+      if (!ref.mounted || state.requestVersion != requestVersion) return false;
       state = state.copyWith(
         removingPartIds: {...state.removingPartIds}..remove(partId),
         removeError: e.message,
       );
       return false;
     } catch (_) {
+      if (!ref.mounted || state.requestVersion != requestVersion) return false;
       state = state.copyWith(
         removingPartIds: {...state.removingPartIds}..remove(partId),
         removeError: 'Impossible de supprimer la pièce. Réessayez.',
@@ -85,11 +100,11 @@ class PartManagementNotifier extends _$PartManagementNotifier {
   }
 
   void clearAddError() {
-    state = state.copyWith(addError: null);
+    state = state.copyWith(clearAddError: true);
   }
 
   void clearRemoveError() {
-    state = state.copyWith(removeError: null);
+    state = state.copyWith(clearRemoveError: true);
   }
 }
 
@@ -101,6 +116,7 @@ class PartManagementState {
   final String? addError;
   final Set<String> removingPartIds;
   final String? removeError;
+  final int requestVersion;
 
   const PartManagementState({
     this.partKinds = const [],
@@ -110,6 +126,7 @@ class PartManagementState {
     this.addError,
     this.removingPartIds = const {},
     this.removeError,
+    this.requestVersion = 0,
   });
 
   PartManagementState copyWith({
@@ -120,6 +137,7 @@ class PartManagementState {
     String? addError,
     Set<String>? removingPartIds,
     String? removeError,
+    int? requestVersion,
     bool clearPartKindsError = false,
     bool clearAddError = false,
     bool clearRemoveError = false,
@@ -134,6 +152,7 @@ class PartManagementState {
       addError: clearAddError ? null : addError ?? this.addError,
       removingPartIds: removingPartIds ?? this.removingPartIds,
       removeError: clearRemoveError ? null : removeError ?? this.removeError,
+      requestVersion: requestVersion ?? this.requestVersion,
     );
   }
 }

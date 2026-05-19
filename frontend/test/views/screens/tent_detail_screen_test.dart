@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:client/models/part.dart';
+import 'package:client/models/part_kind.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/providers/success_indicator_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
@@ -562,6 +563,82 @@ void main() {
       expect(container.read(successIndicatorProvider), equals(1));
     });
 
+    testWidgets('part comment editor enforces max length', (tester) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ajouter un commentaire'));
+      await tester.pumpAndSettle();
+
+      final textField = tester.widget<TextField>(find.byType(TextField).last);
+
+      expect(textField.maxLength, equals(500));
+      expect(repo.partUpdateCallCount, equals(0));
+    });
+
+    testWidgets(
+      'failed selected part removal keeps selection and shows error',
+      (tester) async {
+        final repo = _FailingRemovePartRepository();
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+            child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+        await tester.longPress(find.text('Toile extérieure'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Supprimer les pièces sélectionnées'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Supprimer'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Suppression impossible.'), findsOneWidget);
+        expect(find.byTooltip('Annuler la sélection'), findsOneWidget);
+      },
+    );
+
+    testWidgets('add sheet disables submit for empty search results', (
+      tester,
+    ) async {
+      final repo = _PartKindTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Ajouter une pièce'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Double toit'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'introuvable');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Aucun type de pièce trouvé'), findsOneWidget);
+      final addButton = tester.widget<FilledButton>(
+        find.ancestor(
+          of: find.text('Ajouter').last,
+          matching: find.byType(FilledButton),
+        ),
+      );
+      expect(addButton.onPressed, isNull);
+    });
+
     testWidgets(
       'selecting the current part state does not update or fire success',
       (tester) async {
@@ -775,6 +852,37 @@ class _ArchiveFailingTentRepository extends _EditableTentRepository {
       message: 'Impossible d\'archiver la tente. Réessayez.',
     );
   }
+}
+
+class _FailingRemovePartRepository extends _EditableTentRepository {
+  @override
+  Future<void> removePart({required String partId}) async {
+    throw const TentRepositoryException(message: 'Suppression impossible.');
+  }
+}
+
+class _PartKindTentRepository extends _EditableTentRepository {
+  @override
+  Future<List<PartKind>> getPartKinds() async => const [
+    PartKind(
+      id: 'kind-1',
+      name: 'Toile extérieure',
+      displayOrder: 1,
+      isStandard: true,
+    ),
+    PartKind(
+      id: 'kind-2',
+      name: 'Double toit',
+      displayOrder: 2,
+      isStandard: true,
+    ),
+  ];
+
+  @override
+  Future<List<Part>> addPartsToTent({
+    required String tentId,
+    required List<String> partKindIds,
+  }) async => const [];
 }
 
 class _ArchivedTentRepository extends TentRepository {
