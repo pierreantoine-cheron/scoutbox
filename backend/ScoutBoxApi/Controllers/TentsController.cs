@@ -12,10 +12,12 @@ namespace ScoutBoxApi.Controllers;
 public class TentsController : ControllerBase
 {
     private readonly TentService _tentService;
+    private readonly IAuditHistoryService _auditHistoryService;
 
-    public TentsController(TentService tentService)
+    public TentsController(TentService tentService, IAuditHistoryService auditHistoryService)
     {
         _tentService = tentService;
+        _auditHistoryService = auditHistoryService;
     }
 
     [HttpGet]
@@ -78,5 +80,28 @@ public class TentsController : ControllerBase
         }
 
         return Ok(new { data = response });
+    }
+
+    [HttpGet("{id:guid}/history")]
+    public async Task<IActionResult> GetTentHistory(
+        [FromRoute] Guid id,
+        [FromQuery] string? category = null,
+        [FromQuery] int limit = 50,
+        CancellationToken cancellationToken = default)
+    {
+        if (limit < 1 || limit > 100)
+        {
+            return BadRequest(new ErrorResponse("Limit must be between 1 and 100", "INVALID_REQUEST"));
+        }
+
+        var tent = await _tentService.GetTentByIdAsync(id);
+        if (tent == null)
+        {
+            return NotFound(new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
+        }
+
+        var history = await _auditHistoryService.GetTentHistoryAsync(id, category, limit, cancellationToken);
+
+        return Ok(new { data = history });
     }
 }

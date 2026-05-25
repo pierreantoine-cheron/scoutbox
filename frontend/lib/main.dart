@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'providers/providers.dart';
 import 'utils/app_theme.dart';
@@ -44,6 +45,11 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
   }
 
   Future<void> _initializeApp() async {
+    try {
+      await initializeDateFormatting('fr_FR');
+    } catch (e) {
+      debugPrint('Date formatting initialization failed: $e');
+    }
     try {
       await ref.read(authProvider.notifier).initializeAuth();
     } catch (e) {

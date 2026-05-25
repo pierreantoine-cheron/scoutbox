@@ -262,6 +262,42 @@ class TentRepository {
     }
   }
 
+  Future<List<TentHistoryItem>> getTentHistory({
+    required String tentId,
+    String? category,
+    int limit = 50,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{'limit': limit};
+      if (category != null) {
+        queryParams['category'] = category;
+      }
+      final response = await ApiClient.instance.get(
+        '${ApiRoutes.tents}/$tentId/history',
+        queryParameters: queryParams,
+      );
+      final rawItems = _readEnvelopeList(response.data);
+      return rawItems
+          .map((item) => TentHistoryItem.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _toRepositoryException(
+        e,
+        fallbackMessage: 'Impossible de charger l\'historique de la tente.',
+      );
+    } on FormatException catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors du chargement de l\'historique.',
+      );
+    } on TypeError catch (_) {
+      throw const TentRepositoryException(
+        message:
+            'Réponse du serveur invalide lors du chargement de l\'historique.',
+      );
+    }
+  }
+
   Future<Part> updatePartState({
     required String id,
     required PartState state,

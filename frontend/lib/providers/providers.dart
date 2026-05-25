@@ -6,6 +6,7 @@ export 'route_observer_provider.dart';
 export 'success_indicator_provider.dart';
 export 'tent_creation_provider.dart';
 export 'tent_detail_provider.dart';
+export 'tent_history_provider.dart';
 export 'tent_edit_provider.dart';
 export 'tent_filter_provider.dart';
 export 'tent_list_provider.dart';
