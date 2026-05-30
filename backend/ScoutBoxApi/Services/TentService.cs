@@ -322,9 +322,7 @@ public class TentService
 
     private static bool IsDuplicateTentNameViolation(DbUpdateException exception)
     {
-        var message = exception.InnerException?.Message ?? exception.Message;
-        return message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase)
-            && message.Contains("Tents.Name", StringComparison.OrdinalIgnoreCase);
+        return DbExceptionHelper.IsConstraintViolation(exception, "UNIQUE", "Tents.Name");
     }
 
     private sealed record ValidatedTentRequest(

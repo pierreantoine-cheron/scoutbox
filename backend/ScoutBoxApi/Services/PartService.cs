@@ -251,9 +251,7 @@ public class PartService
 
     private static bool IsDuplicateTentPartKindViolation(DbUpdateException exception)
     {
-        var message = exception.InnerException?.Message ?? exception.Message;
-        return message.Contains("Parts.TentId", StringComparison.OrdinalIgnoreCase)
-            && message.Contains("Parts.PartKindId", StringComparison.OrdinalIgnoreCase);
+        return DbExceptionHelper.IsConstraintViolation(exception, "Parts.TentId", "Parts.PartKindId");
     }
 
     private static PartDto ToPartDto(Part part)

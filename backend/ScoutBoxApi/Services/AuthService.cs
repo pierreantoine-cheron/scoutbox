@@ -285,8 +285,6 @@ public class AuthService
 
     private static bool IsDuplicateUsernameConstraintViolation(DbUpdateException ex)
     {
-        var message = ex.InnerException?.Message ?? ex.Message;
-        return message.Contains("Users.Username", StringComparison.OrdinalIgnoreCase)
-               || message.Contains("IX_Users_Username", StringComparison.OrdinalIgnoreCase);
+        return DbExceptionHelper.IsAnyConstraintViolation(ex, "Users.Username", "IX_Users_Username");
     }
 }
