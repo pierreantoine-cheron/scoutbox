@@ -13,81 +13,57 @@ TentRepository tentRepository(Ref ref) => TentRepository();
 
 class TentRepository {
   Future<List<Tent>> getTents() async {
-    try {
-      final response = await ApiClient.instance.get(ApiRoutes.tents);
-      final rawTents = _readEnvelopeList(response.data);
+    return _request(
+      fallbackMessage: 'Impossible de charger les tentes. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors du chargement des tentes.',
+      action: () async {
+        final response = await ApiClient.instance.get(ApiRoutes.tents);
+        final rawTents = _readEnvelopeList(response.data);
 
-      return rawTents
-          .map((tent) => Tent.fromJson(tent as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible de charger les tentes. Réessayez.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message: 'Réponse du serveur invalide lors du chargement des tentes.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message: 'Réponse du serveur invalide lors du chargement des tentes.',
-      );
-    }
+        return rawTents
+            .map((tent) => Tent.fromJson(tent as Map<String, dynamic>))
+            .toList();
+      },
+    );
   }
 
   Future<List<TentShape>> getTentShapes() async {
-    try {
-      final response = await ApiClient.instance.get(ApiRoutes.tentShapes);
-      final rawShapes = _readEnvelopeList(response.data);
+    return _request(
+      fallbackMessage: 'Impossible de charger les formes de tentes. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors du chargement des formes de tentes.',
+      action: () async {
+        final response = await ApiClient.instance.get(ApiRoutes.tentShapes);
+        final rawShapes = _readEnvelopeList(response.data);
 
-      final shapes =
-          rawShapes
-              .map((shape) => TentShape.fromJson(shape as Map<String, dynamic>))
-              .where((shape) => shape.isActive)
-              .toList()
-            ..sort(
-              (left, right) => left.displayOrder.compareTo(right.displayOrder),
-            );
+        final shapes =
+            rawShapes
+                .map(
+                  (shape) => TentShape.fromJson(shape as Map<String, dynamic>),
+                )
+                .where((shape) => shape.isActive)
+                .toList()
+              ..sort(
+                (left, right) =>
+                    left.displayOrder.compareTo(right.displayOrder),
+              );
 
-      return shapes;
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage:
-            'Impossible de charger les formes de tentes. Réessayez.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors du chargement des formes de tentes.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors du chargement des formes de tentes.',
-      );
-    }
+        return shapes;
+      },
+    );
   }
 
   Future<Tent> getTent(String id) async {
-    try {
-      final response = await ApiClient.instance.get('${ApiRoutes.tents}/$id');
-      return Tent.fromJson(_readEnvelopeMap(response.data));
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible de charger le détail de la tente.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message: 'Réponse du serveur invalide lors du chargement du détail.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message: 'Réponse du serveur invalide lors du chargement du détail.',
-      );
-    }
+    return _request(
+      fallbackMessage: 'Impossible de charger le détail de la tente.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors du chargement du détail.',
+      action: () async {
+        final response = await ApiClient.instance.get('${ApiRoutes.tents}/$id');
+        return Tent.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
   }
 
   Future<Tent> updateTent({
@@ -97,34 +73,24 @@ class TentRepository {
     required TentOverallState overallState,
     String? comments,
   }) async {
-    try {
-      final response = await ApiClient.instance.put(
-        '${ApiRoutes.tents}/$id',
-        data: {
-          'name': name,
-          'size': size,
-          'overallState': overallState.toApiValue(),
-          'comments': comments,
-        },
-      );
+    return _request(
+      fallbackMessage: 'Impossible de mettre à jour la tente. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors de la mise à jour de la tente.',
+      action: () async {
+        final response = await ApiClient.instance.put(
+          '${ApiRoutes.tents}/$id',
+          data: {
+            'name': name,
+            'size': size,
+            'overallState': overallState.toApiValue(),
+            'comments': comments,
+          },
+        );
 
-      return Tent.fromJson(_readEnvelopeMap(response.data));
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible de mettre à jour la tente. Réessayez.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors de la mise à jour de la tente.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors de la mise à jour de la tente.',
-      );
-    }
+        return Tent.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
   }
 
   Future<Tent> createTent({
@@ -134,132 +100,86 @@ class TentRepository {
     required TentOverallState overallState,
     String? comments,
   }) async {
-    try {
-      final response = await ApiClient.instance.post(
-        ApiRoutes.tents,
-        data: {
-          'name': name,
-          'size': size,
-          'tentShapeId': tentShapeId,
-          'overallState': overallState.toApiValue(),
-          'comments': comments,
-        },
-      );
+    return _request(
+      fallbackMessage: 'Impossible de créer la tente. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors de la création de la tente.',
+      action: () async {
+        final response = await ApiClient.instance.post(
+          ApiRoutes.tents,
+          data: {
+            'name': name,
+            'size': size,
+            'tentShapeId': tentShapeId,
+            'overallState': overallState.toApiValue(),
+            'comments': comments,
+          },
+        );
 
-      return Tent.fromJson(_readEnvelopeMap(response.data));
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible de créer la tente. Réessayez.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message: 'Réponse du serveur invalide lors de la création de la tente.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message: 'Réponse du serveur invalide lors de la création de la tente.',
-      );
-    }
+        return Tent.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
   }
 
   Future<Tent> archiveTent(String id) async {
-    try {
-      final response = await ApiClient.instance.put(
-        '${ApiRoutes.tents}/$id/archive',
-      );
-      return Tent.fromJson(_readEnvelopeMap(response.data));
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible d\'archiver la tente. Réessayez.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors de l\'archivage de la tente.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors de l\'archivage de la tente.',
-      );
-    }
+    return _request(
+      fallbackMessage: 'Impossible d\'archiver la tente. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors de l\'archivage de la tente.',
+      action: () async {
+        final response = await ApiClient.instance.put(
+          '${ApiRoutes.tents}/$id/archive',
+        );
+        return Tent.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
   }
 
   Future<List<Part>> addPartsToTent({
     required String tentId,
     required List<String> partKindIds,
   }) async {
-    try {
-      final response = await ApiClient.instance.post(
-        '${ApiRoutes.tentParts}/$tentId/parts',
-        data: {'partKindIds': partKindIds},
-      );
-      final rawParts = _readEnvelopeList(response.data);
-      return rawParts
-          .map((part) => Part.fromJson(part as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible d\'ajouter les pièces. Réessayez.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message: 'Réponse du serveur invalide lors de l\'ajout des pièces.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message: 'Réponse du serveur invalide lors de l\'ajout des pièces.',
-      );
-    }
+    return _request(
+      fallbackMessage: 'Impossible d\'ajouter les pièces. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors de l\'ajout des pièces.',
+      action: () async {
+        final response = await ApiClient.instance.post(
+          '${ApiRoutes.tentParts}/$tentId/parts',
+          data: {'partKindIds': partKindIds},
+        );
+        final rawParts = _readEnvelopeList(response.data);
+        return rawParts
+            .map((part) => Part.fromJson(part as Map<String, dynamic>))
+            .toList();
+      },
+    );
   }
 
   Future<void> removePart({required String partId}) async {
-    try {
-      await ApiClient.instance.delete('${ApiRoutes.parts}/$partId');
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible de supprimer la pièce. Réessayez.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors de la suppression de la pièce.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors de la suppression de la pièce.',
-      );
-    }
+    return _request(
+      fallbackMessage: 'Impossible de supprimer la pièce. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors de la suppression de la pièce.',
+      action: () async {
+        await ApiClient.instance.delete('${ApiRoutes.parts}/$partId');
+      },
+    );
   }
 
   Future<List<PartKind>> getPartKinds() async {
-    try {
-      final response = await ApiClient.instance.get(ApiRoutes.partKinds);
-      final rawKinds = _readEnvelopeList(response.data);
-      return rawKinds
-          .map((kind) => PartKind.fromJson(kind as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible de charger les types de pièces.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors du chargement des types de pièces.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors du chargement des types de pièces.',
-      );
-    }
+    return _request(
+      fallbackMessage: 'Impossible de charger les types de pièces.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors du chargement des types de pièces.',
+      action: () async {
+        final response = await ApiClient.instance.get(ApiRoutes.partKinds);
+        final rawKinds = _readEnvelopeList(response.data);
+        return rawKinds
+            .map((kind) => PartKind.fromJson(kind as Map<String, dynamic>))
+            .toList();
+      },
+    );
   }
 
   Future<List<TentHistoryItem>> getTentHistory({
@@ -267,35 +187,27 @@ class TentRepository {
     String? category,
     int limit = 50,
   }) async {
-    try {
-      final queryParams = <String, dynamic>{'limit': limit};
-      if (category != null) {
-        queryParams['category'] = category;
-      }
-      final response = await ApiClient.instance.get(
-        '${ApiRoutes.tents}/$tentId/history',
-        queryParameters: queryParams,
-      );
-      final rawItems = _readEnvelopeList(response.data);
-      return rawItems
-          .map((item) => TentHistoryItem.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible de charger l\'historique de la tente.',
-      );
-    } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors du chargement de l\'historique.',
-      );
-    } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors du chargement de l\'historique.',
-      );
-    }
+    return _request(
+      fallbackMessage: 'Impossible de charger l\'historique de la tente.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors du chargement de l\'historique.',
+      action: () async {
+        final queryParams = <String, dynamic>{'limit': limit};
+        if (category != null) {
+          queryParams['category'] = category;
+        }
+        final response = await ApiClient.instance.get(
+          '${ApiRoutes.tents}/$tentId/history',
+          queryParameters: queryParams,
+        );
+        final rawItems = _readEnvelopeList(response.data);
+        return rawItems
+            .map(
+              (item) => TentHistoryItem.fromJson(item as Map<String, dynamic>),
+            )
+            .toList();
+      },
+    );
   }
 
   Future<Part> updatePartState({
@@ -303,27 +215,33 @@ class TentRepository {
     required PartState state,
     required String? comments,
   }) async {
+    return _request(
+      fallbackMessage: 'Impossible de mettre à jour l\'élément. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors de la mise à jour de l\'élément.',
+      action: () async {
+        final response = await ApiClient.instance.put(
+          '${ApiRoutes.parts}/$id',
+          data: {'state': state.toApiValue(), 'comments': comments},
+        );
+        return Part.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
+  }
+
+  Future<T> _request<T>({
+    required Future<T> Function() action,
+    required String fallbackMessage,
+    required String invalidResponseMessage,
+  }) async {
     try {
-      final response = await ApiClient.instance.put(
-        '${ApiRoutes.parts}/$id',
-        data: {'state': state.toApiValue(), 'comments': comments},
-      );
-      return Part.fromJson(_readEnvelopeMap(response.data));
+      return await action();
     } on DioException catch (e) {
-      throw _toRepositoryException(
-        e,
-        fallbackMessage: 'Impossible de mettre à jour l\'élément. Réessayez.',
-      );
+      throw _toRepositoryException(e, fallbackMessage: fallbackMessage);
     } on FormatException catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors de la mise à jour de l\'élément.',
-      );
+      throw TentRepositoryException(message: invalidResponseMessage);
     } on TypeError catch (_) {
-      throw const TentRepositoryException(
-        message:
-            'Réponse du serveur invalide lors de la mise à jour de l\'élément.',
-      );
+      throw TentRepositoryException(message: invalidResponseMessage);
     }
   }
 
