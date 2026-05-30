@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/part.dart';
 import '../repositories/tent_repository.dart';
 import 'tent_detail_provider.dart';
+import 'tent_history_provider.dart';
 
 part 'part_update_provider.g.dart';
 
@@ -91,6 +92,7 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
       );
 
       ref.invalidate(tentDetailProvider(tentId));
+      invalidateTentHistory(ref, tentId);
       return PartUpdateResult.success;
     } on TentRepositoryException catch (e) {
       if (!ref.mounted) {

@@ -2043,6 +2043,22 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
     }
 
     [Fact]
+    public async Task GetTentHistory_InvalidCategory_Returns400()
+    {
+        await EnsureTestUserExistsAsync();
+        using var client = CreateAuthenticatedClient();
+
+        var response = await client.GetAsync(
+            $"/api/tents/{Guid.NewGuid()}/history?category=invalid_category");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("INVALID_REQUEST", payload.Code);
+    }
+
+    [Fact]
     public async Task GetTentHistory_ForExistingTent_ReturnsTentEventsNewestFirst()
     {
         await EnsureTestUserExistsAsync();

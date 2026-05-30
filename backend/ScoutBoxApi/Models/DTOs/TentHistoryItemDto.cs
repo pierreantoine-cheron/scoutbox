@@ -7,7 +7,7 @@ public record TentHistoryItemDto(
     DateTime OccurredAt,
     Guid? ActorUserId,
     string ActorDisplayName,
-    string Summary,
+    string? SubjectName,
     List<TentHistoryDetailDto> Details,
     string? TargetEntityType,
     Guid? TargetEntityId);

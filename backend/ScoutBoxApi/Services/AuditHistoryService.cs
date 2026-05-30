@@ -19,6 +19,47 @@ public record AuditEventHistoryItemDto(
     Guid? ActorUserId,
     string ActorDisplayName);
 
+public enum TentHistoryCategory
+{
+    TentInfo,
+    Archive,
+    PartState,
+    PartManagement,
+    Other
+}
+
+public static class TentHistoryCategoryMapper
+{
+    public static bool TryParse(string? value, out TentHistoryCategory? category)
+    {
+        category = value switch
+        {
+            null or "" => null,
+            "tent_info" => TentHistoryCategory.TentInfo,
+            "archive" => TentHistoryCategory.Archive,
+            "part_state" => TentHistoryCategory.PartState,
+            "part_management" => TentHistoryCategory.PartManagement,
+            "other" => TentHistoryCategory.Other,
+            _ => null
+        };
+
+        return string.IsNullOrEmpty(value) || category.HasValue;
+    }
+
+    public static string ToApiValue(TentHistoryCategory category)
+    {
+        return category switch
+        {
+            TentHistoryCategory.TentInfo => "tent_info",
+            TentHistoryCategory.Archive => "archive",
+            TentHistoryCategory.PartState => "part_state",
+            TentHistoryCategory.PartManagement => "part_management",
+            TentHistoryCategory.Other => "other",
+            _ => "other"
+        };
+    }
+}
+
 /// <summary>
 /// Service for querying audit history with resolved user display names.
 /// Handles soft-deleted users by showing "Utilisateur supprimé" as fallback.
@@ -63,7 +104,7 @@ public interface IAuditHistoryService
     /// </summary>
     Task<List<TentHistoryItemDto>> GetTentHistoryAsync(
         Guid tentId,
-        string? category = null,
+        TentHistoryCategory? category = null,
         int limit = 50,
         CancellationToken cancellationToken = default);
 
@@ -189,34 +230,43 @@ public class AuditHistoryService : IAuditHistoryService
         )).ToList();
     }
 
-    private static class TentHistoryCategories
-    {
-        public const string TentInfo = "tent_info";
-        public const string Archive = "archive";
-        public const string PartState = "part_state";
-        public const string PartManagement = "part_management";
-        public const string Other = "other";
-    }
-
     public async Task<List<TentHistoryItemDto>> GetTentHistoryAsync(
         Guid tentId,
-        string? category = null,
+        TentHistoryCategory? category = null,
         int limit = 50,
         CancellationToken cancellationToken = default)
     {
         var candidateCount = Math.Min(Math.Max(limit * 5, 200), 500);
+        var tentActions = GetTentHistoryTentActions(category);
+        var partActions = GetTentHistoryPartActions(category);
 
-        var tentEvents = await _db.AuditEvents
+        var tentQuery = _db.AuditEvents
             .AsNoTracking()
-            .Where(ae => ae.TargetEntityType == "Tent" && ae.TargetEntityId == tentId)
+            .Where(ae => ae.TargetEntityType == "Tent" && ae.TargetEntityId == tentId);
+
+        if (tentActions != null)
+        {
+            tentQuery = tentQuery.Where(ae => tentActions.Contains(ae.Action));
+        }
+
+        var tentEvents = await tentQuery
             .OrderByDescending(ae => ae.OccurredAt)
             .Take(candidateCount)
             .ToListAsync(cancellationToken);
 
-        var partActions = new[] { AuditActions.PartStateChanged, AuditActions.PartCommentsChanged, AuditActions.PartAdded, AuditActions.PartDeleted };
-        var partEventCandidates = await _db.AuditEvents
+        var tentIdPattern = $"%{tentId}%";
+        var partQuery = _db.AuditEvents
             .AsNoTracking()
-            .Where(ae => ae.TargetEntityType == "Part" && partActions.Contains(ae.Action))
+            .Where(ae => ae.TargetEntityType == "Part" &&
+                         ae.MetadataJson != null &&
+                         EF.Functions.Like(ae.MetadataJson, tentIdPattern));
+
+        if (partActions != null)
+        {
+            partQuery = partQuery.Where(ae => partActions.Contains(ae.Action));
+        }
+
+        var partEventCandidates = await partQuery
             .OrderByDescending(ae => ae.OccurredAt)
             .Take(candidateCount)
             .ToListAsync(cancellationToken);
@@ -225,12 +275,11 @@ public class AuditHistoryService : IAuditHistoryService
             .Where(pe => TryGetMetadataTentId(pe.MetadataJson) == tentId)
             .ToList();
 
-        var allEvents = tentEvents.Concat(matchingPartEvents)
+        var allCandidateEvents = tentEvents.Concat(matchingPartEvents)
             .OrderByDescending(ae => ae.OccurredAt)
-            .Take(limit)
             .ToList();
 
-        var allPartKindIds = allEvents
+        var allPartKindIds = allCandidateEvents
             .Select(ae => TryGetMetadataPartKindId(ae.MetadataJson))
             .Where(id => id.HasValue)
             .Select(id => id!.Value)
@@ -242,7 +291,31 @@ public class AuditHistoryService : IAuditHistoryService
             .Where(pk => allPartKindIds.Contains(pk.Id))
             .ToDictionaryAsync(pk => pk.Id, pk => pk.Name, cancellationToken);
 
-        return await MapToTentHistoryDtosAsync(allEvents, partKindNames, category, cancellationToken);
+        return await MapToTentHistoryDtosAsync(allCandidateEvents, partKindNames, category, limit, cancellationToken);
+    }
+
+    private static string[]? GetTentHistoryTentActions(TentHistoryCategory? category)
+    {
+        return category switch
+        {
+            TentHistoryCategory.TentInfo => new[] { AuditActions.TentCreated, AuditActions.TentUpdated },
+            TentHistoryCategory.Archive => new[] { AuditActions.TentArchived },
+            TentHistoryCategory.PartState => Array.Empty<string>(),
+            TentHistoryCategory.PartManagement => Array.Empty<string>(),
+            _ => null
+        };
+    }
+
+    private static string[]? GetTentHistoryPartActions(TentHistoryCategory? category)
+    {
+        return category switch
+        {
+            TentHistoryCategory.TentInfo => Array.Empty<string>(),
+            TentHistoryCategory.Archive => Array.Empty<string>(),
+            TentHistoryCategory.PartState => new[] { AuditActions.PartStateChanged, AuditActions.PartCommentsChanged },
+            TentHistoryCategory.PartManagement => new[] { AuditActions.PartAdded, AuditActions.PartDeleted },
+            _ => new[] { AuditActions.PartStateChanged, AuditActions.PartCommentsChanged, AuditActions.PartAdded, AuditActions.PartDeleted }
+        };
     }
 
     private static Guid? TryGetMetadataTentId(string? metadataJson)
@@ -288,7 +361,8 @@ public class AuditHistoryService : IAuditHistoryService
     private async Task<List<TentHistoryItemDto>> MapToTentHistoryDtosAsync(
         List<AuditEvent> events,
         Dictionary<Guid, string> partKindNames,
-        string? categoryFilter,
+        TentHistoryCategory? categoryFilter,
+        int limit,
         CancellationToken cancellationToken)
     {
         var actorIds = events
@@ -311,13 +385,13 @@ public class AuditHistoryService : IAuditHistoryService
 
             var item = BuildTentHistoryItem(ae, partKindNames, displayNameMap, out metadataJson);
 
-            if (categoryFilter == null || item.Category == categoryFilter)
+            if (categoryFilter == null || item.Category == TentHistoryCategoryMapper.ToApiValue(categoryFilter.Value))
             {
                 results.Add(item);
             }
         }
 
-        return results;
+        return results.Take(limit).ToList();
     }
 
     private TentHistoryItemDto BuildTentHistoryItem(
@@ -347,10 +421,9 @@ public class AuditHistoryService : IAuditHistoryService
     private static TentHistoryItemDto BuildTentCreatedItem(AuditEvent ae, string actorName)
     {
         return new TentHistoryItemDto(
-            ae.Id, ae.Action, TentHistoryCategories.TentInfo,
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.TentInfo),
             ae.OccurredAt, ae.ActorUserId, actorName,
-            $"Tente créée le {ae.OccurredAt.ToLocalTime():g} par {actorName}",
-            new List<TentHistoryDetailDto>(),
+            null, new List<TentHistoryDetailDto>(),
             ae.TargetEntityType, ae.TargetEntityId
         );
     }
@@ -380,20 +453,18 @@ public class AuditHistoryService : IAuditHistoryService
         }
 
         return new TentHistoryItemDto(
-            ae.Id, ae.Action, TentHistoryCategories.TentInfo,
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.TentInfo),
             ae.OccurredAt, ae.ActorUserId, actorName,
-            $"Informations mises à jour le {ae.OccurredAt.ToLocalTime():g} par {actorName}",
-            details, ae.TargetEntityType, ae.TargetEntityId
+            null, details, ae.TargetEntityType, ae.TargetEntityId
         );
     }
 
     private static TentHistoryItemDto BuildTentArchivedItem(AuditEvent ae, string actorName)
     {
         return new TentHistoryItemDto(
-            ae.Id, ae.Action, TentHistoryCategories.Archive,
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.Archive),
             ae.OccurredAt, ae.ActorUserId, actorName,
-            $"Tente archivée le {ae.OccurredAt.ToLocalTime():g} par {actorName}",
-            new List<TentHistoryDetailDto>(),
+            null, new List<TentHistoryDetailDto>(),
             ae.TargetEntityType, ae.TargetEntityId
         );
     }
@@ -414,14 +485,10 @@ public class AuditHistoryService : IAuditHistoryService
             details.Add(new TentHistoryDetailDto("État", oldState, newState, null, "state"));
         }
 
-        var oldStateLabel = !string.IsNullOrEmpty(oldState) ? oldState : "?";
-        var newStateLabel = !string.IsNullOrEmpty(newState) ? newState : "?";
-
         return new TentHistoryItemDto(
-            ae.Id, ae.Action, TentHistoryCategories.PartState,
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartState),
             ae.OccurredAt, ae.ActorUserId, actorName,
-            $"État de {partName} changé de {oldStateLabel} à {newStateLabel} le {ae.OccurredAt.ToLocalTime():g} par {actorName}",
-            details, ae.TargetEntityType, ae.TargetEntityId
+            partName, details, ae.TargetEntityType, ae.TargetEntityId
         );
     }
 
@@ -434,10 +501,9 @@ public class AuditHistoryService : IAuditHistoryService
             : "Pièce inconnue";
 
         return new TentHistoryItemDto(
-            ae.Id, ae.Action, TentHistoryCategories.PartState,
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartState),
             ae.OccurredAt, ae.ActorUserId, actorName,
-            $"Commentaire de {partName} modifié le {ae.OccurredAt.ToLocalTime():g} par {actorName}",
-            new List<TentHistoryDetailDto>(),
+            partName, new List<TentHistoryDetailDto>(),
             ae.TargetEntityType, ae.TargetEntityId
         );
     }
@@ -456,10 +522,9 @@ public class AuditHistoryService : IAuditHistoryService
         };
 
         return new TentHistoryItemDto(
-            ae.Id, ae.Action, TentHistoryCategories.PartManagement,
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartManagement),
             ae.OccurredAt, ae.ActorUserId, actorName,
-            $"Pièce ajoutée : {partName} le {ae.OccurredAt.ToLocalTime():g} par {actorName}",
-            details, ae.TargetEntityType, ae.TargetEntityId
+            partName, details, ae.TargetEntityType, ae.TargetEntityId
         );
     }
 
@@ -472,10 +537,9 @@ public class AuditHistoryService : IAuditHistoryService
             : "Pièce inconnue";
 
         return new TentHistoryItemDto(
-            ae.Id, ae.Action, TentHistoryCategories.PartManagement,
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartManagement),
             ae.OccurredAt, ae.ActorUserId, actorName,
-            $"Pièce supprimée : {partName} le {ae.OccurredAt.ToLocalTime():g} par {actorName}",
-            new List<TentHistoryDetailDto>(),
+            partName, new List<TentHistoryDetailDto>(),
             ae.TargetEntityType, ae.TargetEntityId
         );
     }
@@ -483,10 +547,9 @@ public class AuditHistoryService : IAuditHistoryService
     private static TentHistoryItemDto BuildUnknownItem(AuditEvent ae, string actorName)
     {
         return new TentHistoryItemDto(
-            ae.Id, ae.Action, TentHistoryCategories.Other,
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.Other),
             ae.OccurredAt, ae.ActorUserId, actorName,
-            $"Action {ae.Action} le {ae.OccurredAt.ToLocalTime():g} par {actorName}",
-            new List<TentHistoryDetailDto>(),
+            null, new List<TentHistoryDetailDto>(),
             ae.TargetEntityType, ae.TargetEntityId
         );
     }

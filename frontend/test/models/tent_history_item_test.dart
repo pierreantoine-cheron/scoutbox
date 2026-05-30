@@ -11,7 +11,7 @@ void main() {
         'occurredAt': '2026-05-19T10:30:00Z',
         'actorUserId': 'user-1',
         'actorDisplayName': 'Jean Dupont',
-        'summary': 'Tente créée le 19/05/2026 12:30 par Jean Dupont',
+        'subjectName': null,
         'details': <Map<String, dynamic>>[],
         'targetEntityType': 'Tent',
         'targetEntityId': 'tent-1',
@@ -25,7 +25,7 @@ void main() {
       expect(item.occurredAt, DateTime.utc(2026, 5, 19, 10, 30));
       expect(item.actorUserId, 'user-1');
       expect(item.actorDisplayName, 'Jean Dupont');
-      expect(item.summary, contains('Tente créée'));
+      expect(item.subjectName, isNull);
       expect(item.details, isEmpty);
       expect(item.targetEntityType, 'Tent');
       expect(item.targetEntityId, 'tent-1');
@@ -38,7 +38,7 @@ void main() {
         'category': 'tent_info',
         'occurredAt': '2026-05-19T11:00:00Z',
         'actorDisplayName': null,
-        'summary': 'Informations mises à jour',
+        'subjectName': null,
         'details': [],
       };
 
@@ -54,7 +54,7 @@ void main() {
         'category': 'part_state',
         'occurredAt': '2026-05-19T12:00:00Z',
         'actorDisplayName': 'Marie',
-        'summary': 'État de Toile changé',
+        'subjectName': 'Toile',
         'details': [
           {
             'label': 'État',
@@ -69,6 +69,7 @@ void main() {
       final item = TentHistoryItem.fromJson(json);
 
       expect(item.details.length, 1);
+      expect(item.subjectName, 'Toile');
       expect(item.details[0].label, 'État');
       expect(item.details[0].oldValue, 'Good');
       expect(item.details[0].newValue, 'NeedsRepair');

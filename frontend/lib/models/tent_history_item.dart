@@ -7,7 +7,7 @@ class TentHistoryItem {
   final DateTime occurredAt;
   final String? actorUserId;
   final String actorDisplayName;
-  final String summary;
+  final String? subjectName;
   final List<TentHistoryDetail> details;
   final String? targetEntityType;
   final String? targetEntityId;
@@ -19,7 +19,7 @@ class TentHistoryItem {
     required this.occurredAt,
     this.actorUserId,
     required this.actorDisplayName,
-    required this.summary,
+    this.subjectName,
     required this.details,
     this.targetEntityType,
     this.targetEntityId,
@@ -37,7 +37,7 @@ class TentHistoryItem {
       actorUserId: json['actorUserId'] as String?,
       actorDisplayName:
           json['actorDisplayName'] as String? ?? 'Utilisateur supprimé',
-      summary: json['summary'] as String? ?? '',
+      subjectName: json['subjectName'] as String?,
       details:
           (json['details'] as List<dynamic>?)
               ?.map(

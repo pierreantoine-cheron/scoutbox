@@ -4,6 +4,7 @@ import '../models/part_kind.dart';
 import '../repositories/tent_repository.dart';
 import 'success_indicator_provider.dart';
 import 'tent_detail_provider.dart';
+import 'tent_history_provider.dart';
 
 part 'part_management_provider.g.dart';
 
@@ -48,6 +49,7 @@ class PartManagementNotifier extends _$PartManagementNotifier {
       if (!ref.mounted || state.requestVersion != requestVersion) return false;
 
       ref.invalidate(tentDetailProvider(tentId));
+      invalidateTentHistory(ref, tentId);
       ref.read(successIndicatorProvider.notifier).fire();
       state = state.copyWith(isAdding: false);
       return true;
@@ -77,6 +79,7 @@ class PartManagementNotifier extends _$PartManagementNotifier {
       if (!ref.mounted || state.requestVersion != requestVersion) return false;
 
       ref.invalidate(tentDetailProvider(tentId));
+      invalidateTentHistory(ref, tentId);
       ref.read(successIndicatorProvider.notifier).fire();
       state = state.copyWith(
         removingPartIds: {...state.removingPartIds}..remove(partId),

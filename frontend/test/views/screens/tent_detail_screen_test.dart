@@ -645,6 +645,48 @@ void main() {
       expect(addButton.onPressed, isNull);
     });
 
+    testWidgets('removed part disappears after prior tent edit', (
+      tester,
+    ) async {
+      final repo = _PartRemovalAfterEditRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Tente Modifiée');
+      await tester.tap(find.byTooltip('Valider'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Toile extérieure'), findsOneWidget);
+
+      await tester.longPress(find.text('Toile extérieure'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Supprimer les pièces sélectionnées'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Supprimer'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Toile extérieure'), findsNothing);
+      expect(find.text('Aucun élément associé à cette tente.'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Ajouter une pièce'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Toile extérieure'), findsOneWidget);
+      expect(
+        find.text('Toutes les pièces sont déjà présentes sur cette tente.'),
+        findsNothing,
+      );
+    });
+
     testWidgets(
       'selecting the current part state does not update or fire success',
       (tester) async {
@@ -699,7 +741,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Historique'), findsOneWidget);
-      expect(find.text('Tente créée'), findsOneWidget);
+      expect(find.textContaining('Tente créée le'), findsOneWidget);
     });
 
     // Error/retry behavior is tested in tent_history_provider_test.dart
@@ -740,8 +782,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Historique'), findsOneWidget);
-      expect(find.text('Tente créée'), findsOneWidget);
-      expect(find.text('Tente archivée'), findsOneWidget);
+      expect(find.textContaining('Tente créée le'), findsOneWidget);
+      expect(find.textContaining('Tente archivée le'), findsOneWidget);
     });
   });
 }
@@ -957,6 +999,34 @@ class _PartKindTentRepository extends _EditableTentRepository {
   }) async => const [];
 }
 
+class _PartRemovalAfterEditRepository extends _PartKindTentRepository {
+  bool _hasPart = true;
+
+  @override
+  Future<Tent> getTent(String id) async {
+    final tent = await super.getTent(id);
+    if (_hasPart) return tent;
+    return Tent(
+      id: tent.id,
+      name: tent.name,
+      size: tent.size,
+      tentShapeId: tent.tentShapeId,
+      tentShapeName: tent.tentShapeName,
+      overallState: tent.overallState,
+      isArchived: tent.isArchived,
+      comments: tent.comments,
+      createdAt: tent.createdAt,
+      updatedAt: tent.updatedAt,
+      parts: const [],
+    );
+  }
+
+  @override
+  Future<void> removePart({required String partId}) async {
+    _hasPart = false;
+  }
+}
+
 class _ArchivedTentRepository extends TentRepository {
   @override
   Future<Tent> getTent(String id) async => Tent(
@@ -1062,7 +1132,6 @@ class _HistorySuccessRepository extends TentRepository {
         category: 'tent_info',
         occurredAt: DateTime.utc(2026, 5, 19, 10, 0),
         actorDisplayName: 'Jean',
-        summary: 'Tente créée',
         details: [],
       ),
       TentHistoryItem(
@@ -1071,7 +1140,6 @@ class _HistorySuccessRepository extends TentRepository {
         category: 'tent_info',
         occurredAt: DateTime.utc(2026, 5, 19, 11, 0),
         actorDisplayName: 'Jean',
-        summary: 'Informations mises à jour',
         details: [
           const TentHistoryDetail(
             label: 'Nom',
@@ -1120,7 +1188,6 @@ class _HistoryArchivedRepository extends TentRepository {
         category: 'tent_info',
         occurredAt: DateTime.utc(2026, 4, 10, 9, 0),
         actorDisplayName: 'Jean',
-        summary: 'Tente créée',
         details: [],
       ),
       TentHistoryItem(
@@ -1129,7 +1196,6 @@ class _HistoryArchivedRepository extends TentRepository {
         category: 'archive',
         occurredAt: DateTime.utc(2026, 4, 13, 10, 0),
         actorDisplayName: 'Jean',
-        summary: 'Tente archivée',
         details: [],
       ),
     ];

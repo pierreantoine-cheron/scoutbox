@@ -117,9 +117,10 @@ class _DetailContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final editState = ref.watch(tentEditProvider(tentId));
-    final displayedTent = editState.baseTent?.id == tentId
-        ? editState.baseTent!
-        : tent;
+    final useLocalTent =
+        editState.baseTent?.id == tentId &&
+        (editState.editingField != null || editState.savingField != null);
+    final displayedTent = useLocalTent ? editState.baseTent! : tent;
     final isWide = MediaQuery.sizeOf(context).width >= 900;
 
     return Align(
@@ -314,6 +315,7 @@ class _ArchiveTentButtonState extends ConsumerState<_ArchiveTentButton> {
       final archivedTent = await ref
           .read(tentRepositoryProvider)
           .archiveTent(widget.tentId);
+      invalidateTentHistory(ref, widget.tentId);
       ref.read(tentListProvider.notifier).hideTent(archivedTent.id);
       ref.read(successIndicatorProvider.notifier).fire();
 
@@ -1272,7 +1274,7 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
             Text('Historique', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             SizedBox(
-              height: 32,
+              height: 48,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _categories.length,
@@ -1288,7 +1290,6 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
                         _selectedCategory = selected ? cat.value : null;
                       });
                     },
-                    visualDensity: VisualDensity.compact,
                   );
                 },
               ),
@@ -1316,7 +1317,20 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
             historyAsync.when(
               loading: () => const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: Text('Chargement de l\'historique...')),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Chargement de l\'historique...'),
+                    ],
+                  ),
+                ),
               ),
               error: (error, _) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1347,7 +1361,7 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
                 final filtered = items.where((item) {
                   if (_searchQuery.isEmpty) return true;
                   final query = _searchQuery;
-                  return item.summary.toLowerCase().contains(query) ||
+                  return _historySummary(item).toLowerCase().contains(query) ||
                       item.actorDisplayName.toLowerCase().contains(query) ||
                       item.action.toLowerCase().contains(query);
                 }).toList();
@@ -1367,6 +1381,10 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
         ),
       ),
     );
+  }
+
+  String _historySummary(TentHistoryItem item) {
+    return _buildHistorySummary(item);
   }
 
   String _toHistoryErrorMessage(Object error) {
@@ -1451,6 +1469,7 @@ class _HistoryEntry extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final icon = _actionIcon(item.action);
     final time = DateFormat('HH:mm', 'fr').format(item.occurredAt.toLocal());
+    final summary = _buildHistorySummary(item);
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 2),
@@ -1458,10 +1477,7 @@ class _HistoryEntry extends StatelessWidget {
         tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
         childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         leading: Icon(icon, size: 20, color: colorScheme.primary),
-        title: Text(
-          item.summary,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        title: Text(summary, style: Theme.of(context).textTheme.bodyMedium),
         subtitle: Text(
           '$time • ${item.actorDisplayName}',
           style: Theme.of(
@@ -1483,16 +1499,16 @@ class _HistoryEntry extends StatelessWidget {
       final hasOldNew = detail.oldValue != null && detail.newValue != null;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 4,
+          runSpacing: 4,
           children: [
-            SizedBox(
-              width: 80,
-              child: Text(
-                '${detail.label}:',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-              ),
+            Text(
+              '${detail.label}:',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             if (hasOldNew) ...[
               _buildStateValue(context, detail.oldValue),
@@ -1502,11 +1518,9 @@ class _HistoryEntry extends StatelessWidget {
               ),
               _buildStateValue(context, detail.newValue),
             ] else
-              Expanded(
-                child: Text(
-                  detail.value ?? '',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+              Text(
+                detail.value ?? '',
+                style: Theme.of(context).textTheme.bodySmall,
               ),
           ],
         ),
@@ -1577,6 +1591,54 @@ class _HistoryEntry extends StatelessWidget {
         return Icons.info_outline;
     }
   }
+}
+
+String _buildHistorySummary(TentHistoryItem item) {
+  final localDate = item.occurredAt.toLocal();
+  final date = DateFormat('dd/MM/yyyy', 'fr').format(localDate);
+  final time = DateFormat('HH:mm', 'fr').format(localDate);
+  final suffix = 'le $date à $time par ${item.actorDisplayName}';
+  final subject = item.subjectName ?? 'Pièce inconnue';
+
+  switch (item.action) {
+    case 'tent_created':
+      return 'Tente créée $suffix';
+    case 'tent_updated':
+      return 'Informations mises à jour $suffix';
+    case 'tent_archived':
+      return 'Tente archivée $suffix';
+    case 'part_state_changed':
+      final stateDetail = item.details
+          .where((d) => d.valueType == 'state')
+          .firstOrNull;
+      final oldState = _historyStateLabel(stateDetail?.oldValue);
+      final newState = _historyStateLabel(stateDetail?.newValue);
+      return 'État de $subject changé de $oldState à $newState $suffix';
+    case 'part_comments_changed':
+      return 'Commentaire de $subject modifié $suffix';
+    case 'part_added':
+      return 'Pièce ajoutée : $subject $suffix';
+    case 'part_deleted':
+      return 'Pièce supprimée : $subject $suffix';
+    default:
+      return 'Action ${item.action} $suffix';
+  }
+}
+
+String _historyStateLabel(String? value) {
+  if (value == null || value.isEmpty) return '?';
+
+  final partState = PartState.values
+      .where((s) => s.toApiValue() == value || s.toFrenchLabel() == value)
+      .firstOrNull;
+  if (partState != null) return partState.toFrenchLabel();
+
+  final tentState = TentOverallState.values
+      .where((s) => s.toApiValue() == value || s.toFrenchLabel() == value)
+      .firstOrNull;
+  if (tentState != null) return tentState.toFrenchLabel();
+
+  return value;
 }
 
 class _FieldErrorBanner extends StatelessWidget {

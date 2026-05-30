@@ -68,6 +68,54 @@ void main() {
 
       expect(items.isEmpty, true);
     });
+
+    test(
+      'invalidateTentHistory refreshes all loaded category variants',
+      () async {
+        final repository = _CountingHistoryRepository();
+        final container = ProviderContainer(
+          overrides: [tentRepositoryProvider.overrideWithValue(repository)],
+        );
+        addTearDown(container.dispose);
+
+        final allSubscription = container.listen(
+          tentHistoryProvider('tent-1'),
+          (_, _) {},
+        );
+        final tentSubscription = container.listen(
+          tentHistoryProvider('tent-1', category: 'tent_info'),
+          (_, _) {},
+        );
+        final partStateSubscription = container.listen(
+          tentHistoryProvider('tent-1', category: 'part_state'),
+          (_, _) {},
+        );
+        addTearDown(allSubscription.close);
+        addTearDown(tentSubscription.close);
+        addTearDown(partStateSubscription.close);
+
+        await container.read(tentHistoryProvider('tent-1').future);
+        await container.read(
+          tentHistoryProvider('tent-1', category: 'tent_info').future,
+        );
+        await container.read(
+          tentHistoryProvider('tent-1', category: 'part_state').future,
+        );
+
+        invalidateTentHistory(container, 'tent-1');
+        await container.read(tentHistoryProvider('tent-1').future);
+        await container.read(
+          tentHistoryProvider('tent-1', category: 'tent_info').future,
+        );
+        await container.read(
+          tentHistoryProvider('tent-1', category: 'part_state').future,
+        );
+
+        expect(repository.callCount(null), 2);
+        expect(repository.callCount('tent_info'), 2);
+        expect(repository.callCount('part_state'), 2);
+      },
+    );
   });
 }
 
@@ -85,7 +133,6 @@ class _SuccessHistoryRepository extends TentRepository {
         category: 'tent_info',
         occurredAt: DateTime.utc(2026, 5, 19, 10, 0),
         actorDisplayName: 'Jean',
-        summary: 'Tente créée',
         details: [],
       ),
       TentHistoryItem(
@@ -94,7 +141,6 @@ class _SuccessHistoryRepository extends TentRepository {
         category: 'tent_info',
         occurredAt: DateTime.utc(2026, 5, 19, 11, 0),
         actorDisplayName: 'Jean',
-        summary: 'Informations mises à jour',
         details: [],
       ),
     ];
@@ -118,5 +164,30 @@ class _FailingHistoryRepository extends TentRepository {
       code: 'INTERNAL_ERROR',
       message: 'Impossible de charger l\'historique de la tente.',
     );
+  }
+}
+
+class _CountingHistoryRepository extends TentRepository {
+  final _calls = <String?, int>{};
+
+  int callCount(String? category) => _calls[category] ?? 0;
+
+  @override
+  Future<List<TentHistoryItem>> getTentHistory({
+    required String tentId,
+    String? category,
+    int limit = 50,
+  }) async {
+    _calls[category] = callCount(category) + 1;
+    return [
+      TentHistoryItem(
+        id: 'evt-${callCount(category)}',
+        action: 'tent_created',
+        category: category ?? 'tent_info',
+        occurredAt: DateTime.utc(2026, 5, 19, 10, 0),
+        actorDisplayName: 'Jean',
+        details: [],
+      ),
+    ];
   }
 }

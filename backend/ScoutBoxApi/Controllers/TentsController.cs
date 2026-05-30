@@ -94,13 +94,18 @@ public class TentsController : ControllerBase
             return BadRequest(new ErrorResponse("Limit must be between 1 and 100", "INVALID_REQUEST"));
         }
 
+        if (!TentHistoryCategoryMapper.TryParse(category, out var parsedCategory))
+        {
+            return BadRequest(new ErrorResponse("Invalid history category", "INVALID_REQUEST"));
+        }
+
         var tent = await _tentService.GetTentByIdAsync(id);
         if (tent == null)
         {
             return NotFound(new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
         }
 
-        var history = await _auditHistoryService.GetTentHistoryAsync(id, category, limit, cancellationToken);
+        var history = await _auditHistoryService.GetTentHistoryAsync(id, parsedCategory, limit, cancellationToken);
 
         return Ok(new { data = history });
     }

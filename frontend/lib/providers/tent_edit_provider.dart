@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/tent.dart';
 import '../repositories/tent_repository.dart';
 import 'tent_detail_provider.dart';
+import 'tent_history_provider.dart';
 import 'tent_list_provider.dart';
 
 part 'tent_edit_provider.g.dart';
@@ -54,6 +55,7 @@ class TentEditNotifier extends _$TentEditNotifier {
           );
 
       ref.invalidate(tentDetailProvider(tentId));
+      invalidateTentHistory(ref, tentId);
       ref.read(tentListProvider.notifier).showTent(updatedTent);
 
       state = state.copyWith(
