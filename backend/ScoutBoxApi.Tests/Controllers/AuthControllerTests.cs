@@ -454,6 +454,16 @@ public class AuthControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task RefreshToken_WithBlankToken_ReturnsBadRequest()
+    {
+        var result = await _controller.RefreshToken(new RefreshTokenRequest("   "));
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        Assert.Equal("INVALID_REFRESH_TOKEN", error.Code);
+    }
+
+    [Fact]
     public async Task RefreshToken_WithLegacyPlaintextStoredToken_ReturnsBadRequest()
     {
         var user = new User

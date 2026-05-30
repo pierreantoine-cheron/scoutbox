@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -20,13 +21,13 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody, Required] RegisterRequest request)
     {
         return this.OkOrBadRequest(await _authService.RegisterAsync(request));
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody, Required] LoginRequest request)
     {
         var (response, error) = await _authService.LoginAsync(request);
 
@@ -42,15 +43,20 @@ public class AuthController : ControllerBase
     [HttpPost("invites")]
     [Authorize]
     [ValidateUser]
-    public async Task<IActionResult> CreateInvite([FromBody] CreateInviteRequest request)
+    public async Task<IActionResult> CreateInvite([FromBody, Required] CreateInviteRequest request)
     {
         var userId = HttpContext.GetUserId();
         return this.OkOrBadRequest(await _authService.CreateInviteAsync(userId, request));
     }
 
     [HttpPost("refresh")]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    public async Task<IActionResult> RefreshToken([FromBody, Required] RefreshTokenRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            return BadRequest(new ErrorResponse("Refresh token is required", "INVALID_REFRESH_TOKEN"));
+        }
+
         return this.OkOrBadRequest(await _authService.RefreshTokenAsync(request.RefreshToken));
     }
 

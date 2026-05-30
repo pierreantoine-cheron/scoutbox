@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -86,6 +87,24 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var payload = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
         Assert.NotNull(payload);
         Assert.True(payload.Errors.ContainsKey("Username"));
+    }
+
+    [Fact]
+    public async Task RefreshToken_WithMissingBody_ReturnsApiValidationError()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+        using var content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync("/api/auth/refresh", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        Assert.NotNull(payload);
+        Assert.NotEmpty(payload.Errors);
     }
 }
 

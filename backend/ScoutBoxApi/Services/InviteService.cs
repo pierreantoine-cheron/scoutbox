@@ -69,7 +69,15 @@ public class InviteService
                 ["isCustomCode"] = !string.IsNullOrEmpty(request.Code)
             });
 
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsDuplicateInviteCodeViolation(ex))
+        {
+            _logger.LogWarning(ex, "Duplicate invite code blocked by DB constraint: {Code}", code);
+            return (null, new ErrorResponse("This invite code already exists", "DUPLICATE_CODE"));
+        }
 
         _logger.LogInformation("Invite created: {Code} by user {UserId}", code, createdByUserId);
 
@@ -120,5 +128,12 @@ public class InviteService
         }
 
         return null;
+    }
+
+    private static bool IsDuplicateInviteCodeViolation(DbUpdateException exception)
+    {
+        var message = exception.InnerException?.Message ?? exception.Message;
+        return message.Contains("Invites.Code", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("IX_Invites_Code", StringComparison.OrdinalIgnoreCase);
     }
 }

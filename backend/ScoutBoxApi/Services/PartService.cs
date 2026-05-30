@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using ScoutBoxApi.Models.DTOs;
 using ScoutBoxApi.Models.Entities;
 using ScoutBoxApi.Repositories;
@@ -200,7 +201,14 @@ public class PartService
         }
 
         _repo.AddParts(newParts);
-        await _repo.SaveChangesAsync();
+        try
+        {
+            await _repo.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsDuplicateTentPartKindViolation(ex))
+        {
+            return (null, new ErrorResponse("One or more parts already exist on this tent", "DUPLICATE_PART"));
+        }
 
         var partIds = newParts.Select(p => p.Id).ToList();
         var savedParts = await _repo.GetPartsByIdsAsync(partIds);
@@ -239,6 +247,13 @@ public class PartService
         await _repo.SaveChangesAsync();
 
         return (null, false);
+    }
+
+    private static bool IsDuplicateTentPartKindViolation(DbUpdateException exception)
+    {
+        var message = exception.InnerException?.Message ?? exception.Message;
+        return message.Contains("Parts.TentId", StringComparison.OrdinalIgnoreCase)
+            && message.Contains("Parts.PartKindId", StringComparison.OrdinalIgnoreCase);
     }
 
     private static PartDto ToPartDto(Part part)

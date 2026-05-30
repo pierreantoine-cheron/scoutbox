@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ScoutBoxApi.Filters;
@@ -20,7 +21,7 @@ public class PartsController : ControllerBase
 
     [HttpPut("{id:guid}")]
     [ValidateUser]
-    public async Task<IActionResult> UpdatePartState([FromRoute] Guid id, [FromBody] UpdatePartStateRequest request)
+    public async Task<IActionResult> UpdatePartState([FromRoute] Guid id, [FromBody, Required] UpdatePartStateRequest request)
     {
         var userId = HttpContext.GetUserId();
         var (response, error, notFound) = await _partService.UpdatePartStateAsync(id, userId, request);
@@ -73,9 +74,9 @@ public class TentPartsController : ControllerBase
 
     [HttpPost]
     [ValidateUser]
-    public async Task<IActionResult> AddPartsToTent(Guid tentId, [FromBody] AddPartsRequest request)
+    public async Task<IActionResult> AddPartsToTent(Guid tentId, [FromBody, Required] AddPartsRequest request)
     {
-        if (request == null || request.PartKindIds == null || request.PartKindIds.Count == 0)
+        if (request.PartKindIds == null || request.PartKindIds.Count == 0)
         {
             return BadRequest(new ErrorResponse("Request must contain at least one partKindId", "INVALID_REQUEST"));
         }
