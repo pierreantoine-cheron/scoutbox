@@ -14,10 +14,12 @@ namespace ScoutBoxApi.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public AuthController(AuthService authService)
+    public AuthController(AuthService authService, ICurrentUserAccessor currentUserAccessor)
     {
         _authService = authService;
+        _currentUserAccessor = currentUserAccessor;
     }
 
     [HttpPost("register")]
@@ -45,7 +47,7 @@ public class AuthController : ControllerBase
     [ValidateUser]
     public async Task<IActionResult> CreateInvite([FromBody, Required] CreateInviteRequest request)
     {
-        var userId = HttpContext.GetUserId();
+        var userId = _currentUserAccessor.GetValidatedUserId();
         return this.OkOrBadRequest(await _authService.CreateInviteAsync(userId, request));
     }
 
@@ -70,7 +72,7 @@ public class AuthController : ControllerBase
             return BadRequest(new ErrorResponse("Refresh token is required", "INVALID_REFRESH_TOKEN"));
         }
 
-        var userId = HttpContext.GetUserId();
+        var userId = _currentUserAccessor.GetValidatedUserId();
         return this.OkOrBadRequest(await _authService.LogoutAsync(userId, request.RefreshToken));
     }
 }

@@ -1,7 +1,8 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.DependencyInjection;
 using ScoutBoxApi.Models.DTOs;
+using ScoutBoxApi.Services;
 
 namespace ScoutBoxApi.Filters;
 
@@ -12,7 +13,8 @@ public class ValidateUserAttribute : ActionFilterAttribute
     {
         try
         {
-            var userId = context.HttpContext.GetUserId(skipCheck: false);
+            var currentUserAccessor = context.HttpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>();
+            var userId = currentUserAccessor.GetValidatedUserId();
             context.HttpContext.Items["CurrentUserId"] = userId;
         }
         catch (UnauthorizedAccessException)
@@ -20,35 +22,5 @@ public class ValidateUserAttribute : ActionFilterAttribute
             context.Result = new UnauthorizedObjectResult(
                 new ErrorResponse("Authentication required", "AUTH_INVALID_TOKEN"));
         }
-    }
-}
-
-public static class HttpContextExtensions
-{
-    public static Guid GetUserId(this HttpContext context, bool skipCheck = true)
-    {
-        if (context == null)
-        {
-            throw new UnauthorizedAccessException("Authentication required");
-        }
-
-        if (skipCheck && context.Items.TryGetValue("CurrentUserId", out var cached) && cached is Guid userId)
-        {
-            return userId;
-        }
-
-        var user = context.User;
-        if (user == null || user.Identity?.IsAuthenticated != true)
-        {
-            throw new UnauthorizedAccessException("Authentication required");
-        }
-
-        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var id))
-        {
-            throw new UnauthorizedAccessException("Invalid identity claim in token");
-        }
-
-        return id;
     }
 }

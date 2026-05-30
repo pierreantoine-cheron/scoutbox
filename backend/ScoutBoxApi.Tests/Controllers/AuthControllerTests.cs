@@ -22,6 +22,7 @@ public class AuthControllerTests : IDisposable
     private readonly AuthController _controller;
     private readonly AuthService _authService;
     private readonly TokenService _tokenService;
+    private readonly Mock<ICurrentUserAccessor> _currentUserAccessorMock;
 
     public AuthControllerTests()
     {
@@ -48,8 +49,12 @@ public class AuthControllerTests : IDisposable
         var auditService = new AuditService(_db, auditServiceLoggerMock.Object);
         var inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object);
         _authService = new AuthService(_db, _tokenService, inviteService, auditService, authServiceLoggerMock.Object);
+        _currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
+        _currentUserAccessorMock
+            .Setup(accessor => accessor.GetValidatedUserId())
+            .Throws(new UnauthorizedAccessException("Authentication required"));
 
-        _controller = new AuthController(_authService);
+        _controller = new AuthController(_authService, _currentUserAccessorMock.Object);
     }
 
     public void Dispose()
@@ -59,6 +64,10 @@ public class AuthControllerTests : IDisposable
 
     private void SetControllerUser(Guid userId, string username)
     {
+        _currentUserAccessorMock
+            .Setup(accessor => accessor.GetValidatedUserId())
+            .Returns(userId);
+
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),

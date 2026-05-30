@@ -13,17 +13,19 @@ namespace ScoutBoxApi.Controllers;
 public class PartsController : ControllerBase
 {
     private readonly PartService _partService;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public PartsController(PartService partService)
+    public PartsController(PartService partService, ICurrentUserAccessor currentUserAccessor)
     {
         _partService = partService;
+        _currentUserAccessor = currentUserAccessor;
     }
 
     [HttpPut("{id:guid}")]
     [ValidateUser]
     public async Task<IActionResult> UpdatePartState([FromRoute] Guid id, [FromBody, Required] UpdatePartStateRequest request)
     {
-        var userId = HttpContext.GetUserId();
+        var userId = _currentUserAccessor.GetValidatedUserId();
         var (response, error, notFound) = await _partService.UpdatePartStateAsync(id, userId, request);
 
         if (notFound)
@@ -43,7 +45,7 @@ public class PartsController : ControllerBase
     [ValidateUser]
     public async Task<IActionResult> DeletePart(Guid id)
     {
-        var userId = HttpContext.GetUserId();
+        var userId = _currentUserAccessor.GetValidatedUserId();
         var (error, notFound) = await _partService.RemovePartAsync(id, userId);
 
         if (notFound)
@@ -66,10 +68,12 @@ public class PartsController : ControllerBase
 public class TentPartsController : ControllerBase
 {
     private readonly PartService _partService;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public TentPartsController(PartService partService)
+    public TentPartsController(PartService partService, ICurrentUserAccessor currentUserAccessor)
     {
         _partService = partService;
+        _currentUserAccessor = currentUserAccessor;
     }
 
     [HttpPost]
@@ -81,7 +85,7 @@ public class TentPartsController : ControllerBase
             return BadRequest(new ErrorResponse("Request must contain at least one partKindId", "INVALID_REQUEST"));
         }
 
-        var userId = HttpContext.GetUserId();
+        var userId = _currentUserAccessor.GetValidatedUserId();
         var (response, error) = await _partService.AddPartsToTentAsync(tentId, request.PartKindIds, userId);
 
         if (error != null)

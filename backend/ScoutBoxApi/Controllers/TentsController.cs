@@ -13,11 +13,16 @@ public class TentsController : ControllerBase
 {
     private readonly TentService _tentService;
     private readonly IAuditHistoryService _auditHistoryService;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public TentsController(TentService tentService, IAuditHistoryService auditHistoryService)
+    public TentsController(
+        TentService tentService,
+        IAuditHistoryService auditHistoryService,
+        ICurrentUserAccessor currentUserAccessor)
     {
         _tentService = tentService;
         _auditHistoryService = auditHistoryService;
+        _currentUserAccessor = currentUserAccessor;
     }
 
     [HttpGet]
@@ -43,7 +48,7 @@ public class TentsController : ControllerBase
     [ValidateUser]
     public async Task<IActionResult> CreateTent([FromBody] CreateTentRequest request)
     {
-        var userId = HttpContext.GetUserId();
+        var userId = _currentUserAccessor.GetValidatedUserId();
         return this.OkDataOrBadRequest(await _tentService.CreateTentAsync(userId, request));
     }
 
@@ -51,7 +56,7 @@ public class TentsController : ControllerBase
     [ValidateUser]
     public async Task<IActionResult> UpdateTent([FromRoute] Guid id, [FromBody] UpdateTentRequest request)
     {
-        var userId = HttpContext.GetUserId();
+        var userId = _currentUserAccessor.GetValidatedUserId();
         var (response, error, notFound) = await _tentService.UpdateTentAsync(id, userId, request);
 
         if (notFound)
@@ -71,7 +76,7 @@ public class TentsController : ControllerBase
     [ValidateUser]
     public async Task<IActionResult> ArchiveTent([FromRoute] Guid id)
     {
-        var userId = HttpContext.GetUserId();
+        var userId = _currentUserAccessor.GetValidatedUserId();
         var (response, notFound) = await _tentService.ArchiveTentAsync(id, userId);
 
         if (notFound)
