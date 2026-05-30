@@ -1,6 +1,6 @@
 namespace ScoutBoxApi.Models.Entities;
 
-public class Tent : IHasName
+public class Tent : IHasName, IAuditableEntity
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

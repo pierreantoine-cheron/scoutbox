@@ -168,23 +168,18 @@ public class PartService
             return (null, new ErrorResponse("One or more parts already exist on this tent", "DUPLICATE_PART"));
         }
 
-        var now = DateTime.UtcNow;
         var newParts = new List<Part>();
 
         foreach (var partKindId in partKindIds)
         {
             var part = new Part
             {
-                Id = Guid.NewGuid(),
                 TentId = tentId,
                 PartKindId = partKindId,
                 State = PartState.Good,
                 Comments = null,
-                CreatedAt = now,
-                UpdatedAt = now,
-                CreatedByUserId = userId,
-                UpdatedByUserId = userId
             };
+            EntityFactory.SetCreationAudit(part, userId);
 
             newParts.Add(part);
 

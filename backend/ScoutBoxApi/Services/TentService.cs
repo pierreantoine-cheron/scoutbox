@@ -61,20 +61,15 @@ public class TentService
 
         try
         {
-            var now = DateTime.UtcNow;
             var tent = new Tent
             {
-                Id = Guid.NewGuid(),
                 Name = validated.Name,
                 Size = validated.Size,
                 TentShapeId = request.TentShapeId,
                 OverallState = validated.OverallState,
                 Comments = validated.Comments,
-                CreatedAt = now,
-                UpdatedAt = now,
-                CreatedByUserId = userId,
-                UpdatedByUserId = userId
             };
+            EntityFactory.SetCreationAudit(tent, userId);
 
             _repo.AddTent(tent);
 
@@ -88,17 +83,13 @@ public class TentService
             {
                 var part = new Part
                 {
-                    Id = Guid.NewGuid(),
                     TentId = tent.Id,
                     PartKindId = shapePart.PartKindId,
                     PartKind = shapePart.PartKind,
                     State = PartState.Good,
                     Comments = null,
-                    CreatedAt = now,
-                    UpdatedAt = now,
-                    CreatedByUserId = userId,
-                    UpdatedByUserId = userId
                 };
+                EntityFactory.SetCreationAudit(part, userId);
                 _repo.AddPart(part);
                 createdParts.Add(part);
             }

@@ -1,6 +1,6 @@
 namespace ScoutBoxApi.Models.Entities;
 
-public class Part
+public class Part : IAuditableEntity
 {
     public Guid Id { get; set; }
     public Guid TentId { get; set; }
