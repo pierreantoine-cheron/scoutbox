@@ -4,12 +4,16 @@ import 'package:client/repositories/tent_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/fake_tent_repository.dart';
+
 void main() {
   group('tentHistoryProvider', () {
     test('returns history when repository succeeds', () async {
       final container = ProviderContainer(
         overrides: [
-          tentRepositoryProvider.overrideWithValue(_SuccessHistoryRepository()),
+          tentRepositoryProvider.overrideWithValue(
+            FakeTentRepository()..getTentHistoryHandler = _getHistory,
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -22,7 +26,19 @@ void main() {
     test('returns error state when repository fails', () async {
       final container = ProviderContainer(
         overrides: [
-          tentRepositoryProvider.overrideWithValue(_FailingHistoryRepository()),
+          tentRepositoryProvider.overrideWithValue(
+            FakeTentRepository()
+              ..getTentHistoryHandler = ({
+                required String tentId,
+                String? category,
+                int limit = 50,
+              }) async {
+                throw const TentRepositoryException(
+                  code: 'INTERNAL_ERROR',
+                  message: 'Impossible de charger l\'historique de la tente.',
+                );
+              },
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -57,7 +73,9 @@ void main() {
     test('supports category filter', () async {
       final container = ProviderContainer(
         overrides: [
-          tentRepositoryProvider.overrideWithValue(_SuccessHistoryRepository()),
+          tentRepositoryProvider.overrideWithValue(
+            FakeTentRepository()..getTentHistoryHandler = _getHistory,
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -72,7 +90,25 @@ void main() {
     test(
       'invalidateTentHistory refreshes all loaded category variants',
       () async {
-        final repository = _CountingHistoryRepository();
+        final calls = <String?, int>{};
+        final repository = FakeTentRepository()
+          ..getTentHistoryHandler = ({
+            required String tentId,
+            String? category,
+            int limit = 50,
+          }) async {
+            calls[category] = (calls[category] ?? 0) + 1;
+            return [
+              TentHistoryItem(
+                id: 'evt-${calls[category]}',
+                action: 'tent_created',
+                category: category ?? 'tent_info',
+                occurredAt: DateTime.utc(2026, 5, 19, 10, 0),
+                actorDisplayName: 'Jean',
+                details: [],
+              ),
+            ];
+          };
         final container = ProviderContainer(
           overrides: [tentRepositoryProvider.overrideWithValue(repository)],
         );
@@ -111,83 +147,41 @@ void main() {
           tentHistoryProvider('tent-1', category: 'part_state').future,
         );
 
-        expect(repository.callCount(null), 2);
-        expect(repository.callCount('tent_info'), 2);
-        expect(repository.callCount('part_state'), 2);
+        expect(calls[null], 2);
+        expect(calls['tent_info'], 2);
+        expect(calls['part_state'], 2);
       },
     );
   });
 }
 
-class _SuccessHistoryRepository extends TentRepository {
-  @override
-  Future<List<TentHistoryItem>> getTentHistory({
-    required String tentId,
-    String? category,
-    int limit = 50,
-  }) async {
-    final items = [
-      TentHistoryItem(
-        id: 'evt-1',
-        action: 'tent_created',
-        category: 'tent_info',
-        occurredAt: DateTime.utc(2026, 5, 19, 10, 0),
-        actorDisplayName: 'Jean',
-        details: [],
-      ),
-      TentHistoryItem(
-        id: 'evt-2',
-        action: 'tent_updated',
-        category: 'tent_info',
-        occurredAt: DateTime.utc(2026, 5, 19, 11, 0),
-        actorDisplayName: 'Jean',
-        details: [],
-      ),
-    ];
+Future<List<TentHistoryItem>> _getHistory({
+  required String tentId,
+  String? category,
+  int limit = 50,
+}) async {
+  final items = [
+    TentHistoryItem(
+      id: 'evt-1',
+      action: 'tent_created',
+      category: 'tent_info',
+      occurredAt: DateTime.utc(2026, 5, 19, 10, 0),
+      actorDisplayName: 'Jean',
+      details: [],
+    ),
+    TentHistoryItem(
+      id: 'evt-2',
+      action: 'tent_updated',
+      category: 'tent_info',
+      occurredAt: DateTime.utc(2026, 5, 19, 11, 0),
+      actorDisplayName: 'Jean',
+      details: [],
+    ),
+  ];
 
-    if (category != null) {
-      return items.where((i) => i.category == category).toList();
-    }
-
-    return items;
+  if (category != null) {
+    return items.where((i) => i.category == category).toList();
   }
-}
 
-class _FailingHistoryRepository extends TentRepository {
-  @override
-  Future<List<TentHistoryItem>> getTentHistory({
-    required String tentId,
-    String? category,
-    int limit = 50,
-  }) async {
-    throw const TentRepositoryException(
-      code: 'INTERNAL_ERROR',
-      message: 'Impossible de charger l\'historique de la tente.',
-    );
-  }
-}
-
-class _CountingHistoryRepository extends TentRepository {
-  final _calls = <String?, int>{};
-
-  int callCount(String? category) => _calls[category] ?? 0;
-
-  @override
-  Future<List<TentHistoryItem>> getTentHistory({
-    required String tentId,
-    String? category,
-    int limit = 50,
-  }) async {
-    _calls[category] = callCount(category) + 1;
-    return [
-      TentHistoryItem(
-        id: 'evt-${callCount(category)}',
-        action: 'tent_created',
-        category: category ?? 'tent_info',
-        occurredAt: DateTime.utc(2026, 5, 19, 10, 0),
-        actorDisplayName: 'Jean',
-        details: [],
-      ),
-    ];
-  }
+  return items;
 }
