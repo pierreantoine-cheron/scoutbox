@@ -210,11 +210,7 @@ public class AuditHistoryService : IAuditHistoryService
             .Distinct()
             .ToList();
 
-        var displayNameMap = new Dictionary<Guid, string>();
-        foreach (var id in actorIds)
-        {
-            displayNameMap[id] = await ResolveActorDisplayNameAsync(id, cancellationToken);
-        }
+        var displayNameMap = await ResolveActorDisplayNamesBatchAsync(actorIds, cancellationToken);
 
         return events.Select(ae => new AuditEventHistoryItemDto(
             ae.Id,
@@ -371,11 +367,7 @@ public class AuditHistoryService : IAuditHistoryService
             .Distinct()
             .ToList();
 
-        var displayNameMap = new Dictionary<Guid, string>();
-        foreach (var id in actorIds)
-        {
-            displayNameMap[id] = await ResolveActorDisplayNameAsync(id, cancellationToken);
-        }
+        var displayNameMap = await ResolveActorDisplayNamesBatchAsync(actorIds, cancellationToken);
 
         var results = new List<TentHistoryItemDto>();
 
@@ -646,5 +638,21 @@ public class AuditHistoryService : IAuditHistoryService
             _logger.LogError(ex, "Error resolving actor display name for user {UserId}", userId.Value);
             return DeletedUserDisplayName;
         }
+    }
+
+    private async Task<Dictionary<Guid, string>> ResolveActorDisplayNamesBatchAsync(
+        List<Guid> actorIds,
+        CancellationToken cancellationToken)
+    {
+        if (actorIds.Count == 0) return [];
+
+        var users = await _db.Users
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(u => actorIds.Contains(u.Id) && !u.IsDeleted)
+            .Select(u => new { u.Id, u.Username })
+            .ToDictionaryAsync((x) => x.Id, (x) => x.Username, cancellationToken);
+
+        return users;
     }
 }
