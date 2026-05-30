@@ -290,16 +290,7 @@ public class TentService
         return parts
             .OrderBy(p => p.PartKind.DisplayOrder)
             .ThenBy(p => p.PartKindId)
-            .Select(p => new PartDto(
-                p.Id,
-                p.PartKindId,
-                p.PartKind.Name,
-                p.PartKind.DisplayOrder,
-                p.State.ToString(),
-                p.Comments,
-                p.CreatedAt,
-                p.UpdatedAt
-            ))
+            .Select(PartDto.FromPart)
             .ToList();
     }
 

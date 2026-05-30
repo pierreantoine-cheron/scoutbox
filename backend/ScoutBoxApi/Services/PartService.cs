@@ -58,7 +58,7 @@ public class PartService
 
         if (part.State == newState && part.Comments == normalizedComments)
         {
-            return (ToPartDto(part), null, false);
+            return (PartDto.FromPart(part), null, false);
         }
 
         var oldState = part.State;
@@ -99,7 +99,7 @@ public class PartService
         }
 
         await _repo.SaveChangesAsync();
-        return (ToPartDto(part), null, false);
+        return (PartDto.FromPart(part), null, false);
     }
 
     private static bool TryParseState(string? value, out PartState state)
@@ -212,7 +212,7 @@ public class PartService
 
         var partIds = newParts.Select(p => p.Id).ToList();
         var savedParts = await _repo.GetPartsByIdsAsync(partIds);
-        var dtos = savedParts.Select(ToPartDto).ToList();
+        var dtos = savedParts.Select(PartDto.FromPart).ToList();
         return (dtos, null);
     }
 
@@ -252,18 +252,5 @@ public class PartService
     private static bool IsDuplicateTentPartKindViolation(DbUpdateException exception)
     {
         return DbExceptionHelper.IsConstraintViolation(exception, "Parts.TentId", "Parts.PartKindId");
-    }
-
-    private static PartDto ToPartDto(Part part)
-    {
-        return new PartDto(
-            part.Id,
-            part.PartKindId,
-            part.PartKind.Name,
-            part.PartKind.DisplayOrder,
-            part.State.ToString(),
-            part.Comments,
-            part.CreatedAt,
-            part.UpdatedAt);
     }
 }

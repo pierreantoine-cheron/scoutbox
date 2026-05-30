@@ -1,3 +1,5 @@
+using ScoutBoxApi.Models.Entities;
+
 namespace ScoutBoxApi.Models.DTOs;
 
 public record PartDto(
@@ -8,4 +10,15 @@ public record PartDto(
     string State,
     string? Comments,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt)
+{
+    public static PartDto FromPart(Part part) => new(
+        part.Id,
+        part.PartKindId,
+        part.PartKind.Name,
+        part.PartKind.DisplayOrder,
+        part.State.ToString(),
+        part.Comments,
+        part.CreatedAt,
+        part.UpdatedAt);
+}
