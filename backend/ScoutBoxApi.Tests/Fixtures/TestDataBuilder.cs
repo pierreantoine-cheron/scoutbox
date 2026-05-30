@@ -36,7 +36,7 @@ public class TestDataBuilder
         var user = new User
         {
             Id = id ?? Guid.NewGuid(),
-            Username = username ?? $"user_{Guid.NewGuid():N}[8]",
+            Username = username ?? $"user_{Guid.NewGuid().ToString("N")[..8]}",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
             CreatedAt = DateTime.UtcNow,
             IsDeleted = isDeleted,
@@ -59,7 +59,7 @@ public class TestDataBuilder
         var invite = new Invite
         {
             Id = Guid.NewGuid(),
-            Code = code ?? $"INVITE-{Guid.NewGuid():N}[6]",
+            Code = code ?? $"INVITE-{Guid.NewGuid().ToString("N")[..6]}",
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(expiresInDays),
             IsUsed = isUsed,
