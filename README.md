@@ -1,25 +1,24 @@
 # ScoutBox
 
-Mobile application for managing scout group tent inventory with real-time collaboration features.
+Application for managing scout group tent inventory.
 
 ## Description
 
-ScoutBox is a comprehensive tent inventory management system designed for scout groups. It enables leaders to track tents, manage parts, document conditions with photos, and collaborate in real-time across multiple devices.
+ScoutBox helps scout leaders track tents, tent shapes, parts, condition, comments, and history. The project is intentionally kept simple enough for occasional volunteer contributors to understand and maintain.
 
 ## Tech Stack
 
-- **Frontend**: Flutter/Dart (cross-platform iOS/Android)
+- **Frontend**: Flutter/Dart
   - State Management: Riverpod with code generation
   - HTTP Client: Dio
   - Secure Storage: flutter_secure_storage
-  - Deep Links: app_links
   - Localization: flutter_localizations + intl
 
-- **Backend**: .NET 8.0 Web API
-  - ORM: Entity Framework Core 8.0 with SQLite
+- **Backend**: .NET 10 Web API
+  - ORM: Entity Framework Core 10 with SQLite
   - Authentication: JWT tokens
   - API Documentation: Swagger/OpenAPI
-  - Pattern: Repository + Service layer architecture
+  - Pattern: Controllers with services/repositories where useful
 
 - **Database**: SQLite (lightweight, serverless)
 
@@ -27,22 +26,24 @@ ScoutBox is a comprehensive tent inventory management system designed for scout 
 
 ### Prerequisites
 
-- Flutter SDK v3.x+ (with Dart)
-- .NET SDK v8.0+
-- Android Studio / Xcode (for mobile development)
+- Flutter SDK with Dart compatible with `frontend/pubspec.yaml`
+- .NET SDK 10+
+- Android Studio, Xcode, or a browser target for Flutter development
 - Git
 
 ### Backend Startup
 
 ```bash
-cd backend
+cd backend/ScoutBoxApi
 dotnet restore
 dotnet run
 ```
 
-API will be available at `http://localhost:5000`
+API will be available at `http://localhost:5169`.
 
-Swagger UI available at `http://localhost:5000/swagger`
+With the HTTPS launch profile, it is also available at `https://localhost:7210`.
+
+Swagger UI is available at `/swagger`, for example `http://localhost:5169/swagger`.
 
 ### Frontend Startup
 
@@ -54,7 +55,7 @@ flutter run
 
 ## Architecture
 
-See [architecture documentation](docs/architecture.md) for detailed system design, patterns, and conventions.
+For project structure, coding conventions, and where to add common changes, see `AGENTS.md`. Deployment notes are under `docs/deployment/`.
 
 ## Deployment
 
@@ -73,7 +74,7 @@ scoutbox/
 │       ├── Models/
 │       ├── Services/
 │       ├── Data/
-│       └── Middleware/
+│       └── Filters/
 ├── frontend/              # Flutter application
 │   ├── lib/
 │   │   ├── models/
@@ -84,7 +85,7 @@ scoutbox/
 │   │   └── utils/
 │   └── test/
 ├── docs/                 # Documentation
-└── infrastructure/       # Deployment configs
+└── AGENTS.md             # Contributor and AI-agent project guide
 ```
 
 ## Naming Conventions
@@ -113,13 +114,21 @@ flutter pub run build_runner watch
 
 ## Features
 
+Implemented now:
+
 - User registration with invite codes
 - Tent inventory management
 - Part tracking and management
+- Tent shape reference data
+- Tent archiving
+- Tent and part history through audit events
+
+Planned or deferred:
+
 - Photo documentation
 - Tag system for organization
 - Real-time collaboration via SSE
-- French localization
+- French localization (using real localization tech)
 - Offline support
 
 ---
