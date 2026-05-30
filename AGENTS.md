@@ -309,3 +309,38 @@ public class UploadRequest
 
 When changing a decision from _bmad-output files, replace the old decision with the new, no need to justify or mark as new, do not add history to file, I handle the versionning myself through git.
 Use windows-style line endings.
+
+## Refactoring Rules (learned)
+
+### Backend (C#)
+
+**Extract shared helpers when duplicated 3+ times:**
+When the same private helper appears in three or more services, extract it to a static utility class in `backend/ScoutBoxApi/Services/`. Examples:
+- `DbExceptionHelper.cs` — `IsConstraintViolation(DbUpdateException, params string[])` / `IsAnyConstraintViolation(...)`
+- `EntityFactory.cs` — `SetCreationAudit<T>(entity, userId)` for common audit field initialization
+
+**DTO static factories over duplicated mappings:**
+When the same DTO mapping (`new PartDto(...)`) appears in multiple services, add a static factory method to the DTO record itself (e.g., `PartDto.FromPart(Part)`). This keeps the mapping next to the type it creates.
+
+**Entity interfaces for shared field sets:**
+When multiple entities share the same set of fields, extract an interface (e.g., `IAuditableEntity` for `Id`, `CreatedAt`, `UpdatedAt`, `CreatedByUserId`, `UpdatedByUserId`). Use it with a generic static helper.
+
+### Frontend (Dart)
+
+**Mixins for screen lifecycle boilerplate:**
+When multiple screens share the same `RouteAware` + `AppBarConfig` lifecycle, extract to a mixin with `on ConsumerState<T>, RouteAware` constraint. Cast `this as RouteAware` when passing to `RouteObserver` methods. Each screen implements `AppBarConfig buildAppBarConfig()`.
+
+**Shared dialog function over copy-pasted AlertDialogs:**
+Extract repeated confirmation dialogs to a single top-level function with `title`, `content`, `confirmLabel`, `cancelLabel`, `isDestructive`, and `barrierDismissible` parameters. Return `Future<bool>`.
+
+**Merge near-duplicate screens with mode parameter:**
+When two screens share ~70% code, merge into one widget with an enum `mode` parameter. Keep thin `StatelessWidget` wrapper classes for backward compatibility with widget tests that use `find.byType()`.
+
+**Error handling consistency across providers:**
+Always use `ErrorLocalizer.localize(e.code, fallback: e.message)` when catching `TentRepositoryException`. Never use raw `e.message` directly:
+- Known error codes → mapped French message
+- Unknown codes in dev builds → raw backend message preserved
+- Unknown codes in production → safe generic fallback
+
+**Barrel exports for new widgets:**
+When adding a new file under `frontend/lib/views/widgets/`, add it to the `widgets.dart` barrel export.
