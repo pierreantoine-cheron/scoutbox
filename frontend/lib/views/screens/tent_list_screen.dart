@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/tent.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
+import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 import 'tent_creation_screen.dart';
 import 'tent_detail_screen.dart';
@@ -16,10 +17,8 @@ class TentListScreen extends ConsumerStatefulWidget {
 }
 
 class _TentListScreenState extends ConsumerState<TentListScreen>
-    with RouteAware {
+    with RouteAware, RouteAwareAppBarMixin<TentListScreen> {
   late final TextEditingController _searchController;
-  RouteObserver<ModalRoute<dynamic>>? _routeObserver;
-  ModalRoute<dynamic>? _subscribedRoute;
 
   @override
   void initState() {
@@ -30,80 +29,60 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _routeObserver ??= ref.read(routeObserverProvider);
-    final route = ModalRoute.of(context);
-    if (route != null && route != _subscribedRoute) {
-      if (_subscribedRoute != null) {
-        _routeObserver!.unsubscribe(this);
-      }
-      _routeObserver!.subscribe(this, route);
-      _subscribedRoute = route;
-    }
-    _scheduleConfigUpdate();
+    subscribeRouteObserver();
+    dispatchAppBarConfig();
   }
 
   @override
   void dispose() {
-    _routeObserver?.unsubscribe(this);
-    _subscribedRoute = null;
+    unsubscribeRouteObserver();
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   void didPush() {
-    _scheduleConfigUpdate();
+    dispatchAppBarConfig();
   }
 
   @override
   void didPopNext() {
-    _scheduleConfigUpdate();
+    dispatchAppBarConfig();
   }
 
-  void _scheduleConfigUpdate() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _setAppBarConfig();
-    });
-  }
-
-  void _setAppBarConfig() {
-    if (!mounted) return;
-    final route = ModalRoute.of(context);
-    if (route == null || !route.isCurrent) return;
+  @override
+  AppBarConfig buildAppBarConfig() {
+    if (!mounted) return const AppBarConfig(screenId: '');
 
     final isDesktop = MediaQuery.sizeOf(context).width >= 768;
     final authState = ref.read(authProvider);
     final tentsState = ref.read(tentListProvider);
 
-    ref
-        .read(appBarConfigProvider.notifier)
-        .set(
-          AppBarConfig(
-            screenId: 'tent_list',
-            title: const Text('ScoutBox - Tentes'),
-            actions: [
-              if (isDesktop)
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'Actualiser la liste',
-                  onPressed: tentsState.isLoading
-                      ? null
-                      : () => ref.read(tentListProvider.notifier).refresh(),
-                ),
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: authState.isLoading
-                    ? null
-                    : () => _showLogoutConfirmationDialog(context, ref),
-              ),
-            ],
-            fab: FloatingActionButton(
-              onPressed: () => _openTentCreation(context),
-              tooltip: 'Ajouter une tente',
-              child: const Icon(Icons.add),
-            ),
+    return AppBarConfig(
+      screenId: 'tent_list',
+      title: const Text('ScoutBox - Tentes'),
+      actions: [
+        if (isDesktop)
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Actualiser la liste',
+            onPressed: tentsState.isLoading
+                ? null
+                : () => ref.read(tentListProvider.notifier).refresh(),
           ),
-        );
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: authState.isLoading
+              ? null
+              : () => _showLogoutConfirmationDialog(),
+        ),
+      ],
+      fab: FloatingActionButton(
+        onPressed: () => _openTentCreation(context),
+        tooltip: 'Ajouter une tente',
+        child: const Icon(Icons.add),
+      ),
+    );
   }
 
   @override
@@ -120,11 +99,11 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     );
     ref.listen(
       authProvider.select((state) => state.isLoading),
-      (_, _) => _scheduleConfigUpdate(),
+      (_, _) => dispatchAppBarConfig(),
     );
     ref.listen(
       tentListProvider.select((state) => state.isLoading),
-      (_, _) => _scheduleConfigUpdate(),
+      (_, _) => dispatchAppBarConfig(),
     );
 
     return Material(
@@ -397,31 +376,16 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     );
   }
 
-  void _showLogoutConfirmationDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Se déconnecter ?'),
-          content: const Text('Votre session sera fermée.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Annuler'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                await ref.read(authProvider.notifier).logout();
-              },
-              child: const Text('Déconnecter'),
-            ),
-          ],
-        );
-      },
+  Future<void> _showLogoutConfirmationDialog() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Se déconnecter ?',
+      content: 'Votre session sera fermée.',
+      confirmLabel: 'Déconnecter',
     );
+    if (confirmed && mounted) {
+      await ref.read(authProvider.notifier).logout();
+    }
   }
 
   void _clearFiltersHook() {

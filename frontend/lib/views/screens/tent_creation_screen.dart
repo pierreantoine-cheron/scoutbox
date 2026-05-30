@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../utils/constants.dart';
+import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 
 class TentCreationScreen extends ConsumerStatefulWidget {
@@ -15,7 +16,7 @@ class TentCreationScreen extends ConsumerStatefulWidget {
 }
 
 class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
-    with RouteAware {
+    with RouteAware, RouteAwareAppBarMixin<TentCreationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _sizeController = TextEditingController();
@@ -24,8 +25,6 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
   int _currentStep = 0;
   bool _didAttemptSubmit = false;
   bool _isRetryingShapes = false;
-  RouteObserver<ModalRoute<dynamic>>? _routeObserver;
-  ModalRoute<dynamic>? _subscribedRoute;
 
   @override
   void initState() {
@@ -39,21 +38,13 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _routeObserver ??= ref.read(routeObserverProvider);
-    final route = ModalRoute.of(context);
-    if (route != null && route != _subscribedRoute) {
-      if (_subscribedRoute != null) {
-        _routeObserver!.unsubscribe(this);
-      }
-      _routeObserver!.subscribe(this, route);
-      _subscribedRoute = route;
-    }
+    subscribeRouteObserver();
+    dispatchAppBarConfig();
   }
 
   @override
   void dispose() {
-    _routeObserver?.unsubscribe(this);
-    _subscribedRoute = null;
+    unsubscribeRouteObserver();
     _nameController.dispose();
     _sizeController.dispose();
     _commentsController.dispose();
@@ -62,19 +53,18 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
 
   @override
   void didPush() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref
-            .read(appBarConfigProvider.notifier)
-            .set(
-              const AppBarConfig(
-                screenId: 'tent_creation',
-                title: Text('Créer une tente'),
-                showBackButton: true,
-              ),
-            );
-      }
-    });
+    dispatchAppBarConfig();
+  }
+
+  @override
+  AppBarConfig buildAppBarConfig() {
+    if (!mounted) return const AppBarConfig(screenId: '');
+
+    return const AppBarConfig(
+      screenId: 'tent_creation',
+      title: Text('Créer une tente'),
+      showBackButton: true,
+    );
   }
 
   @override
@@ -352,27 +342,13 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
   }
 
   Future<bool> _confirmDiscardDraft() async {
-    final shouldLeave = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Quitter la création ?'),
-          content: const Text('Votre brouillon sera conservé pour plus tard.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Rester'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Quitter'),
-            ),
-          ],
-        );
-      },
+    return showConfirmDialog(
+      context,
+      title: 'Quitter la création ?',
+      content: 'Votre brouillon sera conservé pour plus tard.',
+      confirmLabel: 'Quitter',
+      cancelLabel: 'Rester',
     );
-
-    return shouldLeave ?? false;
   }
 }
 

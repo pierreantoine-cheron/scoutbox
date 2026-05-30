@@ -5,6 +5,7 @@ import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/constants.dart';
+import '../../utils/route_aware_app_bar_mixin.dart';
 import '../../utils/tent_validators.dart';
 import '../widgets/add_part_sheet.dart';
 import '../widgets/tent_history_section.dart';
@@ -20,58 +21,36 @@ class TentDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
-    with RouteAware {
+    with RouteAware, RouteAwareAppBarMixin<TentDetailScreen> {
   DateTime? _lastSeenSaveTime;
-  RouteObserver<ModalRoute<dynamic>>? _routeObserver;
-  ModalRoute<dynamic>? _subscribedRoute;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _routeObserver ??= ref.read(routeObserverProvider);
-    final route = ModalRoute.of(context);
-    if (route != null && route != _subscribedRoute) {
-      if (_subscribedRoute != null) {
-        _routeObserver!.unsubscribe(this);
-      }
-      _routeObserver!.subscribe(this, route);
-      _subscribedRoute = route;
-    }
-    _scheduleConfigUpdate();
+    subscribeRouteObserver();
+    dispatchAppBarConfig();
   }
 
   @override
   void dispose() {
-    _routeObserver?.unsubscribe(this);
-    _subscribedRoute = null;
+    unsubscribeRouteObserver();
     super.dispose();
   }
 
   @override
   void didPush() {
-    _scheduleConfigUpdate();
+    dispatchAppBarConfig();
   }
 
-  void _scheduleConfigUpdate() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _setAppBarConfig();
-    });
-  }
+  @override
+  AppBarConfig buildAppBarConfig() {
+    if (!mounted) return const AppBarConfig(screenId: '');
 
-  void _setAppBarConfig() {
-    if (!mounted) return;
-    final route = ModalRoute.of(context);
-    if (route == null || !route.isCurrent) return;
-
-    ref
-        .read(appBarConfigProvider.notifier)
-        .set(
-          const AppBarConfig(
-            screenId: 'tent_detail',
-            title: Text('Détail de la tente'),
-            showBackButton: true,
-          ),
-        );
+    return const AppBarConfig(
+      screenId: 'tent_detail',
+      title: Text('Détail de la tente'),
+      showBackButton: true,
+    );
   }
 
   @override
@@ -285,27 +264,13 @@ class _ArchiveTentButtonState extends ConsumerState<_ArchiveTentButton> {
   }
 
   Future<void> _onArchivePressed() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Archiver la tente'),
-        content: const Text(
-          'Archiver cette tente ? Elle n\'apparaîtra plus dans la liste mais restera dans l\'historique.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Confirmer'),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Archiver la tente',
+      content: 'Archiver cette tente ? Elle n\'apparaîtra plus dans la liste mais restera dans l\'historique.',
     );
 
-    if (confirmed != true || !mounted) {
+    if (!confirmed || !mounted) {
       return;
     }
 
@@ -647,32 +612,16 @@ class _PartsSectionState extends ConsumerState<_PartsSection> {
   }
 
   Future<void> _confirmDeleteSelected() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Supprimer ces pièces ?',
+      content: '${_selectedPartIds.length} pièce(s) seront supprimées définitivement. Cette action est irréversible.',
+      confirmLabel: 'Supprimer',
+      isDestructive: true,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer ces pièces ?'),
-        content: Text(
-          '${_selectedPartIds.length} pièce(s) seront supprimées définitivement. Cette action est irréversible.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-              foregroundColor: Theme.of(ctx).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
     );
 
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     var allSucceeded = true;
     for (final partId in _selectedPartIds.toList()) {
