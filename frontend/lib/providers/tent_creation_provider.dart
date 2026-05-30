@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/models.dart';
 import '../repositories/tent_repository.dart';
 import '../services/error_localizer.dart';
-import '../utils/constants.dart';
+import '../utils/tent_validators.dart';
 
 part 'tent_creation_provider.g.dart';
 
@@ -38,51 +38,12 @@ class TentCreationNotifier extends _$TentCreationNotifier {
     state = state.copyWith(submitError: null);
   }
 
-  String? validateName(String? value) {
-    if (value == null) {
-      return 'Le nom de la tente est requis';
-    }
+  String? validateName(String? value) => TentValidators.validateName(value);
 
-    if (value.trim().isEmpty) {
-      return 'Le nom de la tente est requis';
-    }
+  String? validateSize(String? value) => TentValidators.validateSize(value);
 
-    if (value.trim().length > ValidationConstants.tentNameMaxLength) {
-      return 'Le nom ne doit pas dépasser 100 caractères';
-    }
-
-    return null;
-  }
-
-  String? validateSize(String? value) {
-    if (value == null) {
-      return 'La taille doit être un nombre positif';
-    }
-
-    if (value.trim().isEmpty) {
-      return 'La taille doit être un nombre positif';
-    }
-
-    final parsedSize = int.tryParse(value);
-    if (parsedSize == null ||
-        parsedSize < ValidationConstants.tentMinSize ||
-        parsedSize > ValidationConstants.tentMaxSize) {
-      return 'La taille doit être un nombre positif';
-    }
-
-    return null;
-  }
-
-  String? validateComments(String? value) {
-    if (value == null) {
-      return null;
-    }
-    if (value.length > ValidationConstants.tentCommentsMaxLength) {
-      return 'Le commentaire ne doit pas dépasser 500 caractères';
-    }
-
-    return null;
-  }
+  String? validateComments(String? value) =>
+      TentValidators.validateComments(value);
 
   Future<Tent?> submit() async {
     if (state.selectedShape == null) {

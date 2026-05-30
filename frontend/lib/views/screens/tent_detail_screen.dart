@@ -6,6 +6,7 @@ import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/constants.dart';
+import '../../utils/tent_validators.dart';
 import '../widgets/widgets.dart';
 
 class TentDetailScreen extends ConsumerStatefulWidget {
@@ -410,14 +411,7 @@ class _EditableNameField extends ConsumerWidget {
     );
   }
 
-  String? _validateName(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return 'Le nom de la tente est requis.';
-    if (trimmed.length > ValidationConstants.tentNameMaxLength) {
-      return 'Le nom ne peut pas dépasser ${ValidationConstants.tentNameMaxLength} caractères.';
-    }
-    return null;
-  }
+  String? _validateName(String value) => TentValidators.validateName(value);
 }
 
 class _EditableSizeField extends ConsumerWidget {
@@ -484,17 +478,7 @@ class _EditableSizeField extends ConsumerWidget {
     );
   }
 
-  String? _validateSize(String value) {
-    final raw = value.trim();
-    final size = int.tryParse(raw);
-    if (raw.isEmpty || size == null || size <= 0) {
-      return 'La taille doit être un nombre positif.';
-    }
-    if (size > ValidationConstants.tentMaxSize) {
-      return 'La taille doit être comprise entre 1 et ${ValidationConstants.tentMaxSize}.';
-    }
-    return null;
-  }
+  String? _validateSize(String value) => TentValidators.validateSize(value);
 }
 
 class _EditableOverallStateSelector extends ConsumerWidget {
@@ -619,12 +603,8 @@ class _CommentsSection extends ConsumerWidget {
     return normalized;
   }
 
-  String? _validateComments(String value) {
-    if (value.trim().length > ValidationConstants.tentCommentsMaxLength) {
-      return 'Le commentaire ne peut pas dépasser ${ValidationConstants.tentCommentsMaxLength} caractères.';
-    }
-    return null;
-  }
+  String? _validateComments(String value) =>
+      TentValidators.validateComments(value);
 }
 
 class _PartsSection extends ConsumerStatefulWidget {
@@ -976,12 +956,8 @@ class _PartsSectionState extends ConsumerState<_PartsSection> {
     return normalized == null || normalized.isEmpty;
   }
 
-  String? _validateComments(String value) {
-    if (value.trim().length > ValidationConstants.tentCommentsMaxLength) {
-      return 'Le commentaire ne peut pas dépasser ${ValidationConstants.tentCommentsMaxLength} caractères.';
-    }
-    return null;
-  }
+  String? _validateComments(String value) =>
+      TentValidators.validateComments(value);
 
   void _showAddPartDialog() {
     showModalBottomSheet(
