@@ -23,7 +23,7 @@ void main() {
       expect(failed, isFalse);
       expect(
         container.read(partManagementProvider('tent-1')).addError,
-        'Ajout impossible.',
+        'Une erreur est survenue. Veuillez réessayer.',
       );
 
       final succeeded = await notifier.addParts(const ['kind-1']);
@@ -46,7 +46,7 @@ void main() {
       expect(failed, isFalse);
       expect(
         container.read(partManagementProvider('tent-1')).removeError,
-        'Suppression impossible.',
+        'Une erreur est survenue. Veuillez réessayer.',
       );
 
       final succeeded = await notifier.removePart('part-1');

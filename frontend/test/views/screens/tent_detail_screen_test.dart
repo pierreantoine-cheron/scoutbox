@@ -231,7 +231,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(
-        find.textContaining('Impossible de mettre à jour la tente'),
+        find.textContaining('Une erreur est survenue'),
         findsOneWidget,
       );
       expect(find.byType(TextButton), findsAtLeast(1));
@@ -609,7 +609,7 @@ void main() {
         await tester.tap(find.text('Supprimer'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Suppression impossible.'), findsOneWidget);
+        expect(find.text('Une erreur est survenue. Veuillez réessayer.'), findsOneWidget);
         expect(find.byTooltip('Annuler la sélection'), findsOneWidget);
       },
     );

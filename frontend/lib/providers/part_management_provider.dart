@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/part_kind.dart';
 import '../repositories/tent_repository.dart';
+import '../services/error_localizer.dart';
 import 'success_indicator_provider.dart';
 import 'tent_detail_provider.dart';
 import 'tent_history_provider.dart';
@@ -23,7 +24,7 @@ class PartManagementNotifier extends _$PartManagementNotifier {
     } catch (e) {
       if (!ref.mounted) return [];
       final message = e is TentRepositoryException
-          ? e.message
+          ? ErrorLocalizer.localize(e.code, fallback: e.message)
           : 'Impossible de charger les types de pièces.';
       state = state.copyWith(
         isLoadingPartKinds: false,
@@ -55,7 +56,7 @@ class PartManagementNotifier extends _$PartManagementNotifier {
       return true;
     } on TentRepositoryException catch (e) {
       if (!ref.mounted || state.requestVersion != requestVersion) return false;
-      state = state.copyWith(isAdding: false, addError: e.message);
+      state = state.copyWith(isAdding: false, addError: ErrorLocalizer.localize(e.code, fallback: e.message));
       return false;
     } catch (_) {
       if (!ref.mounted || state.requestVersion != requestVersion) return false;
@@ -89,7 +90,7 @@ class PartManagementNotifier extends _$PartManagementNotifier {
       if (!ref.mounted || state.requestVersion != requestVersion) return false;
       state = state.copyWith(
         removingPartIds: {...state.removingPartIds}..remove(partId),
-        removeError: e.message,
+        removeError: ErrorLocalizer.localize(e.code, fallback: e.message),
       );
       return false;
     } catch (_) {

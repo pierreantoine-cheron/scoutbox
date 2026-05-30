@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/tent.dart';
 import '../repositories/tent_repository.dart';
+import '../services/error_localizer.dart';
 import 'tent_detail_provider.dart';
 import 'tent_history_provider.dart';
 import 'tent_list_provider.dart';
@@ -68,7 +69,7 @@ class TentEditNotifier extends _$TentEditNotifier {
       );
     } on TentRepositoryException catch (e) {
       state = state.copyWith(
-        fieldError: e.message,
+        fieldError: ErrorLocalizer.localize(e.code, fallback: e.message),
         clearSavingField: true,
         pendingRetry: retryRequest,
       );

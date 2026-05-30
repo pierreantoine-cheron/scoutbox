@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/part.dart';
 import '../repositories/tent_repository.dart';
+import '../services/error_localizer.dart';
 import 'tent_detail_provider.dart';
 import 'tent_history_provider.dart';
 
@@ -106,7 +107,7 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
       final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)
         ..remove(partId);
       final errors = Map<String, String>.from(state.errors)
-        ..[partId] = e.message;
+        ..[partId] = ErrorLocalizer.localize(e.code, fallback: e.message);
       final confirmed = Map<String, PartState>.from(state.confirmedStates)
         ..remove(partId);
       final confirmedSources = Map<String, PartState>.from(

@@ -74,7 +74,7 @@ void main() {
 
       var state = container.read(partUpdateProvider('tent-1'));
       expect(state.isSaving('part-1'), isFalse);
-      expect(state.errorFor('part-1'), 'Échec réseau.');
+      expect(state.errorFor('part-1'), 'Une erreur est survenue. Veuillez réessayer.');
       expect(
         state.resolveDisplayedState(_part(PartState.good)),
         PartState.good,

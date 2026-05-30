@@ -88,7 +88,7 @@ class TentCreationNotifier extends _$TentCreationNotifier {
     } on TentRepositoryException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        submitError: ErrorLocalizer.localize(e.code),
+        submitError: ErrorLocalizer.localize(e.code, fallback: e.message),
       );
       return null;
     } catch (_) {
