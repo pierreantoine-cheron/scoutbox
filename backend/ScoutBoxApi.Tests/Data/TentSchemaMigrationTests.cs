@@ -70,7 +70,8 @@ public class TentSchemaMigrationTests : IDisposable
             "piquets",
             "tapis de sol",
             "sac",
-            "sardines"
+            "sardines",
+            "Chambre"
         }, partKinds);
 
         Assert.Equal(new[]
@@ -82,7 +83,7 @@ public class TentSchemaMigrationTests : IDisposable
         }, tentModels);
 
         var modelComponentCount = await _db.TentModelComponents.CountAsync();
-        Assert.Equal(28, modelComponentCount);
+        Assert.Equal(24, modelComponentCount);
     }
 
     [Fact]
