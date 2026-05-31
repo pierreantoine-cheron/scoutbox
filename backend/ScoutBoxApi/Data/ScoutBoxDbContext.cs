@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using ScoutBoxApi.Models.Entities;
 
 namespace ScoutBoxApi.Data;
@@ -22,6 +23,14 @@ public class ScoutBoxDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
+
+        // User entity has a soft-delete query filter (e => !e.IsDeleted) and
+        // is the required end of relationships with Part, RefreshToken, Tent.
+        // These audit navigations (CreatedByUser, UpdatedByUser) are never
+        // eagerly loaded; RefreshToken.User already handles null in AuthService.
+        // Users are rarely deleted in this volunteer-run app, so this is safe.
+        optionsBuilder.ConfigureWarnings(warnings =>
+            warnings.Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning));
 
         optionsBuilder.UseSeeding((context, _) =>
         {
