@@ -218,7 +218,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             await db.SaveChangesAsync();
         }
 
-        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         var partKinds = await db.PartKinds.OrderBy(x => x.DisplayOrder).ToListAsync();
 
         var tentId = Guid.NewGuid();
@@ -229,7 +229,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             Id = tentId,
             Name = $"AddPartsTest-{Guid.NewGuid():N}",
             Size = 4,
-            TentShapeId = shapeId,
+            TentModelId = shapeId,
             OverallState = TentOverallState.Good,
             IsArchived = false,
             CreatedAt = now,
@@ -284,7 +284,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         var partKindId = await db.PartKinds.Select(x => x.Id).FirstAsync();
 
         var tentId = Guid.NewGuid();
@@ -294,7 +294,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             Id = tentId,
             Name = $"DuplicateRequest-{Guid.NewGuid():N}",
             Size = 4,
-            TentShapeId = shapeId,
+            TentModelId = shapeId,
             OverallState = TentOverallState.Good,
             IsArchived = false,
             CreatedAt = now,
@@ -319,7 +319,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
 
         var tentId = Guid.NewGuid();
         var now = DateTime.UtcNow;
@@ -328,7 +328,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             Id = tentId,
             Name = $"InvalidPK-{Guid.NewGuid():N}",
             Size = 4,
-            TentShapeId = shapeId,
+            TentModelId = shapeId,
             OverallState = TentOverallState.Good,
             IsArchived = false,
             CreatedAt = now,
@@ -382,7 +382,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
 
         var tentId = Guid.NewGuid();
         var now = DateTime.UtcNow;
@@ -391,7 +391,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             Id = tentId,
             Name = $"EmptyReq-{Guid.NewGuid():N}",
             Size = 4,
-            TentShapeId = shapeId,
+            TentModelId = shapeId,
             OverallState = TentOverallState.Good,
             IsArchived = false,
             CreatedAt = now,
@@ -510,7 +510,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             await db.SaveChangesAsync();
         }
 
-        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         var partKinds = await db.PartKinds.OrderBy(x => x.DisplayOrder).ToListAsync();
 
         var tentId = Guid.NewGuid();
@@ -521,7 +521,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             Id = tentId,
             Name = $"DisplayOrderTest-{Guid.NewGuid():N}",
             Size = 4,
-            TentShapeId = shapeId,
+            TentModelId = shapeId,
             OverallState = TentOverallState.Good,
             IsArchived = false,
             CreatedAt = now,
@@ -572,7 +572,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             await db.SaveChangesAsync();
         }
 
-        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         var partKinds = await db.PartKinds.OrderBy(x => x.DisplayOrder).ToListAsync();
 
         var tentId = Guid.NewGuid();
@@ -583,7 +583,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             Id = tentId,
             Name = $"AllPartsTest-{Guid.NewGuid():N}",
             Size = 4,
-            TentShapeId = shapeId,
+            TentModelId = shapeId,
             OverallState = TentOverallState.Good,
             IsArchived = false,
             CreatedAt = now,
@@ -654,7 +654,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             await db.SaveChangesAsync();
         }
 
-        var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         var partKind = await db.PartKinds.OrderBy(x => x.DisplayOrder).FirstAsync();
 
         var tentId = Guid.NewGuid();
@@ -664,7 +664,7 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             Id = tentId,
             Name = $"Tent-{Guid.NewGuid():N}",
             Size = 4,
-            TentShapeId = shapeId,
+            TentModelId = shapeId,
             OverallState = TentOverallState.Good,
             IsArchived = isArchived,
             CreatedAt = now,

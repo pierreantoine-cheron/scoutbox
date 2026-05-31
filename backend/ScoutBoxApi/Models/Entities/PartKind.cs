@@ -4,11 +4,10 @@ public class PartKind : IHasName
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public bool IsStandard { get; set; }
     public int DisplayOrder { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
     public ICollection<Part> Parts { get; set; } = new List<Part>();
-    public ICollection<TentShapePart> TentShapeParts { get; set; } = new List<TentShapePart>();
+    public ICollection<TentModelComponent> TentModelComponents { get; set; } = new List<TentModelComponent>();
 }

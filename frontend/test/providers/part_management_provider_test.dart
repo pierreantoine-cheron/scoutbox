@@ -65,7 +65,7 @@ class _PartManagementRepository extends TentRepository {
 
   @override
   Future<List<PartKind>> getPartKinds() async => const [
-    PartKind(id: 'kind-1', name: 'Toile', displayOrder: 1, isStandard: true),
+    PartKind(id: 'kind-1', name: 'Toile', displayOrder: 1),
   ];
 
   @override
@@ -103,7 +103,7 @@ class _PartManagementRepository extends TentRepository {
     id: id,
     name: 'Tente',
     size: 4,
-    tentShapeId: 'shape-1',
+    tentModelId: 'shape-1',
     overallState: TentOverallState.good,
     comments: null,
     parts: const [],

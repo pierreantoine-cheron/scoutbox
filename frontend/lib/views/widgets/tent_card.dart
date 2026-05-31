@@ -11,8 +11,8 @@ class TentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shapeName = tent.tentShapeName?.trim();
-    final hasShapeName = shapeName != null && shapeName.isNotEmpty;
+    final modelName = tent.tentModelName?.trim();
+    final hasModelName = modelName != null && modelName.isNotEmpty;
 
     return Semantics(
       button: true,
@@ -52,10 +52,10 @@ class TentCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
 
-                    if (hasShapeName) ...[
+                    if (hasModelName) ...[
                       const SizedBox(height: 6),
                       Text(
-                        shapeName,
+                        modelName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium,

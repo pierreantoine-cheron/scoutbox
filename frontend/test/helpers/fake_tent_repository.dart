@@ -2,7 +2,7 @@ import 'package:client/models/models.dart';
 import 'package:client/repositories/tent_repository.dart';
 
 typedef GetTentsHandler = Future<List<Tent>> Function();
-typedef GetTentShapesHandler = Future<List<TentShape>> Function();
+typedef GetTentModelsHandler = Future<List<TentModel>> Function();
 typedef GetTentHandler = Future<Tent> Function(String id);
 typedef UpdateTentHandler = Future<Tent> Function({
   required String id,
@@ -14,7 +14,7 @@ typedef UpdateTentHandler = Future<Tent> Function({
 typedef CreateTentHandler = Future<Tent> Function({
   required String name,
   required int size,
-  required String tentShapeId,
+  required String tentModelId,
   required TentOverallState overallState,
   String? comments,
 });
@@ -38,7 +38,7 @@ typedef UpdatePartStateHandler = Future<Part> Function({
 
 class FakeTentRepository extends TentRepository {
   GetTentsHandler? getTentsHandler;
-  GetTentShapesHandler? getTentShapesHandler;
+  GetTentModelsHandler? getTentModelsHandler;
   GetTentHandler? getTentHandler;
   UpdateTentHandler? updateTentHandler;
   CreateTentHandler? createTentHandler;
@@ -57,9 +57,9 @@ class FakeTentRepository extends TentRepository {
   }
 
   @override
-  Future<List<TentShape>> getTentShapes() {
-    final handler = getTentShapesHandler;
-    if (handler == null) throw UnimplementedError('getTentShapes');
+  Future<List<TentModel>> getTentModels() {
+    final handler = getTentModelsHandler;
+    if (handler == null) throw UnimplementedError('getTentModels');
     return handler();
   }
 
@@ -93,7 +93,7 @@ class FakeTentRepository extends TentRepository {
   Future<Tent> createTent({
     required String name,
     required int size,
-    required String tentShapeId,
+    required String tentModelId,
     required TentOverallState overallState,
     String? comments,
   }) {
@@ -102,7 +102,7 @@ class FakeTentRepository extends TentRepository {
     return handler(
       name: name,
       size: size,
-      tentShapeId: tentShapeId,
+      tentModelId: tentModelId,
       overallState: overallState,
       comments: comments,
     );

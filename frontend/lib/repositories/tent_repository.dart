@@ -28,28 +28,28 @@ class TentRepository {
     );
   }
 
-  Future<List<TentShape>> getTentShapes() async {
+  Future<List<TentModel>> getTentModels() async {
     return _request(
-      fallbackMessage: 'Impossible de charger les formes de tentes. Réessayez.',
+      fallbackMessage: 'Impossible de charger les modèles de tentes. Réessayez.',
       invalidResponseMessage:
-          'Réponse du serveur invalide lors du chargement des formes de tentes.',
+          'Réponse du serveur invalide lors du chargement des modèles de tentes.',
       action: () async {
-        final response = await ApiClient.instance.get(ApiRoutes.tentShapes);
-        final rawShapes = _readEnvelopeList(response.data);
+        final response = await ApiClient.instance.get(ApiRoutes.tentModels);
+        final rawModels = _readEnvelopeList(response.data);
 
-        final shapes =
-            rawShapes
+        final models =
+            rawModels
                 .map(
-                  (shape) => TentShape.fromJson(shape as Map<String, dynamic>),
+                  (model) => TentModel.fromJson(model as Map<String, dynamic>),
                 )
-                .where((shape) => shape.isActive)
+                .where((model) => model.isActive)
                 .toList()
               ..sort(
                 (left, right) =>
                     left.displayOrder.compareTo(right.displayOrder),
               );
 
-        return shapes;
+        return models;
       },
     );
   }
@@ -96,7 +96,7 @@ class TentRepository {
   Future<Tent> createTent({
     required String name,
     required int size,
-    required String tentShapeId,
+    required String tentModelId,
     required TentOverallState overallState,
     String? comments,
   }) async {
@@ -110,7 +110,7 @@ class TentRepository {
           data: {
             'name': name,
             'size': size,
-            'tentShapeId': tentShapeId,
+            'tentModelId': tentModelId,
             'overallState': overallState.toApiValue(),
             'comments': comments,
           },

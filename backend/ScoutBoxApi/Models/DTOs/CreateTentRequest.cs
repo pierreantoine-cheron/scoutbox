@@ -11,8 +11,8 @@ public class CreateTentRequest
     [Range(1, 100, ErrorMessage = "Tent size must be between 1 and 100")]
     public int Size { get; set; }
 
-    [Required(ErrorMessage = "Tent shape is required")]
-    public Guid TentShapeId { get; set; }
+    [Required(ErrorMessage = "Tent model is required")]
+    public Guid TentModelId { get; set; }
 
     [Required(ErrorMessage = "Tent overall state is required")]
     public string OverallState { get; set; } = string.Empty;

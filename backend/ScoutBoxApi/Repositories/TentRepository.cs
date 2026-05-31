@@ -15,13 +15,13 @@ public class TentRepository : ITentRepository
         _db = db;
     }
 
-    public async Task<IReadOnlyList<TentShapeDto>> GetActiveShapesAsync()
+    public async Task<IReadOnlyList<TentModelDto>> GetActiveModelsAsync()
     {
-        return await _db.TentShapes
+        return await _db.TentModels
             .AsNoTracking()
-            .Where(shape => shape.IsActive)
-            .OrderBy(shape => shape.DisplayOrder)
-            .Select(shape => new TentShapeDto(shape.Id, shape.Name, shape.DisplayOrder, shape.IsActive))
+            .Where(model => model.IsActive)
+            .OrderBy(model => model.DisplayOrder)
+            .Select(model => new TentModelDto(model.Id, model.Name, model.DisplayOrder, model.IsActive))
             .ToListAsync();
     }
 
@@ -30,15 +30,15 @@ public class TentRepository : ITentRepository
         return await (
             from tent in _db.Tents.AsNoTracking()
             where !tent.IsArchived
-            join shape in _db.TentShapes.AsNoTracking() on tent.TentShapeId equals shape.Id into shapeJoin
-            from shape in shapeJoin.DefaultIfEmpty()
+            join model in _db.TentModels.AsNoTracking() on tent.TentModelId equals model.Id into modelJoin
+            from model in modelJoin.DefaultIfEmpty()
             orderby tent.UpdatedAt descending, tent.CreatedAt descending, tent.Id descending
             select new TentDto(
                 tent.Id,
                 tent.Name,
                 tent.Size,
-                tent.TentShapeId,
-                shape != null ? shape.Name : null,
+                tent.TentModelId,
+                model != null ? model.Name : null,
                 tent.OverallState.ToString(),
                 tent.IsArchived,
                 tent.Comments,
@@ -53,7 +53,7 @@ public class TentRepository : ITentRepository
     {
         return await _db.Tents
             .AsNoTracking()
-            .Include(t => t.TentShape)
+            .Include(t => t.TentModel)
             .Include(t => t.Parts)
                 .ThenInclude(p => p.PartKind)
             .FirstOrDefaultAsync(t => t.Id == id);
@@ -62,7 +62,7 @@ public class TentRepository : ITentRepository
     public async Task<Tent?> GetTentByIdForUpdateAsync(Guid id)
     {
         return await _db.Tents
-            .Include(t => t.TentShape)
+            .Include(t => t.TentModel)
             .Include(t => t.Parts)
                 .ThenInclude(p => p.PartKind)
             .FirstOrDefaultAsync(t => t.Id == id);
@@ -76,12 +76,12 @@ public class TentRepository : ITentRepository
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
-    public async Task<TentShape?> GetActiveTentShapeByIdAsync(Guid id)
+    public async Task<TentModel?> GetActiveTentModelByIdAsync(Guid id)
     {
-        return await _db.TentShapes
-            .Include(s => s.TentShapeParts)
-                .ThenInclude(sp => sp.PartKind)
-            .Where(shape => shape.Id == id && shape.IsActive)
+        return await _db.TentModels
+            .Include(m => m.TentModelComponents)
+                .ThenInclude(mc => mc.PartKind)
+            .Where(model => model.Id == id && model.IsActive)
             .FirstOrDefaultAsync();
     }
 

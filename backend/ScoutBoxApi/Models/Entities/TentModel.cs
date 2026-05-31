@@ -1,6 +1,6 @@
 namespace ScoutBoxApi.Models.Entities;
 
-public class TentShape : IHasName
+public class TentModel : IHasName
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -10,6 +10,6 @@ public class TentShape : IHasName
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
-    public ICollection<TentShapePart> TentShapeParts { get; set; } = new List<TentShapePart>();
+    public ICollection<TentModelComponent> TentModelComponents { get; set; } = new List<TentModelComponent>();
     public ICollection<Tent> Tents { get; set; } = new List<Tent>();
 }

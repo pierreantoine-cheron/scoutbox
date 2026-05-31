@@ -14,14 +14,14 @@ class TentListFilterBar extends StatelessWidget {
   final TextEditingController searchController;
   final Set<TentOverallState> selectedStates;
   final Set<int> selectedSizes;
-  final Set<String> selectedShapeIds;
+  final Set<String> selectedModelIds;
   final List<int> availableSizes;
-  final List<TentTypeFilterOption> availableShapeOptions;
+  final List<TentTypeFilterOption> availableModelOptions;
   final bool isFilteredMode;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<TentOverallState> onToggleState;
   final ValueChanged<int> onToggleSize;
-  final ValueChanged<String> onToggleShape;
+  final ValueChanged<String> onToggleModel;
   final VoidCallback onClearAll;
 
   const TentListFilterBar({
@@ -30,14 +30,14 @@ class TentListFilterBar extends StatelessWidget {
     required this.searchController,
     required this.selectedStates,
     required this.selectedSizes,
-    required this.selectedShapeIds,
+    required this.selectedModelIds,
     required this.availableSizes,
-    required this.availableShapeOptions,
+    required this.availableModelOptions,
     required this.isFilteredMode,
     required this.onSearchChanged,
     required this.onToggleState,
     required this.onToggleSize,
-    required this.onToggleShape,
+    required this.onToggleModel,
     required this.onClearAll,
   });
 
@@ -94,20 +94,20 @@ class TentListFilterBar extends StatelessWidget {
                             ],
                           ),
                         ),
-                      if (availableShapeOptions.isNotEmpty)
+                      if (availableModelOptions.isNotEmpty)
                         _DesktopCategory(
                           label: 'Type',
                           child: Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              for (final option in availableShapeOptions)
+                              for (final option in availableModelOptions)
                                 FilterChip(
                                   label: Text(option.label),
-                                  selected: selectedShapeIds.contains(
+                                  selected: selectedModelIds.contains(
                                     option.id,
                                   ),
-                                  onSelected: (_) => onToggleShape(option.id),
+                                  onSelected: (_) => onToggleModel(option.id),
                                 ),
                             ],
                           ),
@@ -163,10 +163,10 @@ class TentListFilterBar extends StatelessWidget {
   }
 
   bool get _hasSecondaryFilters =>
-      availableSizes.isNotEmpty || availableShapeOptions.isNotEmpty;
+      availableSizes.isNotEmpty || availableModelOptions.isNotEmpty;
 
   String _mobileFiltersLabel() {
-    final activeCount = selectedSizes.length + selectedShapeIds.length;
+    final activeCount = selectedSizes.length + selectedModelIds.length;
     if (activeCount == 0) {
       return 'Filtres';
     }
@@ -175,7 +175,7 @@ class TentListFilterBar extends StatelessWidget {
 
   Future<void> _openMobileFilters(BuildContext context) async {
     final sheetSelectedSizes = Set<int>.from(selectedSizes);
-    final sheetSelectedShapeIds = Set<String>.from(selectedShapeIds);
+    final sheetSelectedModelIds = Set<String>.from(selectedModelIds);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -224,7 +224,7 @@ class TentListFilterBar extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                       ],
-                      if (availableShapeOptions.isNotEmpty) ...[
+                      if (availableModelOptions.isNotEmpty) ...[
                         const Text(
                           'Type',
                           style: TextStyle(fontWeight: FontWeight.w600),
@@ -234,23 +234,23 @@ class TentListFilterBar extends StatelessWidget {
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                            for (final option in availableShapeOptions)
+                            for (final option in availableModelOptions)
                               FilterChip(
                                 label: Text(option.label),
-                                selected: sheetSelectedShapeIds.contains(
+                                selected: sheetSelectedModelIds.contains(
                                   option.id,
                                 ),
                                 onSelected: (_) {
                                   setSheetState(() {
-                                    if (sheetSelectedShapeIds.contains(
+                                    if (sheetSelectedModelIds.contains(
                                       option.id,
                                     )) {
-                                      sheetSelectedShapeIds.remove(option.id);
+                                      sheetSelectedModelIds.remove(option.id);
                                     } else {
-                                      sheetSelectedShapeIds.add(option.id);
+                                      sheetSelectedModelIds.add(option.id);
                                     }
                                   });
-                                  onToggleShape(option.id);
+                                  onToggleModel(option.id);
                                 },
                               ),
                           ],

@@ -24,7 +24,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
 
   int _currentStep = 0;
   bool _didAttemptSubmit = false;
-  bool _isRetryingShapes = false;
+  bool _isRetryingModels = false;
 
   @override
   void initState() {
@@ -69,7 +69,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
 
   @override
   Widget build(BuildContext context) {
-    final shapesState = ref.watch(tentShapesProvider);
+    final modelsState = ref.watch(tentModelsProvider);
     final creationState = ref.watch(tentCreationProvider);
     _syncControllersFromState(creationState);
 
@@ -93,7 +93,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: _currentStep == 0
-                  ? _buildShapeStep(context, shapesState, creationState)
+                  ? _buildModelStep(context, modelsState, creationState)
                   : _buildDetailsStep(context, creationState),
             ),
           ),
@@ -102,37 +102,37 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     );
   }
 
-  Widget _buildShapeStep(
+  Widget _buildModelStep(
     BuildContext context,
-    AsyncValue<List<TentShape>> shapesState,
+    AsyncValue<List<TentModel>> modelsState,
     TentCreationState creationState,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Étape 1 : choisissez une forme',
+          'Étape 1 : choisissez un modèle',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 12),
         Expanded(
-          child: shapesState.when(
+          child: modelsState.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, _) => AsyncErrorView(
-              message: 'Impossible de charger les formes de tentes.',
-              isRetrying: _isRetryingShapes,
-              onRetry: _retryShapes,
+              message: 'Impossible de charger les modèles de tentes.',
+              isRetrying: _isRetryingModels,
+              onRetry: _retryModels,
             ),
-            data: (shapes) {
-              if (shapes.isEmpty) {
-                return const _ShapesEmptyView();
+            data: (models) {
+              if (models.isEmpty) {
+                return const _ModelsEmptyView();
               }
 
-              return TentShapeSelectionGrid(
-                shapes: shapes,
-                selectedShape: creationState.selectedShape,
-                onSelect: (shape) {
-                  ref.read(tentCreationProvider.notifier).selectShape(shape);
+              return TentModelSelectionGrid(
+                models: models,
+                selectedModel: creationState.selectedModel,
+                onSelect: (model) {
+                  ref.read(tentCreationProvider.notifier).selectModel(model);
                 },
               );
             },
@@ -140,7 +140,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
         ),
         const SizedBox(height: 12),
         ElevatedButton(
-          onPressed: creationState.selectedShape == null
+          onPressed: creationState.selectedModel == null
               ? null
               : () => _goToDetailsStep(),
           child: const Text('Continuer'),
@@ -165,12 +165,12 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Card(
+          Card(
           child: ListTile(
-            title: const Text('Forme sélectionnée'),
-            subtitle: Text(creationState.selectedShape?.name ?? ''),
+            title: const Text('Modèle sélectionné'),
+            subtitle: Text(creationState.selectedModel?.name ?? ''),
             trailing: TextButton(
-              onPressed: _goToShapeStep,
+              onPressed: _goToModelStep,
               child: const Text('Modifier'),
             ),
           ),
@@ -314,7 +314,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     });
   }
 
-  void _goToShapeStep() {
+  void _goToModelStep() {
     FocusScope.of(context).unfocus();
     ref.read(tentCreationProvider.notifier).clearSubmitError();
     setState(() {
@@ -322,22 +322,22 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     });
   }
 
-  Future<void> _retryShapes() async {
-    if (_isRetryingShapes) {
+  Future<void> _retryModels() async {
+    if (_isRetryingModels) {
       return;
     }
 
     setState(() {
-      _isRetryingShapes = true;
+      _isRetryingModels = true;
     });
 
-    await ref.read(tentShapesProvider.notifier).retry();
+    await ref.read(tentModelsProvider.notifier).retry();
     if (!mounted) {
       return;
     }
 
     setState(() {
-      _isRetryingShapes = false;
+      _isRetryingModels = false;
     });
   }
 
@@ -352,13 +352,13 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
   }
 }
 
-class _ShapesEmptyView extends StatelessWidget {
-  const _ShapesEmptyView();
+class _ModelsEmptyView extends StatelessWidget {
+  const _ModelsEmptyView();
 
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('Aucune forme de tente disponible pour le moment.'),
+      child: Text('Aucun modèle de tente disponible pour le moment.'),
     );
   }
 }

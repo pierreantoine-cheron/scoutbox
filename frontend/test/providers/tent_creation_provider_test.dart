@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:client/models/tent.dart';
-import 'package:client/models/tent_shape.dart';
+import 'package:client/models/tent_model.dart';
 import 'package:client/providers/tent_creation_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/utils/constants.dart';
@@ -16,8 +16,8 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(tentCreationProvider.notifier);
-      notifier.selectShape(
-        const TentShape(
+      notifier.selectModel(
+        const TentModel(
           id: 'shape-1',
           name: 'Canadienne',
           displayOrder: 1,
@@ -35,7 +35,7 @@ void main() {
       expect(repository.createTentCallCount, equals(1));
       expect(repository.lastName, equals('Tente Alpha'));
       expect(repository.lastSize, equals(6));
-      expect(repository.lastTentShapeId, equals('shape-1'));
+      expect(repository.lastTentModelId, equals('shape-1'));
       expect(repository.lastOverallState, equals(TentOverallState.needsRepair));
       expect(repository.lastComments, equals('A verifier'));
       expect(container.read(tentCreationProvider).submitError, isNull);
@@ -53,8 +53,8 @@ void main() {
 
         final notifier = container.read(tentCreationProvider.notifier);
 
-        notifier.selectShape(
-          const TentShape(
+        notifier.selectModel(
+          const TentModel(
             id: 'shape-1',
             name: 'Canadienne',
             displayOrder: 1,
@@ -114,8 +114,8 @@ void main() {
         addTearDown(container.dispose);
 
         final notifier = container.read(tentCreationProvider.notifier);
-        notifier.selectShape(
-          const TentShape(
+        notifier.selectModel(
+          const TentModel(
             id: 'shape-1',
             name: 'Canadienne',
             displayOrder: 1,
@@ -141,8 +141,8 @@ void main() {
         'La taille doit être comprise entre 1 et 100',
       );
       await expectCodeMessage(
-        ErrorCodes.invalidTentShape,
-        'La forme de tente sélectionnée est invalide',
+        ErrorCodes.invalidTentModel,
+        'Le modèle de tente sélectionné est invalide',
       );
       await expectCodeMessage(
         ErrorCodes.invalidTentState,
@@ -161,8 +161,8 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(tentCreationProvider.notifier);
-      notifier.selectShape(
-        const TentShape(
+      notifier.selectModel(
+        const TentModel(
           id: 'shape-1',
           name: 'Canadienne',
           displayOrder: 1,
@@ -187,12 +187,12 @@ class _CapturingTentRepository extends TentRepository {
   int createTentCallCount = 0;
   String? lastName;
   int? lastSize;
-  String? lastTentShapeId;
+  String? lastTentModelId;
   TentOverallState? lastOverallState;
   String? lastComments;
 
   @override
-  Future<List<TentShape>> getTentShapes() async {
+  Future<List<TentModel>> getTentModels() async {
     return const [];
   }
 
@@ -200,14 +200,14 @@ class _CapturingTentRepository extends TentRepository {
   Future<Tent> createTent({
     required String name,
     required int size,
-    required String tentShapeId,
+    required String tentModelId,
     required TentOverallState overallState,
     String? comments,
   }) async {
     createTentCallCount++;
     lastName = name;
     lastSize = size;
-    lastTentShapeId = tentShapeId;
+    lastTentModelId = tentModelId;
     lastOverallState = overallState;
     lastComments = comments;
 
@@ -215,7 +215,7 @@ class _CapturingTentRepository extends TentRepository {
       id: 'tent-1',
       name: name,
       size: size,
-      tentShapeId: tentShapeId,
+      tentModelId: tentModelId,
       overallState: overallState,
       comments: comments,
     );
@@ -224,7 +224,7 @@ class _CapturingTentRepository extends TentRepository {
 
 class _UnexpectedFailingTentRepository extends TentRepository {
   @override
-  Future<List<TentShape>> getTentShapes() async {
+  Future<List<TentModel>> getTentModels() async {
     return const [];
   }
 
@@ -232,7 +232,7 @@ class _UnexpectedFailingTentRepository extends TentRepository {
   Future<Tent> createTent({
     required String name,
     required int size,
-    required String tentShapeId,
+    required String tentModelId,
     required TentOverallState overallState,
     String? comments,
   }) {
@@ -246,7 +246,7 @@ class _FailingTentRepository extends TentRepository {
   _FailingTentRepository({this.errorCode = ErrorCodes.tentNameExists});
 
   @override
-  Future<List<TentShape>> getTentShapes() async {
+  Future<List<TentModel>> getTentModels() async {
     return const [];
   }
 
@@ -254,7 +254,7 @@ class _FailingTentRepository extends TentRepository {
   Future<Tent> createTent({
     required String name,
     required int size,
-    required String tentShapeId,
+    required String tentModelId,
     required TentOverallState overallState,
     String? comments,
   }) {

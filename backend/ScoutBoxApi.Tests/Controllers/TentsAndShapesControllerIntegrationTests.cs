@@ -34,18 +34,18 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeToDisable = await db.TentShapes.OrderBy(x => x.DisplayOrder).FirstAsync();
+            var shapeToDisable = await db.TentModels.OrderBy(x => x.DisplayOrder).FirstAsync();
             shapeToDisable.IsActive = false;
             shapeToDisable.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
         }
 
         using var client = CreateAuthenticatedClient();
-        var response = await client.GetAsync("/api/tent-shapes");
+        var response = await client.GetAsync("/api/tent-models");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentShapeApiDto>>>();
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentModelApiDto>>>();
         Assert.NotNull(payload);
         Assert.NotNull(payload.Data);
         Assert.NotEmpty(payload.Data);
@@ -65,7 +65,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes
+            shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -77,7 +77,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = "Tente A",
             size = 6,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = "Commentaire"
         };
@@ -91,7 +91,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.NotNull(payload.Data);
         Assert.Equal("Tente A", payload.Data.Name);
         Assert.Equal(6, payload.Data.Size);
-        Assert.Equal(shapeId, payload.Data.TentShapeId);
+        Assert.Equal(shapeId, payload.Data.TentModelId);
         Assert.Equal("Good", payload.Data.OverallState);
         Assert.Equal("Commentaire", payload.Data.Comments);
 
@@ -115,7 +115,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shape = await db.TentShapes
+            var shape = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .FirstAsync();
@@ -128,7 +128,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = Guid.NewGuid(),
                 Name = tentName,
                 Size = 5,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = "Test list",
                 CreatedAt = DateTime.UtcNow,
@@ -152,8 +152,8 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.NotNull(createdTent);
         Assert.NotEqual(Guid.Empty, createdTent.Id);
         Assert.Equal(5, createdTent.Size);
-        Assert.Equal(shapeId, createdTent.TentShapeId);
-        Assert.Equal(shapeName, createdTent.TentShapeName);
+        Assert.Equal(shapeId, createdTent.TentModelId);
+        Assert.Equal(shapeName, createdTent.TentModelName);
         Assert.Equal("Good", createdTent.OverallState);
         Assert.Empty(createdTent.Parts);
     }
@@ -167,7 +167,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shape = await db.TentShapes
+            var shape = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .FirstAsync();
@@ -184,7 +184,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = $"Tente Detail {Guid.NewGuid():N}",
                 Size = 4,
-                TentShapeId = shape.Id,
+                TentModelId = shape.Id,
                 OverallState = TentOverallState.NeedsRepair,
                 Comments = "Commentaire détail",
                 CreatedAt = DateTime.UtcNow.AddDays(-1),
@@ -289,7 +289,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes
+            shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -311,7 +311,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                     Id = firstId,
                     Name = firstName,
                     Size = 4,
-                    TentShapeId = shapeId,
+                    TentModelId = shapeId,
                     OverallState = TentOverallState.Good,
                     CreatedAt = tiedCreatedAt,
                     UpdatedAt = baseTime,
@@ -323,7 +323,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                     Id = secondId,
                     Name = secondName,
                     Size = 4,
-                    TentShapeId = shapeId,
+                    TentModelId = shapeId,
                     OverallState = TentOverallState.Good,
                     CreatedAt = tiedCreatedAt,
                     UpdatedAt = baseTime,
@@ -335,7 +335,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                     Id = Guid.NewGuid(),
                     Name = thirdName,
                     Size = 4,
-                    TentShapeId = shapeId,
+                    TentModelId = shapeId,
                     OverallState = TentOverallState.Good,
                     CreatedAt = baseTime.AddMinutes(-2),
                     UpdatedAt = baseTime.AddMinutes(-1),
@@ -347,7 +347,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                     Id = fourthId,
                     Name = fourthName,
                     Size = 4,
-                    TentShapeId = shapeId,
+                    TentModelId = shapeId,
                     OverallState = TentOverallState.Good,
                     CreatedAt = tiedCreatedAt,
                     UpdatedAt = baseTime,
@@ -389,7 +389,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes
+            shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -401,7 +401,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name,
             size,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = "test"
         };
@@ -424,7 +424,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes
+            shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -436,7 +436,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = "   ",
             size = 6,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = "test"
         };
@@ -459,7 +459,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes
+            shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -471,7 +471,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = "Tente Long Comments",
             size = 6,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = new string('x', 501)
         });
@@ -492,7 +492,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes
+            shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -504,7 +504,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = "Tente Etat Invalide",
             size = 6,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "BrokenBeyondRepair",
             comments = "test"
         };
@@ -529,7 +529,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = "Tente Shape Invalide",
             size = 6,
-            tentShapeId = Guid.NewGuid(),
+            tentModelId = Guid.NewGuid(),
             overallState = "Good",
             comments = "test"
         };
@@ -541,7 +541,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
         Assert.NotNull(payload);
         Assert.False(string.IsNullOrWhiteSpace(payload.Error));
-        Assert.Equal("INVALID_TENT_SHAPE", payload.Code);
+        Assert.Equal("INVALID_TENT_MODEL", payload.Code);
     }
 
     [Fact]
@@ -553,7 +553,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes
+            shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -564,7 +564,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = Guid.NewGuid(),
                 Name = "Tente Dupliquee",
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = "seed",
                 CreatedAt = DateTime.UtcNow,
@@ -580,7 +580,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = "Tente Dupliquee",
             size = 6,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = "new"
         };
@@ -607,20 +607,20 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shape = await db.TentShapes
-                .Include(s => s.TentShapeParts)
+            var shape = await db.TentModels
+                .Include(s => s.TentModelComponents)
                 .Where(x => x.Name == "Canadienne")
                 .FirstOrDefaultAsync();
             if (shape == null || !shape.IsActive)
             {
-                shape = await db.TentShapes
-                    .Include(s => s.TentShapeParts)
-                    .Where(x => x.IsActive && x.TentShapeParts.Any())
+                shape = await db.TentModels
+                    .Include(s => s.TentModelComponents)
+                    .Where(x => x.IsActive && x.TentModelComponents.Any())
                     .OrderBy(x => x.DisplayOrder)
                     .FirstAsync();
             }
             canadienneShapeId = shape.Id;
-            expectedPartCount = shape.TentShapeParts.Count;
+            expectedPartCount = shape.TentModelComponents.Count;
         }
 
         using var client = CreateAuthenticatedClient();
@@ -628,7 +628,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = $"Tente Parts Test {Guid.NewGuid():N}",
             size = 6,
-            tentShapeId = canadienneShapeId,
+            tentModelId = canadienneShapeId,
             overallState = "Good",
             comments = null as string
         };
@@ -661,9 +661,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
-            expectedPartCount = await db.TentShapeParts
-                .CountAsync(sp => sp.TentShapeId == shapeId);
+            shapeId = await GetFirstActiveModelWithComponentsAsync(db);
+            expectedPartCount = await db.TentModelComponents
+                .CountAsync(sp => sp.TentModelId == shapeId);
         }
 
         using var client = CreateAuthenticatedClient();
@@ -671,7 +671,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = $"Tente Cabanon Test {Guid.NewGuid():N}",
             size = 8,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = null as string
         };
@@ -697,7 +697,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
 
-            var shape = new TentShape
+            var shape = new TentModel
             {
                 Id = Guid.NewGuid(),
                 Name = "Empty Shape Test",
@@ -707,7 +707,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            db.TentShapes.Add(shape);
+            db.TentModels.Add(shape);
             await db.SaveChangesAsync();
             emptyShapeId = shape.Id;
         }
@@ -717,7 +717,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = "Tente No Parts Test",
             size = 2,
-            tentShapeId = emptyShapeId,
+            tentModelId = emptyShapeId,
             overallState = "Good",
             comments = null as string
         };
@@ -742,7 +742,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
+            shapeId = await GetFirstActiveModelWithComponentsAsync(db);
         }
 
         using var client = CreateAuthenticatedClient();
@@ -750,7 +750,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = $"Tente Audit Test {Guid.NewGuid():N}",
             size = 4,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = null as string
         };
@@ -806,7 +806,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
+            shapeId = await GetFirstActiveModelWithComponentsAsync(db);
         }
 
         using var client = CreateAuthenticatedClient();
@@ -814,7 +814,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = $"Tente Order Test {Guid.NewGuid():N}",
             size = 4,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = null as string
         };
@@ -866,7 +866,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
+            shapeId = await GetFirstActiveModelWithComponentsAsync(db);
             tentsCountBefore = await db.Tents.CountAsync();
             partsCountBefore = await db.Parts.CountAsync();
 
@@ -875,7 +875,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = Guid.NewGuid(),
                 Name = uniqueName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = "seed",
                 CreatedAt = DateTime.UtcNow,
@@ -894,7 +894,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = uniqueName,
             size = 4,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = null as string
         };
@@ -927,7 +927,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await GetFirstActiveShapeWithPartsAsync(db);
+            shapeId = await GetFirstActiveModelWithComponentsAsync(db);
         }
 
         using var client = CreateAuthenticatedClient();
@@ -935,7 +935,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             name = $"Tente Compatibility Test {Guid.NewGuid():N}",
             size = 8,
-            tentShapeId = shapeId,
+            tentModelId = shapeId,
             overallState = "Good",
             comments = "Test compatibility"
         };
@@ -949,16 +949,16 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.NotNull(payload.Data);
         Assert.NotEqual(Guid.Empty, payload.Data.Id);
         Assert.Equal(8, payload.Data.Size);
-        Assert.Equal(shapeId, payload.Data.TentShapeId);
+        Assert.Equal(shapeId, payload.Data.TentModelId);
         Assert.Equal("Good", payload.Data.OverallState);
         Assert.Equal("Test compatibility", payload.Data.Comments);
         Assert.NotNull(payload.Data.Parts);
         Assert.NotEmpty(payload.Data.Parts);
     }
 
-    private static async Task<Guid> GetFirstActiveShapeWithPartsAsync(ScoutBoxDbContext db)
+    private static async Task<Guid> GetFirstActiveModelWithComponentsAsync(ScoutBoxDbContext db)
     {
-        var canadienne = await db.TentShapes
+        var canadienne = await db.TentModels
             .Where(x => x.Name == "Canadienne" && x.IsActive)
             .Select(x => x.Id)
             .FirstOrDefaultAsync();
@@ -966,8 +966,8 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         if (canadienne != Guid.Empty)
             return canadienne;
 
-        return await db.TentShapes
-            .Where(x => x.IsActive && x.TentShapeParts.Any())
+        return await db.TentModels
+            .Where(x => x.IsActive && x.TentModelComponents.Any())
             .OrderBy(x => x.DisplayOrder)
             .Select(x => x.Id)
             .FirstAsync();
@@ -1008,7 +1008,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public T Data { get; set; } = default!;
     }
 
-    private sealed class TentShapeApiDto
+    private sealed class TentModelApiDto
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -1021,8 +1021,8 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public int Size { get; set; }
-        public Guid TentShapeId { get; set; }
-        public string? TentShapeName { get; set; }
+        public Guid TentModelId { get; set; }
+        public string? TentModelName { get; set; }
         public string OverallState { get; set; } = string.Empty;
         public bool IsArchived { get; set; }
         public string? Comments { get; set; }
@@ -1056,7 +1056,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes
+            shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1068,7 +1068,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = "Tente A Modifier",
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = "Commentaire avant",
                 CreatedAt = createdAt,
@@ -1100,8 +1100,8 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.Equal(8, payload.Data.Size);
         Assert.Equal("NeedsRepair", payload.Data.OverallState);
         Assert.Equal("Commentaire après", payload.Data.Comments);
-        Assert.Equal(shapeId, payload.Data.TentShapeId);
-        Assert.NotNull(payload.Data.TentShapeName);
+        Assert.Equal(shapeId, payload.Data.TentModelId);
+        Assert.NotNull(payload.Data.TentModelName);
         Assert.True(payload.Data.UpdatedAt > createdAt);
     }
 
@@ -1114,7 +1114,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1126,7 +1126,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = $"Tente Comments Test {Guid.NewGuid():N}",
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = "Existing comment",
                 CreatedAt = DateTime.UtcNow,
@@ -1170,7 +1170,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1182,7 +1182,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = $"Tente Audit Test {Guid.NewGuid():N}",
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = originalUpdatedAt,
@@ -1231,7 +1231,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1243,7 +1243,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = existingName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = originalUpdatedAt,
@@ -1293,7 +1293,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1305,7 +1305,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = $"Tente Trim Source {Guid.NewGuid():N}",
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = DateTime.UtcNow,
@@ -1346,7 +1346,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shape = await db.TentShapes
+            var shape = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .FirstAsync();
@@ -1363,7 +1363,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = existingName,
                 Size = 4,
-                TentShapeId = shape.Id,
+                TentModelId = shape.Id,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = DateTime.UtcNow,
@@ -1477,7 +1477,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1491,7 +1491,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = $"Original Name {Guid.NewGuid():N}",
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = DateTime.UtcNow,
@@ -1505,7 +1505,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = otherTentId,
                 Name = duplicateName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = DateTime.UtcNow,
@@ -1543,7 +1543,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1555,7 +1555,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = tentName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = DateTime.UtcNow,
@@ -1598,7 +1598,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1610,7 +1610,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = originalName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = DateTime.UtcNow,
@@ -1647,7 +1647,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1659,7 +1659,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = originalName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = DateTime.UtcNow,
@@ -1696,7 +1696,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1708,7 +1708,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = originalName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = DateTime.UtcNow,
@@ -1745,7 +1745,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes
+            var shapeId = await db.TentModels
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => x.Id)
@@ -1757,7 +1757,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = originalName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = null,
                 CreatedAt = DateTime.UtcNow,
@@ -1795,7 +1795,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+            var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
 
             tentId = Guid.NewGuid();
             db.Tents.Add(new Tent
@@ -1803,7 +1803,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = $"Archive-{Guid.NewGuid():N}",
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 CreatedAt = DateTime.UtcNow.AddHours(-1),
                 UpdatedAt = DateTime.UtcNow.AddHours(-1),
@@ -1841,7 +1841,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+            var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
             firstUpdatedAt = DateTime.UtcNow.AddMinutes(-10);
             tentId = Guid.NewGuid();
             db.Tents.Add(new Tent
@@ -1849,7 +1849,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = $"Archive-idempotent-{Guid.NewGuid():N}",
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 IsArchived = true,
                 CreatedAt = firstUpdatedAt,
@@ -1884,14 +1884,14 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+            var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
 
             db.Tents.Add(new Tent
             {
                 Id = Guid.NewGuid(),
                 Name = archivedName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 IsArchived = true,
                 CreatedAt = DateTime.UtcNow,
@@ -1904,7 +1904,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = Guid.NewGuid(),
                 Name = activeName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 IsArchived = false,
                 CreatedAt = DateTime.UtcNow,
@@ -1961,7 +1961,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+            var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
 
             tentId = Guid.NewGuid();
             db.Tents.Add(new Tent
@@ -1969,7 +1969,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 Id = tentId,
                 Name = tentName,
                 Size = 4,
-                TentShapeId = shapeId,
+                TentModelId = shapeId,
                 OverallState = TentOverallState.Good,
                 Comments = "Comments on archived",
                 IsArchived = true,
@@ -2068,7 +2068,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+            shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         }
 
         using (var client = CreateAuthenticatedClient())
@@ -2077,7 +2077,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
             {
                 name = $"History-Test-{Guid.NewGuid():N}",
                 size = 4,
-                tentShapeId = shapeId,
+                tentModelId = shapeId,
                 overallState = "Good"
             });
             createResponse.EnsureSuccessStatusCode();
@@ -2130,14 +2130,14 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
             using (var scope = _factory.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-                shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+                shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
             }
 
             var createResponse = await client.PostAsJsonAsync("/api/tents", new
             {
                 name = $"History-Parts-{Guid.NewGuid():N}",
                 size = 4,
-                tentShapeId = shapeId,
+                tentModelId = shapeId,
                 overallState = "Good"
             });
             createResponse.EnsureSuccessStatusCode();
@@ -2179,7 +2179,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+            shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         }
 
         DataEnvelope<TentApiDto>? tent1Dto = null;
@@ -2189,7 +2189,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
             {
                 name = $"History-Other-1-{Guid.NewGuid():N}",
                 size = 4,
-                tentShapeId = shapeId,
+                tentModelId = shapeId,
                 overallState = "Good"
             });
             create1.EnsureSuccessStatusCode();
@@ -2200,7 +2200,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
             {
                 name = $"History-Other-2-{Guid.NewGuid():N}",
                 size = 4,
-                tentShapeId = shapeId,
+                tentModelId = shapeId,
                 overallState = "Good"
             });
             create2.EnsureSuccessStatusCode();
@@ -2239,7 +2239,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+            shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         }
 
         using (var client = CreateAuthenticatedClient())
@@ -2248,7 +2248,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
             {
                 name = $"History-Archived-{Guid.NewGuid():N}",
                 size = 4,
-                tentShapeId = shapeId,
+                tentModelId = shapeId,
                 overallState = "Good"
             });
             createResponse.EnsureSuccessStatusCode();
@@ -2282,7 +2282,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            shapeId = await db.TentShapes.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+            shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         }
 
         using (var client = CreateAuthenticatedClient())
@@ -2291,7 +2291,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
             {
                 name = $"History-Filter-{Guid.NewGuid():N}",
                 size = 4,
-                tentShapeId = shapeId,
+                tentModelId = shapeId,
                 overallState = "Good"
             });
             createResponse.EnsureSuccessStatusCode();

@@ -22,9 +22,9 @@ public class TentService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<TentShapeDto>> GetActiveShapesAsync()
+    public async Task<IReadOnlyList<TentModelDto>> GetActiveModelsAsync()
     {
-        return await _repo.GetActiveShapesAsync();
+        return await _repo.GetActiveModelsAsync();
     }
 
     public async Task<IReadOnlyList<TentDto>> GetTentsAsync()
@@ -50,9 +50,9 @@ public class TentService
             out var validated);
         if (validationError != null) return (null, validationError);
 
-        var shape = await _repo.GetActiveTentShapeByIdAsync(request.TentShapeId);
-        if (shape == null)
-            return (null, new ErrorResponse("Tent shape does not exist", "INVALID_TENT_SHAPE"));
+        var model = await _repo.GetActiveTentModelByIdAsync(request.TentModelId);
+        if (model == null)
+            return (null, new ErrorResponse("Tent model does not exist", "INVALID_TENT_MODEL"));
 
         if (await _repo.HasDuplicateTentNameAsync(validated.Name))
             return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"));
@@ -65,7 +65,7 @@ public class TentService
             {
                 Name = validated.Name,
                 Size = validated.Size,
-                TentShapeId = request.TentShapeId,
+                TentModelId = request.TentModelId,
                 OverallState = validated.OverallState,
                 Comments = validated.Comments,
             };
@@ -73,19 +73,19 @@ public class TentService
 
             _repo.AddTent(tent);
 
-            var orderedShapeParts = shape.TentShapeParts
-                .OrderBy(sp => sp.PartKind.DisplayOrder)
-                .ThenBy(sp => sp.PartKindId)
+            var orderedModelComponents = model.TentModelComponents
+                .OrderBy(mc => mc.PartKind.DisplayOrder)
+                .ThenBy(mc => mc.PartKindId)
                 .ToList();
 
-            var createdParts = new List<Part>(orderedShapeParts.Count);
-            foreach (var shapePart in orderedShapeParts)
+            var createdParts = new List<Part>(orderedModelComponents.Count);
+            foreach (var component in orderedModelComponents)
             {
                 var part = new Part
                 {
                     TentId = tent.Id,
-                    PartKindId = shapePart.PartKindId,
-                    PartKind = shapePart.PartKind,
+                    PartKindId = component.PartKindId,
+                    PartKind = component.PartKind,
                     State = PartState.Good,
                     Comments = null,
                 };
@@ -104,7 +104,7 @@ public class TentService
                     ["name"] = tent.Name,
                     ["size"] = tent.Size,
                     ["overallState"] = tent.OverallState.ToString(),
-                    ["tentShapeId"] = tent.TentShapeId,
+                    ["tentModelId"] = tent.TentModelId,
                     ["partCount"] = createdParts.Count
                 });
 
@@ -120,12 +120,12 @@ public class TentService
             }
 
             await _repo.CommitTransactionAsync();
-            return (ToTentDto(tent, ToPartDtos(createdParts), shape.Name), null);
+            return (ToTentDto(tent, ToPartDtos(createdParts), model.Name), null);
         }
         catch (Exception ex)
         {
             await _repo.RollbackTransactionAsync();
-            _logger.LogError(ex, "Failed to create tent {TentName} with shape {TentShapeId} for user {UserId}", validated.Name, request.TentShapeId, userId);
+            _logger.LogError(ex, "Failed to create tent {TentName} with model {TentModelId} for user {UserId}", validated.Name, request.TentModelId, userId);
             throw;
         }
     }
@@ -141,7 +141,6 @@ public class TentService
             out var validated);
         if (validationError != null) return (null, validationError, false);
 
-        // Need tracking entity for update
         var tent = await _repo.GetTentByIdForUpdateAsync(id);
         if (tent == null) return (null, null, true);
 
@@ -285,14 +284,14 @@ public class TentService
             .ToList();
     }
 
-    private static TentDto ToTentDto(Tent tent, IReadOnlyList<PartDto> parts, string? shapeName = null)
+    private static TentDto ToTentDto(Tent tent, IReadOnlyList<PartDto> parts, string? modelName = null)
     {
         return new TentDto(
             tent.Id,
             tent.Name,
             tent.Size,
-            tent.TentShapeId,
-            shapeName ?? tent.TentShape?.Name,
+            tent.TentModelId,
+            modelName ?? tent.TentModel?.Name,
             tent.OverallState.ToString(),
             tent.IsArchived,
             tent.Comments,

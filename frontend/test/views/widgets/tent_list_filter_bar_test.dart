@@ -8,13 +8,13 @@ void main() {
     late TextEditingController searchController;
     late Set<TentOverallState> selectedStates;
     late Set<int> selectedSizes;
-    late Set<String> selectedShapeIds;
+    late Set<String> selectedModelIds;
 
     setUp(() {
       searchController = TextEditingController();
       selectedStates = {};
       selectedSizes = {};
-      selectedShapeIds = {};
+      selectedModelIds = {};
     });
 
     tearDown(() {
@@ -29,9 +29,9 @@ void main() {
             searchController: searchController,
             selectedStates: selectedStates,
             selectedSizes: selectedSizes,
-            selectedShapeIds: selectedShapeIds,
+            selectedModelIds: selectedModelIds,
             availableSizes: const [4, 6, 8],
-            availableShapeOptions: const [
+            availableModelOptions: const [
               TentTypeFilterOption(id: 'shape-1', label: 'Canadienne'),
               TentTypeFilterOption(id: 'shape-2', label: 'Cabanon'),
             ],
@@ -39,7 +39,7 @@ void main() {
             onSearchChanged: (_) {},
             onToggleState: (_) {},
             onToggleSize: (_) {},
-            onToggleShape: (_) {},
+            onToggleModel: (_) {},
             onClearAll: () {},
           ),
         ),
@@ -88,14 +88,14 @@ void main() {
               searchController: searchController,
               selectedStates: selectedStates,
               selectedSizes: selectedSizes,
-              selectedShapeIds: selectedShapeIds,
+              selectedModelIds: selectedModelIds,
               availableSizes: const [],
-              availableShapeOptions: const [],
+              availableModelOptions: const [],
               isFilteredMode: false,
               onSearchChanged: (_) {},
               onToggleState: (s) => toggledState = s,
               onToggleSize: (_) {},
-              onToggleShape: (_) {},
+              onToggleModel: (_) {},
               onClearAll: () {},
             ),
           ),
@@ -117,14 +117,14 @@ void main() {
               searchController: searchController,
               selectedStates: const {TentOverallState.good},
               selectedSizes: selectedSizes,
-              selectedShapeIds: selectedShapeIds,
+              selectedModelIds: selectedModelIds,
               availableSizes: const [],
-              availableShapeOptions: const [],
+              availableModelOptions: const [],
               isFilteredMode: true,
               onSearchChanged: (_) {},
               onToggleState: (_) {},
               onToggleSize: (_) {},
-              onToggleShape: (_) {},
+              onToggleModel: (_) {},
               onClearAll: () => cleared = true,
             ),
           ),
@@ -170,14 +170,14 @@ void main() {
               searchController: searchController,
               selectedStates: selectedStates,
               selectedSizes: selectedSizes,
-              selectedShapeIds: selectedShapeIds,
+              selectedModelIds: selectedModelIds,
               availableSizes: const [],
-              availableShapeOptions: const [],
+              availableModelOptions: const [],
               isFilteredMode: false,
               onSearchChanged: (v) => searchValue = v,
               onToggleState: (_) {},
               onToggleSize: (_) {},
-              onToggleShape: (_) {},
+              onToggleModel: (_) {},
               onClearAll: () {},
             ),
           ),

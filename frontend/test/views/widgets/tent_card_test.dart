@@ -6,15 +6,15 @@ import 'package:client/views/widgets/tent_card.dart';
 Tent _sampleTent({
   String name = 'Tente Test',
   int size = 6,
-  String? shapeName = 'Canadienne',
+  String? modelName = 'Canadienne',
   TentOverallState state = TentOverallState.good,
 }) {
   return Tent(
     id: 'tent-1',
     name: name,
     size: size,
-    tentShapeId: 'shape-1',
-    tentShapeName: shapeName,
+    tentModelId: 'shape-1',
+    tentModelName: modelName,
     overallState: state,
     isArchived: false,
     comments: null,
@@ -139,7 +139,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: TentCard(
-              tent: _sampleTent(shapeName: ''),
+              tent: _sampleTent(modelName: ''),
               onTap: () {},
             ),
           ),

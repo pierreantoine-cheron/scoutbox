@@ -64,8 +64,8 @@ class _SuccessTentRepository extends TentRepository {
       id: 't-1',
       name: 'Tente détail',
       size: 4,
-      tentShapeId: 'shape-1',
-      tentShapeName: 'Canadienne',
+      tentModelId: 'shape-1',
+      tentModelName: 'Canadienne',
       overallState: TentOverallState.good,
       comments: null,
     );

@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/providers/auth_provider.dart';
 import 'package:client/models/tent.dart';
-import 'package:client/models/tent_shape.dart';
+import 'package:client/models/tent_model.dart';
 import 'package:client/providers/app_bar_config_provider.dart';
 import 'package:client/providers/tent_list_provider.dart';
-import 'package:client/providers/tent_shapes_provider.dart';
+import 'package:client/providers/tent_models_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/views/screens/tent_list_screen.dart';
 import 'package:client/views/widgets/async_error_view.dart';
@@ -25,8 +25,8 @@ void main() {
                   id: '1',
                   name: 'Tente A',
                   size: 6,
-                  tentShapeId: 'shape-1',
-                  tentShapeName: 'Canadienne',
+                  tentModelId: 'shape-1',
+                  tentModelName: 'Canadienne',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
@@ -86,12 +86,12 @@ void main() {
         ProviderScope(
           overrides: [
             tentRepositoryProvider.overrideWithValue(
-              _TentListAndShapesTestRepository(),
+              _TentListAndModelsTestRepository(),
             ),
             tentListProvider.overrideWith(
               () => _TentListTestNotifier(const []),
             ),
-            tentShapesProvider.overrideWith(() => _TentShapesTestNotifier()),
+            tentModelsProvider.overrideWith(() => _TentModelsTestNotifier()),
           ],
           child: const MaterialApp(home: _TentListTestShell()),
         ),
@@ -103,7 +103,7 @@ void main() {
       await tester.tap(find.text('Créer une tente'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Étape 1 : choisissez une forme'), findsOneWidget);
+      expect(find.text('Étape 1 : choisissez un modèle'), findsOneWidget);
     });
 
     testWidgets('renders desktop table for wide screens', (
@@ -126,7 +126,7 @@ void main() {
       expect(find.text('Nom'), findsOneWidget);
       expect(find.text('Etat'), findsWidgets);
       expect(find.text('Taille'), findsWidgets);
-      expect(find.text('Forme'), findsOneWidget);
+      expect(find.text('Modèle'), findsOneWidget);
       expect(find.text('Derniere mise a jour'), findsOneWidget);
       expect(find.text('Tente Atlas'), findsOneWidget);
       expect(find.text('Forme: Canadienne'), findsNothing);
@@ -146,8 +146,8 @@ void main() {
                   id: 't1',
                   name: 'Zulu',
                   size: 2,
-                  tentShapeId: 'shape-1',
-                  tentShapeName: 'Tipi',
+                  tentModelId: 'shape-1',
+                  tentModelName: 'Tipi',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
@@ -155,8 +155,8 @@ void main() {
                   id: 't2',
                   name: 'Alpha',
                   size: 4,
-                  tentShapeId: 'shape-2',
-                  tentShapeName: 'Canadienne',
+                  tentModelId: 'shape-2',
+                  tentModelName: 'Canadienne',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
@@ -219,7 +219,7 @@ void main() {
                   id: 't1',
                   name: 'Alpha',
                   size: 2,
-                  tentShapeId: 'shape-1',
+                  tentModelId: 'shape-1',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
@@ -227,8 +227,8 @@ void main() {
                   id: 't2',
                   name: 'Bravo',
                   size: 4,
-                  tentShapeId: 'shape-2',
-                  tentShapeName: 'Tipi',
+                  tentModelId: 'shape-2',
+                  tentModelName: 'Tipi',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
@@ -240,13 +240,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Forme'));
+      await tester.tap(find.text('Modèle'));
       await tester.pumpAndSettle();
 
       var textOrder = _extractTextData(tester);
       expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
 
-      await tester.tap(find.text('Forme'));
+      await tester.tap(find.text('Modèle'));
       await tester.pumpAndSettle();
 
       textOrder = _extractTextData(tester);
@@ -267,8 +267,8 @@ void main() {
                   id: 't1',
                   name: 'Alpha',
                   size: 2,
-                  tentShapeId: 'shape-1',
-                  tentShapeName: 'Tipi',
+                  tentModelId: 'shape-1',
+                  tentModelName: 'Tipi',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
@@ -276,8 +276,8 @@ void main() {
                   id: 't2',
                   name: 'Bravo',
                   size: 4,
-                  tentShapeId: 'shape-2',
-                  tentShapeName: 'Canadienne',
+                  tentModelId: 'shape-2',
+                  tentModelName: 'Canadienne',
                   overallState: TentOverallState.good,
                   comments: null,
                   updatedAt: DateTime.utc(2026, 4, 12, 10, 30),
@@ -312,7 +312,7 @@ void main() {
         ProviderScope(
           overrides: [
             tentRepositoryProvider.overrideWithValue(
-              _TentListAndShapesTestRepository(),
+              _TentListAndModelsTestRepository(),
             ),
             tentListProvider.overrideWith(
               () => _TentListTestNotifier(_buildSampleTents()),
@@ -358,7 +358,7 @@ void main() {
         ProviderScope(
           overrides: [
             tentRepositoryProvider.overrideWithValue(
-              _TentListAndShapesTestRepository(),
+              _TentListAndModelsTestRepository(),
             ),
             tentListProvider.overrideWith(
               () => _TentListTestNotifier(_buildSampleTents()),
@@ -652,8 +652,8 @@ void main() {
               () =>
                   _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
-            tentShapesProvider.overrideWith(
-              () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+            tentModelsProvider.overrideWith(
+              () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
           child: const MaterialApp(home: TentListScreen()),
@@ -682,8 +682,8 @@ void main() {
               () =>
                   _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
-            tentShapesProvider.overrideWith(
-              () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+            tentModelsProvider.overrideWith(
+              () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
           child: const MaterialApp(home: TentListScreen()),
@@ -707,8 +707,8 @@ void main() {
                   _buildSecondaryFilteringSampleTents(),
                 ),
               ),
-              tentShapesProvider.overrideWith(
-                () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+              tentModelsProvider.overrideWith(
+                () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
               ),
             ],
             child: const MaterialApp(home: TentListScreen()),
@@ -748,8 +748,8 @@ void main() {
                   _buildSecondaryFilteringSampleTents(),
                 ),
               ),
-              tentShapesProvider.overrideWith(
-                () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+              tentModelsProvider.overrideWith(
+                () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
               ),
             ],
             child: const MaterialApp(home: TentListScreen()),
@@ -783,8 +783,8 @@ void main() {
               () =>
                   _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
-            tentShapesProvider.overrideWith(
-              () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+            tentModelsProvider.overrideWith(
+              () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
           child: const MaterialApp(home: TentListScreen()),
@@ -814,8 +814,8 @@ void main() {
               () =>
                   _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
-            tentShapesProvider.overrideWith(
-              () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+            tentModelsProvider.overrideWith(
+              () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
           child: const MaterialApp(home: TentListScreen()),
@@ -852,8 +852,8 @@ void main() {
             tentListProvider.overrideWith(
               () => _TentListTestNotifier(_buildManyFilterOptionsTents()),
             ),
-            tentShapesProvider.overrideWith(
-              () => _TentShapesLoadedNotifier(_buildManyShapeOptionsMetadata()),
+            tentModelsProvider.overrideWith(
+              () => _TentModelsLoadedNotifier(_buildManyModelOptionsMetadata()),
             ),
           ],
           child: const MaterialApp(home: TentListScreen()),
@@ -880,8 +880,8 @@ void main() {
               () =>
                   _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
-            tentShapesProvider.overrideWith(
-              () => _TentShapesLoadedNotifier(_buildShapeOptionsMetadata()),
+            tentModelsProvider.overrideWith(
+              () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
           child: const MaterialApp(home: TentListScreen()),
@@ -919,7 +919,7 @@ void main() {
               () =>
                   _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
-            tentShapesProvider.overrideWith(() => _TentShapesFailingNotifier()),
+            tentModelsProvider.overrideWith(() => _TentModelsFailingNotifier()),
           ],
           child: const MaterialApp(home: TentListScreen()),
         ),
@@ -945,7 +945,7 @@ void main() {
               () =>
                   _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
-            tentShapesProvider.overrideWith(() => _TentShapesLoadingNotifier()),
+            tentModelsProvider.overrideWith(() => _TentModelsLoadingNotifier()),
           ],
           child: const MaterialApp(home: TentListScreen()),
         ),
@@ -972,9 +972,9 @@ void main() {
               () =>
                   _TentListTestNotifier(_buildSecondaryFilteringSampleTents()),
             ),
-            tentShapesProvider.overrideWith(
-              () => _TentShapesLoadedNotifier(const [
-                TentShape(
+            tentModelsProvider.overrideWith(
+              () => _TentModelsLoadedNotifier(const [
+                TentModel(
                   id: 'shape-1',
                   name: 'Canadienne',
                   displayOrder: 1,
@@ -1003,7 +1003,7 @@ void main() {
         ProviderScope(
           overrides: [
             tentRepositoryProvider.overrideWithValue(
-              _TentListAndShapesTestRepository(),
+              _TentListAndModelsTestRepository(),
             ),
             tentListProvider.overrideWith(
               () => _TentListTestNotifier(const [
@@ -1011,14 +1011,14 @@ void main() {
                   id: '1',
                   name: 'Tente A',
                   size: 6,
-                  tentShapeId: 'shape-1',
-                  tentShapeName: 'Canadienne',
+                  tentModelId: 'shape-1',
+                  tentModelName: 'Canadienne',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
               ]),
             ),
-            tentShapesProvider.overrideWith(() => _TentShapesTestNotifier()),
+            tentModelsProvider.overrideWith(() => _TentModelsTestNotifier()),
           ],
           child: const MaterialApp(home: _TentListTestShell()),
         ),
@@ -1028,7 +1028,7 @@ void main() {
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
 
-      expect(find.text('Étape 1 : choisissez une forme'), findsOneWidget);
+      expect(find.text('Étape 1 : choisissez un modèle'), findsOneWidget);
     });
   });
 }
@@ -1072,8 +1072,8 @@ List<Tent> _buildSampleTents() {
       id: 't1',
       name: 'Tente Atlas',
       size: 6,
-      tentShapeId: 'shape-1',
-      tentShapeName: 'Canadienne',
+      tentModelId: 'shape-1',
+      tentModelName: 'Canadienne',
       overallState: TentOverallState.needsRepair,
       comments: null,
     ),
@@ -1086,8 +1086,8 @@ List<Tent> _buildFilteringSampleTents() {
       id: 't1',
       name: 'Tente Atlas',
       size: 6,
-      tentShapeId: 'shape-1',
-      tentShapeName: 'Canadienne',
+      tentModelId: 'shape-1',
+      tentModelName: 'Canadienne',
       overallState: TentOverallState.good,
       comments: null,
     ),
@@ -1095,8 +1095,8 @@ List<Tent> _buildFilteringSampleTents() {
       id: 't2',
       name: 'Tente Boreale',
       size: 4,
-      tentShapeId: 'shape-2',
-      tentShapeName: 'Tipi',
+      tentModelId: 'shape-2',
+      tentModelName: 'Tipi',
       overallState: TentOverallState.needsRepair,
       comments: null,
     ),
@@ -1109,8 +1109,8 @@ List<Tent> _buildSecondaryFilteringSampleTents() {
       id: 't1',
       name: 'Tente Atlas',
       size: 6,
-      tentShapeId: 'shape-1',
-      tentShapeName: 'Canadienne',
+      tentModelId: 'shape-1',
+      tentModelName: 'Canadienne',
       overallState: TentOverallState.good,
       comments: null,
     ),
@@ -1118,8 +1118,8 @@ List<Tent> _buildSecondaryFilteringSampleTents() {
       id: 't2',
       name: 'Tente Boreale',
       size: 4,
-      tentShapeId: 'shape-2',
-      tentShapeName: 'Tipi',
+      tentModelId: 'shape-2',
+      tentModelName: 'Tipi',
       overallState: TentOverallState.needsRepair,
       comments: null,
     ),
@@ -1127,8 +1127,8 @@ List<Tent> _buildSecondaryFilteringSampleTents() {
       id: 't3',
       name: 'Tente Cerise',
       size: 2,
-      tentShapeId: 'shape-3',
-      tentShapeName: 'Dome',
+      tentModelId: 'shape-3',
+      tentModelName: 'Dome',
       overallState: TentOverallState.unusable,
       comments: null,
     ),
@@ -1142,30 +1142,30 @@ List<Tent> _buildManyFilterOptionsTents() {
         id: 't$index',
         name: 'Tente $index',
         size: index,
-        tentShapeId: 'shape-$index',
-        tentShapeName: 'Type $index',
+        tentModelId: 'shape-$index',
+        tentModelName: 'Type $index',
         overallState: TentOverallState.good,
         comments: null,
       ),
   ];
 }
 
-List<TentShape> _buildShapeOptionsMetadata() {
+List<TentModel> _buildModelOptionsMetadata() {
   return const [
-    TentShape(
+    TentModel(
       id: 'shape-1',
       name: 'Canadienne',
       displayOrder: 1,
       isActive: true,
     ),
-    TentShape(id: 'shape-2', name: 'Tipi', displayOrder: 2, isActive: true),
+    TentModel(id: 'shape-2', name: 'Tipi', displayOrder: 2, isActive: true),
   ];
 }
 
-List<TentShape> _buildManyShapeOptionsMetadata() {
+List<TentModel> _buildManyModelOptionsMetadata() {
   return [
     for (var index = 1; index <= 12; index++)
-      TentShape(
+      TentModel(
         id: 'shape-$index',
         name: 'Type $index',
         displayOrder: index,
@@ -1174,7 +1174,7 @@ List<TentShape> _buildManyShapeOptionsMetadata() {
   ];
 }
 
-class _TentListAndShapesTestRepository extends TentRepository {
+class _TentListAndModelsTestRepository extends TentRepository {
   @override
   Future<List<Tent>> getTents() async {
     return const [];
@@ -1186,8 +1186,8 @@ class _TentListAndShapesTestRepository extends TentRepository {
       id: id,
       name: 'Tente Atlas',
       size: 6,
-      tentShapeId: 'shape-1',
-      tentShapeName: 'Canadienne',
+      tentModelId: 'shape-1',
+      tentModelName: 'Canadienne',
       overallState: TentOverallState.good,
       comments: null,
       createdAt: DateTime.utc(2026, 4, 10, 9),
@@ -1226,28 +1226,28 @@ class _RefreshTrackingTentListNotifier extends TentListNotifier {
   }
 }
 
-class _TentShapesTestNotifier extends TentShapesNotifier {
+class _TentModelsTestNotifier extends TentModelsNotifier {
   @override
-  Future<List<TentShape>> build() async => const [];
+  Future<List<TentModel>> build() async => const [];
 }
 
-class _TentShapesLoadedNotifier extends TentShapesNotifier {
-  final List<TentShape> shapes;
+class _TentModelsLoadedNotifier extends TentModelsNotifier {
+  final List<TentModel> shapes;
 
-  _TentShapesLoadedNotifier(this.shapes);
+  _TentModelsLoadedNotifier(this.shapes);
 
   @override
-  Future<List<TentShape>> build() async => shapes;
+  Future<List<TentModel>> build() async => shapes;
 }
 
-class _TentShapesFailingNotifier extends TentShapesNotifier {
+class _TentModelsFailingNotifier extends TentModelsNotifier {
   @override
-  Future<List<TentShape>> build() {
+  Future<List<TentModel>> build() {
     throw Exception('network');
   }
 }
 
-class _TentShapesLoadingNotifier extends TentShapesNotifier {
+class _TentModelsLoadingNotifier extends TentModelsNotifier {
   @override
-  Future<List<TentShape>> build() => Completer<List<TentShape>>().future;
+  Future<List<TentModel>> build() => Completer<List<TentModel>>().future;
 }

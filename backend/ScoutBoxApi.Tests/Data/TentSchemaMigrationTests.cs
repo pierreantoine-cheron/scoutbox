@@ -43,8 +43,8 @@ public class TentSchemaMigrationTests : IDisposable
         }
 
         Assert.Contains("Tents", tableNames);
-        Assert.Contains("TentShapes", tableNames);
-        Assert.Contains("TentShapeParts", tableNames);
+        Assert.Contains("TentModels", tableNames);
+        Assert.Contains("TentModelComponents", tableNames);
         Assert.Contains("PartKinds", tableNames);
         Assert.Contains("Parts", tableNames);
     }
@@ -57,7 +57,7 @@ public class TentSchemaMigrationTests : IDisposable
             .Select(x => x.Name)
             .ToListAsync();
 
-        var tentShapes = await _db.TentShapes
+        var tentModels = await _db.TentModels
             .OrderBy(x => x.DisplayOrder)
             .Select(x => x.Name)
             .ToListAsync();
@@ -79,25 +79,27 @@ public class TentSchemaMigrationTests : IDisposable
             "Cabanon",
             "Tipi",
             "Marabout"
-        }, tentShapes);
+        }, tentModels);
 
-        var shapePartCount = await _db.TentShapeParts.CountAsync();
-        Assert.Equal(28, shapePartCount);
+        var modelComponentCount = await _db.TentModelComponents.CountAsync();
+        Assert.Equal(28, modelComponentCount);
     }
 
     [Fact]
-    public async Task Constraints_RejectInvalidDisplayOrder()
+    public async Task Constraints_RejectInvalidName()
     {
-        _db.PartKinds.Add(new PartKind
+        _db.TentModels.Add(new TentModel
         {
             Id = Guid.NewGuid(),
-            Name = "invalid-order",
-            IsStandard = false,
-            DisplayOrder = 0,
-            CreatedAt = DateTime.UtcNow
+            Name = "   ",
+            Description = null,
+            IsActive = true,
+            DisplayOrder = 99,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         });
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _db.SaveChangesAsync());
     }
 
     [Fact]
@@ -113,7 +115,7 @@ public class TentSchemaMigrationTests : IDisposable
         };
         _db.Users.Add(user);
 
-        var shapeId = await _db.TentShapes
+        var shapeId = await _db.TentModels
             .OrderBy(x => x.DisplayOrder)
             .Select(x => x.Id)
             .FirstAsync();
@@ -124,7 +126,7 @@ public class TentSchemaMigrationTests : IDisposable
             Name = "Test Tent",
             OverallState = TentOverallState.Good,
             Size = 6,
-            TentShapeId = shapeId,
+            TentModelId = shapeId,
             Comments = "ok",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
@@ -153,7 +155,7 @@ public class TentSchemaMigrationTests : IDisposable
         };
         _db.Users.Add(user);
 
-        var shapeId = await _db.TentShapes
+        var shapeId = await _db.TentModels
             .OrderBy(x => x.DisplayOrder)
             .Select(x => x.Id)
             .FirstAsync();
@@ -170,7 +172,7 @@ public class TentSchemaMigrationTests : IDisposable
             Name = "Duplicate PartKind Tent",
             OverallState = TentOverallState.Good,
             Size = 6,
-            TentShapeId = shapeId,
+            TentModelId = shapeId,
             CreatedAt = now,
             UpdatedAt = now,
             CreatedByUserId = user.Id,

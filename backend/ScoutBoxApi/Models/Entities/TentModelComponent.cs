@@ -1,11 +1,12 @@
 namespace ScoutBoxApi.Models.Entities;
 
-public class TentShapePart
+public class TentModelComponent
 {
     public Guid Id { get; set; }
-    public Guid TentShapeId { get; set; }
+    public Guid TentModelId { get; set; }
     public Guid PartKindId { get; set; }
+    public bool IsStandard { get; set; }
 
-    public TentShape TentShape { get; set; } = null!;
+    public TentModel TentModel { get; set; } = null!;
     public PartKind PartKind { get; set; } = null!;
 }

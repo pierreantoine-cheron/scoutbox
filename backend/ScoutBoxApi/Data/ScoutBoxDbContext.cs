@@ -14,8 +14,8 @@ public class ScoutBoxDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<AuditEvent> AuditEvents { get; set; }
     public DbSet<Tent> Tents { get; set; }
-    public DbSet<TentShape> TentShapes { get; set; }
-    public DbSet<TentShapePart> TentShapeParts { get; set; }
+    public DbSet<TentModel> TentModels { get; set; }
+    public DbSet<TentModelComponent> TentModelComponents { get; set; }
     public DbSet<PartKind> PartKinds { get; set; }
     public DbSet<Part> Parts { get; set; }
 
@@ -57,7 +57,6 @@ public class ScoutBoxDbContext : DbContext
 
     private static async Task SeedAdminInviteAsync(DbContext context, CancellationToken cancellationToken)
     {
-        // Only create admin invite if no invites exist (first-time setup)
         if (!context.Set<Invite>().Any())
         {
             var adminInvite = new Invite
@@ -111,7 +110,6 @@ public class ScoutBoxDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // User configuration
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -122,11 +120,9 @@ public class ScoutBoxDbContext : DbContext
             entity.HasIndex(e => e.Username).IsUnique();
             entity.HasIndex(e => e.IsDeleted);
 
-            // Soft delete filter - exclude deleted users by default
             entity.HasQueryFilter(e => !e.IsDeleted);
         });
 
-        // Invite configuration
         modelBuilder.Entity<Invite>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -148,7 +144,6 @@ public class ScoutBoxDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // RefreshToken configuration
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -165,7 +160,6 @@ public class ScoutBoxDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // AuditEvent configuration
         modelBuilder.Entity<AuditEvent>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -174,13 +168,11 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.TargetEntityType).HasMaxLength(50);
             entity.Property(e => e.MetadataJson);
 
-            // Foreign key to User with SetNull to preserve history when user is soft-deleted
             entity.HasOne(e => e.Actor)
                 .WithMany()
                 .HasForeignKey(e => e.ActorUserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Indexes for reporting queries
             entity.HasIndex(e => e.OccurredAt);
             entity.HasIndex(e => e.ActorUserId);
             entity.HasIndex(e => e.Action);
@@ -203,9 +195,9 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.UpdatedByUserId).IsRequired();
             entity.Property(e => e.IsArchived).IsRequired().HasDefaultValue(false);
 
-            entity.HasOne(e => e.TentShape)
+            entity.HasOne(e => e.TentModel)
                 .WithMany(e => e.Tents)
-                .HasForeignKey(e => e.TentShapeId)
+                .HasForeignKey(e => e.TentModelId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.CreatedByUser)
@@ -219,14 +211,14 @@ public class ScoutBoxDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(e => e.CreatedAt);
-            entity.HasIndex(e => e.TentShapeId);
+            entity.HasIndex(e => e.TentModelId);
             entity.HasIndex(e => e.CreatedByUserId);
             entity.HasIndex(e => e.UpdatedByUserId);
             entity.HasIndex(e => e.IsArchived);
             entity.HasIndex(e => e.Name).IsUnique();
         });
 
-        modelBuilder.Entity<TentShape>(entity =>
+        modelBuilder.Entity<TentModel>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
@@ -245,7 +237,6 @@ public class ScoutBoxDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.IsStandard).IsRequired();
             entity.Property(e => e.DisplayOrder).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
@@ -255,22 +246,23 @@ public class ScoutBoxDbContext : DbContext
             entity.HasIndex(e => e.CreatedAt);
         });
 
-        modelBuilder.Entity<TentShapePart>(entity =>
+        modelBuilder.Entity<TentModelComponent>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.IsStandard).IsRequired();
 
-            entity.HasOne(e => e.TentShape)
-                .WithMany(e => e.TentShapeParts)
-                .HasForeignKey(e => e.TentShapeId)
+            entity.HasOne(e => e.TentModel)
+                .WithMany(e => e.TentModelComponents)
+                .HasForeignKey(e => e.TentModelId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.PartKind)
-                .WithMany(e => e.TentShapeParts)
+                .WithMany(e => e.TentModelComponents)
                 .HasForeignKey(e => e.PartKindId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasIndex(e => new { e.TentShapeId, e.PartKindId }).IsUnique();
-            entity.HasIndex(e => e.TentShapeId);
+            entity.HasIndex(e => new { e.TentModelId, e.PartKindId }).IsUnique();
+            entity.HasIndex(e => e.TentModelId);
             entity.HasIndex(e => e.PartKindId);
         });
 
@@ -315,4 +307,3 @@ public class ScoutBoxDbContext : DbContext
         modelBuilder.SeedTentReferenceData();
     }
 }
-

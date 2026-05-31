@@ -205,7 +205,7 @@ class _HeaderSection extends ConsumerWidget {
                     ),
                     _InfoChip(
                       icon: Icons.terrain_outlined,
-                      label: _shapeLabel(tent.tentShapeName),
+                      label: _modelLabel(tent.tentModelName),
                     ),
                   ],
                 ),
@@ -219,7 +219,7 @@ class _HeaderSection extends ConsumerWidget {
     );
   }
 
-  String _shapeLabel(String? value) {
+  String _modelLabel(String? value) {
     final normalized = value?.trim();
     if (normalized == null || normalized.isEmpty) {
       return 'Type inconnu';

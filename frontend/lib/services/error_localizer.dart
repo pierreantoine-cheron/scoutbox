@@ -34,7 +34,7 @@ class ErrorLocalizer {
     ErrorCodes.tentNameRequired: 'Le nom de la tente est requis',
     ErrorCodes.tentNameExists: 'Une tente avec ce nom existe déjà',
     ErrorCodes.invalidTentSize: 'La taille doit être comprise entre 1 et 100',
-    ErrorCodes.invalidTentShape: 'La forme de tente sélectionnée est invalide',
+    ErrorCodes.invalidTentModel: 'Le modèle de tente sélectionné est invalide',
     ErrorCodes.invalidTentState: "L'état de la tente est invalide",
     ErrorCodes.tentCreateFailed: 'Erreur serveur. Réessayez',
     ErrorCodes.tentNotFound: 'Tente introuvable',

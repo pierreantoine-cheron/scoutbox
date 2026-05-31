@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:client/models/tent.dart';
-import 'package:client/models/tent_shape.dart';
+import 'package:client/models/tent_model.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/views/screens/tent_creation_screen.dart';
 
@@ -196,7 +196,7 @@ void main() {
       await tester.tap(find.text('Rester'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Étape 1 : choisissez une forme'), findsOneWidget);
+      expect(find.text('Étape 1 : choisissez un modèle'), findsOneWidget);
     });
 
     testWidgets('back confirmation quitter closes the screen', (
@@ -214,7 +214,7 @@ void main() {
 
       await tester.tap(find.text('Ouvrir création'));
       await tester.pumpAndSettle();
-      expect(find.text('Étape 1 : choisissez une forme'), findsOneWidget);
+      expect(find.text('Étape 1 : choisissez un modèle'), findsOneWidget);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -222,7 +222,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Écran hôte'), findsOneWidget);
-      expect(find.text('Étape 1 : choisissez une forme'), findsNothing);
+      expect(find.text('Étape 1 : choisissez un modèle'), findsNothing);
     });
 
     testWidgets('shows empty state when no shape is available', (
@@ -232,7 +232,7 @@ void main() {
         ProviderScope(
           overrides: [
             tentRepositoryProvider.overrideWithValue(
-              _EmptyShapesTentRepository(),
+              _EmptyModelsTentRepository(),
             ),
           ],
           child: const MaterialApp(home: TentCreationScreen()),
@@ -241,7 +241,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Aucune forme de tente disponible pour le moment.'),
+        find.text('Aucun modèle de tente disponible pour le moment.'),
         findsOneWidget,
       );
       final continueButton = tester.widget<ElevatedButton>(
@@ -253,7 +253,7 @@ void main() {
     testWidgets('shows error state and retries shape loading', (
       WidgetTester tester,
     ) async {
-      final repo = _RetryableShapesTentRepository();
+      final repo = _RetryableModelsTentRepository();
 
       await tester.pumpWidget(
         ProviderScope(
@@ -264,7 +264,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Impossible de charger les formes de tentes.'),
+        find.text('Impossible de charger les modèles de tentes.'),
         findsOneWidget,
       );
 
@@ -399,32 +399,32 @@ class _TentCreationHostScreen extends StatelessWidget {
   }
 }
 
-class _EmptyShapesTentRepository extends _SuccessTentRepository {
+class _EmptyModelsTentRepository extends _SuccessTentRepository {
   @override
-  Future<List<TentShape>> getTentShapes() async {
+  Future<List<TentModel>> getTentModels() async {
     return const [];
   }
 }
 
-class _RetryableShapesTentRepository extends _SuccessTentRepository {
+class _RetryableModelsTentRepository extends _SuccessTentRepository {
   bool fail = true;
 
   @override
-  Future<List<TentShape>> getTentShapes() async {
+  Future<List<TentModel>> getTentModels() async {
     if (fail) {
       throw Exception('network');
     }
 
-    return super.getTentShapes();
+    return super.getTentModels();
   }
 }
 
 class _SuccessTentRepository extends TentRepository {
   @override
-  Future<List<TentShape>> getTentShapes() async {
+  Future<List<TentModel>> getTentModels() async {
     return const [
-      TentShape(id: '1', name: 'Canadienne', displayOrder: 1, isActive: true),
-      TentShape(id: '2', name: 'Tipi', displayOrder: 2, isActive: true),
+      TentModel(id: '1', name: 'Canadienne', displayOrder: 1, isActive: true),
+      TentModel(id: '2', name: 'Tipi', displayOrder: 2, isActive: true),
     ];
   }
 
@@ -432,7 +432,7 @@ class _SuccessTentRepository extends TentRepository {
   Future<Tent> createTent({
     required String name,
     required int size,
-    required String tentShapeId,
+    required String tentModelId,
     required TentOverallState overallState,
     String? comments,
   }) async {
@@ -440,7 +440,7 @@ class _SuccessTentRepository extends TentRepository {
       id: 'tent-1',
       name: name,
       size: size,
-      tentShapeId: tentShapeId,
+      tentModelId: tentModelId,
       overallState: overallState,
       comments: comments,
     );
@@ -452,7 +452,7 @@ class _FailingTentRepository extends _SuccessTentRepository {
   Future<Tent> createTent({
     required String name,
     required int size,
-    required String tentShapeId,
+    required String tentModelId,
     required TentOverallState overallState,
     String? comments,
   }) {

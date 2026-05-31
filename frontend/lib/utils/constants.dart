@@ -6,7 +6,7 @@ class ApiRoutes {
   static const String tents = '/api/tents';
   static const String parts = '/api/parts';
   static const String tentParts = '/api/tents';
-  static const String tentShapes = '/api/tent-shapes';
+  static const String tentModels = '/api/tent-models';
   static const String partKinds = '/api/part-kinds';
 
   // Auth endpoints
@@ -53,7 +53,7 @@ class ErrorCodes {
   static const String tentNameRequired = 'TENT_NAME_REQUIRED';
   static const String tentNameExists = 'TENT_NAME_EXISTS';
   static const String invalidTentSize = 'INVALID_TENT_SIZE';
-  static const String invalidTentShape = 'INVALID_TENT_SHAPE';
+  static const String invalidTentModel = 'INVALID_TENT_MODEL';
   static const String invalidTentState = 'INVALID_TENT_STATE';
   static const String tentCreateFailed = 'TENT_CREATE_FAILED';
   static const String tentNotFound = 'TENT_NOT_FOUND';

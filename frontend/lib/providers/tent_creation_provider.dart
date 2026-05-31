@@ -14,8 +14,8 @@ class TentCreationNotifier extends _$TentCreationNotifier {
     return const TentCreationState();
   }
 
-  void selectShape(TentShape shape) {
-    state = state.copyWith(selectedShape: shape, submitError: null);
+  void selectModel(TentModel model) {
+    state = state.copyWith(selectedModel: model, submitError: null);
   }
 
   void updateName(String value) {
@@ -46,9 +46,9 @@ class TentCreationNotifier extends _$TentCreationNotifier {
       TentValidators.validateComments(value);
 
   Future<Tent?> submit() async {
-    if (state.selectedShape == null) {
+    if (state.selectedModel == null) {
       state = state.copyWith(
-        submitError: 'Veuillez sélectionner une forme de tente',
+        submitError: 'Veuillez sélectionner un modèle de tente',
       );
       return null;
     }
@@ -78,7 +78,7 @@ class TentCreationNotifier extends _$TentCreationNotifier {
       final createdTent = await repository.createTent(
         name: state.name.trim(),
         size: int.parse(state.sizeInput),
-        tentShapeId: state.selectedShape!.id,
+        tentModelId: state.selectedModel!.id,
         overallState: state.overallState,
         comments: state.comments.trim().isEmpty ? null : state.comments.trim(),
       );
@@ -102,7 +102,7 @@ class TentCreationNotifier extends _$TentCreationNotifier {
 }
 
 class TentCreationState {
-  final TentShape? selectedShape;
+  final TentModel? selectedModel;
   final String name;
   final String sizeInput;
   final TentOverallState overallState;
@@ -111,7 +111,7 @@ class TentCreationState {
   final String? submitError;
 
   const TentCreationState({
-    this.selectedShape,
+    this.selectedModel,
     this.name = '',
     this.sizeInput = '',
     this.overallState = TentOverallState.good,
@@ -121,19 +121,19 @@ class TentCreationState {
   });
 
   TentCreationState copyWith({
-    TentShape? selectedShape,
+    TentModel? selectedModel,
     String? name,
     String? sizeInput,
     TentOverallState? overallState,
     String? comments,
     bool? isSubmitting,
     String? submitError,
-    bool clearSelectedShape = false,
+    bool clearSelectedModel = false,
   }) {
     return TentCreationState(
-      selectedShape: clearSelectedShape
+      selectedModel: clearSelectedModel
           ? null
-          : (selectedShape ?? this.selectedShape),
+          : (selectedModel ?? this.selectedModel),
       name: name ?? this.name,
       sizeInput: sizeInput ?? this.sizeInput,
       overallState: overallState ?? this.overallState,

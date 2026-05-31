@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/tent.dart';
 
-enum TentDesktopSortColumn { name, state, size, shape, updatedAt }
+enum TentDesktopSortColumn { name, state, size, model, updatedAt }
 
 class TentDataTable extends StatefulWidget {
   final List<Tent> tents;
@@ -59,8 +59,8 @@ class _TentDataTableState extends State<TentDataTable> {
           size: ColumnSize.S,
         ),
         DataColumn2(
-          label: const Text('Forme'),
-          onSort: (_, _) => _toggleSort(TentDesktopSortColumn.shape),
+          label: const Text('Modèle'),
+          onSort: (_, _) => _toggleSort(TentDesktopSortColumn.model),
           size: ColumnSize.M,
         ),
         DataColumn2(
@@ -81,7 +81,7 @@ class _TentDataTableState extends State<TentDataTable> {
         DataCell(Text(tent.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
         DataCell(Text(tent.overallState.toFrenchLabel())),
         DataCell(Text(tent.size == 1 ? '1 place' : '${tent.size} places')),
-        DataCell(_EllipsisCell(value: tent.tentShapeName)),
+        DataCell(_EllipsisCell(value: tent.tentModelName)),
         DataCell(Text(tent.toFrenchUpdatedAtLabel(_updatedAtFormatter))),
       ],
     );
@@ -105,9 +105,9 @@ class _TentDataTableState extends State<TentDataTable> {
         TentDesktopSortColumn.size => _applySortDirection(
           left.size.compareTo(right.size),
         ),
-        TentDesktopSortColumn.shape => _compareNullableText(
-          left.tentShapeName,
-          right.tentShapeName,
+        TentDesktopSortColumn.model => _compareNullableText(
+          left.tentModelName,
+          right.tentModelName,
         ),
         TentDesktopSortColumn.updatedAt => _compareNullableDate(
           left.updatedAt,

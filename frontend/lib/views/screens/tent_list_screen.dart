@@ -149,7 +149,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   }) {
     final isDesktop = MediaQuery.sizeOf(context).width >= 768;
     final availableSizes = _buildSizeOptions(rawTents);
-    final availableShapeOptions = _buildShapeOptions(rawTents);
+    final availableModelOptions = _buildModelOptions(rawTents);
 
     if (rawTents.isEmpty && !isFilteredMode) {
       return Column(
@@ -159,7 +159,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             isFilteredMode,
             isDesktop,
             availableSizes,
-            availableShapeOptions,
+            availableModelOptions,
           ),
           Expanded(
             child: RefreshIndicator(
@@ -182,7 +182,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             isFilteredMode,
             isDesktop,
             availableSizes,
-            availableShapeOptions,
+            availableModelOptions,
           ),
           Expanded(
             child: RefreshIndicator(
@@ -207,7 +207,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             isFilteredMode,
             isDesktop,
             availableSizes,
-            availableShapeOptions,
+            availableModelOptions,
           ),
           if (warning != null) _RefreshWarningCard(message: warning),
           Expanded(
@@ -230,7 +230,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
           isFilteredMode,
           isDesktop,
           availableSizes,
-          availableShapeOptions,
+          availableModelOptions,
         ),
         Expanded(
           child: RefreshIndicator(
@@ -264,16 +264,16 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     bool isFilteredMode,
     bool isDesktop,
     List<int> availableSizes,
-    List<TentTypeFilterOption> availableShapeOptions,
+    List<TentTypeFilterOption> availableModelOptions,
   ) {
     return TentListFilterBar(
       isDesktop: isDesktop,
       searchController: _searchController,
       selectedStates: filterState.selectedStates,
       selectedSizes: filterState.selectedSizes,
-      selectedShapeIds: filterState.selectedShapeIds,
+      selectedModelIds: filterState.selectedModelIds,
       availableSizes: availableSizes,
-      availableShapeOptions: availableShapeOptions,
+      availableModelOptions: availableModelOptions,
       isFilteredMode: isFilteredMode,
       onSearchChanged: (value) {
         ref.read(tentListFilterProvider.notifier).setSearchText(value);
@@ -284,8 +284,8 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       onToggleSize: (size) {
         ref.read(tentListFilterProvider.notifier).toggleSize(size);
       },
-      onToggleShape: (shapeId) {
-        ref.read(tentListFilterProvider.notifier).toggleShape(shapeId);
+      onToggleModel: (modelId) {
+        ref.read(tentListFilterProvider.notifier).toggleModel(modelId);
       },
       onClearAll: _clearFiltersHook,
     );
@@ -297,36 +297,36 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     return options;
   }
 
-  List<TentTypeFilterOption> _buildShapeOptions(List<Tent> rawTents) {
-    final rawShapeIds = rawTents.map((tent) => tent.tentShapeId).toSet();
-    final rawShapeLabels = <String, String>{
+  List<TentTypeFilterOption> _buildModelOptions(List<Tent> rawTents) {
+    final rawModelIds = rawTents.map((tent) => tent.tentModelId).toSet();
+    final rawModelLabels = <String, String>{
       for (final tent in rawTents)
-        if ((tent.tentShapeName ?? '').trim().isNotEmpty)
-          tent.tentShapeId: tent.tentShapeName!.trim(),
+        if ((tent.tentModelName ?? '').trim().isNotEmpty)
+          tent.tentModelId: tent.tentModelName!.trim(),
     };
 
-    final shapeMetadata =
-        ref.watch(tentShapesProvider).asData?.value ?? const [];
+    final modelMetadata =
+        ref.watch(tentModelsProvider).asData?.value ?? const [];
     final options = <TentTypeFilterOption>[];
     final includedIds = <String>{};
 
-    for (final shape in shapeMetadata) {
-      if (!rawShapeIds.contains(shape.id)) {
+    for (final model in modelMetadata) {
+      if (!rawModelIds.contains(model.id)) {
         continue;
       }
 
-      options.add(TentTypeFilterOption(id: shape.id, label: shape.name));
-      includedIds.add(shape.id);
+      options.add(TentTypeFilterOption(id: model.id, label: model.name));
+      includedIds.add(model.id);
     }
 
     final missingIds =
-        rawShapeIds.where((id) => !includedIds.contains(id)).toList()..sort();
+        rawModelIds.where((id) => !includedIds.contains(id)).toList()..sort();
 
-    for (final shapeId in missingIds) {
+    for (final modelId in missingIds) {
       options.add(
         TentTypeFilterOption(
-          id: shapeId,
-          label: rawShapeLabels[shapeId] ?? 'Type inconnu',
+          id: modelId,
+          label: rawModelLabels[modelId] ?? 'Type inconnu',
         ),
       );
     }

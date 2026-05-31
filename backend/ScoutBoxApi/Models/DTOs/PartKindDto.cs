@@ -1,3 +1,3 @@
 namespace ScoutBoxApi.Models.DTOs;
 
-public record PartKindDto(Guid Id, string Name, int DisplayOrder, bool IsStandard);
+public record PartKindDto(Guid Id, string Name, int DisplayOrder);

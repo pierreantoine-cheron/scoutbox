@@ -10,4 +10,4 @@ export 'tent_history_provider.dart';
 export 'tent_edit_provider.dart';
 export 'tent_filter_provider.dart';
 export 'tent_list_provider.dart';
-export 'tent_shapes_provider.dart';
+export 'tent_models_provider.dart';

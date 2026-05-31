@@ -48,8 +48,8 @@ class Tent {
   final String id;
   final String name;
   final int size;
-  final String tentShapeId;
-  final String? tentShapeName;
+  final String tentModelId;
+  final String? tentModelName;
   final TentOverallState overallState;
   final bool isArchived;
   final String? comments;
@@ -61,8 +61,8 @@ class Tent {
     required this.id,
     required this.name,
     required this.size,
-    required this.tentShapeId,
-    this.tentShapeName,
+    required this.tentModelId,
+    this.tentModelName,
     required this.overallState,
     this.isArchived = false,
     required this.comments,
@@ -76,8 +76,8 @@ class Tent {
       id: json['id'] as String,
       name: json['name'] as String,
       size: json['size'] as int,
-      tentShapeId: json['tentShapeId'] as String,
-      tentShapeName: json['tentShapeName'] as String?,
+      tentModelId: json['tentModelId'] as String,
+      tentModelName: json['tentModelName'] as String?,
       overallState: TentOverallState.fromApiValue(
         json['overallState'] as String,
       ),

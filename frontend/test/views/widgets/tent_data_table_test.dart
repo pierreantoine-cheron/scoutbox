@@ -7,7 +7,7 @@ Tent _tent({
   String id = 't-1',
   String name = 'Tente A',
   int size = 6,
-  String? shapeName = 'Canadienne',
+  String? modelName = 'Canadienne',
   TentOverallState state = TentOverallState.good,
   DateTime? updatedAt,
 }) {
@@ -15,8 +15,8 @@ Tent _tent({
     id: id,
     name: name,
     size: size,
-    tentShapeId: 'shape-1',
-    tentShapeName: shapeName,
+    tentModelId: 'shape-1',
+    tentModelName: modelName,
     overallState: state,
     isArchived: false,
     comments: null,
@@ -53,7 +53,7 @@ void main() {
       expect(find.text('Nom'), findsAtLeast(1));
       expect(find.text('Etat'), findsAtLeast(1));
       expect(find.text('Taille'), findsAtLeast(1));
-      expect(find.text('Forme'), findsAtLeast(1));
+      expect(find.text('Modèle'), findsAtLeast(1));
     });
 
     testWidgets('renders tent names in rows', (tester) async {
@@ -89,14 +89,14 @@ void main() {
     });
 
     testWidgets('renders shape name', (tester) async {
-      await tester.pumpWidget(buildTable(tents: [_tent(shapeName: 'Cabanon')]));
+      await tester.pumpWidget(buildTable(tents: [_tent(modelName: 'Cabanon')]));
       await tester.pumpAndSettle();
 
       expect(find.text('Cabanon'), findsOneWidget);
     });
 
     testWidgets('renders "-" for missing shape name', (tester) async {
-      await tester.pumpWidget(buildTable(tents: [_tent(shapeName: '')]));
+      await tester.pumpWidget(buildTable(tents: [_tent(modelName: '')]));
       await tester.pumpAndSettle();
 
       expect(find.text('-'), findsAtLeast(1));

@@ -265,7 +265,7 @@ void main() {
 
       await container.read(tentListProvider.future);
 
-      container.read(tentListFilterProvider.notifier).toggleShape('shape-1');
+      container.read(tentListFilterProvider.notifier).toggleModel('shape-1');
 
       final filtered = container.read(filteredTentListProvider);
       expect(container.read(tentListFilteredModeProvider), isTrue);
@@ -298,7 +298,7 @@ void main() {
           .read(tentListFilterProvider.notifier)
           .toggleState(TentOverallState.good);
       container.read(tentListFilterProvider.notifier).toggleSize(4);
-      container.read(tentListFilterProvider.notifier).toggleShape('shape-1');
+      container.read(tentListFilterProvider.notifier).toggleModel('shape-1');
       container.read(tentListFilterProvider.notifier).setSearchText('at');
       await Future<void>.delayed(const Duration(milliseconds: 320));
 
@@ -332,7 +332,7 @@ void main() {
           .read(tentListFilterProvider.notifier)
           .toggleState(TentOverallState.unusable);
       container.read(tentListFilterProvider.notifier).toggleSize(6);
-      container.read(tentListFilterProvider.notifier).toggleShape('shape-3');
+      container.read(tentListFilterProvider.notifier).toggleModel('shape-3');
       container.read(tentListFilterProvider.notifier).setSearchText('ce');
       await Future<void>.delayed(const Duration(milliseconds: 320));
 
@@ -345,7 +345,7 @@ void main() {
       expect(state.effectiveSearchText, isEmpty);
       expect(state.selectedStates, isEmpty);
       expect(state.selectedSizes, isEmpty);
-      expect(state.selectedShapeIds, isEmpty);
+      expect(state.selectedModelIds, isEmpty);
       expect(container.read(tentListFilteredModeProvider), isFalse);
       expect(container.read(filteredTentListProvider), hasLength(3));
     });
@@ -366,8 +366,8 @@ const _sampleTents = [
     id: 't1',
     name: 'Atlas',
     size: 4,
-    tentShapeId: 'shape-1',
-    tentShapeName: 'Canadienne',
+    tentModelId: 'shape-1',
+    tentModelName: 'Canadienne',
     overallState: TentOverallState.good,
     comments: null,
   ),
@@ -375,8 +375,8 @@ const _sampleTents = [
     id: 't2',
     name: 'Boreal',
     size: 2,
-    tentShapeId: 'shape-2',
-    tentShapeName: 'Tipi',
+    tentModelId: 'shape-2',
+    tentModelName: 'Tipi',
     overallState: TentOverallState.needsRepair,
     comments: null,
   ),
@@ -384,8 +384,8 @@ const _sampleTents = [
     id: 't3',
     name: 'Cerise',
     size: 6,
-    tentShapeId: 'shape-3',
-    tentShapeName: 'Tunnel',
+    tentModelId: 'shape-3',
+    tentModelName: 'Tunnel',
     overallState: TentOverallState.unusable,
     comments: null,
   ),

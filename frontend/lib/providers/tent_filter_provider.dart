@@ -12,20 +12,20 @@ class TentListFilterState {
   final String effectiveSearchText;
   final Set<TentOverallState> selectedStates;
   final Set<int> selectedSizes;
-  final Set<String> selectedShapeIds;
+  final Set<String> selectedModelIds;
 
   const TentListFilterState({
     this.searchText = '',
     this.effectiveSearchText = '',
     this.selectedStates = const {},
     this.selectedSizes = const {},
-    this.selectedShapeIds = const {},
+    this.selectedModelIds = const {},
   });
 
   bool get isFilteredMode =>
       selectedStates.isNotEmpty ||
       selectedSizes.isNotEmpty ||
-      selectedShapeIds.isNotEmpty ||
+      selectedModelIds.isNotEmpty ||
       effectiveSearchText.isNotEmpty;
 
   TentListFilterState copyWith({
@@ -33,14 +33,14 @@ class TentListFilterState {
     String? effectiveSearchText,
     Set<TentOverallState>? selectedStates,
     Set<int>? selectedSizes,
-    Set<String>? selectedShapeIds,
+    Set<String>? selectedModelIds,
   }) {
     return TentListFilterState(
       searchText: searchText ?? this.searchText,
       effectiveSearchText: effectiveSearchText ?? this.effectiveSearchText,
       selectedStates: selectedStates ?? this.selectedStates,
       selectedSizes: selectedSizes ?? this.selectedSizes,
-      selectedShapeIds: selectedShapeIds ?? this.selectedShapeIds,
+      selectedModelIds: selectedModelIds ?? this.selectedModelIds,
     );
   }
 }
@@ -95,15 +95,15 @@ class TentListFilterNotifier extends _$TentListFilterNotifier {
     state = state.copyWith(selectedSizes: nextSizes);
   }
 
-  void toggleShape(String shapeId) {
-    final nextShapeIds = Set<String>.from(state.selectedShapeIds);
-    if (nextShapeIds.contains(shapeId)) {
-      nextShapeIds.remove(shapeId);
+  void toggleModel(String modelId) {
+    final nextModelIds = Set<String>.from(state.selectedModelIds);
+    if (nextModelIds.contains(modelId)) {
+      nextModelIds.remove(modelId);
     } else {
-      nextShapeIds.add(shapeId);
+      nextModelIds.add(modelId);
     }
 
-    state = state.copyWith(selectedShapeIds: nextShapeIds);
+    state = state.copyWith(selectedModelIds: nextModelIds);
   }
 
   void clearAll() {

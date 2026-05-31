@@ -23,7 +23,7 @@ public class PartKindsController : ControllerBase
     {
         var partKinds = await _db.PartKinds
             .OrderBy(pk => pk.DisplayOrder)
-            .Select(pk => new PartKindDto(pk.Id, pk.Name, pk.DisplayOrder, pk.IsStandard))
+            .Select(pk => new PartKindDto(pk.Id, pk.Name, pk.DisplayOrder))
             .ToListAsync();
 
         return Ok(new { data = partKinds });

@@ -48,11 +48,11 @@ List<Tent> filteredTentList(Ref ref) {
             filterState.selectedSizes.isEmpty ||
             filterState.selectedSizes.contains(tent.size);
 
-        final matchesShape =
-            filterState.selectedShapeIds.isEmpty ||
-            filterState.selectedShapeIds.contains(tent.tentShapeId);
+        final matchesModel =
+            filterState.selectedModelIds.isEmpty ||
+            filterState.selectedModelIds.contains(tent.tentModelId);
 
-        return matchesState && matchesSearch && matchesSize && matchesShape;
+        return matchesState && matchesSearch && matchesSize && matchesModel;
       })
       .toList(growable: false);
 }

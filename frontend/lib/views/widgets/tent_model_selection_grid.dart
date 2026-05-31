@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 
-import '../../models/tent_shape.dart';
+import '../../models/tent_model.dart';
 
-class TentShapeSelectionGrid extends StatelessWidget {
-  final List<TentShape> shapes;
-  final TentShape? selectedShape;
-  final ValueChanged<TentShape> onSelect;
+class TentModelSelectionGrid extends StatelessWidget {
+  final List<TentModel> models;
+  final TentModel? selectedModel;
+  final ValueChanged<TentModel> onSelect;
 
-  const TentShapeSelectionGrid({
+  const TentModelSelectionGrid({
     super.key,
-    required this.shapes,
-    required this.selectedShape,
+    required this.models,
+    required this.selectedModel,
     required this.onSelect,
   });
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      itemCount: shapes.length,
+      itemCount: models.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 12,
@@ -25,12 +25,12 @@ class TentShapeSelectionGrid extends StatelessWidget {
         childAspectRatio: 1.8,
       ),
       itemBuilder: (context, index) {
-        final shape = shapes[index];
-        final isSelected = selectedShape?.id == shape.id;
+        final model = models[index];
+        final isSelected = selectedModel?.id == model.id;
 
         return InkWell(
-          key: ValueKey('shape-${shape.id}'),
-          onTap: () => onSelect(shape),
+          key: ValueKey('model-${model.id}'),
+          onTap: () => onSelect(model),
           borderRadius: BorderRadius.circular(12),
           child: Ink(
             decoration: BoxDecoration(
@@ -51,7 +51,7 @@ class TentShapeSelectionGrid extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      shape.name,
+                      model.name,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
