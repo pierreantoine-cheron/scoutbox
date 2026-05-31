@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ScoutBoxApi.Data;
+using ScoutBoxApi.Converters;
 using ScoutBoxApi.Filters;
 using ScoutBoxApi.Models.DTOs;
 using ScoutBoxApi.Repositories;
@@ -18,6 +19,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ApiExceptionFilter>();
+}).AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
 });
 
 // Add OpenAPI/Swagger
