@@ -9,7 +9,7 @@ import 'tent_list_provider.dart';
 
 part 'tent_edit_provider.g.dart';
 
-enum EditableField { name, size, overallState, comments }
+enum EditableField { name, size, overallState, comments, model }
 
 @riverpod
 class TentEditNotifier extends _$TentEditNotifier {
@@ -22,6 +22,7 @@ class TentEditNotifier extends _$TentEditNotifier {
     required int size,
     required TentOverallState overallState,
     String? comments,
+    String? tentModelId,
   }) async {
     final retryRequest = PendingTentUpdate(
       tentId: tentId,
@@ -29,6 +30,7 @@ class TentEditNotifier extends _$TentEditNotifier {
       size: size,
       overallState: overallState,
       comments: comments,
+      tentModelId: tentModelId,
     );
 
     state = state.copyWith(
@@ -38,6 +40,7 @@ class TentEditNotifier extends _$TentEditNotifier {
         size: size,
         overallState: overallState,
         comments: comments,
+        tentModelId: tentModelId,
         baseTent: state.baseTent,
       ),
       pendingRetry: retryRequest,
@@ -53,6 +56,7 @@ class TentEditNotifier extends _$TentEditNotifier {
             size: size,
             overallState: overallState,
             comments: comments,
+            tentModelId: tentModelId,
           );
 
       ref.invalidate(tentDetailProvider(tentId));
@@ -82,6 +86,24 @@ class TentEditNotifier extends _$TentEditNotifier {
     }
   }
 
+  Future<void> updateModel({
+    required String tentId,
+    required String tentModelId,
+    required String name,
+    required int size,
+    required TentOverallState overallState,
+    String? comments,
+  }) async {
+    await updateField(
+      tentId: tentId,
+      name: name,
+      size: size,
+      overallState: overallState,
+      comments: comments,
+      tentModelId: tentModelId,
+    );
+  }
+
   Future<void> retryLastUpdate() async {
     final request = state.pendingRetry;
     if (request == null) return;
@@ -92,6 +114,7 @@ class TentEditNotifier extends _$TentEditNotifier {
       size: request.size,
       overallState: request.overallState,
       comments: request.comments,
+      tentModelId: request.tentModelId,
     );
   }
 
@@ -124,6 +147,7 @@ class TentEditNotifier extends _$TentEditNotifier {
     required int size,
     required TentOverallState overallState,
     String? comments,
+    String? tentModelId,
     Tent? baseTent,
   }) {
     if (baseTent == null) return editingField;
@@ -134,6 +158,9 @@ class TentEditNotifier extends _$TentEditNotifier {
       return EditableField.overallState;
     }
     if (baseTent.comments != comments) return EditableField.comments;
+    if (tentModelId != null && baseTent.tentModelId != tentModelId) {
+      return EditableField.model;
+    }
 
     return editingField;
   }
@@ -190,6 +217,7 @@ class PendingTentUpdate {
   final int size;
   final TentOverallState overallState;
   final String? comments;
+  final String? tentModelId;
 
   const PendingTentUpdate({
     required this.tentId,
@@ -197,5 +225,6 @@ class PendingTentUpdate {
     required this.size,
     required this.overallState,
     this.comments,
+    this.tentModelId,
   });
 }

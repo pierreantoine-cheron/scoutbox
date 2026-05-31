@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:client/models/part.dart';
 import 'package:client/models/part_kind.dart';
 import 'package:client/models/tent.dart';
+import 'package:client/models/tent_model.dart';
 import 'package:client/models/tent_history_item.dart';
 import 'package:client/providers/success_indicator_provider.dart';
+import 'package:client/providers/tent_models_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/views/screens/tent_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -531,6 +533,34 @@ void main() {
       expect(find.byIcon(Icons.arrow_drop_down), findsWidgets);
     });
 
+    testWidgets('model chip shows model name and dropdown', (tester) async {
+      final repo = _EditableTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(repo),
+            tentModelsProvider.overrideWith(() => _FixedModelsNotifier()),
+          ],
+          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Canadienne'), findsWidgets);
+
+      await tester.tap(find.text('Canadienne'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tipi'), findsOneWidget);
+
+      await tester.tap(find.text('Tipi'));
+      await tester.pumpAndSettle();
+
+      expect(repo.updateCallCount, equals(1));
+    });
+
     testWidgets('part state selection updates row and fires success feedback', (
       tester,
     ) async {
@@ -882,18 +912,20 @@ class _EditableTentRepository extends TentRepository {
     required int size,
     required TentOverallState overallState,
     String? comments,
+    String? tentModelId,
   }) async {
     updateCallCount++;
     _currentName = name;
     _currentSize = size;
     _currentState = overallState;
     _currentComments = comments;
+    final modelName = tentModelId == 'shape-2' ? 'Tipi' : 'Canadienne';
     return Tent(
       id: id,
       name: name,
       size: size,
-      tentModelId: 'shape-1',
-      tentModelName: 'Canadienne',
+      tentModelId: tentModelId ?? 'shape-1',
+      tentModelName: modelName,
       overallState: overallState,
       comments: comments,
       createdAt: DateTime.utc(2026, 4, 10, 9),
@@ -1062,6 +1094,7 @@ class _FailingUpdateTentRepository extends TentRepository {
     required int size,
     required TentOverallState overallState,
     String? comments,
+    String? tentModelId,
   }) async {
     throw const TentRepositoryException(
       message: 'Impossible de mettre à jour la tente.',
@@ -1077,6 +1110,7 @@ class _FlakyUpdateTentRepository extends _EditableTentRepository {
     required int size,
     required TentOverallState overallState,
     String? comments,
+    String? tentModelId,
   }) async {
     updateCallCount++;
     if (updateCallCount == 1) {
@@ -1198,4 +1232,22 @@ class _HistoryArchivedRepository extends TentRepository {
       ),
     ];
   }
+}
+
+class _FixedModelsNotifier extends TentModelsNotifier {
+  @override
+  Future<List<TentModel>> build() async => const [
+    TentModel(
+      id: 'shape-1',
+      name: 'Canadienne',
+      displayOrder: 1,
+      isActive: true,
+    ),
+    TentModel(
+      id: 'shape-2',
+      name: 'Tipi',
+      displayOrder: 2,
+      isActive: true,
+    ),
+  ];
 }

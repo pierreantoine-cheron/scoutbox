@@ -72,20 +72,25 @@ class TentRepository {
     required int size,
     required TentOverallState overallState,
     String? comments,
+    String? tentModelId,
   }) async {
     return _request(
       fallbackMessage: 'Impossible de mettre à jour la tente. Réessayez.',
       invalidResponseMessage:
           'Réponse du serveur invalide lors de la mise à jour de la tente.',
       action: () async {
+        final body = <String, dynamic>{
+          'name': name,
+          'size': size,
+          'overallState': overallState.toApiValue(),
+          'comments': comments,
+        };
+        if (tentModelId != null) {
+          body['tentModelId'] = tentModelId;
+        }
         final response = await ApiClient.instance.put(
           '${ApiRoutes.tents}/$id',
-          data: {
-            'name': name,
-            'size': size,
-            'overallState': overallState.toApiValue(),
-            'comments': comments,
-          },
+          data: body,
         );
 
         return Tent.fromJson(_readEnvelopeMap(response.data));

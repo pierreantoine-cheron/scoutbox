@@ -203,9 +203,9 @@ class _HeaderSection extends ConsumerWidget {
                       tent: tent,
                       editState: editState,
                     ),
-                    _InfoChip(
-                      icon: Icons.terrain_outlined,
-                      label: _modelLabel(tent.tentModelName),
+                    _EditableModelSelector(
+                      tentId: tentId,
+                      tent: tent,
                     ),
                   ],
                 ),
@@ -217,15 +217,6 @@ class _HeaderSection extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _modelLabel(String? value) {
-    final normalized = value?.trim();
-    if (normalized == null || normalized.isEmpty) {
-      return 'Type inconnu';
-    }
-
-    return normalized;
   }
 }
 
@@ -981,6 +972,78 @@ class _FieldErrorBanner extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _EditableModelSelector extends ConsumerWidget {
+  final String tentId;
+  final Tent tent;
+
+  const _EditableModelSelector({
+    required this.tentId,
+    required this.tent,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final modelsAsync = ref.watch(tentModelsProvider);
+    final models = modelsAsync.asData?.value ?? const [];
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return PopupMenuButton<String>(
+      enabled: !tent.isArchived,
+      tooltip: 'Modifier le modèle',
+      padding: EdgeInsets.zero,
+      splashRadius: 1,
+      offset: const Offset(0, 40),
+      onSelected: (modelId) {
+        if (modelId == tent.tentModelId) return;
+        ref.read(tentEditProvider(tentId).notifier).updateModel(
+          tentId: tentId,
+          tentModelId: modelId,
+          name: tent.name,
+          size: tent.size,
+          overallState: tent.overallState,
+          comments: tent.comments,
+        );
+      },
+      itemBuilder: (context) {
+        return models.map((model) {
+          final isCurrent = model.id == tent.tentModelId;
+          return PopupMenuItem<String>(
+            value: model.id,
+            enabled: !isCurrent,
+            child: Text(model.name),
+          );
+        }).toList();
+      },
+      child: Opacity(
+        opacity: tent.isArchived ? 0.55 : 1,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Chip(
+              avatar: const Icon(Icons.terrain_outlined, size: 18),
+              label: Text(_modelLabel(tent.tentModelName)),
+            ),
+            if (!tent.isArchived) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_drop_down,
+                size: 20,
+                color: colorScheme.outline,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _modelLabel(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return 'Type inconnu';
+    return normalized;
   }
 }
 

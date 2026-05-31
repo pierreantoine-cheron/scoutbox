@@ -10,6 +10,7 @@ typedef UpdateTentHandler = Future<Tent> Function({
   required int size,
   required TentOverallState overallState,
   String? comments,
+  String? tentModelId,
 });
 typedef CreateTentHandler = Future<Tent> Function({
   required String name,
@@ -77,6 +78,7 @@ class FakeTentRepository extends TentRepository {
     required int size,
     required TentOverallState overallState,
     String? comments,
+    String? tentModelId,
   }) {
     final handler = updateTentHandler;
     if (handler == null) throw UnimplementedError('updateTent');
@@ -86,6 +88,7 @@ class FakeTentRepository extends TentRepository {
       size: size,
       overallState: overallState,
       comments: comments,
+      tentModelId: tentModelId,
     );
   }
 

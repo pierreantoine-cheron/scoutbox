@@ -151,6 +151,7 @@ public class TentService
         var oldSize = tent.Size;
         var oldOverallState = tent.OverallState;
         var oldComments = tent.Comments;
+        var oldModelId = tent.TentModelId;
 
         var changedFields = new List<string>();
         if (oldName != validated.Name) changedFields.Add("name");
@@ -158,6 +159,21 @@ public class TentService
         if (oldOverallState != validated.OverallState) changedFields.Add("overallState");
         var commentsChanged = oldComments != validated.Comments;
         if (commentsChanged) changedFields.Add("comments");
+
+        var modelName = tent.TentModel?.Name;
+        var oldModelName = modelName;
+
+        if (request.TentModelId.HasValue && request.TentModelId.Value != oldModelId)
+        {
+            var model = await _repo.GetActiveTentModelByIdAsync(request.TentModelId.Value);
+            if (model == null)
+                return (null, new ErrorResponse("Tent model does not exist", "INVALID_TENT_MODEL"), false);
+
+            tent.TentModelId = request.TentModelId.Value;
+            tent.TentModel = model;
+            modelName = model.Name;
+            changedFields.Add("tentModelId");
+        }
 
         if (changedFields.Count > 0)
         {
@@ -169,22 +185,32 @@ public class TentService
             tent.UpdatedAt = now;
             tent.UpdatedByUserId = userId;
 
+            var metadata = new Dictionary<string, object?>
+            {
+                ["changedFields"] = changedFields,
+                ["oldName"] = oldName,
+                ["newName"] = tent.Name,
+                ["oldSize"] = oldSize,
+                ["newSize"] = tent.Size,
+                ["oldOverallState"] = oldOverallState.ToString(),
+                ["newOverallState"] = tent.OverallState.ToString(),
+                ["commentsChanged"] = commentsChanged
+            };
+
+            if (request.TentModelId.HasValue && request.TentModelId.Value != oldModelId)
+            {
+                metadata["oldTentModelId"] = oldModelId;
+                metadata["newTentModelId"] = request.TentModelId.Value;
+                metadata["oldTentModelName"] = oldModelName;
+                metadata["newTentModelName"] = modelName;
+            }
+
             _auditService.RecordEvent(
                 AuditActions.TentUpdated,
                 userId,
                 targetEntityType: "Tent",
                 targetEntityId: id,
-                metadata: new Dictionary<string, object?>
-                {
-                    ["changedFields"] = changedFields,
-                    ["oldName"] = oldName,
-                    ["newName"] = tent.Name,
-                    ["oldSize"] = oldSize,
-                    ["newSize"] = tent.Size,
-                    ["oldOverallState"] = oldOverallState.ToString(),
-                    ["newOverallState"] = tent.OverallState.ToString(),
-                    ["commentsChanged"] = commentsChanged
-                });
+                metadata: metadata);
         }
 
         try
@@ -197,7 +223,7 @@ public class TentService
             return (null, new ErrorResponse("Tent name already exists", "TENT_NAME_EXISTS"), false);
         }
 
-        return (ToTentDto(tent, ToPartDtos(tent.Parts)), null, false);
+        return (ToTentDto(tent, ToPartDtos(tent.Parts), modelName), null, false);
     }
 
     public async Task<(TentDto? Response, bool NotFound)> ArchiveTentAsync(Guid id, Guid userId)

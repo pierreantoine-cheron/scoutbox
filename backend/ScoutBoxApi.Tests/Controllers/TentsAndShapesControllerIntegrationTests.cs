@@ -2329,6 +2329,73 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.DoesNotContain(tentPayload.Data, e => e.Action == AuditActions.PartStateChanged);
     }
 
+    [Fact]
+    public async Task UpdateTent_ModelChange_RecordsHistoryDetail()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        Guid firstModelId;
+        Guid secondModelId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var models = await db.TentModels
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .Take(2)
+                .ToListAsync();
+            firstModelId = models[0].Id;
+            secondModelId = models[1].Id;
+        }
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            var createResponse = await client.PostAsJsonAsync("/api/tents", new
+            {
+                name = $"Model-History-{Guid.NewGuid():N}",
+                size = 4,
+                tentModelId = firstModelId,
+                overallState = "Good"
+            });
+            createResponse.EnsureSuccessStatusCode();
+            var created = await createResponse.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+            tentId = created!.Data.Id;
+
+            await Task.Delay(50);
+
+            var updateResponse = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
+            {
+                name = created.Data.Name,
+                size = created.Data.Size,
+                overallState = created.Data.OverallState,
+                tentModelId = secondModelId
+            });
+            updateResponse.EnsureSuccessStatusCode();
+        }
+
+        using var historyClient = CreateAuthenticatedClient();
+        var response = await historyClient.GetAsync($"/api/tents/{tentId}/history");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
+        Assert.NotNull(payload!.Data);
+
+        var tentEvents = payload.Data
+            .Where(e => e.Action == AuditActions.TentUpdated)
+            .ToList();
+        Assert.Single(tentEvents);
+
+        var updateEvent = tentEvents[0];
+        var modelDetail = updateEvent.Details.Find(d => d.Label == "Modèle");
+        Assert.NotNull(modelDetail);
+        Assert.Equal("old_new", modelDetail!.ValueType);
+        Assert.NotNull(modelDetail.OldValue);
+        Assert.NotNull(modelDetail.NewValue);
+        Assert.NotEqual(modelDetail.OldValue, modelDetail.NewValue);
+    }
+
     // --- DTOs for history test deserialization ---
 
     private sealed class TentHistoryApiItem
@@ -2339,6 +2406,16 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public DateTime OccurredAt { get; set; }
         public string? ActorUserId { get; set; }
         public string ActorDisplayName { get; set; } = string.Empty;
+        public List<TentHistoryApiDetail> Details { get; set; } = [];
+    }
+
+    private sealed class TentHistoryApiDetail
+    {
+        public string Label { get; set; } = string.Empty;
+        public string? OldValue { get; set; }
+        public string? NewValue { get; set; }
+        public string? Value { get; set; }
+        public string? ValueType { get; set; }
     }
 
     private sealed class ErrorPayload

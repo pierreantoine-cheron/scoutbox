@@ -14,4 +14,6 @@ public record UpdateTentRequest(
     string OverallState,
 
     [TrimmedStringLength(500, ErrorMessage = "Tent comments cannot exceed 500 characters")]
-    string? Comments);
+    string? Comments,
+
+    Guid? TentModelId);

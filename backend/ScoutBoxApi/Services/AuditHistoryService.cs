@@ -425,7 +425,7 @@ public class AuditHistoryService : IAuditHistoryService
         var details = new List<TentHistoryDetailDto>();
         TryParseMetadata(ae.MetadataJson, out var changedFields, out var oldName, out var newName,
             out var oldSize, out var newSize, out var oldOverallState, out var newOverallState,
-            out var commentsChanged);
+            out var commentsChanged, out var oldTentModelName, out var newTentModelName);
 
         if (!string.IsNullOrEmpty(oldName) && !string.IsNullOrEmpty(newName) && oldName != newName)
         {
@@ -442,6 +442,11 @@ public class AuditHistoryService : IAuditHistoryService
         if (commentsChanged == true)
         {
             details.Add(new TentHistoryDetailDto("Commentaire", null, null, "Commentaire modifié", "flag"));
+        }
+
+        if (!string.IsNullOrEmpty(oldTentModelName) && !string.IsNullOrEmpty(newTentModelName) && oldTentModelName != newTentModelName)
+        {
+            details.Add(new TentHistoryDetailDto("Modèle", oldTentModelName, newTentModelName, null, "old_new"));
         }
 
         return new TentHistoryItemDto(
@@ -552,13 +557,15 @@ public class AuditHistoryService : IAuditHistoryService
         out string? oldName, out string? newName,
         out int? oldSize, out int? newSize,
         out string? oldOverallState, out string? newOverallState,
-        out bool? commentsChanged)
+        out bool? commentsChanged,
+        out string? oldTentModelName, out string? newTentModelName)
     {
         changedFields = null;
         oldName = null; newName = null;
         oldSize = null; newSize = null;
         oldOverallState = null; newOverallState = null;
         commentsChanged = null;
+        oldTentModelName = null; newTentModelName = null;
 
         if (string.IsNullOrWhiteSpace(metadataJson)) return;
 
@@ -579,6 +586,8 @@ public class AuditHistoryService : IAuditHistoryService
             if (root.TryGetProperty("oldOverallState", out var p5)) oldOverallState = p5.GetString();
             if (root.TryGetProperty("newOverallState", out var p6)) newOverallState = p6.GetString();
             if (root.TryGetProperty("commentsChanged", out var p7) && p7.ValueKind == JsonValueKind.True) commentsChanged = true;
+            if (root.TryGetProperty("oldTentModelName", out var p8)) oldTentModelName = p8.GetString();
+            if (root.TryGetProperty("newTentModelName", out var p9)) newTentModelName = p9.GetString();
         }
         catch
         {
