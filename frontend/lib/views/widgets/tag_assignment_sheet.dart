@@ -211,6 +211,9 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
       invalidateTentHistory(ref, widget.tentId);
     } catch (error) {
       if (!mounted) return;
+      if (error is! TentRepositoryException) {
+        debugPrint('Tag toggle failed: $error');
+      }
       final message = error is TentRepositoryException
           ? error.message
           : 'Impossible de modifier les étiquettes. Réessayez.';

@@ -228,26 +228,27 @@ public class TentService
 
     public async Task<(TentDto? Response, ErrorResponse? Error, bool NotFound)> SetTentTagsAsync(Guid tentId, IReadOnlyList<Guid> tagIds, Guid userId)
     {
-        var requestedTagIds = tagIds.Distinct().ToList();
+        tagIds ??= Array.Empty<Guid>();
+        var requestedTagIdSet = tagIds.Distinct().ToHashSet();
         var tent = await _repo.GetTentByIdForUpdateAsync(tentId);
         if (tent == null) return (null, null, true);
-
-        var tags = await _repo.GetTagsByIdsAsync(requestedTagIds);
-        if (tags.Count != requestedTagIds.Count)
-        {
-            return (null, new ErrorResponse("One or more tags not found", "TAG_NOT_FOUND"), false);
-        }
-
-        var tagsById = tags.ToDictionary(tag => tag.Id);
-        var requestedTagIdSet = requestedTagIds.ToHashSet();
-        var currentTagIds = tent.TentTags.Select(tt => tt.TagId).ToHashSet();
-        var toAdd = requestedTagIds.Where(tagId => !currentTagIds.Contains(tagId)).ToList();
-        var toRemove = tent.TentTags.Where(tt => !requestedTagIdSet.Contains(tt.TagId)).ToList();
 
         await _repo.BeginTransactionAsync();
 
         try
         {
+            var tags = await _repo.GetTagsByIdsAsync(requestedTagIdSet);
+            if (tags.Count != requestedTagIdSet.Count)
+            {
+                await _repo.RollbackTransactionAsync();
+                return (null, new ErrorResponse("One or more tags not found", "TAG_NOT_FOUND"), false);
+            }
+
+            var tagsById = tags.ToDictionary(tag => tag.Id);
+            var currentTagIds = tent.TentTags.Select(tt => tt.TagId).ToHashSet();
+            var toAdd = requestedTagIdSet.Where(tagId => !currentTagIds.Contains(tagId)).ToList();
+            var toRemove = tent.TentTags.Where(tt => !requestedTagIdSet.Contains(tt.TagId)).ToList();
+
             var now = DateTime.UtcNow;
             foreach (var tentTag in toRemove)
             {
@@ -271,7 +272,6 @@ public class TentService
                 {
                     TentId = tentId,
                     TagId = tagId,
-                    Tag = tag,
                     CreatedAt = now,
                     CreatedByUserId = userId
                 });
@@ -287,11 +287,20 @@ public class TentService
                     });
             }
 
+            tent.UpdatedAt = now;
+            tent.UpdatedByUserId = userId;
+
             await _repo.SaveChangesAsync();
             var updatedTent = await _repo.GetTentByIdAsync(tentId);
+            if (updatedTent == null)
+            {
+                await _repo.RollbackTransactionAsync();
+                return (null, null, true);
+            }
+
             await _repo.CommitTransactionAsync();
 
-            return (ToTentDto(updatedTent!, ToPartDtos(updatedTent!.Parts)), null, false);
+            return (ToTentDto(updatedTent, ToPartDtos(updatedTent.Parts)), null, false);
         }
         catch (DbUpdateException ex) when (DbExceptionHelper.IsAnyConstraintViolation(ex, "FOREIGN KEY", "constraint"))
         {
@@ -405,18 +414,8 @@ public class TentService
             tent.CreatedAt,
             tent.UpdatedAt,
             parts,
-            ToTagDtos(tent.TentTags)
+            TentRepository.ToTagDtos(tent.TentTags)
         );
-    }
-
-    private static List<TagDto> ToTagDtos(IEnumerable<TentTag> tentTags)
-    {
-        return tentTags
-            .Select(tt => tt.Tag)
-            .OrderBy(tag => tag.Name)
-            .ThenBy(tag => tag.Id)
-            .Select(TagDto.FromTag)
-            .ToList();
     }
 
     private static bool IsDuplicateTentNameViolation(DbUpdateException exception)

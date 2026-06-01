@@ -123,7 +123,6 @@ public class TentRepository : ITentRepository
     public async Task<List<Tag>> GetTagsByIdsAsync(IReadOnlyCollection<Guid> ids)
     {
         return await _db.Tags
-            .Include(tag => tag.TentTags)
             .Where(tag => ids.Contains(tag.Id))
             .ToListAsync();
     }
@@ -165,7 +164,7 @@ public class TentRepository : ITentRepository
         _db.TentTags.Remove(tentTag);
     }
 
-    private static List<TagDto> ToTagDtos(IEnumerable<TentTag> tentTags)
+    public static List<TagDto> ToTagDtos(IEnumerable<TentTag> tentTags)
     {
         return tentTags
             .Select(tt => tt.Tag)

@@ -362,7 +362,6 @@ public class ScoutBoxDbContext : DbContext
                 .HasForeignKey(e => e.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasIndex(e => new { e.TentId, e.TagId }).IsUnique();
             entity.HasIndex(e => e.TagId);
             entity.HasIndex(e => e.CreatedByUserId);
         });
