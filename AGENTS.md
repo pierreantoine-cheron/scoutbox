@@ -1,5 +1,9 @@
 # AGENTS.md - ScoutBox Project Guide
 
+## Rules
+
+When developing, reviewing, if a change is worthy to be added as a rule to the porject, offer to the user adding it to this file.
+
 ## Project Overview
 
 ScoutBox is a scout group tent inventory management system with a Flutter/Dart frontend and .NET backend.
