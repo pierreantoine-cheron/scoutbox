@@ -56,7 +56,10 @@ class PartManagementNotifier extends _$PartManagementNotifier {
       return true;
     } on TentRepositoryException catch (e) {
       if (!ref.mounted || state.requestVersion != requestVersion) return false;
-      state = state.copyWith(isAdding: false, addError: ErrorLocalizer.localize(e.code, fallback: e.message));
+      state = state.copyWith(
+        isAdding: false,
+        addError: ErrorLocalizer.localize(e.code, fallback: e.message),
+      );
       return false;
     } catch (_) {
       if (!ref.mounted || state.requestVersion != requestVersion) return false;

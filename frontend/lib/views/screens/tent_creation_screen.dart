@@ -165,7 +165,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-          Card(
+        Card(
           child: ListTile(
             title: const Text('Modèle sélectionné'),
             subtitle: Text(creationState.selectedModel?.name ?? ''),

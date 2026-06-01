@@ -4,38 +4,43 @@ import 'package:client/repositories/tent_repository.dart';
 typedef GetTentsHandler = Future<List<Tent>> Function();
 typedef GetTentModelsHandler = Future<List<TentModel>> Function();
 typedef GetTentHandler = Future<Tent> Function(String id);
-typedef UpdateTentHandler = Future<Tent> Function({
-  required String id,
-  required String name,
-  required int size,
-  required TentOverallState overallState,
-  String? comments,
-  String? tentModelId,
-});
-typedef CreateTentHandler = Future<Tent> Function({
-  required String name,
-  required int size,
-  required String tentModelId,
-  required TentOverallState overallState,
-  String? comments,
-});
+typedef UpdateTentHandler =
+    Future<Tent> Function({
+      required String id,
+      required String name,
+      required int size,
+      required TentOverallState overallState,
+      String? comments,
+      String? tentModelId,
+    });
+typedef CreateTentHandler =
+    Future<Tent> Function({
+      required String name,
+      required int size,
+      required String tentModelId,
+      required TentOverallState overallState,
+      String? comments,
+    });
 typedef ArchiveTentHandler = Future<Tent> Function(String id);
-typedef AddPartsToTentHandler = Future<List<Part>> Function({
-  required String tentId,
-  required List<String> partKindIds,
-});
+typedef AddPartsToTentHandler =
+    Future<List<Part>> Function({
+      required String tentId,
+      required List<String> partKindIds,
+    });
 typedef RemovePartHandler = Future<void> Function({required String partId});
 typedef GetPartKindsHandler = Future<List<PartKind>> Function();
-typedef GetTentHistoryHandler = Future<List<TentHistoryItem>> Function({
-  required String tentId,
-  String? category,
-  int limit,
-});
-typedef UpdatePartStateHandler = Future<Part> Function({
-  required String id,
-  required PartState state,
-  required String? comments,
-});
+typedef GetTentHistoryHandler =
+    Future<List<TentHistoryItem>> Function({
+      required String tentId,
+      String? category,
+      int limit,
+    });
+typedef UpdatePartStateHandler =
+    Future<Part> Function({
+      required String id,
+      required PartState state,
+      required String? comments,
+    });
 
 class FakeTentRepository extends TentRepository {
   GetTentsHandler? getTentsHandler;

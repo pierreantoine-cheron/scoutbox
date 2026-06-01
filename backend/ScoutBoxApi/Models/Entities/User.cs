@@ -27,4 +27,7 @@ public class User
     public ICollection<Tent> UpdatedTents { get; set; } = new List<Tent>();
     public ICollection<Part> CreatedParts { get; set; } = new List<Part>();
     public ICollection<Part> UpdatedParts { get; set; } = new List<Part>();
+    public ICollection<Tag> CreatedTags { get; set; } = new List<Tag>();
+    public ICollection<Tag> UpdatedTags { get; set; } = new List<Tag>();
+    public ICollection<TentTag> CreatedTentTags { get; set; } = new List<TentTag>();
 }

@@ -47,6 +47,8 @@ public class TentSchemaMigrationTests : IDisposable
         Assert.Contains("TentModelComponents", tableNames);
         Assert.Contains("PartKinds", tableNames);
         Assert.Contains("Parts", tableNames);
+        Assert.Contains("Tags", tableNames);
+        Assert.Contains("TentTags", tableNames);
     }
 
     [Fact]
@@ -205,6 +207,114 @@ public class TentSchemaMigrationTests : IDisposable
             });
 
         await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task Constraints_AllowCaseSensitiveTagNamesButRejectExactDuplicates()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "tag_owner",
+            PasswordHash = "hash",
+            CreatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        _db.Users.Add(user);
+        var now = DateTime.UtcNow;
+
+        _db.Tags.AddRange(
+            new Tag
+            {
+                Id = Guid.NewGuid(),
+                Name = "Groupe A",
+                Color = "#2196F3",
+                CreatedAt = now,
+                UpdatedAt = now,
+                CreatedByUserId = user.Id,
+                UpdatedByUserId = user.Id
+            },
+            new Tag
+            {
+                Id = Guid.NewGuid(),
+                Name = "groupe A",
+                Color = "#4CAF50",
+                CreatedAt = now,
+                UpdatedAt = now,
+                CreatedByUserId = user.Id,
+                UpdatedByUserId = user.Id
+            });
+        await _db.SaveChangesAsync();
+
+        _db.Tags.Add(new Tag
+        {
+            Id = Guid.NewGuid(),
+            Name = "Groupe A",
+            Color = "#F44336",
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = user.Id,
+            UpdatedByUserId = user.Id
+        });
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task Constraints_RejectDuplicateTentTagRelationship()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "tent_tag_owner",
+            PasswordHash = "hash",
+            CreatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        _db.Users.Add(user);
+
+        var modelId = await _db.TentModels
+            .OrderBy(x => x.DisplayOrder)
+            .Select(x => x.Id)
+            .FirstAsync();
+        var now = DateTime.UtcNow;
+        var tentId = Guid.NewGuid();
+        var tagId = Guid.NewGuid();
+
+        _db.Tents.Add(new Tent
+        {
+            Id = tentId,
+            Name = "Tent Tag Unique Tent",
+            OverallState = TentOverallState.Good,
+            Size = 6,
+            TentModelId = modelId,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = user.Id,
+            UpdatedByUserId = user.Id
+        });
+        _db.Tags.Add(new Tag
+        {
+            Id = tagId,
+            Name = "Tent Tag Unique Tag",
+            Color = "#2196F3",
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = user.Id,
+            UpdatedByUserId = user.Id
+        });
+        _db.TentTags.Add(new TentTag
+        {
+            TentId = tentId,
+            TagId = tagId,
+            CreatedAt = now,
+            CreatedByUserId = user.Id
+        });
+        await _db.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<SqliteException>(() =>
+            _db.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO TentTags (TentId, TagId, CreatedAt, CreatedByUserId) VALUES ({tentId}, {tagId}, {now}, {user.Id})"));
     }
 
     public void Dispose()

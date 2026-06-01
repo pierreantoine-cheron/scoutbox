@@ -203,10 +203,7 @@ class _HeaderSection extends ConsumerWidget {
                       tent: tent,
                       editState: editState,
                     ),
-                    _EditableModelSelector(
-                      tentId: tentId,
-                      tent: tent,
-                    ),
+                    _EditableModelSelector(tentId: tentId, tent: tent),
                   ],
                 ),
               ),
@@ -258,7 +255,8 @@ class _ArchiveTentButtonState extends ConsumerState<_ArchiveTentButton> {
     final confirmed = await showConfirmDialog(
       context,
       title: 'Archiver la tente',
-      content: 'Archiver cette tente ? Elle n\'apparaîtra plus dans la liste mais restera dans l\'historique.',
+      content:
+          'Archiver cette tente ? Elle n\'apparaîtra plus dans la liste mais restera dans l\'historique.',
     );
 
     if (!confirmed || !mounted) {
@@ -606,7 +604,8 @@ class _PartsSectionState extends ConsumerState<_PartsSection> {
     final confirmed = await showConfirmDialog(
       context,
       title: 'Supprimer ces pièces ?',
-      content: '${_selectedPartIds.length} pièce(s) seront supprimées définitivement. Cette action est irréversible.',
+      content:
+          '${_selectedPartIds.length} pièce(s) seront supprimées définitivement. Cette action est irréversible.',
       confirmLabel: 'Supprimer',
       isDestructive: true,
       barrierDismissible: false,
@@ -910,7 +909,7 @@ class _PartsSectionState extends ConsumerState<_PartsSection> {
         existingPartKindIds: widget.parts.map((p) => p.partKindId).toSet(),
       ),
     );
-}
+  }
 }
 
 class _FieldErrorBanner extends StatelessWidget {
@@ -979,10 +978,7 @@ class _EditableModelSelector extends ConsumerWidget {
   final String tentId;
   final Tent tent;
 
-  const _EditableModelSelector({
-    required this.tentId,
-    required this.tent,
-  });
+  const _EditableModelSelector({required this.tentId, required this.tent});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -998,14 +994,16 @@ class _EditableModelSelector extends ConsumerWidget {
       offset: const Offset(0, 40),
       onSelected: (modelId) {
         if (modelId == tent.tentModelId) return;
-        ref.read(tentEditProvider(tentId).notifier).updateModel(
-          tentId: tentId,
-          tentModelId: modelId,
-          name: tent.name,
-          size: tent.size,
-          overallState: tent.overallState,
-          comments: tent.comments,
-        );
+        ref
+            .read(tentEditProvider(tentId).notifier)
+            .updateModel(
+              tentId: tentId,
+              tentModelId: modelId,
+              name: tent.name,
+              size: tent.size,
+              overallState: tent.overallState,
+              comments: tent.comments,
+            );
       },
       itemBuilder: (context) {
         return models.map((model) {
@@ -1028,11 +1026,7 @@ class _EditableModelSelector extends ConsumerWidget {
             ),
             if (!tent.isArchived) ...[
               const SizedBox(width: 4),
-              Icon(
-                Icons.arrow_drop_down,
-                size: 20,
-                color: colorScheme.outline,
-              ),
+              Icon(Icons.arrow_drop_down, size: 20, color: colorScheme.outline),
             ],
           ],
         ),

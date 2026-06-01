@@ -30,7 +30,8 @@ class TentRepository {
 
   Future<List<TentModel>> getTentModels() async {
     return _request(
-      fallbackMessage: 'Impossible de charger les modèles de tentes. Réessayez.',
+      fallbackMessage:
+          'Impossible de charger les modèles de tentes. Réessayez.',
       invalidResponseMessage:
           'Réponse du serveur invalide lors du chargement des modèles de tentes.',
       action: () async {

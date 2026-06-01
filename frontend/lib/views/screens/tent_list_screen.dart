@@ -8,6 +8,7 @@ import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 import 'tent_creation_screen.dart';
 import 'tent_detail_screen.dart';
+import 'tags_screen.dart';
 
 class TentListScreen extends ConsumerStatefulWidget {
   const TentListScreen({super.key});
@@ -70,6 +71,11 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
                 ? null
                 : () => ref.read(tentListProvider.notifier).refresh(),
           ),
+        IconButton(
+          icon: const Icon(Icons.label_outline),
+          tooltip: 'Gérer les étiquettes',
+          onPressed: () => _openTags(context),
+        ),
         IconButton(
           icon: const Icon(Icons.logout),
           onPressed: authState.isLoading
@@ -374,6 +380,12 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => TentDetailScreen(tentId: tent.id)),
     );
+  }
+
+  Future<void> _openTags(BuildContext context) async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const TagsScreen()));
   }
 
   Future<void> _showLogoutConfirmationDialog() async {

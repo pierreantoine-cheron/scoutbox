@@ -8,6 +8,7 @@ class ApiRoutes {
   static const String tentParts = '/api/tents';
   static const String tentModels = '/api/tent-models';
   static const String partKinds = '/api/part-kinds';
+  static const String tags = '/api/tags';
 
   // Auth endpoints
   static const String register = '$authBase/register';
@@ -38,6 +39,8 @@ class ValidationConstants {
   static const int tentCommentsMaxLength = 500;
   static const int tentMinSize = 1;
   static const int tentMaxSize = 100;
+  static const int tagNameMinLength = 2;
+  static const int tagNameMaxLength = 30;
 }
 
 // Error codes returned by backend
@@ -63,6 +66,12 @@ class ErrorCodes {
   static const String duplicatePart = 'DUPLICATE_PART';
   static const String invalidPartKind = 'INVALID_PART_KIND';
   static const String invalidRequest = 'INVALID_REQUEST';
+  static const String tagNameExists = 'TAG_NAME_EXISTS';
+  static const String tagNameRequired = 'TAG_NAME_REQUIRED';
+  static const String tagNameTooShort = 'TAG_NAME_TOO_SHORT';
+  static const String tagNameTooLong = 'TAG_NAME_TOO_LONG';
+  static const String invalidTagColor = 'INVALID_TAG_COLOR';
+  static const String tagCreateFailed = 'TAG_CREATE_FAILED';
 }
 
 // API timeouts

@@ -13,8 +13,7 @@ class TentHistorySection extends ConsumerStatefulWidget {
   const TentHistorySection({super.key, required this.tentId});
 
   @override
-  ConsumerState<TentHistorySection> createState() =>
-      _TentHistorySectionState();
+  ConsumerState<TentHistorySection> createState() => _TentHistorySectionState();
 }
 
 class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
@@ -138,9 +137,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
                 final filtered = items.where((item) {
                   if (_searchQuery.isEmpty) return true;
                   final query = _searchQuery;
-                  return _historySummary(item)
-                          .toLowerCase()
-                          .contains(query) ||
+                  return _historySummary(item).toLowerCase().contains(query) ||
                       item.actorDisplayName.toLowerCase().contains(query) ||
                       item.action.toLowerCase().contains(query);
                 }).toList();
@@ -148,8 +145,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
                 if (filtered.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
-                    child:
-                        Center(child: Text('Aucun historique à afficher.')),
+                    child: Center(child: Text('Aucun historique à afficher.')),
                   );
                 }
 
@@ -174,9 +170,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
     return 'Impossible de charger l\'historique.';
   }
 
-  Map<String, List<TentHistoryItem>> _groupByDate(
-    List<TentHistoryItem> items,
-  ) {
+  Map<String, List<TentHistoryItem>> _groupByDate(List<TentHistoryItem> items) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -185,8 +179,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
     final grouped = <String, List<TentHistoryItem>>{};
     for (final item in items) {
       final localDate = item.occurredAt.toLocal();
-      final itemDay =
-          DateTime(localDate.year, localDate.month, localDate.day);
+      final itemDay = DateTime(localDate.year, localDate.month, localDate.day);
       String label;
       if (itemDay == today) {
         label = "Aujourd'hui";

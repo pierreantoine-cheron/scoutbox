@@ -62,8 +62,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         _serverController.text = serverUrl ?? '';
       });
       if (_isLogin) {
-        final rememberedUsername = await SecureStorageService.getRememberedUsername();
-        final rememberPref = await SecureStorageService.getRememberUsernamePreference();
+        final rememberedUsername =
+            await SecureStorageService.getRememberedUsername();
+        final rememberPref =
+            await SecureStorageService.getRememberUsernamePreference();
         if (!mounted) return;
         setState(() {
           _usernameController.text = rememberedUsername ?? '';
@@ -109,10 +111,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(appBarConfigProvider.notifier).set(AppBarConfig(
-          screenId: _isLogin ? 'login' : 'register',
-          title: Text(_isLogin ? 'Connexion' : 'Inscription'),
-        ));
+        ref
+            .read(appBarConfigProvider.notifier)
+            .set(
+              AppBarConfig(
+                screenId: _isLogin ? 'login' : 'register',
+                title: Text(_isLogin ? 'Connexion' : 'Inscription'),
+              ),
+            );
       }
     });
 
@@ -240,10 +246,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       autofillHints: const [AutofillHints.newPassword],
       textInputAction: TextInputAction.done,
       onFieldSubmitted: (_) => _submit(),
-      validator: (value) => AuthValidators.validatePasswordMatch(
-        value,
-        _passwordController.text,
-      ),
+      validator: (value) =>
+          AuthValidators.validatePasswordMatch(value, _passwordController.text),
     );
   }
 
@@ -293,7 +297,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               }
             },
       child: Text(
-        _isLogin ? "Pas de compte ? S'inscrire" : 'Déjà un compte ? Se connecter',
+        _isLogin
+            ? "Pas de compte ? S'inscrire"
+            : 'Déjà un compte ? Se connecter',
       ),
     );
   }
@@ -305,9 +311,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       child: Text(
         error,
         textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.error,
-        ),
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
       ),
     );
   }
@@ -320,19 +324,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_isLogin) {
-      await ref.read(authProvider.notifier).login(
-        serverUrl: _serverController.text.trim(),
-        username: _usernameController.text.trim(),
-        password: _passwordController.text,
-        rememberUsername: _rememberUsername,
-      );
+      await ref
+          .read(authProvider.notifier)
+          .login(
+            serverUrl: _serverController.text.trim(),
+            username: _usernameController.text.trim(),
+            password: _passwordController.text,
+            rememberUsername: _rememberUsername,
+          );
     } else {
-      await ref.read(authProvider.notifier).register(
-        serverUrl: _serverController.text.trim(),
-        inviteCode: _inviteController.text.trim(),
-        username: _usernameController.text.trim(),
-        password: _passwordController.text,
-      );
+      await ref
+          .read(authProvider.notifier)
+          .register(
+            serverUrl: _serverController.text.trim(),
+            inviteCode: _inviteController.text.trim(),
+            username: _usernameController.text.trim(),
+            password: _passwordController.text,
+          );
     }
 
     if (mounted && ref.read(authProvider).isAuthenticated) {

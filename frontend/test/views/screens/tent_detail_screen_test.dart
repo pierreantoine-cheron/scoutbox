@@ -232,10 +232,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(
-        find.textContaining('Une erreur est survenue'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Une erreur est survenue'), findsOneWidget);
       expect(find.byType(TextButton), findsAtLeast(1));
       expect(find.byTooltip('Valider'), findsOneWidget);
     });
@@ -639,7 +636,10 @@ void main() {
         await tester.tap(find.text('Supprimer'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Une erreur est survenue. Veuillez réessayer.'), findsOneWidget);
+        expect(
+          find.text('Une erreur est survenue. Veuillez réessayer.'),
+          findsOneWidget,
+        );
         expect(find.byTooltip('Annuler la sélection'), findsOneWidget);
       },
     );
@@ -1010,16 +1010,8 @@ class _FailingRemovePartRepository extends _EditableTentRepository {
 class _PartKindTentRepository extends _EditableTentRepository {
   @override
   Future<List<PartKind>> getPartKinds() async => const [
-    PartKind(
-      id: 'kind-1',
-      name: 'Toile extérieure',
-      displayOrder: 1,
-    ),
-    PartKind(
-      id: 'kind-2',
-      name: 'Double toit',
-      displayOrder: 2,
-    ),
+    PartKind(id: 'kind-1', name: 'Toile extérieure', displayOrder: 1),
+    PartKind(id: 'kind-2', name: 'Double toit', displayOrder: 2),
   ];
 
   @override
@@ -1243,11 +1235,6 @@ class _FixedModelsNotifier extends TentModelsNotifier {
       displayOrder: 1,
       isActive: true,
     ),
-    TentModel(
-      id: 'shape-2',
-      name: 'Tipi',
-      displayOrder: 2,
-      isActive: true,
-    ),
+    TentModel(id: 'shape-2', name: 'Tipi', displayOrder: 2, isActive: true),
   ];
 }

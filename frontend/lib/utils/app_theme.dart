@@ -15,6 +15,7 @@ class AppTheme {
           onWarningContainer: AppColors.onWarningContainer,
         ),
       ],
+      splashFactory: InkRipple.splashFactory,
       useMaterial3: true,
       appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -43,6 +44,7 @@ class AppTheme {
           onWarningContainer: AppColors.onWarningContainer,
         ),
       ],
+      splashFactory: InkRipple.splashFactory,
       useMaterial3: true,
     );
   }

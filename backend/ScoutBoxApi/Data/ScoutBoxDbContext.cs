@@ -19,6 +19,8 @@ public class ScoutBoxDbContext : DbContext
     public DbSet<TentModelComponent> TentModelComponents { get; set; }
     public DbSet<PartKind> PartKinds { get; set; }
     public DbSet<Part> Parts { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<TentTag> TentTags { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -311,6 +313,58 @@ public class ScoutBoxDbContext : DbContext
             entity.HasIndex(e => e.PartKindId);
             entity.HasIndex(e => e.CreatedByUserId);
             entity.HasIndex(e => e.UpdatedByUserId);
+        });
+
+        modelBuilder.Entity<Tag>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(30);
+            entity.Property(e => e.Color).IsRequired().HasMaxLength(7);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.CreatedByUserId).IsRequired();
+            entity.Property(e => e.UpdatedByUserId).IsRequired();
+
+            entity.HasOne(e => e.CreatedByUser)
+                .WithMany(e => e.CreatedTags)
+                .HasForeignKey(e => e.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedByUser)
+                .WithMany(e => e.UpdatedTags)
+                .HasForeignKey(e => e.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.CreatedByUserId);
+            entity.HasIndex(e => e.UpdatedByUserId);
+        });
+
+        modelBuilder.Entity<TentTag>(entity =>
+        {
+            entity.HasKey(e => new { e.TentId, e.TagId });
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.CreatedByUserId).IsRequired();
+
+            entity.HasOne(e => e.Tent)
+                .WithMany(e => e.TentTags)
+                .HasForeignKey(e => e.TentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Tag)
+                .WithMany(e => e.TentTags)
+                .HasForeignKey(e => e.TagId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.CreatedByUser)
+                .WithMany(e => e.CreatedTentTags)
+                .HasForeignKey(e => e.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.TentId, e.TagId }).IsUnique();
+            entity.HasIndex(e => e.TagId);
+            entity.HasIndex(e => e.CreatedByUserId);
         });
 
         modelBuilder.SeedTentReferenceData();

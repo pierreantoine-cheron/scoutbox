@@ -4,6 +4,7 @@ export 'part_management_provider.dart';
 export 'part_update_provider.dart';
 export 'route_observer_provider.dart';
 export 'success_indicator_provider.dart';
+export 'tags_provider.dart';
 export 'tent_creation_provider.dart';
 export 'tent_detail_provider.dart';
 export 'tent_history_provider.dart';

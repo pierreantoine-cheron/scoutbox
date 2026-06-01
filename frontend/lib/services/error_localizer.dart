@@ -46,5 +46,13 @@ class ErrorLocalizer {
     ErrorCodes.invalidPartKind: 'Type de pièce invalide.',
     ErrorCodes.invalidRequest:
         'Requête invalide. Vérifiez les données saisies.',
+    ErrorCodes.tagNameExists: 'Une étiquette avec ce nom existe déjà',
+    ErrorCodes.tagNameRequired: 'Le nom de l\'étiquette est requis',
+    ErrorCodes.tagNameTooShort:
+        'Le nom de l\'étiquette doit contenir au moins 2 caractères',
+    ErrorCodes.tagNameTooLong:
+        'Le nom de l\'étiquette doit contenir 30 caractères maximum',
+    ErrorCodes.invalidTagColor: 'La couleur sélectionnée est invalide',
+    ErrorCodes.tagCreateFailed: 'Impossible de créer l\'étiquette. Réessayez.',
   };
 }

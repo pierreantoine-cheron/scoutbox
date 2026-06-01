@@ -28,16 +28,18 @@ void main() {
         overrides: [
           tentRepositoryProvider.overrideWithValue(
             FakeTentRepository()
-              ..getTentHistoryHandler = ({
-                required String tentId,
-                String? category,
-                int limit = 50,
-              }) async {
-                throw const TentRepositoryException(
-                  code: 'INTERNAL_ERROR',
-                  message: 'Impossible de charger l\'historique de la tente.',
-                );
-              },
+              ..getTentHistoryHandler =
+                  ({
+                    required String tentId,
+                    String? category,
+                    int limit = 50,
+                  }) async {
+                    throw const TentRepositoryException(
+                      code: 'INTERNAL_ERROR',
+                      message:
+                          'Impossible de charger l\'historique de la tente.',
+                    );
+                  },
           ),
         ],
       );
@@ -92,23 +94,24 @@ void main() {
       () async {
         final calls = <String?, int>{};
         final repository = FakeTentRepository()
-          ..getTentHistoryHandler = ({
-            required String tentId,
-            String? category,
-            int limit = 50,
-          }) async {
-            calls[category] = (calls[category] ?? 0) + 1;
-            return [
-              TentHistoryItem(
-                id: 'evt-${calls[category]}',
-                action: 'tent_created',
-                category: category ?? 'tent_info',
-                occurredAt: DateTime.utc(2026, 5, 19, 10, 0),
-                actorDisplayName: 'Jean',
-                details: [],
-              ),
-            ];
-          };
+          ..getTentHistoryHandler =
+              ({
+                required String tentId,
+                String? category,
+                int limit = 50,
+              }) async {
+                calls[category] = (calls[category] ?? 0) + 1;
+                return [
+                  TentHistoryItem(
+                    id: 'evt-${calls[category]}',
+                    action: 'tent_created',
+                    category: category ?? 'tent_info',
+                    occurredAt: DateTime.utc(2026, 5, 19, 10, 0),
+                    actorDisplayName: 'Jean',
+                    details: [],
+                  ),
+                ];
+              };
         final container = ProviderContainer(
           overrides: [tentRepositoryProvider.overrideWithValue(repository)],
         );
