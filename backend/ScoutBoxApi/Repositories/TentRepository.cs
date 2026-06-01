@@ -27,26 +27,32 @@ public class TentRepository : ITentRepository
 
     public async Task<IReadOnlyList<TentDto>> GetTentsAsync()
     {
-        return await (
-            from tent in _db.Tents.AsNoTracking()
-            where !tent.IsArchived
-            join model in _db.TentModels.AsNoTracking() on tent.TentModelId equals model.Id into modelJoin
-            from model in modelJoin.DefaultIfEmpty()
-            orderby tent.UpdatedAt descending, tent.CreatedAt descending, tent.Id descending
-            select new TentDto(
-                tent.Id,
-                tent.Name,
-                tent.Size,
-                tent.TentModelId,
-                model != null ? model.Name : null,
-                tent.OverallState.ToString(),
-                tent.IsArchived,
-                tent.Comments,
-                tent.CreatedAt,
-                tent.UpdatedAt,
-                Array.Empty<PartDto>()
-            )
-        ).ToListAsync();
+        var tents = await _db.Tents
+            .AsNoTracking()
+            .Include(t => t.TentModel)
+            .Include(t => t.TentTags)
+                .ThenInclude(tt => tt.Tag)
+            .Where(tent => !tent.IsArchived)
+            .OrderByDescending(tent => tent.UpdatedAt)
+            .ThenByDescending(tent => tent.CreatedAt)
+            .ThenByDescending(tent => tent.Id)
+            .AsSplitQuery()
+            .ToListAsync();
+
+        return tents.Select(tent => new TentDto(
+            tent.Id,
+            tent.Name,
+            tent.Size,
+            tent.TentModelId,
+            tent.TentModel?.Name,
+            tent.OverallState.ToString(),
+            tent.IsArchived,
+            tent.Comments,
+            tent.CreatedAt,
+            tent.UpdatedAt,
+            Array.Empty<PartDto>(),
+            ToTagDtos(tent.TentTags)
+        )).ToList();
     }
 
     public async Task<Tent?> GetTentByIdAsync(Guid id)
@@ -56,6 +62,8 @@ public class TentRepository : ITentRepository
             .Include(t => t.TentModel)
             .Include(t => t.Parts)
                 .ThenInclude(p => p.PartKind)
+            .Include(t => t.TentTags)
+                .ThenInclude(tt => tt.Tag)
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
@@ -65,6 +73,8 @@ public class TentRepository : ITentRepository
             .Include(t => t.TentModel)
             .Include(t => t.Parts)
                 .ThenInclude(p => p.PartKind)
+            .Include(t => t.TentTags)
+                .ThenInclude(tt => tt.Tag)
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
@@ -110,6 +120,14 @@ public class TentRepository : ITentRepository
             .ToListAsync();
     }
 
+    public async Task<List<Tag>> GetTagsByIdsAsync(IReadOnlyCollection<Guid> ids)
+    {
+        return await _db.Tags
+            .Include(tag => tag.TentTags)
+            .Where(tag => ids.Contains(tag.Id))
+            .ToListAsync();
+    }
+
     public async Task<bool> HasDuplicateTentNameAsync(string normalizedName, Guid? excludedTentId = null)
     {
         return await _db.Tents.AnyAsync(tent =>
@@ -135,6 +153,26 @@ public class TentRepository : ITentRepository
     public void RemovePart(Part part)
     {
         _db.Parts.Remove(part);
+    }
+
+    public void AddTentTag(TentTag tentTag)
+    {
+        _db.TentTags.Add(tentTag);
+    }
+
+    public void RemoveTentTag(TentTag tentTag)
+    {
+        _db.TentTags.Remove(tentTag);
+    }
+
+    private static List<TagDto> ToTagDtos(IEnumerable<TentTag> tentTags)
+    {
+        return tentTags
+            .Select(tt => tt.Tag)
+            .OrderBy(tag => tag.Name)
+            .ThenBy(tag => tag.Id)
+            .Select(TagDto.FromTag)
+            .ToList();
     }
 
     public async Task BeginTransactionAsync()

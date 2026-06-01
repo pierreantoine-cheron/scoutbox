@@ -71,6 +71,7 @@ class ErrorCodes {
   static const String tagNameTooShort = 'TAG_NAME_TOO_SHORT';
   static const String tagNameTooLong = 'TAG_NAME_TOO_LONG';
   static const String invalidTagColor = 'INVALID_TAG_COLOR';
+  static const String tagNotFound = 'TAG_NOT_FOUND';
 }
 
 // API timeouts

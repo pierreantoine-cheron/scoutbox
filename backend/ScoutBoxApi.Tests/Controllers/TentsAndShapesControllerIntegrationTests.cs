@@ -1029,6 +1029,16 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public List<PartApiDto> Parts { get; set; } = new();
+        public List<TagApiDto> Tags { get; set; } = new();
+    }
+
+    private sealed class TagApiDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public int TentCount { get; set; }
     }
 
     private sealed class PartApiDto
@@ -2394,6 +2404,241 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.NotNull(modelDetail.OldValue);
         Assert.NotNull(modelDetail.NewValue);
         Assert.NotEqual(modelDetail.OldValue, modelDetail.NewValue);
+    }
+
+    [Fact]
+    public async Task SetTentTags_AssignsTagsAndReturnsTagsInDto()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        Tag firstTag;
+        Tag secondTag;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            tentId = await CreateTentForTagsAsync(db);
+            firstTag = CreateTag($"Assign-A-{Guid.NewGuid():N}"[..30], "#F44336");
+            secondTag = CreateTag($"Assign-B-{Guid.NewGuid():N}"[..30], "#2196F3");
+            db.Tags.AddRange(firstTag, secondTag);
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}/tags", new
+        {
+            tagIds = new[] { firstTag.Id, secondTag.Id }
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload?.Data);
+        Assert.Equal(new[] { firstTag.Name, secondTag.Name }, payload.Data.Tags.Select(tag => tag.Name));
+        Assert.Contains(payload.Data.Tags, tag => tag.Id == firstTag.Id && tag.Color == firstTag.Color);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        Assert.Equal(2, await verifyDb.TentTags.CountAsync(tt => tt.TentId == tentId));
+        Assert.Equal(2, await verifyDb.AuditEvents.CountAsync(a => a.TargetEntityId == tentId && a.Action == AuditActions.TagAssigned));
+    }
+
+    [Fact]
+    public async Task SetTentTags_AddsAndRemovesDeltaAndRecordsAudit()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        Tag existingTag;
+        Tag addedTag;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            tentId = await CreateTentForTagsAsync(db);
+            existingTag = CreateTag($"Delta-A-{Guid.NewGuid():N}"[..30], "#4CAF50");
+            addedTag = CreateTag($"Delta-B-{Guid.NewGuid():N}"[..30], "#FFC107");
+            db.Tags.AddRange(existingTag, addedTag);
+            db.TentTags.Add(new TentTag
+            {
+                TentId = tentId,
+                TagId = existingTag.Id,
+                CreatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}/tags", new
+        {
+            tagIds = new[] { addedTag.Id }
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var remainingTagIds = await verifyDb.TentTags
+            .Where(tt => tt.TentId == tentId)
+            .Select(tt => tt.TagId)
+            .ToListAsync();
+        Assert.Equal(new[] { addedTag.Id }, remainingTagIds);
+        Assert.NotNull(await verifyDb.AuditEvents.FirstOrDefaultAsync(a => a.TargetEntityId == tentId && a.Action == AuditActions.TagAssigned));
+        Assert.NotNull(await verifyDb.AuditEvents.FirstOrDefaultAsync(a => a.TargetEntityId == tentId && a.Action == AuditActions.TagRemoved));
+    }
+
+    [Fact]
+    public async Task SetTentTags_EmptyArrayClearsAssignments()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        Tag tag;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            tentId = await CreateTentForTagsAsync(db);
+            tag = CreateTag($"Clear-{Guid.NewGuid():N}"[..30], "#9C27B0");
+            db.Tags.Add(tag);
+            db.TentTags.Add(new TentTag
+            {
+                TentId = tentId,
+                TagId = tag.Id,
+                CreatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tents/{tentId}/tags", new
+        {
+            tagIds = Array.Empty<Guid>()
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        Assert.NotNull(payload?.Data);
+        Assert.Empty(payload.Data.Tags);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        Assert.False(await verifyDb.TentTags.AnyAsync(tt => tt.TentId == tentId));
+    }
+
+    [Fact]
+    public async Task SetTentTags_WithUnknownTentOrTag_ReturnsStableErrorCodes()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            tentId = await CreateTentForTagsAsync(db);
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var missingTentResponse = await client.PutAsJsonAsync($"/api/tents/{Guid.NewGuid()}/tags", new
+        {
+            tagIds = Array.Empty<Guid>()
+        });
+        var missingTagResponse = await client.PutAsJsonAsync($"/api/tents/{tentId}/tags", new
+        {
+            tagIds = new[] { Guid.NewGuid() }
+        });
+
+        Assert.Equal(HttpStatusCode.NotFound, missingTentResponse.StatusCode);
+        var missingTentPayload = await missingTentResponse.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.Equal("TENT_NOT_FOUND", missingTentPayload?.Code);
+
+        Assert.Equal(HttpStatusCode.BadRequest, missingTagResponse.StatusCode);
+        var missingTagPayload = await missingTagResponse.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.Equal("TAG_NOT_FOUND", missingTagPayload?.Code);
+    }
+
+    [Fact]
+    public async Task SetTentTags_IdempotentCallDoesNotDuplicateRowsOrAuditEvents()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        Tag tag;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            tentId = await CreateTentForTagsAsync(db);
+            tag = CreateTag($"Idem-{Guid.NewGuid():N}"[..30], "#009688");
+            db.Tags.Add(tag);
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var body = new { tagIds = new[] { tag.Id, tag.Id } };
+        var firstResponse = await client.PutAsJsonAsync($"/api/tents/{tentId}/tags", body);
+        var secondResponse = await client.PutAsJsonAsync($"/api/tents/{tentId}/tags", body);
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        Assert.Equal(1, await verifyDb.TentTags.CountAsync(tt => tt.TentId == tentId && tt.TagId == tag.Id));
+        Assert.Equal(1, await verifyDb.AuditEvents.CountAsync(a => a.TargetEntityId == tentId && a.Action == AuditActions.TagAssigned));
+    }
+
+    [Fact]
+    public async Task SetTentTags_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await client.PutAsJsonAsync($"/api/tents/{Guid.NewGuid()}/tags", new
+        {
+            tagIds = Array.Empty<Guid>()
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private async Task<Guid> CreateTentForTagsAsync(ScoutBoxDbContext db)
+    {
+        var modelId = await db.TentModels
+            .Where(model => model.IsActive)
+            .OrderBy(model => model.DisplayOrder)
+            .Select(model => model.Id)
+            .FirstAsync();
+
+        var tent = new Tent
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Tag-Tent-{Guid.NewGuid():N}",
+            Size = 4,
+            TentModelId = modelId,
+            OverallState = TentOverallState.Good,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        };
+        db.Tents.Add(tent);
+        return tent.Id;
+    }
+
+    private static Tag CreateTag(string name, string color)
+    {
+        return new Tag
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Color = color,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        };
     }
 
     // --- DTOs for history test deserialization ---

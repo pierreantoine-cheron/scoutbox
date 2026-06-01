@@ -1,7 +1,10 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 
 import 'package:client/models/part.dart';
 import 'package:client/models/part_kind.dart';
+import 'package:client/models/tag.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/models/tent_model.dart';
 import 'package:client/models/tent_history_item.dart';
@@ -15,6 +18,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() {
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    binding.window.physicalSizeTestValue = const Size(1200, 1200);
+    binding.window.devicePixelRatioTestValue = 1;
+  });
+
+  tearDownAll(() {
+    binding.window.clearPhysicalSizeTestValue();
+    binding.window.clearDevicePixelRatioTestValue();
+  });
+
   group('TentDetailScreen', () {
     testWidgets('renders loading then detail content', (tester) async {
       final completer = Completer<Tent>();
@@ -26,7 +41,10 @@ void main() {
               _CompleterTentRepository(completer.future),
             ),
           ],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: MaterialApp(
+            theme: ThemeData(splashFactory: NoSplash.splashFactory),
+            home: const TentDetailScreen(tentId: 'tent-1'),
+          ),
         ),
       );
 
@@ -46,7 +64,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repository)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: MaterialApp(
+            theme: ThemeData(splashFactory: NoSplash.splashFactory),
+            home: const TentDetailScreen(tentId: 'tent-1'),
+          ),
         ),
       );
 
@@ -74,7 +95,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -83,6 +104,47 @@ void main() {
       expect(find.text('Toile extérieure'), findsOneWidget);
       expect(find.text('Bon état'), findsWidgets);
       expect(find.textContaining('Ajouter un commentaire'), findsWidgets);
+    });
+
+    testWidgets('shows assigned tags in tags section', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(
+              _StaticTentRepository(
+                _buildTent(tags: [_tag('tag-1', 'Groupe A')]),
+              ),
+            ),
+          ],
+          child: _testApp(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Étiquettes'), findsOneWidget);
+      expect(find.text('Groupe A'), findsOneWidget);
+    });
+
+    testWidgets('shows empty tag state when no tags are assigned', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: _testApp(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Aucune étiquette assignée'), findsOneWidget);
+      expect(
+        find.text('Appuyez sur + pour ajouter des étiquettes'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -93,7 +155,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -108,7 +170,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -129,7 +191,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -153,7 +215,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -183,10 +245,7 @@ void main() {
         addTearDown(container.dispose);
 
         await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
-          ),
+          UncontrolledProviderScope(container: container, child: _testApp()),
         );
 
         await tester.pumpAndSettle();
@@ -215,7 +274,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -245,10 +304,7 @@ void main() {
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
-        ),
+        UncontrolledProviderScope(container: container, child: _testApp()),
       );
 
       await tester.pumpAndSettle();
@@ -284,7 +340,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -319,7 +375,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -338,7 +394,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -359,7 +415,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -380,7 +436,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -401,7 +457,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -426,7 +482,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -457,7 +513,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -475,7 +531,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -497,7 +553,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -514,7 +570,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -539,7 +595,7 @@ void main() {
             tentRepositoryProvider.overrideWithValue(repo),
             tentModelsProvider.overrideWith(() => _FixedModelsNotifier()),
           ],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -568,10 +624,7 @@ void main() {
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
-        ),
+        UncontrolledProviderScope(container: container, child: _testApp()),
       );
 
       await tester.pumpAndSettle();
@@ -598,7 +651,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -624,7 +677,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-            child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+            child: _testApp(),
           ),
         );
 
@@ -652,7 +705,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -683,7 +736,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -727,10 +780,7 @@ void main() {
         addTearDown(container.dispose);
 
         await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
-          ),
+          UncontrolledProviderScope(container: container, child: _testApp()),
         );
 
         await tester.pumpAndSettle();
@@ -764,7 +814,7 @@ void main() {
               _HistorySuccessRepository(),
             ),
           ],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -784,7 +834,7 @@ void main() {
               _HistorySuccessRepository(),
             ),
           ],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -805,7 +855,7 @@ void main() {
               _HistoryArchivedRepository(),
             ),
           ],
-          child: const MaterialApp(home: TentDetailScreen(tentId: 'tent-1')),
+          child: _testApp(),
         ),
       );
 
@@ -818,7 +868,14 @@ void main() {
   });
 }
 
-Tent _buildTent() {
+Widget _testApp() {
+  return MaterialApp(
+    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    home: const TentDetailScreen(tentId: 'tent-1'),
+  );
+}
+
+Tent _buildTent({List<Tag> tags = const []}) {
   return Tent(
     id: 'tent-1',
     name: 'Tente Atlas',
@@ -839,7 +896,27 @@ Tent _buildTent() {
         comments: null,
       ),
     ],
+    tags: tags,
   );
+}
+
+Tag _tag(String id, String name) {
+  return Tag(
+    id: id,
+    name: name,
+    color: '#2196F3',
+    createdAt: DateTime.utc(2026, 6, 1),
+    tentCount: 1,
+  );
+}
+
+class _StaticTentRepository extends TentRepository {
+  final Tent tent;
+
+  _StaticTentRepository(this.tent);
+
+  @override
+  Future<Tent> getTent(String id) async => tent;
 }
 
 class _CompleterTentRepository extends TentRepository {

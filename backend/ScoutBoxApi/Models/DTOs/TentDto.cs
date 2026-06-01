@@ -11,4 +11,5 @@ public record TentDto(
     string? Comments,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    IReadOnlyList<PartDto> Parts);
+    IReadOnlyList<PartDto> Parts,
+    IReadOnlyList<TagDto> Tags);

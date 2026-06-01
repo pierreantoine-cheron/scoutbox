@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
+import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../../utils/tent_validators.dart';
@@ -119,6 +120,8 @@ class _DetailContent extends ConsumerWidget {
                 editState: editState,
               ),
               const SizedBox(height: 16),
+              _TagsSection(tentId: tentId, tent: displayedTent),
+              const SizedBox(height: 16),
               _CommentsSection(
                 tentId: tentId,
                 tent: displayedTent,
@@ -214,6 +217,95 @@ class _HeaderSection extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+class _TagsSection extends ConsumerWidget {
+  final String tentId;
+  final Tent tent;
+
+  const _TagsSection({required this.tentId, required this.tent});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Étiquettes', style: theme.textTheme.titleMedium),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Ajouter des étiquettes',
+                  onPressed: tent.isArchived
+                      ? null
+                      : () => _showTagAssignmentSheet(context, ref),
+                ),
+              ],
+            ),
+            if (tent.tags.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Aucune étiquette assignée',
+                      style: TextStyle(color: theme.colorScheme.outline),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Appuyez sur + pour ajouter des étiquettes',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: tent.tags
+                      .map(
+                        (tag) => TagChip(
+                          name: tag.name,
+                          color: TagPalette.colorFromHex(tag.color),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showTagAssignmentSheet(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => TagAssignmentSheet(
+        tentId: tentId,
+        assignedTagIds: tent.tags.map((tag) => tag.id).toSet(),
+      ),
+    );
+    ref.invalidate(tentDetailProvider(tentId));
   }
 }
 

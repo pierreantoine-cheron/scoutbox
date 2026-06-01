@@ -14,11 +14,14 @@ public interface ITentRepository
     Task<List<PartKind>> GetAllPartKindsAsync();
     Task<Part?> GetPartByIdIncludingTentAsync(Guid id);
     Task<List<Part>> GetPartsByIdsAsync(List<Guid> ids);
+    Task<List<Tag>> GetTagsByIdsAsync(IReadOnlyCollection<Guid> ids);
 
     void AddTent(Tent tent);
     void AddPart(Part part);
     void AddParts(IEnumerable<Part> parts);
     void RemovePart(Part part);
+    void AddTentTag(TentTag tentTag);
+    void RemoveTentTag(TentTag tentTag);
 
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();

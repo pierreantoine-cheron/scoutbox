@@ -47,7 +47,9 @@ class TagPalette {
     for (final option in options) {
       if (option.hex == hex) return option.color;
     }
-    debugPrint('TagPalette: unknown color hex "$hex", falling back to default blue');
+    debugPrint(
+      'TagPalette: unknown color hex "$hex", falling back to default blue',
+    );
     return const Color(0xFF2196F3);
   }
 

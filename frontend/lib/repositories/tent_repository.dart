@@ -141,6 +141,25 @@ class TentRepository {
     );
   }
 
+  Future<Tent> setTentTags({
+    required String tentId,
+    required List<String> tagIds,
+  }) async {
+    return _request(
+      fallbackMessage: 'Impossible de modifier les étiquettes. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors de la modification des étiquettes.',
+      action: () async {
+        final response = await ApiClient.instance.put(
+          '${ApiRoutes.tents}/$tentId/tags',
+          data: {'tagIds': tagIds},
+        );
+
+        return Tent.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
+  }
+
   Future<List<Part>> addPartsToTent({
     required String tentId,
     required List<String> partKindIds,

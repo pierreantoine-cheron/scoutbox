@@ -226,6 +226,87 @@ public class TentService
         return (ToTentDto(tent, ToPartDtos(tent.Parts), modelName), null, false);
     }
 
+    public async Task<(TentDto? Response, ErrorResponse? Error, bool NotFound)> SetTentTagsAsync(Guid tentId, IReadOnlyList<Guid> tagIds, Guid userId)
+    {
+        var requestedTagIds = tagIds.Distinct().ToList();
+        var tent = await _repo.GetTentByIdForUpdateAsync(tentId);
+        if (tent == null) return (null, null, true);
+
+        var tags = await _repo.GetTagsByIdsAsync(requestedTagIds);
+        if (tags.Count != requestedTagIds.Count)
+        {
+            return (null, new ErrorResponse("One or more tags not found", "TAG_NOT_FOUND"), false);
+        }
+
+        var tagsById = tags.ToDictionary(tag => tag.Id);
+        var requestedTagIdSet = requestedTagIds.ToHashSet();
+        var currentTagIds = tent.TentTags.Select(tt => tt.TagId).ToHashSet();
+        var toAdd = requestedTagIds.Where(tagId => !currentTagIds.Contains(tagId)).ToList();
+        var toRemove = tent.TentTags.Where(tt => !requestedTagIdSet.Contains(tt.TagId)).ToList();
+
+        await _repo.BeginTransactionAsync();
+
+        try
+        {
+            var now = DateTime.UtcNow;
+            foreach (var tentTag in toRemove)
+            {
+                _repo.RemoveTentTag(tentTag);
+                _auditService.RecordEvent(
+                    AuditActions.TagRemoved,
+                    userId,
+                    targetEntityType: "TentTag",
+                    targetEntityId: tentId,
+                    metadata: new Dictionary<string, object?>
+                    {
+                        ["tagId"] = tentTag.TagId,
+                        ["tagName"] = tentTag.Tag.Name
+                    });
+            }
+
+            foreach (var tagId in toAdd)
+            {
+                var tag = tagsById[tagId];
+                _repo.AddTentTag(new TentTag
+                {
+                    TentId = tentId,
+                    TagId = tagId,
+                    Tag = tag,
+                    CreatedAt = now,
+                    CreatedByUserId = userId
+                });
+                _auditService.RecordEvent(
+                    AuditActions.TagAssigned,
+                    userId,
+                    targetEntityType: "TentTag",
+                    targetEntityId: tentId,
+                    metadata: new Dictionary<string, object?>
+                    {
+                        ["tagId"] = tagId,
+                        ["tagName"] = tag.Name
+                    });
+            }
+
+            await _repo.SaveChangesAsync();
+            var updatedTent = await _repo.GetTentByIdAsync(tentId);
+            await _repo.CommitTransactionAsync();
+
+            return (ToTentDto(updatedTent!, ToPartDtos(updatedTent!.Parts)), null, false);
+        }
+        catch (DbUpdateException ex) when (DbExceptionHelper.IsAnyConstraintViolation(ex, "FOREIGN KEY", "constraint"))
+        {
+            await _repo.RollbackTransactionAsync();
+            _logger.LogWarning(ex, "Tag assignment constraint violation for tent {TentId}", tentId);
+            return (null, new ErrorResponse("One or more tags not found", "TAG_NOT_FOUND"), false);
+        }
+        catch (Exception ex)
+        {
+            await _repo.RollbackTransactionAsync();
+            _logger.LogError(ex, "Failed to set tags for tent {TentId} by user {UserId}", tentId, userId);
+            throw;
+        }
+    }
+
     public async Task<(TentDto? Response, bool NotFound)> ArchiveTentAsync(Guid id, Guid userId)
     {
         var tent = await _repo.GetTentByIdForUpdateAsync(id);
@@ -323,8 +404,19 @@ public class TentService
             tent.Comments,
             tent.CreatedAt,
             tent.UpdatedAt,
-            parts
+            parts,
+            ToTagDtos(tent.TentTags)
         );
+    }
+
+    private static List<TagDto> ToTagDtos(IEnumerable<TentTag> tentTags)
+    {
+        return tentTags
+            .Select(tt => tt.Tag)
+            .OrderBy(tag => tag.Name)
+            .ThenBy(tag => tag.Id)
+            .Select(TagDto.FromTag)
+            .ToList();
     }
 
     private static bool IsDuplicateTentNameViolation(DbUpdateException exception)

@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 
 import '../utils/date_time_parser.dart';
 import 'part.dart';
+import 'tag.dart';
 
 enum TentOverallState {
   good,
@@ -56,6 +57,7 @@ class Tent {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final List<Part> parts;
+  final List<Tag> tags;
 
   const Tent({
     required this.id,
@@ -69,6 +71,7 @@ class Tent {
     this.createdAt,
     this.updatedAt,
     this.parts = const [],
+    this.tags = const [],
   });
 
   factory Tent.fromJson(Map<String, dynamic> json) {
@@ -86,6 +89,37 @@ class Tent {
       createdAt: DateTimeParser.parseNullable(json['createdAt']),
       updatedAt: DateTimeParser.parseNullable(json['updatedAt']),
       parts: _parseParts(json['parts']),
+      tags: _parseTags(json['tags']),
+    );
+  }
+
+  Tent copyWith({
+    String? id,
+    String? name,
+    int? size,
+    String? tentModelId,
+    String? tentModelName,
+    TentOverallState? overallState,
+    bool? isArchived,
+    String? comments,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<Part>? parts,
+    List<Tag>? tags,
+  }) {
+    return Tent(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      size: size ?? this.size,
+      tentModelId: tentModelId ?? this.tentModelId,
+      tentModelName: tentModelName ?? this.tentModelName,
+      overallState: overallState ?? this.overallState,
+      isArchived: isArchived ?? this.isArchived,
+      comments: comments ?? this.comments,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      parts: parts ?? this.parts,
+      tags: tags ?? this.tags,
     );
   }
 
@@ -110,5 +144,19 @@ class Tent {
     }
 
     throw const FormatException('Tent parts field is not a list');
+  }
+
+  static List<Tag> _parseTags(Object? value) {
+    if (value == null) {
+      return const [];
+    }
+
+    if (value is List<dynamic>) {
+      return value
+          .map((tag) => Tag.fromJson(tag as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw const FormatException('Tent tags field is not a list');
   }
 }

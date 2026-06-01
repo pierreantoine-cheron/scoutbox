@@ -22,6 +22,11 @@ typedef CreateTentHandler =
       String? comments,
     });
 typedef ArchiveTentHandler = Future<Tent> Function(String id);
+typedef SetTentTagsHandler =
+    Future<Tent> Function({
+      required String tentId,
+      required List<String> tagIds,
+    });
 typedef AddPartsToTentHandler =
     Future<List<Part>> Function({
       required String tentId,
@@ -49,6 +54,7 @@ class FakeTentRepository extends TentRepository {
   UpdateTentHandler? updateTentHandler;
   CreateTentHandler? createTentHandler;
   ArchiveTentHandler? archiveTentHandler;
+  SetTentTagsHandler? setTentTagsHandler;
   AddPartsToTentHandler? addPartsToTentHandler;
   RemovePartHandler? removePartHandler;
   GetPartKindsHandler? getPartKindsHandler;
@@ -121,6 +127,16 @@ class FakeTentRepository extends TentRepository {
     final handler = archiveTentHandler;
     if (handler == null) throw UnimplementedError('archiveTent');
     return handler(id);
+  }
+
+  @override
+  Future<Tent> setTentTags({
+    required String tentId,
+    required List<String> tagIds,
+  }) {
+    final handler = setTentTagsHandler;
+    if (handler == null) throw UnimplementedError('setTentTags');
+    return handler(tentId: tentId, tagIds: tagIds);
   }
 
   @override

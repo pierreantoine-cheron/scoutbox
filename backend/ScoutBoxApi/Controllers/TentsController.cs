@@ -87,6 +87,26 @@ public class TentsController : ControllerBase
         return Ok(new { data = response });
     }
 
+    [HttpPut("{id:guid}/tags")]
+    [ValidateUser]
+    public async Task<IActionResult> SetTentTags([FromRoute] Guid id, [FromBody] AssignTagsRequest request)
+    {
+        var userId = _currentUserAccessor.GetValidatedUserId();
+        var (response, error, notFound) = await _tentService.SetTentTagsAsync(id, request.TagIds ?? Array.Empty<Guid>(), userId);
+
+        if (notFound)
+        {
+            return NotFound(new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
+        }
+
+        if (error != null)
+        {
+            return BadRequest(error);
+        }
+
+        return Ok(new { data = response });
+    }
+
     [HttpGet("{id:guid}/history")]
     public async Task<IActionResult> GetTentHistory(
         [FromRoute] Guid id,

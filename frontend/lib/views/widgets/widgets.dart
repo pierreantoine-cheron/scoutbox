@@ -7,6 +7,7 @@ export 'state_badge.dart';
 export 'state_selector.dart';
 export 'tag_chip.dart';
 export 'tag_creation_dialog.dart';
+export 'tag_assignment_sheet.dart';
 export 'tent_card.dart';
 export 'tent_data_table.dart';
 export 'tent_list_filter_bar.dart';
