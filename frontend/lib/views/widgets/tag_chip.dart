@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../utils/app_colors.dart';
+
 class TagChip extends StatelessWidget {
   final String name;
   final Color color;
@@ -14,7 +16,7 @@ class TagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = _textColorFor(color);
+    final textColor = TagPalette.textColorFor(color);
     final label = tentCount == null
         ? name
         : '$name · $tentCount tente${tentCount! > 1 ? 's' : ''}';
@@ -26,11 +28,5 @@ class TagChip extends StatelessWidget {
       side: BorderSide(color: color),
       labelStyle: TextStyle(color: textColor, fontWeight: FontWeight.w600),
     );
-  }
-
-  static Color _textColorFor(Color color) {
-    return ThemeData.estimateBrightnessForColor(color) == Brightness.dark
-        ? const Color(0xFFFFFFFF)
-        : const Color(0xFF000000);
   }
 }

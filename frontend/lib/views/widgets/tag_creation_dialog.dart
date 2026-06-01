@@ -66,7 +66,7 @@ class _TagCreationDialogState extends State<TagCreationDialog> {
                               ? Icon(
                                   Icons.check,
                                   size: 16,
-                                  color: _textColorFor(option.color),
+                                  color: TagPalette.textColorFor(option.color),
                                 )
                               : null,
                         ),
@@ -155,11 +155,5 @@ class _TagCreationDialogState extends State<TagCreationDialog> {
         });
       }
     }
-  }
-
-  static Color _textColorFor(Color color) {
-    return ThemeData.estimateBrightnessForColor(color) == Brightness.dark
-        ? const Color(0xFFFFFFFF)
-        : const Color(0xFF000000);
   }
 }

@@ -53,6 +53,5 @@ class ErrorLocalizer {
     ErrorCodes.tagNameTooLong:
         'Le nom de l\'étiquette doit contenir 30 caractères maximum',
     ErrorCodes.invalidTagColor: 'La couleur sélectionnée est invalide',
-    ErrorCodes.tagCreateFailed: 'Impossible de créer l\'étiquette. Réessayez.',
   };
 }
