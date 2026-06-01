@@ -181,6 +181,7 @@ class TentListFilterBar extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      useRootNavigator: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
