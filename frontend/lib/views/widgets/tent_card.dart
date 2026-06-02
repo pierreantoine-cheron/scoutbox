@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/tent.dart';
 import 'state_badge.dart';
+import 'tent_tag_chips.dart';
 
 class TentCard extends StatelessWidget {
   final Tent tent;
@@ -41,6 +42,10 @@ class TentCard extends StatelessWidget {
                     StateBadge.forTent(context, tent.overallState),
                   ],
                 ),
+                if (tent.tags.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  TentTagChips(tags: tent.tags),
+                ],
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

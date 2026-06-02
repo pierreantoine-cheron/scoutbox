@@ -2,7 +2,9 @@ import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../models/tag.dart';
 import '../../models/tent.dart';
+import 'tent_tag_chips.dart';
 
 enum TentDesktopSortColumn { name, state, size, model, updatedAt }
 
@@ -38,8 +40,8 @@ class _TentDataTableState extends State<TentDataTable> {
     return DataTable2(
       fixedTopRows: 1,
       fixedLeftColumns: 1,
-      minWidth: 980,
-      sortColumnIndex: _sortColumn?.index,
+      minWidth: 1140,
+      sortColumnIndex: _sortColumn == null ? null : _sortIndexFor(_sortColumn!),
       sortAscending: _sortAscending,
       columns: [
         DataColumn2(
@@ -63,6 +65,7 @@ class _TentDataTableState extends State<TentDataTable> {
           onSort: (_, _) => _toggleSort(TentDesktopSortColumn.model),
           size: ColumnSize.M,
         ),
+        const DataColumn2(label: Text('Étiquettes'), size: ColumnSize.M),
         DataColumn2(
           label: const Text('Derniere mise a jour'),
           onSort: (_, _) => _toggleSort(TentDesktopSortColumn.updatedAt),
@@ -82,9 +85,20 @@ class _TentDataTableState extends State<TentDataTable> {
         DataCell(Text(tent.overallState.toFrenchLabel())),
         DataCell(Text(tent.size == 1 ? '1 place' : '${tent.size} places')),
         DataCell(_EllipsisCell(value: tent.tentModelName)),
+        DataCell(_TagsCell(tags: tent.tags)),
         DataCell(Text(tent.toFrenchUpdatedAtLabel(_updatedAtFormatter))),
       ],
     );
+  }
+
+  int _sortIndexFor(TentDesktopSortColumn column) {
+    return switch (column) {
+      TentDesktopSortColumn.name => 0,
+      TentDesktopSortColumn.state => 1,
+      TentDesktopSortColumn.size => 2,
+      TentDesktopSortColumn.model => 3,
+      TentDesktopSortColumn.updatedAt => 5,
+    };
   }
 
   List<Tent> _sortedTents(List<Tent> tents) {
@@ -189,6 +203,24 @@ class _EllipsisCell extends StatelessWidget {
     return Tooltip(
       message: displayValue,
       child: Text(displayValue, maxLines: 1, overflow: TextOverflow.ellipsis),
+    );
+  }
+}
+
+class _TagsCell extends StatelessWidget {
+  final List<Tag> tags;
+
+  const _TagsCell({required this.tags});
+
+  @override
+  Widget build(BuildContext context) {
+    if (tags.isEmpty) {
+      return const Text('-');
+    }
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 220),
+      child: TentTagChips(tags: tags),
     );
   }
 }
