@@ -7,8 +7,14 @@ import 'tent_tag_chips.dart';
 class TentCard extends StatelessWidget {
   final Tent tent;
   final VoidCallback onTap;
+  final ValueChanged<String>? onTagTap;
 
-  const TentCard({super.key, required this.tent, required this.onTap});
+  const TentCard({
+    super.key,
+    required this.tent,
+    required this.onTap,
+    this.onTagTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +50,7 @@ class TentCard extends StatelessWidget {
                 ),
                 if (tent.tags.isNotEmpty) ...[
                   const SizedBox(height: 10),
-                  TentTagChips(tags: tent.tags),
+                  TentTagChips(tags: tent.tags, onTagTap: onTagTap),
                 ],
                 const SizedBox(height: 10),
                 Row(

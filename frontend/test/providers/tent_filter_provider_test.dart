@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:client/models/tag.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/providers/tent_filter_provider.dart';
 import 'package:client/providers/tent_list_provider.dart';
@@ -272,6 +273,71 @@ void main() {
       expect(filtered.map((tent) => tent.name), equals(['Atlas']));
     });
 
+    test('tag-only filtering uses AND logic for selected tags', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTents),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      container.read(tentListFilterProvider.notifier).toggleTag('tag-a');
+
+      var filtered = container.read(filteredTentListProvider);
+      expect(container.read(tentListFilteredModeProvider), isTrue);
+      expect(filtered.map((tent) => tent.name), equals(['Atlas', 'Boreal']));
+
+      container.read(tentListFilterProvider.notifier).toggleTag('tag-repair');
+
+      filtered = container.read(filteredTentListProvider);
+      expect(filtered.map((tent) => tent.name), equals(['Boreal']));
+    });
+
+    test('tag selection can be bulk-set and clear-all resets tags', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTents),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      container.read(tentListFilterProvider.notifier).setSelectedTags({
+        'tag-a',
+        'tag-repair',
+      });
+
+      var state = container.read(tentListFilterProvider);
+      expect(state.selectedTagIds, equals({'tag-a', 'tag-repair'}));
+      expect(container.read(tentListFilteredModeProvider), isTrue);
+
+      container.read(tentListFilterProvider.notifier).clearAll();
+
+      state = container.read(tentListFilterProvider);
+      expect(state.selectedTagIds, isEmpty);
+      expect(container.read(tentListFilteredModeProvider), isFalse);
+    });
+
     test('combined state size shape and search filtering works', () async {
       final container = ProviderContainer(
         overrides: [
@@ -346,6 +412,7 @@ void main() {
       expect(state.selectedStates, isEmpty);
       expect(state.selectedSizes, isEmpty);
       expect(state.selectedModelIds, isEmpty);
+      expect(state.selectedTagIds, isEmpty);
       expect(container.read(tentListFilteredModeProvider), isFalse);
       expect(container.read(filteredTentListProvider), hasLength(3));
     });
@@ -361,7 +428,7 @@ class _TentListTestNotifier extends TentListNotifier {
   Future<List<Tent>> build() async => tents;
 }
 
-const _sampleTents = [
+final _sampleTents = [
   Tent(
     id: 't1',
     name: 'Atlas',
@@ -370,6 +437,7 @@ const _sampleTents = [
     tentModelName: 'Canadienne',
     overallState: TentOverallState.good,
     comments: null,
+    tags: [_tagA],
   ),
   Tent(
     id: 't2',
@@ -379,6 +447,7 @@ const _sampleTents = [
     tentModelName: 'Tipi',
     overallState: TentOverallState.needsRepair,
     comments: null,
+    tags: [_tagA, _tagRepair],
   ),
   Tent(
     id: 't3',
@@ -388,5 +457,30 @@ const _sampleTents = [
     tentModelName: 'Tunnel',
     overallState: TentOverallState.unusable,
     comments: null,
+    tags: [_tagStorage],
   ),
 ];
+
+final _tagA = Tag(
+  id: 'tag-a',
+  name: 'Groupe A',
+  color: '#2E7D32',
+  createdAt: DateTime(2026),
+  tentCount: 2,
+);
+
+final _tagRepair = Tag(
+  id: 'tag-repair',
+  name: 'À réparer',
+  color: '#F9A825',
+  createdAt: DateTime(2026),
+  tentCount: 1,
+);
+
+final _tagStorage = Tag(
+  id: 'tag-storage',
+  name: 'Stock nord',
+  color: '#1565C0',
+  createdAt: DateTime(2026),
+  tentCount: 1,
+);

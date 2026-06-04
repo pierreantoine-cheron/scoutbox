@@ -52,7 +52,17 @@ List<Tent> filteredTentList(Ref ref) {
             filterState.selectedModelIds.isEmpty ||
             filterState.selectedModelIds.contains(tent.tentModelId);
 
-        return matchesState && matchesSearch && matchesSize && matchesModel;
+        final matchesTags =
+            filterState.selectedTagIds.isEmpty ||
+            filterState.selectedTagIds.every(
+              (tagId) => tent.tags.any((tag) => tag.id == tagId),
+            );
+
+        return matchesState &&
+            matchesSearch &&
+            matchesSize &&
+            matchesModel &&
+            matchesTags;
       })
       .toList(growable: false);
 }

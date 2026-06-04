@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:client/models/tag.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/views/widgets/tent_list_filter_bar.dart';
 
@@ -9,12 +10,14 @@ void main() {
     late Set<TentOverallState> selectedStates;
     late Set<int> selectedSizes;
     late Set<String> selectedModelIds;
+    late Set<String> selectedTagIds;
 
     setUp(() {
       searchController = TextEditingController();
       selectedStates = {};
       selectedSizes = {};
       selectedModelIds = {};
+      selectedTagIds = {};
     });
 
     tearDown(() {
@@ -23,6 +26,7 @@ void main() {
 
     Widget buildBar({bool isDesktop = true}) {
       return MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
         home: Scaffold(
           body: TentListFilterBar(
             isDesktop: isDesktop,
@@ -30,17 +34,21 @@ void main() {
             selectedStates: selectedStates,
             selectedSizes: selectedSizes,
             selectedModelIds: selectedModelIds,
+            selectedTagIds: selectedTagIds,
             availableSizes: const [4, 6, 8],
             availableModelOptions: const [
               TentTypeFilterOption(id: 'shape-1', label: 'Canadienne'),
               TentTypeFilterOption(id: 'shape-2', label: 'Cabanon'),
             ],
+            allTags: [_tagA, _tagB],
             isFilteredMode: false,
             onSearchChanged: (_) {},
             onToggleState: (_) {},
             onToggleSize: (_) {},
             onToggleModel: (_) {},
+            onToggleTag: (_) {},
             onClearAll: () {},
+            onManageTags: () {},
           ),
         ),
       );
@@ -82,6 +90,7 @@ void main() {
       TentOverallState? toggledState;
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
@@ -89,13 +98,16 @@ void main() {
               selectedStates: selectedStates,
               selectedSizes: selectedSizes,
               selectedModelIds: selectedModelIds,
+              selectedTagIds: selectedTagIds,
               availableSizes: const [],
               availableModelOptions: const [],
+              allTags: const [],
               isFilteredMode: false,
               onSearchChanged: (_) {},
               onToggleState: (s) => toggledState = s,
               onToggleSize: (_) {},
               onToggleModel: (_) {},
+              onToggleTag: (_) {},
               onClearAll: () {},
             ),
           ),
@@ -111,6 +123,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
@@ -118,13 +131,16 @@ void main() {
               selectedStates: const {TentOverallState.good},
               selectedSizes: selectedSizes,
               selectedModelIds: selectedModelIds,
+              selectedTagIds: selectedTagIds,
               availableSizes: const [],
               availableModelOptions: const [],
+              allTags: const [],
               isFilteredMode: true,
               onSearchChanged: (_) {},
               onToggleState: (_) {},
               onToggleSize: (_) {},
               onToggleModel: (_) {},
+              onToggleTag: (_) {},
               onClearAll: () => cleared = true,
             ),
           ),
@@ -164,6 +180,7 @@ void main() {
       String? searchValue;
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
@@ -171,13 +188,16 @@ void main() {
               selectedStates: selectedStates,
               selectedSizes: selectedSizes,
               selectedModelIds: selectedModelIds,
+              selectedTagIds: selectedTagIds,
               availableSizes: const [],
               availableModelOptions: const [],
+              allTags: const [],
               isFilteredMode: false,
               onSearchChanged: (v) => searchValue = v,
               onToggleState: (_) {},
               onToggleSize: (_) {},
               onToggleModel: (_) {},
+              onToggleTag: (_) {},
               onClearAll: () {},
             ),
           ),
@@ -191,5 +211,104 @@ void main() {
       expect(searchValue, '');
       expect(searchController.text, '');
     });
+
+    testWidgets('renders tag chips with counts on desktop', (tester) async {
+      await tester.pumpWidget(buildBar(isDesktop: true));
+
+      expect(find.text('Étiquettes'), findsOneWidget);
+      expect(find.text('Groupe A (5)'), findsOneWidget);
+      expect(find.text('À réparer (2)'), findsOneWidget);
+    });
+
+    testWidgets('calls onToggleTag when desktop tag chip is tapped', (
+      tester,
+    ) async {
+      String? toggledTagId;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          home: Scaffold(
+            body: TentListFilterBar(
+              isDesktop: true,
+              searchController: searchController,
+              selectedStates: selectedStates,
+              selectedSizes: selectedSizes,
+              selectedModelIds: selectedModelIds,
+              selectedTagIds: selectedTagIds,
+              availableSizes: const [],
+              availableModelOptions: const [],
+              allTags: [_tagA],
+              isFilteredMode: false,
+              onSearchChanged: (_) {},
+              onToggleState: (_) {},
+              onToggleSize: (_) {},
+              onToggleModel: (_) {},
+              onToggleTag: (tagId) => toggledTagId = tagId,
+              onClearAll: () {},
+              onManageTags: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Groupe A (5)'));
+
+      expect(toggledTagId, 'tag-a');
+    });
+
+    testWidgets('shows no tag message and manage action when no tags exist', (
+      tester,
+    ) async {
+      var manageTags = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          home: Scaffold(
+            body: TentListFilterBar(
+              isDesktop: true,
+              searchController: searchController,
+              selectedStates: selectedStates,
+              selectedSizes: selectedSizes,
+              selectedModelIds: selectedModelIds,
+              selectedTagIds: selectedTagIds,
+              availableSizes: const [],
+              availableModelOptions: const [],
+              allTags: const [],
+              isFilteredMode: false,
+              onSearchChanged: (_) {},
+              onToggleState: (_) {},
+              onToggleSize: (_) {},
+              onToggleModel: (_) {},
+              onToggleTag: (_) {},
+              onClearAll: () {},
+              onManageTags: () => manageTags = true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Aucune étiquette disponible'), findsOneWidget);
+      await tester.tap(find.text('Créer des étiquettes'));
+
+      expect(manageTags, isTrue);
+    });
   });
 }
+
+final _tagA = Tag(
+  id: 'tag-a',
+  name: 'Groupe A',
+  color: '#4CAF50',
+  createdAt: DateTime.utc(2026, 6, 1),
+  tentCount: 5,
+);
+
+final _tagB = Tag(
+  id: 'tag-b',
+  name: 'À réparer',
+  color: '#FFC107',
+  createdAt: DateTime.utc(2026, 6, 1),
+  tentCount: 2,
+);

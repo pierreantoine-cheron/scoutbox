@@ -11,11 +11,13 @@ enum TentDesktopSortColumn { name, state, size, model, updatedAt }
 class TentDataTable extends StatefulWidget {
   final List<Tent> tents;
   final ValueChanged<Tent> onOpenTent;
+  final ValueChanged<String>? onTagTap;
 
   const TentDataTable({
     super.key,
     required this.tents,
     required this.onOpenTent,
+    this.onTagTap,
   });
 
   @override
@@ -85,7 +87,7 @@ class _TentDataTableState extends State<TentDataTable> {
         DataCell(Text(tent.overallState.toFrenchLabel())),
         DataCell(Text(tent.size == 1 ? '1 place' : '${tent.size} places')),
         DataCell(_EllipsisCell(value: tent.tentModelName)),
-        DataCell(_TagsCell(tags: tent.tags)),
+        DataCell(_TagsCell(tags: tent.tags, onTagTap: widget.onTagTap)),
         DataCell(Text(tent.toFrenchUpdatedAtLabel(_updatedAtFormatter))),
       ],
     );
@@ -209,8 +211,9 @@ class _EllipsisCell extends StatelessWidget {
 
 class _TagsCell extends StatelessWidget {
   final List<Tag> tags;
+  final ValueChanged<String>? onTagTap;
 
-  const _TagsCell({required this.tags});
+  const _TagsCell({required this.tags, this.onTagTap});
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +223,7 @@ class _TagsCell extends StatelessWidget {
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 220),
-      child: TentTagChips(tags: tags),
+      child: TentTagChips(tags: tags, onTagTap: onTagTap),
     );
   }
 }

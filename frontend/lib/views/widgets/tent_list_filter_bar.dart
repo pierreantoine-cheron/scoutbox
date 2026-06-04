@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/tag.dart';
 import '../../models/tent.dart';
+import 'tent_tag_filter_sheet.dart';
 
 class TentTypeFilterOption {
   final String id;
@@ -15,14 +17,18 @@ class TentListFilterBar extends StatelessWidget {
   final Set<TentOverallState> selectedStates;
   final Set<int> selectedSizes;
   final Set<String> selectedModelIds;
+  final Set<String> selectedTagIds;
   final List<int> availableSizes;
   final List<TentTypeFilterOption> availableModelOptions;
+  final List<Tag> allTags;
   final bool isFilteredMode;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<TentOverallState> onToggleState;
   final ValueChanged<int> onToggleSize;
   final ValueChanged<String> onToggleModel;
+  final ValueChanged<String> onToggleTag;
   final VoidCallback onClearAll;
+  final VoidCallback? onManageTags;
 
   const TentListFilterBar({
     super.key,
@@ -31,14 +37,18 @@ class TentListFilterBar extends StatelessWidget {
     required this.selectedStates,
     required this.selectedSizes,
     required this.selectedModelIds,
+    required this.selectedTagIds,
     required this.availableSizes,
     required this.availableModelOptions,
+    required this.allTags,
     required this.isFilteredMode,
     required this.onSearchChanged,
     required this.onToggleState,
     required this.onToggleSize,
     required this.onToggleModel,
+    required this.onToggleTag,
     required this.onClearAll,
+    this.onManageTags,
   });
 
   @override
@@ -112,6 +122,30 @@ class TentListFilterBar extends StatelessWidget {
                             ],
                           ),
                         ),
+                      if (allTags.isNotEmpty)
+                        _DesktopCategory(
+                          label: 'Étiquettes',
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final tag in _sortedTags().take(6))
+                                _TagFilterChip(
+                                  tag: tag,
+                                  selected: selectedTagIds.contains(tag.id),
+                                  onToggleTag: onToggleTag,
+                                ),
+                              if (allTags.length > 6)
+                                FilledButton.tonalIcon(
+                                  onPressed: () => _openTagFilterSheet(context),
+                                  icon: const Icon(Icons.label_outline),
+                                  label: Text('Tags (${allTags.length})'),
+                                ),
+                            ],
+                          ),
+                        )
+                      else if (!isFilteredMode)
+                        _NoTagsMessage(onManageTags: onManageTags),
                     ],
                   ),
                   if (isFilteredMode) ...[
@@ -154,6 +188,10 @@ class TentListFilterBar extends StatelessWidget {
                         ),
                     ],
                   ),
+                  if (allTags.isEmpty && !isFilteredMode) ...[
+                    const SizedBox(height: 8),
+                    _NoTagsMessage(onManageTags: onManageTags),
+                  ],
                 ],
               ),
           ],
@@ -163,10 +201,13 @@ class TentListFilterBar extends StatelessWidget {
   }
 
   bool get _hasSecondaryFilters =>
-      availableSizes.isNotEmpty || availableModelOptions.isNotEmpty;
+      availableSizes.isNotEmpty ||
+      availableModelOptions.isNotEmpty ||
+      allTags.isNotEmpty;
 
   String _mobileFiltersLabel() {
-    final activeCount = selectedSizes.length + selectedModelIds.length;
+    final activeCount =
+        selectedSizes.length + selectedModelIds.length + selectedTagIds.length;
     if (activeCount == 0) {
       return 'Filtres';
     }
@@ -258,6 +299,23 @@ class TentListFilterBar extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                       ],
+                      if (allTags.isNotEmpty) ...[
+                        const Text(
+                          'Étiquettes',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 260,
+                          child: TentTagFilterSheet(
+                            tags: allTags,
+                            selectedTagIds: selectedTagIds,
+                            onToggleTag: onToggleTag,
+                            onClearAll: onClearAll,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       Align(
                         alignment: Alignment.centerRight,
                         child: FilledButton(
@@ -276,12 +334,89 @@ class TentListFilterBar extends StatelessWidget {
     );
   }
 
+  Future<void> _openTagFilterSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useRootNavigator: true,
+      builder: (context) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+          ),
+          child: TentTagFilterSheet(
+            tags: allTags,
+            selectedTagIds: selectedTagIds,
+            onToggleTag: onToggleTag,
+            onClearAll: onClearAll,
+          ),
+        );
+      },
+    );
+  }
+
+  List<Tag> _sortedTags() {
+    final tags = [...allTags];
+    tags.sort((left, right) {
+      final countCompare = right.tentCount.compareTo(left.tentCount);
+      if (countCompare != 0) {
+        return countCompare;
+      }
+      return left.name.toLowerCase().compareTo(right.name.toLowerCase());
+    });
+    return tags;
+  }
+
   String _sizeLabel(int size) {
     if (size <= 1) {
       return '$size place';
     }
 
     return '$size places';
+  }
+}
+
+class _TagFilterChip extends StatelessWidget {
+  final Tag tag;
+  final bool selected;
+  final ValueChanged<String> onToggleTag;
+
+  const _TagFilterChip({
+    required this.tag,
+    required this.selected,
+    required this.onToggleTag,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FilterChip(
+      label: Text('${tag.name} (${tag.tentCount})'),
+      selected: selected,
+      onSelected: (_) => onToggleTag(tag.id),
+    );
+  }
+}
+
+class _NoTagsMessage extends StatelessWidget {
+  final VoidCallback? onManageTags;
+
+  const _NoTagsMessage({this.onManageTags});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        const Text('Aucune étiquette disponible'),
+        if (onManageTags != null)
+          TextButton(
+            onPressed: onManageTags,
+            child: const Text('Créer des étiquettes'),
+          ),
+      ],
+    );
   }
 }
 

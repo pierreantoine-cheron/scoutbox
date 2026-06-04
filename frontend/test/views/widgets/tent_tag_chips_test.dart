@@ -109,11 +109,31 @@ void main() {
       expect(text.maxLines, 1);
       expect(text.overflow, TextOverflow.ellipsis);
     });
+
+    testWidgets('calls onTagTap with tapped tag id', (tester) async {
+      String? tappedTagId;
+
+      await tester.pumpWidget(
+        _testApp(
+          TentTagChips(
+            tags: [_tag('tag-1', 'Louveteaux')],
+            onTagTap: (tagId) => tappedTagId = tagId,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Louveteaux'));
+
+      expect(tappedTagId, 'tag-1');
+    });
   });
 }
 
 Widget _testApp(Widget child) {
-  return MaterialApp(home: Scaffold(body: child));
+  return MaterialApp(
+    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    home: Scaffold(body: child),
+  );
 }
 
 Tag _tag(String id, String name, {String color = '#2196F3'}) {

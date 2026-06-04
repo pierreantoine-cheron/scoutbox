@@ -13,6 +13,7 @@ class TentListFilterState {
   final Set<TentOverallState> selectedStates;
   final Set<int> selectedSizes;
   final Set<String> selectedModelIds;
+  final Set<String> selectedTagIds;
 
   const TentListFilterState({
     this.searchText = '',
@@ -20,12 +21,14 @@ class TentListFilterState {
     this.selectedStates = const {},
     this.selectedSizes = const {},
     this.selectedModelIds = const {},
+    this.selectedTagIds = const {},
   });
 
   bool get isFilteredMode =>
       selectedStates.isNotEmpty ||
       selectedSizes.isNotEmpty ||
       selectedModelIds.isNotEmpty ||
+      selectedTagIds.isNotEmpty ||
       effectiveSearchText.isNotEmpty;
 
   TentListFilterState copyWith({
@@ -34,6 +37,7 @@ class TentListFilterState {
     Set<TentOverallState>? selectedStates,
     Set<int>? selectedSizes,
     Set<String>? selectedModelIds,
+    Set<String>? selectedTagIds,
   }) {
     return TentListFilterState(
       searchText: searchText ?? this.searchText,
@@ -41,6 +45,7 @@ class TentListFilterState {
       selectedStates: selectedStates ?? this.selectedStates,
       selectedSizes: selectedSizes ?? this.selectedSizes,
       selectedModelIds: selectedModelIds ?? this.selectedModelIds,
+      selectedTagIds: selectedTagIds ?? this.selectedTagIds,
     );
   }
 }
@@ -104,6 +109,21 @@ class TentListFilterNotifier extends _$TentListFilterNotifier {
     }
 
     state = state.copyWith(selectedModelIds: nextModelIds);
+  }
+
+  void toggleTag(String tagId) {
+    final nextTagIds = Set<String>.from(state.selectedTagIds);
+    if (nextTagIds.contains(tagId)) {
+      nextTagIds.remove(tagId);
+    } else {
+      nextTagIds.add(tagId);
+    }
+
+    state = state.copyWith(selectedTagIds: nextTagIds);
+  }
+
+  void setSelectedTags(Set<String> tagIds) {
+    state = state.copyWith(selectedTagIds: Set<String>.from(tagIds));
   }
 
   void clearAll() {

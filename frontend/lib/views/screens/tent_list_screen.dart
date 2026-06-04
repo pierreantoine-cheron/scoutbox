@@ -98,6 +98,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     final filteredTents = ref.watch(filteredTentListProvider);
     final refreshIssue = ref.watch(tentListRefreshIssueProvider);
     final isFilteredMode = ref.watch(tentListFilteredModeProvider);
+    final allTags = ref.watch(tagsProvider).asData?.value ?? const [];
 
     ref.listen(
       tentListFilterProvider.select((state) => state.searchText),
@@ -123,6 +124,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             refreshIssue: refreshIssue,
             isFilteredMode: isFilteredMode,
             filterState: filterState,
+            allTags: allTags,
           ),
         ),
       ),
@@ -152,6 +154,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     required Object? refreshIssue,
     required bool isFilteredMode,
     required TentListFilterState filterState,
+    required List allTags,
   }) {
     final isDesktop = MediaQuery.sizeOf(context).width >= 768;
     final availableSizes = _buildSizeOptions(rawTents);
@@ -166,6 +169,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             isDesktop,
             availableSizes,
             availableModelOptions,
+            allTags,
           ),
           Expanded(
             child: RefreshIndicator(
@@ -189,6 +193,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             isDesktop,
             availableSizes,
             availableModelOptions,
+            allTags,
           ),
           Expanded(
             child: RefreshIndicator(
@@ -196,6 +201,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
               child: _FilteredEmptyState(
                 onClearFilters: _clearFiltersHook,
                 warningMessage: _toRefreshWarningMessage(refreshIssue),
+                tagFiltersOnly: _hasOnlyTagFilters(filterState),
               ),
             ),
           ),
@@ -214,6 +220,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             isDesktop,
             availableSizes,
             availableModelOptions,
+            allTags,
           ),
           if (warning != null) _RefreshWarningCard(message: warning),
           Expanded(
@@ -222,6 +229,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
               child: TentDataTable(
                 tents: visibleTents,
                 onOpenTent: (tent) => _openTentDetail(context, tent),
+                onTagTap: _toggleTagFilter,
               ),
             ),
           ),
@@ -237,6 +245,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
           isDesktop,
           availableSizes,
           availableModelOptions,
+          allTags,
         ),
         Expanded(
           child: RefreshIndicator(
@@ -256,6 +265,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
                 return TentCard(
                   tent: tent,
                   onTap: () => _openTentDetail(context, tent),
+                  onTagTap: _toggleTagFilter,
                 );
               },
             ),
@@ -271,6 +281,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     bool isDesktop,
     List<int> availableSizes,
     List<TentTypeFilterOption> availableModelOptions,
+    List allTags,
   ) {
     return TentListFilterBar(
       isDesktop: isDesktop,
@@ -278,8 +289,10 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       selectedStates: filterState.selectedStates,
       selectedSizes: filterState.selectedSizes,
       selectedModelIds: filterState.selectedModelIds,
+      selectedTagIds: filterState.selectedTagIds,
       availableSizes: availableSizes,
       availableModelOptions: availableModelOptions,
+      allTags: allTags.cast(),
       isFilteredMode: isFilteredMode,
       onSearchChanged: (value) {
         ref.read(tentListFilterProvider.notifier).setSearchText(value);
@@ -293,8 +306,22 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       onToggleModel: (modelId) {
         ref.read(tentListFilterProvider.notifier).toggleModel(modelId);
       },
+      onToggleTag: _toggleTagFilter,
       onClearAll: _clearFiltersHook,
+      onManageTags: () => _openTags(context),
     );
+  }
+
+  bool _hasOnlyTagFilters(TentListFilterState filterState) {
+    return filterState.selectedTagIds.isNotEmpty &&
+        filterState.selectedStates.isEmpty &&
+        filterState.selectedSizes.isEmpty &&
+        filterState.selectedModelIds.isEmpty &&
+        filterState.effectiveSearchText.isEmpty;
+  }
+
+  void _toggleTagFilter(String tagId) {
+    ref.read(tentListFilterProvider.notifier).toggleTag(tagId);
   }
 
   List<int> _buildSizeOptions(List<Tent> rawTents) {
@@ -446,10 +473,12 @@ class _EmptyState extends StatelessWidget {
 class _FilteredEmptyState extends StatelessWidget {
   final VoidCallback onClearFilters;
   final String? warningMessage;
+  final bool tagFiltersOnly;
 
   const _FilteredEmptyState({
     required this.onClearFilters,
     this.warningMessage,
+    this.tagFiltersOnly = false,
   });
 
   @override
@@ -462,10 +491,12 @@ class _FilteredEmptyState extends StatelessWidget {
         const SizedBox(height: 72),
         const Icon(Icons.filter_alt_off, size: 64),
         const SizedBox(height: 16),
-        const Center(
+        Center(
           child: Text(
-            'Aucune tente ne correspond à vos critères',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            tagFiltersOnly
+                ? 'Aucune tente ne correspond aux étiquettes sélectionnées'
+                : 'Aucune tente ne correspond à vos critères',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
         ),

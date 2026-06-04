@@ -11,5 +11,6 @@ export 'tag_assignment_sheet.dart';
 export 'tent_card.dart';
 export 'tent_data_table.dart';
 export 'tent_tag_chips.dart';
+export 'tent_tag_filter_sheet.dart';
 export 'tent_list_filter_bar.dart';
 export 'tent_model_selection_grid.dart';
