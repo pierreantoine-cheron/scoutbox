@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/tag.dart';
 import '../../models/tent.dart';
+import '../../utils/app_colors.dart';
 import 'tent_tag_filter_sheet.dart';
 
 class TentTypeFilterOption {
@@ -28,6 +29,7 @@ class TentListFilterBar extends StatelessWidget {
   final ValueChanged<String> onToggleModel;
   final ValueChanged<String> onToggleTag;
   final VoidCallback onClearAll;
+  final VoidCallback? onClearTags;
   final VoidCallback? onManageTags;
 
   const TentListFilterBar({
@@ -48,6 +50,7 @@ class TentListFilterBar extends StatelessWidget {
     required this.onToggleModel,
     required this.onToggleTag,
     required this.onClearAll,
+    this.onClearTags,
     this.onManageTags,
   });
 
@@ -311,7 +314,7 @@ class TentListFilterBar extends StatelessWidget {
                             tags: allTags,
                             selectedTagIds: selectedTagIds,
                             onToggleTag: onToggleTag,
-                            onClearAll: onClearAll,
+                            onClearTags: onClearTags ?? onClearAll,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -349,7 +352,7 @@ class TentListFilterBar extends StatelessWidget {
             tags: allTags,
             selectedTagIds: selectedTagIds,
             onToggleTag: onToggleTag,
-            onClearAll: onClearAll,
+            onClearTags: onClearTags ?? onClearAll,
           ),
         );
       },
@@ -391,6 +394,7 @@ class _TagFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FilterChip(
+      avatar: CircleAvatar(backgroundColor: TagPalette.colorFromHex(tag.color)),
       label: Text('${tag.name} (${tag.tentCount})'),
       selected: selected,
       onSelected: (_) => onToggleTag(tag.id),

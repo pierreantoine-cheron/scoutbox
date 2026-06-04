@@ -7,14 +7,14 @@ class TentTagFilterSheet extends StatefulWidget {
   final List<Tag> tags;
   final Set<String> selectedTagIds;
   final ValueChanged<String> onToggleTag;
-  final VoidCallback onClearAll;
+  final VoidCallback onClearTags;
 
   const TentTagFilterSheet({
     super.key,
     required this.tags,
     required this.selectedTagIds,
     required this.onToggleTag,
-    required this.onClearAll,
+    required this.onClearTags,
   });
 
   @override
@@ -46,7 +46,7 @@ class _TentTagFilterSheetState extends State<TentTagFilterSheet> {
                 TextButton(
                   onPressed: widget.selectedTagIds.isEmpty
                       ? null
-                      : widget.onClearAll,
+                      : widget.onClearTags,
                   child: const Text('Effacer tout'),
                 ),
               ],

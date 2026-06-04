@@ -308,6 +308,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       },
       onToggleTag: _toggleTagFilter,
       onClearAll: _clearFiltersHook,
+      onClearTags: () => ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
       onManageTags: () => _openTags(context),
     );
   }
