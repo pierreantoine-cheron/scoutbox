@@ -89,7 +89,7 @@ public class TentsController : ControllerBase
 
     [HttpPut("{id:guid}/tags")]
     [ValidateUser]
-    public async Task<IActionResult> SetTentTags([FromRoute] Guid id, [FromBody] AssignTagsRequest request)
+    public async Task<IActionResult> SetTentTags([FromRoute] Guid id, [FromBody] SetTentTagsRequest request)
     {
         var userId = _currentUserAccessor.GetValidatedUserId();
         var (response, error, notFound) = await _tentService.SetTentTagsAsync(id, request.TagIds ?? Array.Empty<Guid>(), userId);

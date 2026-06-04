@@ -242,8 +242,12 @@ class _TagsSection extends ConsumerWidget {
                   child: Text('Étiquettes', style: theme.textTheme.titleMedium),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add),
-                  tooltip: 'Ajouter des étiquettes',
+                  icon: Icon(
+                    tent.tags.isEmpty ? Icons.add : Icons.edit_outlined,
+                  ),
+                  tooltip: tent.tags.isEmpty
+                      ? 'Ajouter des étiquettes'
+                      : 'Modifier les étiquettes',
                   onPressed: tent.isArchived
                       ? null
                       : () => _showTagAssignmentSheet(context, ref),
