@@ -15,7 +15,7 @@ class TentTagChips extends StatelessWidget {
     required this.tags,
     this.maxVisible = 3,
     this.mode = TentTagChipsMode.compact,
-  });
+  }) : assert(maxVisible > 0, 'maxVisible must be greater than 0');
 
   @override
   Widget build(BuildContext context) {
