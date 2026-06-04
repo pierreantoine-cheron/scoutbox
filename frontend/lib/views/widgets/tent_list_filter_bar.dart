@@ -312,7 +312,6 @@ class TentListFilterBar extends StatelessWidget {
                           height: 260,
                           child: TentTagFilterSheet(
                             tags: allTags,
-                            selectedTagIds: selectedTagIds,
                             onToggleTag: onToggleTag,
                             onClearTags: onClearTags ?? onClearAll,
                           ),
@@ -350,7 +349,6 @@ class TentListFilterBar extends StatelessWidget {
           ),
           child: TentTagFilterSheet(
             tags: allTags,
-            selectedTagIds: selectedTagIds,
             onToggleTag: onToggleTag,
             onClearTags: onClearTags ?? onClearAll,
           ),

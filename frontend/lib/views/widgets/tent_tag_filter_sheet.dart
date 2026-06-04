@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tag.dart';
+import '../../providers/tent_filter_provider.dart';
 import '../../utils/app_colors.dart';
 
-class TentTagFilterSheet extends StatefulWidget {
+class TentTagFilterSheet extends ConsumerStatefulWidget {
   final List<Tag> tags;
-  final Set<String> selectedTagIds;
   final ValueChanged<String> onToggleTag;
   final VoidCallback onClearTags;
 
   const TentTagFilterSheet({
     super.key,
     required this.tags,
-    required this.selectedTagIds,
     required this.onToggleTag,
     required this.onClearTags,
   });
 
   @override
-  State<TentTagFilterSheet> createState() => _TentTagFilterSheetState();
+  ConsumerState<TentTagFilterSheet> createState() => _TentTagFilterSheetState();
 }
 
-class _TentTagFilterSheetState extends State<TentTagFilterSheet> {
+class _TentTagFilterSheetState extends ConsumerState<TentTagFilterSheet> {
   String _searchText = '';
 
   @override
   Widget build(BuildContext context) {
+    final selectedTagIds =
+        ref.watch(tentListFilterProvider.select((s) => s.selectedTagIds));
     final visibleTags = _visibleTags();
 
     return SafeArea(
@@ -44,7 +46,7 @@ class _TentTagFilterSheetState extends State<TentTagFilterSheet> {
                   ),
                 ),
                 TextButton(
-                  onPressed: widget.selectedTagIds.isEmpty
+                  onPressed: selectedTagIds.isEmpty
                       ? null
                       : widget.onClearTags,
                   child: const Text('Effacer tout'),
@@ -72,7 +74,7 @@ class _TentTagFilterSheetState extends State<TentTagFilterSheet> {
                     for (final tag in visibleTags)
                       _TagFilterChip(
                         tag: tag,
-                        selected: widget.selectedTagIds.contains(tag.id),
+                        selected: selectedTagIds.contains(tag.id),
                         onSelected: () => widget.onToggleTag(tag.id),
                       ),
                   ],

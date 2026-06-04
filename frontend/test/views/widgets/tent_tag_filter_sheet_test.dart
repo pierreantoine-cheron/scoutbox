@@ -1,6 +1,8 @@
 import 'package:client/models/tag.dart';
+import 'package:client/providers/tent_filter_provider.dart';
 import 'package:client/views/widgets/tent_tag_filter_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -12,11 +14,11 @@ void main() {
 
       await tester.pumpWidget(
         _testApp(
-          TentTagFilterSheet(
+          selection: const {'tag-high'},
+          child: TentTagFilterSheet(
             tags: [_tagLow, _tagHigh, _tagUnused],
-            selectedTagIds: const {'tag-high'},
             onToggleTag: (tagId) => toggledTagId = tagId,
-            onClearAll: () {},
+            onClearTags: () {},
           ),
         ),
       );
@@ -44,11 +46,10 @@ void main() {
     testWidgets('search filters tags by name', (tester) async {
       await tester.pumpWidget(
         _testApp(
-          TentTagFilterSheet(
+          child: TentTagFilterSheet(
             tags: [_tagLow, _tagHigh, _tagUnused],
-            selectedTagIds: const {},
             onToggleTag: (_) {},
-            onClearAll: () {},
+            onClearTags: () {},
           ),
         ),
       );
@@ -65,11 +66,11 @@ void main() {
 
       await tester.pumpWidget(
         _testApp(
-          TentTagFilterSheet(
+          selection: const {'tag-high'},
+          child: TentTagFilterSheet(
             tags: [_tagHigh],
-            selectedTagIds: const {'tag-high'},
             onToggleTag: (_) {},
-            onClearAll: () => cleared = true,
+            onClearTags: () => cleared = true,
           ),
         ),
       );
@@ -81,10 +82,28 @@ void main() {
   });
 }
 
-Widget _testApp(Widget child) {
-  return MaterialApp(
-    theme: ThemeData(splashFactory: NoSplash.splashFactory),
-    home: Scaffold(body: child),
+Widget _testApp({Set<String>? selection, required Widget child}) {
+  return ProviderScope(
+    overrides: [
+      tentListFilterProvider.overrideWith(
+        () => _TestFilterNotifier(selection ?? const {}),
+      ),
+    ],
+    child: MaterialApp(
+      theme: ThemeData(splashFactory: NoSplash.splashFactory),
+      home: Scaffold(body: child),
+    ),
+  );
+}
+
+class _TestFilterNotifier extends TentListFilterNotifier {
+  final Set<String> _selection;
+
+  _TestFilterNotifier(this._selection);
+
+  @override
+  TentListFilterState build() => TentListFilterState(
+    selectedTagIds: _selection,
   );
 }
 
