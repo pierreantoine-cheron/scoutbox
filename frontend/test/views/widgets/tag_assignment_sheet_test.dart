@@ -34,6 +34,22 @@ void main() {
       expect(tentRepository.lastTagIds, containsAll(['tag-1', 'tag-2']));
     });
 
+    testWidgets('toggle assigned tag off saves reduced tag list', (
+      tester,
+    ) async {
+      final tentRepository = _TentRepositoryStub();
+
+      await tester.pumpWidget(_buildWidget(tentRepository: tentRepository));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Groupe A'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(tentRepository.lastTagIds, isNot(contains('tag-1')));
+      expect(tentRepository.lastTagIds, isEmpty);
+    });
+
     testWidgets('shows empty state when no tags exist', (tester) async {
       await tester.pumpWidget(_buildWidget(tags: const []));
       await tester.pumpAndSettle();
