@@ -234,6 +234,71 @@ public class AuditHistoryServiceTests : TestBase
     }
 
     [Fact]
+    public async Task GetTentHistory_IncludesTagAssignmentEvents()
+    {
+        var user = Builder.CreateUser("taguser");
+        var tentId = Guid.NewGuid();
+
+        Builder.CreateAuditEvent(
+            AuditActions.TagAssigned,
+            user.Id,
+            "TentTag",
+            tentId,
+            DateTime.UtcNow.AddMinutes(-2),
+            new Dictionary<string, object?>
+            {
+                ["tagId"] = Guid.NewGuid(),
+                ["tagName"] = "Patrouille"
+            });
+
+        await Builder.SaveChangesAsync();
+
+        var history = await _service.GetTentHistoryAsync(tentId);
+
+        var item = Assert.Single(history);
+        Assert.Equal(AuditActions.TagAssigned, item.Action);
+        Assert.Equal("tags", item.Category);
+        Assert.Equal("Patrouille", item.SubjectName);
+        Assert.Equal("Étiquette", Assert.Single(item.Details).Label);
+        Assert.Equal("Patrouille", item.Details[0].Value);
+    }
+
+    [Fact]
+    public async Task GetTentHistory_WithTagsCategory_ReturnsOnlyTagEvents()
+    {
+        var user = Builder.CreateUser("taguser");
+        var tentId = Guid.NewGuid();
+
+        Builder.CreateAuditEvent(
+            AuditActions.TentUpdated,
+            user.Id,
+            "Tent",
+            tentId,
+            DateTime.UtcNow.AddMinutes(-3));
+
+        Builder.CreateAuditEvent(
+            AuditActions.TagRemoved,
+            user.Id,
+            "TentTag",
+            tentId,
+            DateTime.UtcNow.AddMinutes(-2),
+            new Dictionary<string, object?>
+            {
+                ["tagId"] = Guid.NewGuid(),
+                ["tagName"] = "Rouge"
+            });
+
+        await Builder.SaveChangesAsync();
+
+        var history = await _service.GetTentHistoryAsync(tentId, TentHistoryCategory.Tags);
+
+        var item = Assert.Single(history);
+        Assert.Equal(AuditActions.TagRemoved, item.Action);
+        Assert.Equal("tags", item.Category);
+        Assert.Equal("Rouge", item.SubjectName);
+    }
+
+    [Fact]
     public async Task GetAuditHistory_OrdersByMostRecentFirst()
     {
         var user = Builder.CreateUser("testuser");

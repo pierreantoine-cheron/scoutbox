@@ -122,7 +122,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Étiquettes'), findsOneWidget);
+      expect(find.text('Étiquettes'), findsAtLeast(1));
       expect(find.text('Groupe A'), findsOneWidget);
     });
 
@@ -844,7 +844,28 @@ void main() {
       expect(find.text('Tente'), findsOneWidget);
       expect(find.text('États'), findsOneWidget);
       expect(find.text('Pièces'), findsOneWidget);
+      expect(find.text('Étiquettes'), findsAtLeast(1));
       expect(find.text('Archive'), findsOneWidget);
+    });
+
+    testWidgets('shows tag audit events in history', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(
+              _HistorySuccessRepository(),
+            ),
+          ],
+          child: _testApp(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Étiquette ajoutée : Patrouille'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('archived tent still shows history', (tester) async {
@@ -1247,6 +1268,21 @@ class _HistorySuccessRepository extends TentRepository {
             oldValue: 'Ancien nom',
             newValue: 'Nouveau nom',
             valueType: 'old_new',
+          ),
+        ],
+      ),
+      TentHistoryItem(
+        id: 'h-3',
+        action: 'tag_assigned',
+        category: 'tags',
+        occurredAt: DateTime.utc(2026, 5, 19, 12, 0),
+        actorDisplayName: 'Jean',
+        subjectName: 'Patrouille',
+        details: const [
+          TentHistoryDetail(
+            label: 'Étiquette',
+            value: 'Patrouille',
+            valueType: 'tag',
           ),
         ],
       ),

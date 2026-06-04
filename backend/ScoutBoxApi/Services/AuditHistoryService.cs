@@ -25,6 +25,7 @@ public enum TentHistoryCategory
     Archive,
     PartState,
     PartManagement,
+    Tags,
     Other
 }
 
@@ -39,6 +40,7 @@ public static class TentHistoryCategoryMapper
             "archive" => TentHistoryCategory.Archive,
             "part_state" => TentHistoryCategory.PartState,
             "part_management" => TentHistoryCategory.PartManagement,
+            "tags" => TentHistoryCategory.Tags,
             "other" => TentHistoryCategory.Other,
             _ => null
         };
@@ -54,6 +56,7 @@ public static class TentHistoryCategoryMapper
             TentHistoryCategory.Archive => "archive",
             TentHistoryCategory.PartState => "part_state",
             TentHistoryCategory.PartManagement => "part_management",
+            TentHistoryCategory.Tags => "tags",
             TentHistoryCategory.Other => "other",
             _ => "other"
         };
@@ -235,6 +238,7 @@ public class AuditHistoryService : IAuditHistoryService
         var candidateCount = Math.Min(Math.Max(limit * 5, 200), 500);
         var tentActions = GetTentHistoryTentActions(category);
         var partActions = GetTentHistoryPartActions(category);
+        var tagActions = GetTentHistoryTagActions(category);
 
         var tentQuery = _db.AuditEvents
             .AsNoTracking()
@@ -271,7 +275,21 @@ public class AuditHistoryService : IAuditHistoryService
             .Where(pe => TryGetMetadataTentId(pe.MetadataJson) == tentId)
             .ToList();
 
-        var allCandidateEvents = tentEvents.Concat(matchingPartEvents)
+        var tagQuery = _db.AuditEvents
+            .AsNoTracking()
+            .Where(ae => ae.TargetEntityType == "TentTag" && ae.TargetEntityId == tentId);
+
+        if (tagActions != null)
+        {
+            tagQuery = tagQuery.Where(ae => tagActions.Contains(ae.Action));
+        }
+
+        var tagEvents = await tagQuery
+            .OrderByDescending(ae => ae.OccurredAt)
+            .Take(candidateCount)
+            .ToListAsync(cancellationToken);
+
+        var allCandidateEvents = tentEvents.Concat(matchingPartEvents).Concat(tagEvents)
             .OrderByDescending(ae => ae.OccurredAt)
             .ToList();
 
@@ -298,6 +316,7 @@ public class AuditHistoryService : IAuditHistoryService
             TentHistoryCategory.Archive => new[] { AuditActions.TentArchived },
             TentHistoryCategory.PartState => Array.Empty<string>(),
             TentHistoryCategory.PartManagement => Array.Empty<string>(),
+            TentHistoryCategory.Tags => Array.Empty<string>(),
             _ => null
         };
     }
@@ -310,7 +329,21 @@ public class AuditHistoryService : IAuditHistoryService
             TentHistoryCategory.Archive => Array.Empty<string>(),
             TentHistoryCategory.PartState => new[] { AuditActions.PartStateChanged, AuditActions.PartCommentsChanged },
             TentHistoryCategory.PartManagement => new[] { AuditActions.PartAdded, AuditActions.PartDeleted },
+            TentHistoryCategory.Tags => Array.Empty<string>(),
             _ => new[] { AuditActions.PartStateChanged, AuditActions.PartCommentsChanged, AuditActions.PartAdded, AuditActions.PartDeleted }
+        };
+    }
+
+    private static string[]? GetTentHistoryTagActions(TentHistoryCategory? category)
+    {
+        return category switch
+        {
+            TentHistoryCategory.TentInfo => Array.Empty<string>(),
+            TentHistoryCategory.Archive => Array.Empty<string>(),
+            TentHistoryCategory.PartState => Array.Empty<string>(),
+            TentHistoryCategory.PartManagement => Array.Empty<string>(),
+            TentHistoryCategory.Tags => new[] { AuditActions.TagAssigned, AuditActions.TagRemoved },
+            _ => new[] { AuditActions.TagAssigned, AuditActions.TagRemoved }
         };
     }
 
@@ -406,6 +439,8 @@ public class AuditHistoryService : IAuditHistoryService
             AuditActions.PartCommentsChanged => BuildPartCommentsChangedItem(ae, actorName, partKindNames),
             AuditActions.PartAdded => BuildPartAddedItem(ae, actorName, partKindNames),
             AuditActions.PartDeleted => BuildPartDeletedItem(ae, actorName, partKindNames),
+            AuditActions.TagAssigned => BuildTagItem(ae, actorName),
+            AuditActions.TagRemoved => BuildTagItem(ae, actorName),
             _ => BuildUnknownItem(ae, actorName)
         };
     }
@@ -549,6 +584,39 @@ public class AuditHistoryService : IAuditHistoryService
             null, new List<TentHistoryDetailDto>(),
             ae.TargetEntityType, ae.TargetEntityId
         );
+    }
+
+    private static TentHistoryItemDto BuildTagItem(AuditEvent ae, string actorName)
+    {
+        var tagName = TryGetMetadataString(ae.MetadataJson, "tagName") ?? "Étiquette inconnue";
+        var details = new List<TentHistoryDetailDto>
+        {
+            new TentHistoryDetailDto("Étiquette", null, null, tagName, "tag")
+        };
+
+        return new TentHistoryItemDto(
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.Tags),
+            ae.OccurredAt, ae.ActorUserId, actorName,
+            tagName, details, ae.TargetEntityType, ae.TargetEntityId
+        );
+    }
+
+    private static string? TryGetMetadataString(string? metadataJson, string propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(metadataJson)) return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(metadataJson);
+            return doc.RootElement.TryGetProperty(propertyName, out var property) &&
+                   property.ValueKind == JsonValueKind.String
+                ? property.GetString()
+                : null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static void TryParseMetadata(

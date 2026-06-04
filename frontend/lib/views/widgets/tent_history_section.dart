@@ -26,6 +26,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
     _FilterOption(label: 'Tente', value: 'tent_info'),
     _FilterOption(label: 'États', value: 'part_state'),
     _FilterOption(label: 'Pièces', value: 'part_management'),
+    _FilterOption(label: 'Étiquettes', value: 'tags'),
     _FilterOption(label: 'Archive', value: 'archive'),
   ];
 
@@ -363,6 +364,10 @@ class _HistoryEntry extends StatelessWidget {
         return Icons.add_box_outlined;
       case 'part_deleted':
         return Icons.remove_circle_outline;
+      case 'tag_assigned':
+        return Icons.label_outlined;
+      case 'tag_removed':
+        return Icons.label_off_outlined;
       default:
         return Icons.info_outline;
     }
@@ -396,6 +401,10 @@ String _buildHistorySummary(TentHistoryItem item) {
       return 'Pièce ajoutée : $subject $suffix';
     case 'part_deleted':
       return 'Pièce supprimée : $subject $suffix';
+    case 'tag_assigned':
+      return 'Étiquette ajoutée : $subject $suffix';
+    case 'tag_removed':
+      return 'Étiquette retirée : $subject $suffix';
     default:
       return 'Action ${item.action} $suffix';
   }
