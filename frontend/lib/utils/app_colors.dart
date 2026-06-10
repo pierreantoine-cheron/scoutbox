@@ -3,10 +3,31 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const scoutGreen = Color(0xFF2E7D32);
+  static const scoutGreen = Color(0xFF186A23);
   static const success = scoutGreen;
-  static const warningContainer = Color(0xFFFFE0B2);
-  static const onWarningContainer = Color(0xFFE65100);
+
+  static const background = Color(0xFFF9FAFB);
+  static const surface = Color(0xFFFFFFFF);
+
+  static const foreground = Color(0xFF11171C);
+  static const muted = Color(0xFF646A70);
+
+  static const border = Color(0xFFDEE2E5);
+
+  static const statePerfect = Color(0xFF1D9330);
+  static const statePerfectBackground = Color(0xFFDBF3DB);
+
+  static const stateUsable = Color(0xFFC68D21);
+  static const stateUsableBackground = Color(0xFFFFEBC1);
+
+  static const stateUnusable = Color(0xFFC91519);
+  static const stateUnusableBackground = Color(0xFFFFDCD7);
+
+  static const stateMissing = Color(0xFF6A57B3);
+  static const stateMissingBackground = Color(0xFFECE2FF);
+
+  static const error = stateUnusable;
+  static const errorBackground = Color(0xFFFFE2DE);
 }
 
 class TagPaletteOption {
@@ -24,23 +45,23 @@ class TagPaletteOption {
 class TagPalette {
   TagPalette._();
 
-  static const defaultColor = '#2196F3';
+  static const defaultColor = '#1A70E5';
 
   static const options = [
-    TagPaletteOption(label: 'Rouge', hex: '#F44336', color: Color(0xFFF44336)),
-    TagPaletteOption(label: 'Orange', hex: '#FF9800', color: Color(0xFFFF9800)),
-    TagPaletteOption(label: 'Jaune', hex: '#FFC107', color: Color(0xFFFFC107)),
-    TagPaletteOption(label: 'Vert', hex: '#4CAF50', color: Color(0xFF4CAF50)),
-    TagPaletteOption(label: 'Bleu', hex: '#2196F3', color: Color(0xFF2196F3)),
-    TagPaletteOption(label: 'Violet', hex: '#9C27B0', color: Color(0xFF9C27B0)),
-    TagPaletteOption(label: 'Rose', hex: '#E91E63', color: Color(0xFFE91E63)),
+    TagPaletteOption(label: 'Rouge', hex: '#DF202E', color: Color(0xFFDF202E)),
+    TagPaletteOption(label: 'Orange', hex: '#DD7234', color: Color(0xFFDD7234)),
+    TagPaletteOption(label: 'Jaune', hex: '#C6A136', color: Color(0xFFC6A136)),
+    TagPaletteOption(label: 'Vert', hex: '#1D9330', color: Color(0xFF1D9330)),
+    TagPaletteOption(label: 'Bleu', hex: '#1A70E5', color: Color(0xFF1A70E5)),
+    TagPaletteOption(label: 'Violet', hex: '#6A34AB', color: Color(0xFF6A34AB)),
+    TagPaletteOption(label: 'Rose', hex: '#C91B86', color: Color(0xFFC91B86)),
     TagPaletteOption(
       label: 'Turquoise',
-      hex: '#009688',
-      color: Color(0xFF009688),
+      hex: '#43857F',
+      color: Color(0xFF43857F),
     ),
-    TagPaletteOption(label: 'Gris', hex: '#9E9E9E', color: Color(0xFF9E9E9E)),
-    TagPaletteOption(label: 'Marron', hex: '#795548', color: Color(0xFF795548)),
+    TagPaletteOption(label: 'Gris', hex: '#6D7277', color: Color(0xFF6D7277)),
+    TagPaletteOption(label: 'Marron', hex: '#6D411C', color: Color(0xFF6D411C)),
   ];
 
   static Color colorFromHex(String hex) {
@@ -50,7 +71,7 @@ class TagPalette {
     debugPrint(
       'TagPalette: unknown color hex "$hex", falling back to default blue',
     );
-    return const Color(0xFF2196F3);
+    return const Color(0xFF1A70E5);
   }
 
   static Color textColorFor(Color color) {
@@ -63,42 +84,91 @@ class TagPalette {
 @immutable
 class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   final Color success;
-  final Color warningContainer;
-  final Color onWarningContainer;
+  final Color statePerfect;
+  final Color statePerfectBackground;
+  final Color stateUsable;
+  final Color stateUsableBackground;
+  final Color stateUnusable;
+  final Color stateUnusableBackground;
+  final Color stateMissing;
+  final Color stateMissingBackground;
 
   const AppSemanticColors({
     required this.success,
-    required this.warningContainer,
-    required this.onWarningContainer,
+    required this.statePerfect,
+    required this.statePerfectBackground,
+    required this.stateUsable,
+    required this.stateUsableBackground,
+    required this.stateUnusable,
+    required this.stateUnusableBackground,
+    required this.stateMissing,
+    required this.stateMissingBackground,
   });
 
   @override
   AppSemanticColors copyWith({
     Color? success,
-    Color? warningContainer,
-    Color? onWarningContainer,
+    Color? statePerfect,
+    Color? statePerfectBackground,
+    Color? stateUsable,
+    Color? stateUsableBackground,
+    Color? stateUnusable,
+    Color? stateUnusableBackground,
+    Color? stateMissing,
+    Color? stateMissingBackground,
   }) {
     return AppSemanticColors(
       success: success ?? this.success,
-      warningContainer: warningContainer ?? this.warningContainer,
-      onWarningContainer: onWarningContainer ?? this.onWarningContainer,
+      statePerfect: statePerfect ?? this.statePerfect,
+      statePerfectBackground:
+          statePerfectBackground ?? this.statePerfectBackground,
+      stateUsable: stateUsable ?? this.stateUsable,
+      stateUsableBackground:
+          stateUsableBackground ?? this.stateUsableBackground,
+      stateUnusable: stateUnusable ?? this.stateUnusable,
+      stateUnusableBackground:
+          stateUnusableBackground ?? this.stateUnusableBackground,
+      stateMissing: stateMissing ?? this.stateMissing,
+      stateMissingBackground:
+          stateMissingBackground ?? this.stateMissingBackground,
     );
   }
 
   @override
-  AppSemanticColors lerp(ThemeExtension<AppSemanticColors>? other, double t) {
+  AppSemanticColors lerp(
+    ThemeExtension<AppSemanticColors>? other,
+    double t,
+  ) {
     if (other is! AppSemanticColors) return this;
 
     return AppSemanticColors(
       success: Color.lerp(success, other.success, t)!,
-      warningContainer: Color.lerp(
-        warningContainer,
-        other.warningContainer,
+      statePerfect: Color.lerp(statePerfect, other.statePerfect, t)!,
+      statePerfectBackground: Color.lerp(
+        statePerfectBackground,
+        other.statePerfectBackground,
         t,
       )!,
-      onWarningContainer: Color.lerp(
-        onWarningContainer,
-        other.onWarningContainer,
+      stateUsable: Color.lerp(stateUsable, other.stateUsable, t)!,
+      stateUsableBackground: Color.lerp(
+        stateUsableBackground,
+        other.stateUsableBackground,
+        t,
+      )!,
+      stateUnusable: Color.lerp(
+        stateUnusable,
+        other.stateUnusable,
+        t,
+      )!,
+      stateUnusableBackground: Color.lerp(
+        stateUnusableBackground,
+        other.stateUnusableBackground,
+        t,
+      )!,
+      stateMissing: Color.lerp(stateMissing, other.stateMissing, t)!,
+      stateMissingBackground: Color.lerp(
+        stateMissingBackground,
+        other.stateMissingBackground,
         t,
       )!,
     );

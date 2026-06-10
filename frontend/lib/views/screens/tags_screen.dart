@@ -185,12 +185,12 @@ class _RefreshWarningCard extends StatelessWidget {
     final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
 
     return Card(
-      color: semanticColors.warningContainer,
+      color: semanticColors.stateUsableBackground,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Text(
           message,
-          style: TextStyle(color: semanticColors.onWarningContainer),
+          style: TextStyle(color: semanticColors.stateUsable),
         ),
       ),
     );

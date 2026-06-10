@@ -31,8 +31,8 @@ StateBadgeStyle tentStateBadgeStyle(
     ),
     TentOverallState.needsRepair => (
       Icons.build_circle_outlined,
-      semanticColors?.warningContainer ?? colorScheme.tertiaryContainer,
-      semanticColors?.onWarningContainer ?? colorScheme.onTertiaryContainer,
+      semanticColors?.stateUsableBackground ?? colorScheme.tertiaryContainer,
+      semanticColors?.stateUsable ?? colorScheme.onTertiaryContainer,
     ),
     TentOverallState.unusable => (
       Icons.cancel_outlined,
@@ -60,8 +60,8 @@ StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
     ),
     PartState.needsRepair => (
       Icons.build_circle_outlined,
-      semanticColors?.warningContainer ?? colorScheme.tertiaryContainer,
-      semanticColors?.onWarningContainer ?? colorScheme.onTertiaryContainer,
+      semanticColors?.stateUsableBackground ?? colorScheme.tertiaryContainer,
+      semanticColors?.stateUsable ?? colorScheme.onTertiaryContainer,
     ),
     PartState.missing => (
       Icons.remove_circle_outline,

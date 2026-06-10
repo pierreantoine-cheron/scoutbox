@@ -58,7 +58,7 @@ void main() {
     await tester.tap(find.text('Créer'));
     await tester.pumpAndSettle();
 
-    expect(repository.createdColor, equals('#2196F3'));
+    expect(repository.createdColor, equals('#1A70E5'));
     expect(find.text('À réparer'), findsWidgets);
   });
 
