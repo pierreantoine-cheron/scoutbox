@@ -45,7 +45,6 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
     return AppBarConfig(
       screenId: 'tags',
       title: const Text('Étiquettes'),
-      showBackButton: true,
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),

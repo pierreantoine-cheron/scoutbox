@@ -56,12 +56,10 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     if (!mounted) return const AppBarConfig(screenId: '');
 
     final isDesktop = MediaQuery.sizeOf(context).width >= 768;
-    final authState = ref.read(authProvider);
     final tentsState = ref.read(tentListProvider);
 
     return AppBarConfig(
       screenId: 'tent_list',
-      title: const Text('ScoutBox - Tentes'),
       actions: [
         if (isDesktop)
           IconButton(
@@ -71,17 +69,6 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
                 ? null
                 : () => ref.read(tentListProvider.notifier).refresh(),
           ),
-        IconButton(
-          icon: const Icon(Icons.label_outline),
-          tooltip: 'Gérer les étiquettes',
-          onPressed: () => _openTags(context),
-        ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: authState.isLoading
-              ? null
-              : () => _showLogoutConfirmationDialog(),
-        ),
       ],
       fab: FloatingActionButton(
         onPressed: () => _openTentCreation(context),
@@ -103,10 +90,6 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     ref.listen(
       tentListFilterProvider.select((state) => state.searchText),
       (_, searchText) => _syncSearchController(searchText),
-    );
-    ref.listen(
-      authProvider.select((state) => state.isLoading),
-      (_, _) => dispatchAppBarConfig(),
     );
     ref.listen(
       tentListProvider.select((state) => state.isLoading),
@@ -309,7 +292,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       onToggleTag: _toggleTagFilter,
       onClearAll: _clearFiltersHook,
       onClearTags: () => ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
-      onManageTags: () => _openTags(context),
+      onManageTags: () => _switchToTags(),
     );
   }
 
@@ -410,22 +393,17 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     );
   }
 
-  Future<void> _openTags(BuildContext context) async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const TagsScreen()));
-  }
-
-  Future<void> _showLogoutConfirmationDialog() async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Se déconnecter ?',
-      content: 'Votre session sera fermée.',
-      confirmLabel: 'Déconnecter',
+  void _switchToTags() {
+    ref.read(navigationSectionProvider.notifier).set(
+          NavigationSection.tags,
+        );
+    ref.read(appBarConfigProvider.notifier).set(
+          const AppBarConfig(screenId: ''),
+        );
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const TagsScreen()),
+      (_) => false,
     );
-    if (confirmed && mounted) {
-      await ref.read(authProvider.notifier).logout();
-    }
   }
 
   void _clearFiltersHook() {

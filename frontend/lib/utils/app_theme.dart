@@ -32,6 +32,7 @@ class AppTheme {
 
   static ColorScheme _colorScheme() {
     return ColorScheme.fromSeed(seedColor: AppColors.scoutGreen).copyWith(
+      surfaceTint: Colors.transparent,
       surface: AppColors.surface,
       surfaceContainerLowest: AppColors.background,
       onSurface: AppColors.foreground,

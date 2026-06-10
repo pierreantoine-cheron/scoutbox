@@ -1039,9 +1039,43 @@ class _TentListTestShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appBarConfig = ref.watch(appBarConfigProvider);
+    final authState = ref.watch(authProvider);
 
     return Scaffold(
-      appBar: AppBar(title: appBarConfig.title, actions: appBarConfig.actions),
+      appBar: AppBar(
+        title: appBarConfig.title,
+        actions: [
+          if (appBarConfig.actions != null) ...appBarConfig.actions!,
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Se déconnecter',
+            onPressed: authState.isLoading
+                ? null
+                : () {
+                    showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Se déconnecter ?'),
+                        content:
+                            const Text('Votre session sera fermée.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(context).pop(false),
+                            child: const Text('Annuler'),
+                          ),
+                          FilledButton(
+                            onPressed: () =>
+                                Navigator.of(context).pop(true),
+                            child: const Text('Déconnecter'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+          ),
+        ],
+      ),
       floatingActionButton: appBarConfig.fab,
       body: const TentListScreen(),
     );
