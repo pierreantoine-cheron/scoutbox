@@ -109,12 +109,12 @@ class _DrawerHeader extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: colorScheme.primary,
+              color: colorScheme.onSurface,
               borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: Icon(
               Icons.cabin,
-              color: colorScheme.onPrimary,
+              color: colorScheme.surface,
               size: 20,
             ),
           ),
@@ -158,8 +158,8 @@ class _DrawerItem extends StatelessWidget {
     final effectiveOpacity = enabled ? 1.0 : 0.38;
 
     final fgColor = isSelected && enabled
-        ? colorScheme.primary
-        : colorScheme.onSurface;
+        ? colorScheme.onSurface
+        : colorScheme.onSurfaceVariant;
 
     return Opacity(
       opacity: effectiveOpacity,

@@ -14,6 +14,11 @@ class AppColors {
 
   static const border = Color(0xFFDEE2E5);
 
+  static const surfaceContainerLow = Color(0xFFF3F4F6);
+  static const surfaceContainer = Color(0xFFEDEEF0);
+  static const surfaceContainerHigh = Color(0xFFE7E8EA);
+  static const surfaceContainerHighest = Color(0xFFE1E2E4);
+
   static const statePerfect = Color(0xFF1D9330);
   static const statePerfectBackground = Color(0xFFDBF3DB);
 
