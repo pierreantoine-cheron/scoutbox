@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
+import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 
 class ScoutBoxNavigationDrawer extends ConsumerWidget {
@@ -109,12 +110,12 @@ class _DrawerHeader extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: colorScheme.onSurface,
+              color: colorScheme.primary,
               borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: Icon(
               Icons.cabin,
-              color: colorScheme.surface,
+              color: colorScheme.onPrimary,
               size: 20,
             ),
           ),
@@ -158,13 +159,15 @@ class _DrawerItem extends StatelessWidget {
     final effectiveOpacity = enabled ? 1.0 : 0.38;
 
     final fgColor = isSelected && enabled
-        ? colorScheme.onSurface
-        : colorScheme.onSurfaceVariant;
+        ? AppColors.scoutGreen
+        : colorScheme.onSurface;
 
     return Opacity(
       opacity: effectiveOpacity,
       child: Material(
-        color: Colors.transparent,
+        color: isSelected && enabled
+            ? AppColors.accentSoft
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(AppRadii.sm),
         child: InkWell(
           onTap: enabled ? onTap : null,
@@ -197,7 +200,7 @@ class _DrawerItem extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
+                      color: AppColors.accentSoft,
                       borderRadius: BorderRadius.circular(AppRadii.pill),
                     ),
                     child: Text(
@@ -205,7 +208,7 @@ class _DrawerItem extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: colorScheme.onSurfaceVariant,
+                        color: AppColors.scoutGreen,
                       ),
                     ),
                   ),

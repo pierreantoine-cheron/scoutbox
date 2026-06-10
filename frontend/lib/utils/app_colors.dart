@@ -4,6 +4,7 @@ class AppColors {
   AppColors._();
 
   static const scoutGreen = Color(0xFF186A23);
+  static const accentSoft = Color(0x1F186A23); // scoutGreen at 12% opacity
   static const success = scoutGreen;
 
   static const background = Color(0xFFF9FAFB);
