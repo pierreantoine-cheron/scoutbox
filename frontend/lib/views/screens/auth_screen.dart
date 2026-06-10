@@ -499,9 +499,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   Widget _buildSubmitButton(bool isLoading) {
+    final enabled = _isFormValid && !isLoading;
+
     return ElevatedButton(
-      onPressed: isLoading ? null : _submit,
+      onPressed: enabled ? _submit : null,
       style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.scoutGreen,
+        disabledBackgroundColor: AppColors.border,
+        foregroundColor: AppColors.surface,
+        disabledForegroundColor: AppColors.muted,
         padding: const EdgeInsets.symmetric(vertical: 13),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       ),

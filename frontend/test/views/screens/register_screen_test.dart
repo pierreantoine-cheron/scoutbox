@@ -10,12 +10,11 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
-      expect(find.text('URL du serveur'), findsOneWidget);
-      expect(find.text("Code d'invitation"), findsOneWidget);
-      expect(find.text("Nom d'utilisateur"), findsOneWidget);
-      expect(find.text('Mot de passe'), findsOneWidget);
-      expect(find.text('Confirmer le mot de passe'), findsOneWidget);
-      expect(find.text(' *'), findsNWidgets(5));
+      expect(find.text('URL du serveur *'), findsOneWidget);
+      expect(find.text("Code d'invitation *"), findsOneWidget);
+      expect(find.text("Nom d'utilisateur *"), findsOneWidget);
+      expect(find.text('Mot de passe *'), findsOneWidget);
+      expect(find.text('Confirmer le mot de passe *'), findsOneWidget);
       expect(find.text("S'inscrire"), findsOneWidget);
       expect(find.text('Connexion'), findsOneWidget);
       expect(find.text('Inscription'), findsOneWidget);
@@ -44,9 +43,18 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
+      await tester.enterText(find.byType(TextFormField).at(0), 'https://api.test');
+      await tester.enterText(find.byType(TextFormField).at(1), 'INVITE123');
+      await tester.enterText(find.byType(TextFormField).at(2), 'testuser');
+      await tester.enterText(find.byType(TextFormField).at(3), 'password123');
+      await tester.enterText(find.byType(TextFormField).at(4), 'password123');
+
       await tester.ensureVisible(find.text("S'inscrire"));
       await tester.pumpAndSettle();
       await tester.tap(find.text("S'inscrire"));
+      await tester.pump();
+
+      await tester.enterText(find.byType(TextFormField).at(0), '');
       await tester.pump();
 
       expect(find.text("L'URL du serveur est requise"), findsOneWidget);
@@ -60,6 +68,10 @@ void main() {
       );
 
       await tester.enterText(find.byType(TextFormField).at(0), 'invalid-url');
+      await tester.enterText(find.byType(TextFormField).at(1), 'INVITE123');
+      await tester.enterText(find.byType(TextFormField).at(2), 'testuser');
+      await tester.enterText(find.byType(TextFormField).at(3), 'password123');
+      await tester.enterText(find.byType(TextFormField).at(4), 'password123');
 
       await tester.ensureVisible(find.text("S'inscrire"));
       await tester.pumpAndSettle();
@@ -92,7 +104,11 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
+      await tester.enterText(find.byType(TextFormField).at(0), 'https://api.test');
+      await tester.enterText(find.byType(TextFormField).at(1), 'INVITE123');
+      await tester.enterText(find.byType(TextFormField).at(2), 'testuser');
       await tester.enterText(find.byType(TextFormField).at(3), 'short');
+      await tester.enterText(find.byType(TextFormField).at(4), 'short');
 
       await tester.ensureVisible(find.text("S'inscrire"));
       await tester.pumpAndSettle();
@@ -112,6 +128,9 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
+      await tester.enterText(find.byType(TextFormField).at(0), 'https://api.test');
+      await tester.enterText(find.byType(TextFormField).at(1), 'INVITE123');
+      await tester.enterText(find.byType(TextFormField).at(2), 'testuser');
       await tester.enterText(find.byType(TextFormField).at(3), 'password123');
       await tester.enterText(find.byType(TextFormField).at(4), 'different123');
 
@@ -134,6 +153,10 @@ void main() {
       );
 
       await tester.enterText(find.byType(TextFormField).at(0), 'http');
+      await tester.enterText(find.byType(TextFormField).at(1), 'INVITE123');
+      await tester.enterText(find.byType(TextFormField).at(2), 'testuser');
+      await tester.enterText(find.byType(TextFormField).at(3), 'password123');
+      await tester.enterText(find.byType(TextFormField).at(4), 'password123');
       await tester.pump();
 
       expect(find.text("L'URL du serveur est requise"), findsNothing);
@@ -146,14 +169,13 @@ void main() {
       await tester.tap(find.text("S'inscrire"));
       await tester.pump();
 
-      expect(find.text("L'URL du serveur est requise"), findsNothing);
       expect(
         find.text("L'URL doit commencer par http:// ou https://"),
         findsOneWidget,
       );
-      expect(find.text("Le code d'invitation est requis"), findsOneWidget);
-      expect(find.text("Le nom d'utilisateur est requis"), findsOneWidget);
-      expect(find.text('Le mot de passe est requis'), findsOneWidget);
+      expect(find.text("Le code d'invitation est requis"), findsNothing);
+      expect(find.text("Le nom d'utilisateur est requis"), findsNothing);
+      expect(find.text('Le mot de passe est requis'), findsNothing);
     });
   });
 }

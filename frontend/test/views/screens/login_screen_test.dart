@@ -22,10 +22,9 @@ void main() {
       expect(find.text('ScoutBox'), findsOneWidget);
       expect(find.text('Connexion'), findsOneWidget);
       expect(find.text('Inscription'), findsOneWidget);
-      expect(find.text('URL du serveur'), findsOneWidget);
-      expect(find.text("Nom d'utilisateur"), findsOneWidget);
-      expect(find.text('Mot de passe'), findsOneWidget);
-      expect(find.text(' *'), findsNWidgets(3));
+      expect(find.text('URL du serveur *'), findsOneWidget);
+      expect(find.text("Nom d'utilisateur *"), findsOneWidget);
+      expect(find.text('Mot de passe *'), findsOneWidget);
       expect(find.text('Se souvenir de moi'), findsOneWidget);
       expect(find.text('Se connecter'), findsOneWidget);
     });
@@ -37,9 +36,16 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
+      await tester.enterText(find.byType(TextFormField).at(0), 'https://api.test');
+      await tester.enterText(find.byType(TextFormField).at(1), 'testuser');
+      await tester.enterText(find.byType(TextFormField).at(2), 'password123');
+
       await tester.ensureVisible(find.text('Se connecter'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Se connecter'));
+      await tester.pump();
+
+      await tester.enterText(find.byType(TextFormField).at(0), '');
       await tester.pump();
 
       expect(find.text("L'URL du serveur est requise"), findsOneWidget);
@@ -52,7 +58,9 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
+      await tester.enterText(find.byType(TextFormField).at(0), 'https://api.test');
       await tester.enterText(find.byType(TextFormField).at(1), 'ab');
+      await tester.enterText(find.byType(TextFormField).at(2), 'password123');
 
       await tester.ensureVisible(find.text('Se connecter'));
       await tester.pumpAndSettle();
@@ -72,6 +80,8 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
+      await tester.enterText(find.byType(TextFormField).at(0), 'https://api.test');
+      await tester.enterText(find.byType(TextFormField).at(1), 'testuser');
       await tester.enterText(find.byType(TextFormField).at(2), 'short');
 
       await tester.ensureVisible(find.text('Se connecter'));
