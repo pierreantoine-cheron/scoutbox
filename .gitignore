@@ -38,3 +38,6 @@ appsettings.Local.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Design WIP
+design/wip

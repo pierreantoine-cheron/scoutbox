@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ScoutBox · Créer une tente</title>
+  <style>
+    :root {
+      --bg:      oklch(98.5% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(20% 0.014 250);
+      --muted:   oklch(52% 0.012 250);
+      --border:  oklch(91% 0.006 250);
+      --accent:  oklch(46% 0.13 145);
+
+      --accent-soft:  color-mix(in oklch, var(--accent) 12%, transparent);
+      --accent-hover: color-mix(in oklch, var(--accent) 88%, black);
+      --fg-soft:      color-mix(in oklch, var(--fg) 5%, transparent);
+      --state-perfect:     oklch(58% 0.17 145);
+      --state-perfect-bg:  oklch(94% 0.04 145);
+      --state-usable:      oklch(68% 0.15 82);
+      --state-usable-bg:   oklch(95% 0.06 82);
+      --state-unusable:    oklch(52% 0.22 25);
+      --state-unusable-bg: oklch(93% 0.05 25);
+
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+      --fs-h1: 22px; --fs-h2: 17px; --fs-h3: 14px;
+      --fs-body: 14px; --fs-meta: 12px;
+      --radius-sm: 6px; --radius: 10px; --radius-lg: 14px; --radius-xl: 18px; --radius-pill: 999px;
+      --gap-xs: 6px; --gap-sm: 10px; --gap-md: 16px; --gap-lg: 24px; --gap-xl: 36px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: var(--font-body); font-size: var(--fs-body);
+      line-height: 1.5; -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+    input, textarea { font: inherit; color: inherit; }
+    svg { display: block; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       APPBAR
+       ═══════════════════════════════════════════════════════════════════ */
+    .appbar {
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      background: color-mix(in oklch, var(--surface) 94%, transparent);
+      backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 10;
+    }
+    @media (min-width: 600px) {
+      .appbar { padding: 12px 32px; }
+    }
+    @media (min-width: 900px) {
+      .appbar { padding: 14px 40px; }
+    }
+
+    .back-btn {
+      position: absolute; left: 16px;
+      display: grid; place-items: center;
+      width: 40px; height: 40px; border-radius: var(--radius-sm);
+      color: var(--fg); flex-shrink: 0;
+      transition: background 0.12s;
+    }
+    @media (min-width: 600px) {
+      .back-btn { left: 32px; }
+    }
+    @media (min-width: 900px) {
+      .back-btn { left: 40px; }
+    }
+    .back-btn:hover { background: var(--fg-soft); }
+    .back-btn svg { width: 22px; height: 22px; }
+
+    .appbar-title {
+      font-family: var(--font-display); font-size: var(--fs-h1);
+      font-weight: 620; letter-spacing: -0.015em;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       FORM CONTENT
+       ═══════════════════════════════════════════════════════════════════ */
+    .form-scroll {
+      padding: 20px 16px 140px;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    @media (min-width: 600px) {
+      .form-scroll {
+        padding: 32px 24px 160px;
+        max-width: 640px;
+      }
+    }
+    @media (min-width: 900px) {
+      .form-scroll {
+        padding: 40px 32px 160px;
+        max-width: 720px;
+      }
+    }
+
+    .section-label {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 10px; margin-top: 6px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* ── Model select trigger ── */
+    .model-select-wrap { position: relative; }
+
+    .model-select-trigger {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--surface); font-size: var(--fs-body);
+      color: var(--muted); transition: border-color 0.15s, box-shadow 0.15s;
+      text-align: left;
+    }
+    .model-select-trigger:focus,
+    .model-select-trigger:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2.5px var(--accent-soft);
+      outline: none;
+    }
+    .model-select-trigger.has-value { color: var(--fg); }
+    .model-select-trigger svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--muted); transition: transform 0.22s; }
+    .model-select-trigger.open svg { transform: rotate(180deg); }
+
+    /* ── Model dropdown (positioned below trigger) ── */
+    .model-dropdown {
+      position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+      max-height: 260px; overflow-y: auto;
+      z-index: 30; display: none;
+    }
+    .model-dropdown.open { display: block; }
+
+    .model-option-btn {
+      display: flex; align-items: center; width: 100%;
+      padding: 12px 14px; font-size: var(--fs-body);
+      color: var(--fg); transition: background 0.08s;
+      text-align: left;
+    }
+    .model-option-btn:not(:last-child) { border-bottom: 1px solid var(--border); }
+    .model-option-btn:hover { background: var(--fg-soft); }
+    .model-option-btn.selected { background: var(--accent-soft); font-weight: 600; }
+
+    /* ── Form row (two fields side by side on desktop) ── */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--gap-md);
+    }
+    @media (min-width: 550px) {
+      .form-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ── Text fields ── */
+    .field-group { margin-bottom: var(--gap-md); }
+    .field-group:last-child { margin-bottom: 0; }
+
+    .form-row .field-group { margin-bottom: 0; }
+
+    .form-row { margin-bottom: var(--gap-lg); }
+    @media (min-width: 550px) {
+      .form-row { margin-bottom: 0; }
+    }
+
+    .field-label {
+      display: block; font-size: 13px; font-weight: 500;
+      color: var(--fg); margin-bottom: 6px;
+    }
+    .field-label .required { color: oklch(52% 0.22 25); margin-left: 2px; }
+    .field-hint { font-size: var(--fs-meta); color: var(--muted); margin-top: 4px; }
+
+    .text-input {
+      display: block; width: 100%;
+      padding: 12px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--surface);
+      font-size: var(--fs-body); line-height: 1.4;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+    .text-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2.5px var(--accent-soft);
+    }
+    .text-input::placeholder { color: var(--muted); }
+
+    textarea.text-input { resize: vertical; min-height: 90px; }
+
+    /* ── State selector (segmented button style) ── */
+    .state-segment {
+      display: flex; gap: 0;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--surface); overflow: hidden;
+    }
+    .state-seg-btn {
+      flex: 1; display: flex; align-items: center; gap: 7px;
+      justify-content: center;
+      padding: 12px 10px; font-size: 13px; font-weight: 500;
+      color: var(--muted); transition: background 0.12s, color 0.12s;
+      border-right: 1px solid var(--border); user-select: none;
+    }
+    .state-seg-btn:last-child { border-right: 0; }
+    .state-seg-btn:hover { background: var(--fg-soft); }
+    .state-seg-btn.selected { color: var(--fg); background: var(--accent-soft); font-weight: 600; }
+    .state-seg-btn svg.state-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    @media (min-width: 600px) {
+      .state-seg-btn { padding: 14px 16px; font-size: 14px; }
+    }
+    .dot-perfect    { background: var(--state-perfect); }
+    .dot-usable     { background: var(--state-usable); }
+    .dot-unusable   { background: var(--state-unusable); }
+
+    /* ── Char count ── */
+    .char-count {
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--muted); text-align: right; margin-top: 3px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       BOTTOM CTA BAR
+       ═══════════════════════════════════════════════════════════════════ */
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0));
+      background: color-mix(in oklch, var(--surface) 97%, transparent);
+      backdrop-filter: blur(14px); border-top: 1px solid var(--border);
+      display: flex; justify-content: center; z-index: 20;
+    }
+    @media (min-width: 768px) {
+      .bottom-bar { padding: 16px 24px; }
+    }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 36px; border-radius: var(--radius);
+      background: var(--accent); color: var(--surface);
+      font-family: var(--font-body); font-size: 15px; font-weight: 600;
+      transition: background 0.12s, transform 0.1s;
+      min-width: 200px; justify-content: center;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled {
+      background: var(--border); color: var(--muted); cursor: not-allowed;
+    }
+    .btn-primary svg { width: 18px; height: 18px; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       DISCARD CONFIRMATION DIALOG (simplified)
+       ═══════════════════════════════════════════════════════════════════ */
+    .scrim {
+      position: fixed; inset: 0; z-index: 70;
+      background: rgba(0,0,0,0.32); opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .scrim.on { opacity: 1; pointer-events: auto; }
+
+    .dialog-card {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.94);
+      width: 90vw; max-width: 360px; z-index: 75;
+      background: var(--surface); border-radius: var(--radius-xl);
+      padding: 22px 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.16);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.18s, transform 0.2s;
+    }
+    .dialog-card.on { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+    .dialog-title {
+      font-family: var(--font-display); font-size: var(--fs-h2); font-weight: 620;
+      letter-spacing: -0.01em; margin-bottom: 6px;
+    }
+    .dialog-body { font-size: var(--fs-body); color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+    .dialog-actions { display: flex; gap: var(--gap-sm); justify-content: flex-end; }
+    .btn-flat {
+      padding: 9px 18px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      transition: background 0.12s, color 0.12s;
+    }
+    .btn-flat:hover { background: var(--fg-soft); color: var(--fg); }
+    .btn-flat.primary { color: var(--accent); }
+    .btn-flat.primary:hover { background: var(--accent-soft); }
+
+    /* ─── responsive polish ─── */
+    @media (max-width: 360px) {
+      .state-seg-btn { font-size: 11px; padding: 10px 6px; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+    APPBAR
+    ═══════════════════════════════════════════════════════════════ -->
+  <header class="appbar" data-od-id="creation-appbar">
+    <button class="back-btn" id="back-btn" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="appbar-title">Nouvelle tente</span>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+    FORM CONTENT
+    ═══════════════════════════════════════════════════════════════ -->
+  <div class="form-scroll" data-od-id="creation-form">
+    <!-- ── Model selection ── -->
+    <p class="section-label">Modèle</p>
+    <div class="model-select-wrap" id="model-select-wrap">
+      <button class="model-select-trigger" id="model-trigger" aria-haspopup="listbox" aria-expanded="false">
+        <span id="model-trigger-text">Choisir un modèle</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="model-dropdown" id="model-dropdown" role="listbox" aria-label="Modèle de tente">
+        <button class="model-option-btn" data-model="dome" role="option" aria-selected="false">Dôme</button>
+        <button class="model-option-btn" data-model="tunnel" role="option" aria-selected="false">Tunnel</button>
+        <button class="model-option-btn" data-model="canadienne" role="option" aria-selected="false">Canadienne</button>
+        <button class="model-option-btn" data-model="tipi" role="option" aria-selected="false">Tipi</button>
+        <button class="model-option-btn" data-model="gonflable" role="option" aria-selected="false">Gonflable</button>
+        <button class="model-option-btn" data-model="toile" role="option" aria-selected="false">Toile / Tarp</button>
+        <button class="model-option-btn" data-model="hamac" role="option" aria-selected="false">Hamac tente</button>
+        <button class="model-option-btn" data-model="bivouac" role="option" aria-selected="false">Bivouac</button>
+        <button class="model-option-btn" data-model="suspendue" role="option" aria-selected="false">Suspendue</button>
+        <button class="model-option-btn" data-model="cabane" role="option" aria-selected="false">Cabane</button>
+      </div>
+    </div>
+
+    <!-- ── Divider ── -->
+    <hr style="border:0;border-top:1px solid var(--border);margin:24px 0;" />
+
+    <!-- ── Name + Size row (side by side on desktop) ── -->
+    <div class="form-row" data-od-id="name-size-row">
+      <div class="field-group">
+        <label class="field-label" for="tent-name">Nom<span class="required">*</span></label>
+        <input class="text-input" type="text" id="tent-name" placeholder="ex: Tente #42 — Arizona Pro" maxlength="120" autocomplete="off" />
+        <div class="field-hint char-count" id="name-count">0 / 120</div>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="tent-size">Taille (places)<span class="required">*</span></label>
+        <input class="text-input" type="number" id="tent-size" inputmode="numeric" placeholder="ex: 6" min="1" max="99" />
+      </div>
+    </div>
+
+    <!-- ── State selector ── -->
+    <div class="field-group" data-od-id="state-field">
+      <label class="field-label">État global</label>
+      <div class="state-segment" id="state-segment" role="radiogroup" aria-label="État global">
+        <button class="state-seg-btn selected" data-state="good" role="radio" aria-checked="true">
+          <span class="state-dot dot-perfect"></span> Bon état
+        </button>
+        <button class="state-seg-btn" data-state="needs-repair" role="radio" aria-checked="false">
+          <span class="state-dot dot-usable"></span> À réparer
+        </button>
+        <button class="state-seg-btn" data-state="unusable" role="radio" aria-checked="false">
+          <span class="state-dot dot-unusable"></span> Inutilisable
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Comments field ── -->
+    <div class="field-group" data-od-id="comments-field">
+      <label class="field-label" for="tent-comments">Commentaires</label>
+      <textarea class="text-input" id="tent-comments" placeholder="Notes, historique, remarques…" maxlength="500" rows="3"></textarea>
+      <div class="field-hint char-count" id="comments-count">0 / 500</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+    BOTTOM CTA BAR
+    ═══════════════════════════════════════════════════════════════ -->
+  <div class="bottom-bar" data-od-id="creation-cta">
+    <button class="btn-primary" id="submit-btn" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Créer la tente
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+    DISCARD DIALOG (scrim + card)
+    ═══════════════════════════════════════════════════════════════ -->
+  <div class="scrim" id="dialog-scrim"></div>
+  <div class="dialog-card" id="discard-dialog" role="dialog" aria-modal="true" aria-labelledby="discard-title">
+    <div class="dialog-title" id="discard-title">Quitter la création ?</div>
+    <div class="dialog-body">Votre brouillon sera conservé pour plus tard.</div>
+    <div class="dialog-actions">
+      <button class="btn-flat" id="dialog-stay">Rester</button>
+      <button class="btn-flat primary" id="dialog-leave">Quitter</button>
+    </div>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════
+       STATE
+       ═══════════════════════════════════════════════════════════════ */
+    let selectedModel = null;
+    let selectedState = 'good';
+    let formDirty = false;
+
+    /* ═══════════════════════════════════════════════════════════════
+       MODEL SELECTION — dropdown
+       ═══════════════════════════════════════════════════════════════ */
+    const trigger = document.getElementById('model-trigger');
+    const triggerText = document.getElementById('model-trigger-text');
+    const dropdown = document.getElementById('model-dropdown');
+    const modelOptions = document.querySelectorAll('.model-option-btn');
+
+    function toggleDropdown() {
+      const isOpen = dropdown.classList.contains('open');
+      if (isOpen) {
+        closeDropdown();
+      } else {
+        openDropdown();
+      }
+    }
+
+    function openDropdown() {
+      dropdown.classList.add('open');
+      trigger.classList.add('open');
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeDropdown() {
+      dropdown.classList.remove('open');
+      trigger.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+
+    modelOptions.forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        modelOptions.forEach(o => {
+          o.classList.remove('selected');
+          o.setAttribute('aria-selected', 'false');
+        });
+        opt.classList.add('selected');
+        opt.setAttribute('aria-selected', 'true');
+        selectedModel = opt.dataset.model;
+        triggerText.textContent = opt.textContent;
+        trigger.classList.add('has-value');
+        formDirty = true;
+        validateForm();
+        closeDropdown();
+      });
+    });
+
+    document.addEventListener('click', () => {
+      if (dropdown.classList.contains('open')) closeDropdown();
+    });
+
+    /* ═══════════════════════════════════════════════════════════════
+       STATE SEGMENT
+       ═══════════════════════════════════════════════════════════════ */
+    const stateBtns = document.querySelectorAll('.state-seg-btn');
+
+    stateBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        stateBtns.forEach(b => {
+          b.classList.remove('selected');
+          b.setAttribute('aria-checked', 'false');
+        });
+        btn.classList.add('selected');
+        btn.setAttribute('aria-checked', 'true');
+        selectedState = btn.dataset.state;
+        formDirty = true;
+      });
+    });
+
+    /* ═══════════════════════════════════════════════════════════════
+       FORM VALIDATION
+       ═══════════════════════════════════════════════════════════════ */
+    const nameInput = document.getElementById('tent-name');
+    const sizeInput = document.getElementById('tent-size');
+    const commentsInput = document.getElementById('tent-comments');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function validateForm() {
+      const name = nameInput.value.trim();
+      const size = sizeInput.value.trim();
+      const valid = selectedModel !== null && name.length > 0 && size.length > 0 && Number(size) >= 1;
+      submitBtn.disabled = !valid;
+    }
+
+    nameInput.addEventListener('input', () => {
+      document.getElementById('name-count').textContent = `${nameInput.value.length} / 120`;
+      formDirty = true;
+      validateForm();
+    });
+
+    sizeInput.addEventListener('input', () => {
+      formDirty = true;
+      validateForm();
+    });
+
+    commentsInput.addEventListener('input', () => {
+      document.getElementById('comments-count').textContent = `${commentsInput.value.length} / 500`;
+      formDirty = true;
+    });
+
+    /* ═══════════════════════════════════════════════════════════════
+       SUBMIT
+       ═══════════════════════════════════════════════════════════════ */
+    submitBtn.addEventListener('click', () => {
+      if (submitBtn.disabled) return;
+
+      const payload = {
+        model: selectedModel,
+        name: nameInput.value.trim(),
+        size: Number(sizeInput.value.trim()),
+        state: selectedState,
+        comments: commentsInput.value.trim()
+      };
+
+      console.log('Tent created:', payload);
+
+      /* simulate success feedback */
+      const icon = submitBtn.querySelector('svg');
+      const originalHTML = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Créée !`;
+      submitBtn.style.background = 'var(--state-perfect)';
+
+      setTimeout(() => {
+        /* in Flutter this would Navigator.pop(context, createdTent) */
+        location.href = 'tent-list.html';
+      }, 800);
+    });
+
+    /* ═══════════════════════════════════════════════════════════════
+       BACK + DISCARD DIALOG
+       ═══════════════════════════════════════════════════════════════ */
+    const dialogScrim = document.getElementById('dialog-scrim');
+    const dialogCard = document.getElementById('discard-dialog');
+
+    function openDialog() {
+      dialogScrim.classList.add('on');
+      dialogCard.classList.add('on');
+    }
+    function closeDialog() {
+      dialogScrim.classList.remove('on');
+      dialogCard.classList.remove('on');
+    }
+
+    document.getElementById('back-btn').addEventListener('click', () => {
+      if (!formDirty) {
+        location.href = 'tent-list.html';
+        return;
+      }
+      openDialog();
+    });
+
+    dialogScrim.addEventListener('click', closeDialog);
+    document.getElementById('dialog-stay').addEventListener('click', closeDialog);
+    document.getElementById('dialog-leave').addEventListener('click', () => {
+      location.href = 'tent-list.html';
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (dialogCard.classList.contains('on')) {
+          closeDialog();
+        } else if (formDirty) {
+          openDialog();
+        } else if (dropdown.classList.contains('open')) {
+          closeDropdown();
+        }
+      }
+    });
+
+    /* initial */
+    validateForm();
+  </script>
+</body>
+</html>

@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ScoutBox · Tentes</title>
+  <style>
+    :root {
+      --bg:      oklch(98.5% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(20% 0.014 250);
+      --muted:   oklch(52% 0.012 250);
+      --border:  oklch(91% 0.006 250);
+      --accent:  oklch(46% 0.13 145);
+
+      --accent-soft:  color-mix(in oklch, var(--accent) 12%, transparent);
+      --accent-hover: color-mix(in oklch, var(--accent) 88%, black);
+      --fg-soft:      color-mix(in oklch, var(--fg) 5%, transparent);
+
+      --state-perfect:     oklch(58% 0.17 145);
+      --state-perfect-bg:  oklch(94% 0.04 145);
+      --state-usable:      oklch(68% 0.15 82);
+      --state-usable-bg:   oklch(95% 0.06 82);
+      --state-unusable:    oklch(52% 0.22 25);
+      --state-unusable-bg: oklch(93% 0.05 25);
+
+      --tag-red:    oklch(58% 0.22 25);
+      --tag-orange: oklch(66% 0.18 62);
+      --tag-green:  oklch(58% 0.17 145);
+      --tag-blue:   oklch(56% 0.20 255);
+      --tag-violet: oklch(46% 0.18 300);
+      --tag-pink:   oklch(56% 0.22 350);
+      --tag-teal:   oklch(54% 0.13 190);
+      --tag-brown:  oklch(42% 0.08 58);
+
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+      --fs-h1: 22px;  --fs-h2: 17px;  --fs-h3: 14px;
+      --fs-body: 14px; --fs-meta: 12px;
+      --radius-sm: 6px; --radius: 10px; --radius-lg: 14px; --radius-xl: 18px; --radius-pill: 999px;
+      --gap-xs: 6px; --gap-sm: 10px; --gap-md: 16px; --gap-lg: 24px; --gap-xl: 36px;
+      --rail-w: 0px;
+    }
+
+    @media (min-width: 768px) {
+      :root { --rail-w: 0px; }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: var(--font-body); font-size: var(--fs-body);
+      line-height: 1.5; -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+    h3 { margin: 0; }
+    svg { display: block; }
+
+    /* ─── scrim (drawer + sheet backdrop) ─── */
+    .scrim {
+      position: fixed; inset: 0; z-index: 45;
+      background: rgba(0,0,0,0.32); opacity: 0; pointer-events: none;
+      transition: opacity 0.22s;
+    }
+    .scrim.on { opacity: 1; pointer-events: auto; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       TOP NAV TABS (desktop)
+       ═══════════════════════════════════════════════════════════════════ */
+    .top-tabs {
+      display: none;
+      gap: 2px; margin-left: 12px;
+    }
+    @media (min-width: 768px) {
+      .top-tabs { display: flex; }
+    }
+    .top-tab {
+      padding: 6px 14px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500;
+      color: var(--muted); transition: background 0.12s, color 0.12s;
+      position: relative;
+    }
+    .top-tab:hover { background: var(--fg-soft); color: var(--fg); }
+    .top-tab.active { color: var(--fg); font-weight: 600; }
+    .top-tab.active::after {
+      content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+      width: 18px; height: 2.5px; border-radius: 999px; background: var(--accent);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       NAVIGATION DRAWER (mobile)
+       ═══════════════════════════════════════════════════════════════════ */
+    .nav-drawer {
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
+      width: 300px; max-width: 85vw;
+      background: var(--surface);
+      transform: translateX(-100%);
+      transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+      display: flex; flex-direction: column;
+    }
+    .nav-drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 18px 20px; border-bottom: 1px solid var(--border);
+    }
+    .drawer-header .drawer-logo {
+      display: grid; place-items: center;
+      width: 40px; height: 40px; border-radius: var(--radius);
+      background: var(--accent); color: var(--surface); flex-shrink: 0;
+    }
+    .drawer-header .drawer-logo svg { width: 22px; height: 22px; }
+    .drawer-header .drawer-brand {
+      font-family: var(--font-display); font-size: 18px; font-weight: 620;
+      letter-spacing: -0.015em;
+    }
+
+    .drawer-body { flex: 1; overflow-y: auto; padding: 12px 8px; }
+    .drawer-section-label {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--muted);
+      padding: 12px 16px 6px;
+    }
+
+    .drawer-item {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 12px 16px; border-radius: var(--radius-lg);
+      font-size: 14px; font-weight: 500;
+      color: var(--fg); transition: background 0.12s, color 0.12s;
+    }
+    .drawer-item:hover { background: var(--fg-soft); }
+    .drawer-item.active { color: var(--accent); background: var(--accent-soft); }
+    .drawer-item svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .drawer-item .drawer-badge {
+      margin-left: auto; font-family: var(--font-mono); font-size: 12px;
+      color: var(--muted); background: var(--fg-soft);
+      padding: 2px 8px; border-radius: var(--radius-pill);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       APP SHELL
+       ═══════════════════════════════════════════════════════════════════ */
+    .app-shell {
+      margin-left: var(--rail-w);
+      display: flex; flex-direction: column; min-height: 100vh;
+    }
+
+    /* ─── appbar ─── */
+    .appbar {
+      display: flex; align-items: center; gap: var(--gap-sm);
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      background: color-mix(in oklch, var(--surface) 94%, transparent);
+      backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 10;
+    }
+    @media (min-width: 768px) {
+      .appbar { padding: 12px 24px; }
+    }
+
+    .hamburger {
+      display: grid; place-items: center;
+      width: 40px; height: 40px; border-radius: var(--radius-sm);
+      color: var(--fg); flex-shrink: 0;
+      transition: background 0.12s;
+    }
+    .hamburger:hover { background: var(--fg-soft); }
+    .hamburger svg { width: 22px; height: 22px; }
+    @media (min-width: 768px) {
+      .hamburger { display: none; }
+    }
+
+    .appbar .brand {
+      font-family: var(--font-display); font-size: var(--fs-h1);
+      font-weight: 620; letter-spacing: -0.015em; white-space: nowrap;
+    }
+
+    .appbar .spacer { flex: 1; }
+
+    .search-box {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 7px 12px;
+      min-width: 160px; max-width: 280px; flex-shrink: 1;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-box svg { flex-shrink: 0; color: var(--muted); width: 16px; height: 16px; }
+    .search-box input {
+      flex: 1; border: 0; outline: 0; font: inherit; font-size: var(--fs-body);
+      color: var(--fg); background: transparent; min-width: 0;
+    }
+    .search-box input::placeholder { color: var(--muted); }
+    .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2.5px var(--accent-soft); }
+
+    .icon-btn {
+      display: grid; place-items: center; width: 38px; height: 38px;
+      border-radius: var(--radius-sm); color: var(--muted); flex-shrink: 0;
+      transition: background 0.12s, color 0.12s;
+    }
+    .icon-btn:hover { background: var(--fg-soft); color: var(--fg); }
+    .icon-btn svg { width: 20px; height: 20px; }
+
+    .appbar-add {
+      display: none;
+      align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: var(--radius);
+      background: var(--accent); color: var(--surface);
+      font-size: 13px; font-weight: 600; white-space: nowrap;
+      transition: background 0.12s;
+    }
+    .appbar-add:hover { background: var(--accent-hover); }
+    .appbar-add svg { width: 14px; height: 14px; }
+
+    @media (min-width: 768px) {
+      .appbar-add { display: flex; }
+    }
+
+    .filter-bar-base {
+      display: flex; align-items: center; gap: var(--gap-sm);
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+    }
+    @media (min-width: 768px) {
+      .filter-bar-base { padding: 10px 24px; }
+    }
+
+    .tent-count {
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--muted); white-space: nowrap; flex-shrink: 0;
+    }
+
+    /* ─── Prop 1 — Tappable tokens ─── */
+    .p1-pills {
+      display: flex; align-items: flex-start; gap: 8px; flex: 1; min-width: 0;
+      flex-wrap: wrap; max-height: 92px; overflow: hidden; min-height: 92px;
+      align-content: flex-start;
+    }
+    .p1-token {
+      display: inline-flex; align-items: center;
+      padding: 8px 14px; border-radius: var(--radius-pill);
+      border: 1px solid transparent;
+      font-size: 13px; font-weight: 500; white-space: nowrap;
+      cursor: pointer; transition: opacity 0.15s, transform 0.12s;
+      user-select: none; height: 38px;
+    }
+    .p1-token:hover { opacity: 0.82; }
+    .p1-token:active { transform: scale(0.96); }
+    .p1-overflow {
+      background: var(--fg-soft); color: var(--muted);
+      font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+      cursor: default;
+    }
+
+    .expand-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; flex-shrink: 0; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--surface);
+      transition: background 0.12s; padding: 0;
+    }
+    .expand-btn:hover { background: var(--fg-soft); }
+    .expand-btn svg { width: 18px; height: 18px; color: var(--muted); transition: transform 0.22s; }
+    .expand-btn.expanded svg { transform: rotate(180deg); }
+    .expand-btn.expanded { background: var(--accent-soft); border-color: var(--accent-soft); }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SHARED FILTER PANEL (expandable)
+       ═══════════════════════════════════════════════════════════════════ */
+    .filter-panel {
+      overflow: hidden;
+      max-height: 0; transition: max-height 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .filter-panel.open { max-height: 500px; }
+    .filter-panel-inner {
+      padding: 16px 16px; border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    @media (min-width: 768px) {
+      .filter-panel-inner { padding: 18px 24px; }
+    }
+
+    .filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 13px; }
+    .filter-row:last-child { margin-bottom: 0; }
+    .filter-label {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--muted); margin-right: 2px;
+    }
+    .filter-clear-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 13px; border: 1px solid var(--border);
+      border-radius: var(--radius-pill); font-size: 13px; font-weight: 500;
+      color: var(--fg); cursor: pointer;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      background: transparent; white-space: nowrap; user-select: none;
+    }
+    .chip:hover { border-color: var(--muted); background: var(--fg-soft); }
+    .chip.on { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+    .chip.on:hover { background: var(--accent-hover); }
+
+    .chip-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 13px; border-radius: var(--radius-pill);
+      font-size: 12px; font-weight: 500; color: var(--surface);
+      cursor: pointer; white-space: nowrap; user-select: none;
+      transition: opacity 0.12s, box-shadow 0.12s;
+    }
+    .chip-tag:hover { opacity: 0.82; }
+    .chip-tag.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+
+    .btn-outline-sm {
+      font-size: 11px; font-weight: 500; color: var(--muted);
+      padding: 5px 12px; border: 1px solid var(--border); border-radius: var(--radius-pill);
+      transition: background 0.12s, color 0.12s;
+    }
+    .btn-outline-sm:hover { background: var(--fg-soft); color: var(--fg); }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       CONTENT — card list + data table
+       ═══════════════════════════════════════════════════════════════════ */
+    .content { padding: 14px 16px 100px; }
+    @media (min-width: 768px) {
+      .content { padding: 20px 24px 100px; }
+    }
+
+    /* ─── tent card ─── */
+    .card-list { display: block; }
+    .tent-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 16px 18px; cursor: pointer;
+      transition: border-color 0.14s, box-shadow 0.14s; margin-bottom: var(--gap-sm);
+    }
+    .tent-card:hover { border-color: var(--accent-soft); box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .tent-card-inner { display: flex; align-items: flex-start; gap: 12px; }
+    .tent-card-info { flex: 1; min-width: 0; }
+    .tent-card-info .tent-name {
+      font-family: var(--font-display); font-size: var(--fs-h2);
+      font-weight: 600; letter-spacing: -0.01em; margin-bottom: 4px;
+    }
+    .tent-card-info .tent-meta {
+      display: flex; align-items: center; gap: var(--gap-sm);
+      color: var(--muted); font-size: var(--fs-meta); margin-bottom: 9px;
+    }
+    .tent-card-info .tent-meta span { display: flex; align-items: center; gap: 4px; }
+    .tent-card-info .tent-meta svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .tent-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .card-chevron {
+      flex-shrink: 0; color: var(--muted); margin-top: 2px;
+      transition: transform 0.14s;
+    }
+    .tent-card:hover .card-chevron { transform: translateX(2px); }
+
+    .state-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: var(--radius-pill);
+      font-size: 11px; font-weight: 600; white-space: nowrap; flex-shrink: 0;
+    }
+    .state-badge .badge-icon { width: 13px; height: 13px; flex-shrink: 0; }
+    .state-perfect   { background: var(--state-perfect-bg);  color: var(--state-perfect); }
+    .state-usable    { background: var(--state-usable-bg);   color: var(--state-usable); }
+    .state-unusable  { background: var(--state-unusable-bg); color: var(--state-unusable); }
+
+    /* ─── data table (desktop) ─── */
+    .data-table-wrapper {
+      display: none;
+      border: 1px solid var(--border); border-radius: var(--radius-xl);
+      overflow: hidden; background: var(--surface);
+    }
+    @media (min-width: 768px) {
+      .card-list { display: none; }
+      .data-table-wrapper { display: block; }
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--muted); font-weight: 500;
+      padding: 13px 18px; text-align: left;
+      border-bottom: 1px solid var(--border); background: var(--bg);
+    }
+    td { padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: var(--fs-body); }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr { cursor: pointer; transition: background 0.1s; }
+    tbody tr:hover { background: var(--fg-soft); }
+    td.name-cell {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      letter-spacing: -0.005em;
+    }
+    td .td-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+
+    /* ─── empty state ─── */
+    .empty-state {
+      display: none; text-align: center; padding: 64px 24px;
+      color: var(--muted);
+    }
+    .empty-state h3 { color: var(--fg); margin-bottom: 6px; }
+    .empty-state p { max-width: 36ch; margin: 0 auto; font-size: var(--fs-body); }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       FAB
+       ═══════════════════════════════════════════════════════════════════ */
+    .fab {
+      position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
+      background: var(--accent); color: var(--surface); border-radius: 16px;
+      display: grid; place-items: center;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+      transition: background 0.12s, transform 0.1s, box-shadow 0.12s;
+      z-index: 30;
+    }
+    .fab:hover { background: var(--accent-hover); box-shadow: 0 6px 22px rgba(0,0,0,0.18); }
+    .fab:active { transform: scale(0.96); }
+    .fab svg { width: 24px; height: 24px; }
+
+    @media (min-width: 768px) {
+      .fab { display: none; }
+    }
+
+    /* ─── responsive polish ─── */
+    @media (max-width: 440px) {
+      .search-box { min-width: 110px; max-width: 150px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+    SCIM
+    ═══════════════════════════════════════════════════════════════ -->
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+    NAVIGATION DRAWER (mobile)
+    ═══════════════════════════════════════════════════════════════ -->
+  <nav class="nav-drawer" id="nav-drawer" role="dialog" aria-modal="true" aria-label="Navigation">
+    <div class="drawer-header">
+      <div class="drawer-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20V4h20v16"/><path d="M12 4v16"/><path d="M2 10h20"/></svg>
+      </div>
+      <span class="drawer-brand">ScoutBox</span>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section-label">Inventaire</div>
+      <button class="drawer-item active" data-nav="tents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 20V4h20v16"/><path d="M12 4v16"/><path d="M2 10h20"/></svg>
+        Tentes
+        <span class="drawer-badge">8</span>
+      </button>
+      <button class="drawer-item" data-nav="tags">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 2 4 9h8l-6.5 4.5 2.5 8-8-5.5-8 5.5 2.5-8L0 11h8Z"/></svg>
+        Étiquettes
+      </button>
+      <div class="drawer-section-label" style="margin-top:8px;">Compte</div>
+      <button class="drawer-item" data-nav="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Réglages
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+    APP SHELL
+    ═══════════════════════════════════════════════════════════════ -->
+  <div class="app-shell">
+
+    <!-- ── APPBAR ──────────────────────────────────────────────── -->
+    <header class="appbar" data-od-id="appbar">
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <span class="brand">ScoutBox</span>
+      <div class="top-tabs">
+        <button class="top-tab active" data-nav="tents">Tentes</button>
+        <button class="top-tab" data-nav="tags">Étiquettes</button>
+        <button class="top-tab" data-nav="settings">Réglages</button>
+      </div>
+      <span class="spacer"></span>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search-input" placeholder="Rechercher…" aria-label="Rechercher une tente" />
+      </div>
+      <button class="appbar-add" title="Ajouter une tente" aria-label="Ajouter une tente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Ajouter
+      </button>
+      <button class="icon-btn" title="Actualiser" id="refresh-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 0 0 14.1-2.5"/><path d="M23 20v-6h-6"/><path d="M20.5 9A9 9 0 0 0 6.4 11.5"/></svg>
+      </button>
+    </header>
+
+    <!-- ── FILTER BAR ──────────────────────────────────────────── -->
+    <div class="filter-bar-base" id="filter-bar" data-od-id="filter-bar">
+      <div class="p1-pills" id="p1-pills"></div>
+      <span class="tent-count" id="tent-count">8 tentes</span>
+      <button class="expand-btn" id="filter-toggle" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
+
+    <!-- ── SHARED FILTER PANEL (expandable) ─────────────────────── -->
+    <div class="filter-panel" id="filter-panel" data-od-id="filter-panel">
+      <div class="filter-panel-inner">
+        <div class="filter-row">
+          <span class="filter-label">État</span>
+          <button class="chip on" data-filter="state" data-value="perfect">Parfait</button>
+          <button class="chip on" data-filter="state" data-value="usable">Utilisable</button>
+          <button class="chip" data-filter="state" data-value="unusable">Inutilisable</button>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Taille</span>
+          <button class="chip on" data-filter="size" data-value="2">2 pers.</button>
+          <button class="chip on" data-filter="size" data-value="4">4 pers.</button>
+          <button class="chip on" data-filter="size" data-value="6">6 pers.</button>
+          <button class="chip" data-filter="size" data-value="8">8 pers.</button>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Modèle</span>
+          <button class="chip on" data-filter="model" data-value="dome">Dôme</button>
+          <button class="chip" data-filter="model" data-value="tunnel">Tunnel</button>
+          <button class="chip" data-filter="model" data-value="canadienne">Canadienne</button>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Étiquettes</span>
+          <button class="chip-tag on" style="background:var(--tag-green);" data-filter="tag" data-value="loups">Loups</button>
+          <button class="chip-tag on" style="background:var(--tag-orange);" data-filter="tag" data-value="hiver">Hiver</button>
+          <button class="chip-tag" style="background:var(--tag-blue);" data-filter="tag" data-value="eclaireurs">Éclaireurs</button>
+          <button class="chip-tag on" style="background:var(--tag-pink);" data-filter="tag" data-value="pionniers">Pionniers</button>
+          <button class="chip-tag" style="background:var(--tag-violet);" data-filter="tag" data-value="camp-ete">Camp été</button>
+          <button class="chip-tag" style="background:var(--tag-teal);" data-filter="tag" data-value="reserve">Réserve</button>
+          <button class="chip-tag" style="background:var(--tag-brown);" data-filter="tag" data-value="a-reparer">À réparer</button>
+          <button class="chip-tag" style="background:var(--tag-red);" data-filter="tag" data-value="hors-service">Hors service</button>
+        </div>
+        <div class="filter-clear-row">
+          <button class="btn-outline-sm" id="clear-filters">Effacer les filtres</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CONTENT ─────────────────────────────────────────────── -->
+    <main class="content" data-od-id="content">
+      <div class="card-list" id="card-list"></div>
+      <div class="data-table-wrapper" id="table-wrapper"></div>
+      <div class="empty-state" id="empty-state">
+        <h3>Aucune tente trouvée</h3>
+        <p>Essayez d'ajuster vos filtres ou votre recherche.</p>
+      </div>
+    </main>
+
+    <!-- ── FAB ─────────────────────────────────────────────────── -->
+    <button class="fab" title="Ajouter une tente" aria-label="Ajouter une tente">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+    TEMPLATES
+    ═══════════════════════════════════════════════════════════════ -->
+  <script id="card-tpl" type="text/template">
+    <article class="tent-card">
+      <div class="tent-card-inner">
+        <span class="state-badge STATE_CLASS">
+          <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">STATE_ICON</svg>
+          STATE_LABEL
+        </span>
+        <div class="tent-card-info">
+          <div class="tent-name">TENT_NAME</div>
+          <div class="tent-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg> TENT_SIZE</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20V4h20v16"/><path d="M12 4v16"/><path d="M2 10h20"/></svg> TENT_MODEL</span>
+          </div>
+          <div class="tent-tags">TENT_TAGS</div>
+        </div>
+        <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </article>
+  </script>
+
+  <script id="row-tpl" type="text/template">
+    <tr>
+      <td><span class="state-badge STATE_CLASS"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">STATE_ICON</svg> STATE_LABEL</span></td>
+      <td class="name-cell">TENT_NAME</td>
+      <td>TENT_SIZE</td>
+      <td>TENT_MODEL</td>
+      <td>ROW_TAGS</td>
+    </tr>
+  </script>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════
+       DATA
+       ═══════════════════════════════════════════════════════════════ */
+    const tents = [
+      { name:'Tente #23 — Arizona Pro', size:'4 pers.', sizeVal:4, model:'Dôme', modelVal:'dome', state:'perfect', label:'Parfait', icon:'<polyline points="20 6 9 17 4 12"/>', tags:[['Loups','var(--tag-green)','loups'],['Hiver','var(--tag-orange)','hiver']] },
+      { name:'Tente #17 — Montana 6', size:'6 pers.', sizeVal:6, model:'Tunnel', modelVal:'tunnel', state:'usable', label:'Utilisable', icon:'<line x1="8" y1="12" x2="16" y2="12" stroke-width="2.5" stroke-linecap="round"/>', tags:[['Éclaireurs','var(--tag-blue)','eclaireurs'],['À réparer','var(--tag-brown)','a-reparer']] },
+      { name:'Tente #08 — Family Plus', size:'8 pers.', sizeVal:8, model:'Canadienne', modelVal:'canadienne', state:'unusable', label:'Inutilisable', icon:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', tags:[['Hors service','var(--tag-red)','hors-service']] },
+      { name:'Tente #12 — Arizona Pro', size:'4 pers.', sizeVal:4, model:'Dôme', modelVal:'dome', state:'perfect', label:'Parfait', icon:'<polyline points="20 6 9 17 4 12"/>', tags:[['Pionniers','var(--tag-pink)','pionniers'],['Camp été','var(--tag-violet)','camp-ete']] },
+      { name:'Tente #05 — Montana 6', size:'6 pers.', sizeVal:6, model:'Tunnel', modelVal:'tunnel', state:'perfect', label:'Parfait', icon:'<polyline points="20 6 9 17 4 12"/>', tags:[] },
+      { name:'Tente #31 — Arizona Pro', size:'2 pers.', sizeVal:2, model:'Dôme', modelVal:'dome', state:'usable', label:'Utilisable', icon:'<line x1="8" y1="12" x2="16" y2="12" stroke-width="2.5" stroke-linecap="round"/>', tags:[['Hiver','var(--tag-orange)','hiver']] },
+      { name:'Tente #19 — Family Plus', size:'8 pers.', sizeVal:8, model:'Canadienne', modelVal:'canadienne', state:'perfect', label:'Parfait', icon:'<polyline points="20 6 9 17 4 12"/>', tags:[['Loups','var(--tag-green)','loups']] },
+      { name:'Tente #42 — Scout Compact', size:'2 pers.', sizeVal:2, model:'Dôme', modelVal:'dome', state:'perfect', label:'Parfait', icon:'<polyline points="20 6 9 17 4 12"/>', tags:[['Réserve','var(--tag-teal)','reserve'],['Loups','var(--tag-green)','loups']] },
+    ];
+
+    const allLabels = {
+      perfect:'Parfait', usable:'Utilisable', unusable:'Inutilisable',
+      dome:'Dôme', tunnel:'Tunnel', canadienne:'Canadienne',
+      loups:'Loups', hiver:'Hiver', eclaireurs:'Éclaireurs', pionniers:'Pionniers', 'camp-ete':'Camp été',
+      reserve:'Réserve', 'a-reparer':'À réparer', 'hors-service':'Hors service'
+    };
+    const tagColorMap = {};
+    tents.forEach(t => t.tags.forEach(tg => { tagColorMap[tg[2]] = tg[1]; }));
+
+    /* ═══════════════════════════════════════════════════════════════════
+       FILTER STATE (shared across proposals)
+       ═══════════════════════════════════════════════════════════════════ */
+    const filters = {
+      state: new Set(['perfect', 'usable']),
+      size: new Set([2, 4, 6]),
+      model: new Set(['dome']),
+      tag: new Set(['loups', 'hiver', 'pionniers']),
+      search: ''
+    };
+
+    /* ═══════════════════════════════════════════════════════════════
+       FILTERING
+       ═══════════════════════════════════════════════════════════════ */
+    function filterTents() {
+      let result = tents;
+      const s = filters.search.toLowerCase().trim();
+      if (s) result = result.filter(t => t.name.toLowerCase().includes(s) || t.model.toLowerCase().includes(s) || t.label.toLowerCase().includes(s));
+      if (filters.state.size) result = result.filter(t => filters.state.has(t.state));
+      if (filters.size.size) result = result.filter(t => filters.size.has(t.sizeVal));
+      if (filters.model.size) result = result.filter(t => filters.model.has(t.modelVal));
+      if (filters.tag.size) result = result.filter(t => t.tags.some(tg => filters.tag.has(tg[2])));
+      return result;
+    }
+
+    function tagHTML(t) {
+      return `<span class="chip-tag" style="background:${t[1]};font-size:11px;padding:3px 10px;">${t[0]}</span>`;
+    }
+    function tagsHTML(ts) {
+      return ts.length ? ts.map(tagHTML).join('') : '<span style="color:var(--muted);font-size:12px;">—</span>';
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       CONTENT RENDERING
+       ═══════════════════════════════════════════════════════════════ */
+    function buildCards(filtered) {
+      const tpl = document.getElementById('card-tpl').textContent;
+      return filtered.map(t => tpl
+        .replace('STATE_CLASS', 'state-'+t.state).replaceAll('STATE_LABEL', t.label)
+        .replaceAll('STATE_ICON', t.icon).replaceAll('TENT_NAME', t.name)
+        .replaceAll('TENT_SIZE', t.size).replaceAll('TENT_MODEL', t.model)
+        .replaceAll('TENT_TAGS', tagsHTML(t.tags))
+      ).join('');
+    }
+
+    function buildTable(filtered) {
+      const rowTpl = document.getElementById('row-tpl').textContent;
+      const rows = filtered.map(t => rowTpl
+        .replace('STATE_CLASS', 'state-'+t.state).replaceAll('STATE_LABEL', t.label)
+        .replaceAll('STATE_ICON', t.icon).replaceAll('TENT_NAME', t.name)
+        .replaceAll('TENT_SIZE', t.size).replaceAll('TENT_MODEL', t.model)
+        .replaceAll('ROW_TAGS', t.tags.length ? `<div class="td-tags">${t.tags.map(tagHTML).join('')}</div>` : '<span style="color:var(--muted);font-size:12px;">—</span>')
+      ).join('');
+      return `<table><thead><tr><th style="width:130px;">État</th><th>Nom</th><th style="width:90px;">Taille</th><th style="width:130px;">Modèle</th><th>Étiquettes</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function allActive() {
+      const all = [];
+      filters.state.forEach(v => all.push({ type:'state', val:v, label:allLabels[v]||v }));
+      filters.size.forEach(v => all.push({ type:'size', val:v, label:`${v} pers.` }));
+      filters.model.forEach(v => all.push({ type:'model', val:v, label:allLabels[v]||v }));
+      filters.tag.forEach(v => all.push({ type:'tag', val:v, label:allLabels[v]||v, color:tagColorMap[v] }));
+      return all;
+    }
+
+    function tokenColor(p) {
+      switch (p.type) {
+        case 'state': return `background:var(--state-${p.val}-bg);color:var(--state-${p.val});border-color:var(--state-${p.val});`;
+        case 'size': case 'model': return `background:var(--accent-soft);color:var(--accent);`;
+        case 'tag': return `background:${p.color};color:var(--surface);`;
+        default: return '';
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       PROPOSAL 1 — Tappable tokens
+       ═══════════════════════════════════════════════════════════════ */
+    function renderP1() {
+      const active = allActive();
+      const container = document.getElementById('p1-pills');
+      if (!active.length) {
+        container.style.minHeight = '0';
+        container.innerHTML = '<span style="color:var(--muted);font-size:12px;">Aucun filtre actif</span>';
+      } else {
+        container.style.minHeight = '';
+        container.innerHTML = active.map(p =>
+          `<span class="p1-token" data-type="${p.type}" data-val="${p.val}" style="${tokenColor(p)}">${p.label}</span>`
+        ).join('');
+        void container.offsetHeight;
+        clipP1Overflow(container, active);
+      }
+      document.getElementById('tent-count').textContent = `${filterTents().length} tentes`;
+    }
+
+    function clipP1Overflow(container, active) {
+      const tokens = container.querySelectorAll('.p1-token');
+      const maxTop = 90;
+      let visible = 0;
+      for (const t of tokens) { if (t.offsetTop < maxTop) visible++; }
+      const hidden = active.length - visible;
+      if (hidden <= 0) { rebindP1(container, active); return; }
+      if (visible <= 1) { rebindP1(container, active); return; }
+      const target = visible - 1;
+      const html = active.slice(0, target).map(p =>
+        `<span class="p1-token" data-type="${p.type}" data-val="${p.val}" style="${tokenColor(p)}">${p.label}</span>`
+      ).join('') + `<span class="p1-token p1-overflow">+${active.length - target}</span>`;
+      container.innerHTML = html;
+      rebindP1(container, active.slice(0, target));
+    }
+
+    function rebindP1(container, active) {
+      container.querySelectorAll('.p1-token:not(.p1-overflow)').forEach(el => {
+        el.addEventListener('click', () => {
+          const val = el.dataset.type === 'size' ? Number(el.dataset.val) : el.dataset.val;
+          filters[el.dataset.type].delete(val);
+          renderAll();
+        });
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       RENDER ALL (content + filter bar + panel chips)
+       ═══════════════════════════════════════════════════════════════ */
+    function renderAll() {
+      const filtered = filterTents();
+      const count = filtered.length;
+
+      document.getElementById('card-list').innerHTML = buildCards(filtered);
+      document.getElementById('table-wrapper').innerHTML = buildTable(filtered);
+
+      document.getElementById('card-list').style.display = count ? '' : 'none';
+      document.getElementById('table-wrapper').style.display = count ? '' : 'none';
+      document.getElementById('empty-state').style.display = count ? 'none' : 'block';
+
+      updatePanelChips();
+      renderP1();
+    }
+
+    function updatePanelChips() {
+      document.querySelectorAll('#filter-panel .chip[data-filter]').forEach(c => {
+        const key = c.dataset.filter;
+        const val = key === 'size' ? Number(c.dataset.value) : c.dataset.value;
+        c.classList.toggle('on', filters[key].has(val));
+      });
+      document.querySelectorAll('#filter-panel .chip-tag[data-filter]').forEach(c => {
+        c.classList.toggle('on', filters.tag.has(c.dataset.value));
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       EVENTS
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* ── drawer ── */
+    const scrim = document.getElementById('scrim');
+    const drawer = document.getElementById('nav-drawer');
+    const hamburger = document.getElementById('hamburger');
+    let drawerOpen = false;
+
+    function openDrawer() {
+      drawerOpen = true;
+      drawer.classList.add('open');
+      scrim.classList.add('on');
+      hamburger.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDrawer() {
+      drawerOpen = false;
+      drawer.classList.remove('open');
+      scrim.classList.remove('on');
+      hamburger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
+    hamburger.addEventListener('click', openDrawer);
+    scrim.addEventListener('click', closeDrawer);
+
+    /* ── top-tab nav clicks (desktop) ── */
+    document.querySelectorAll('.top-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const page = tab.dataset.nav;
+        document.querySelectorAll('.top-tab').forEach(t => t.classList.toggle('active', t.dataset.nav === page));
+        document.querySelectorAll('.drawer-item').forEach(d => d.classList.toggle('active', d.dataset.nav === page));
+      });
+    });
+
+    /* ── drawer nav clicks ── */
+    document.querySelectorAll('.drawer-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const page = item.dataset.nav;
+        document.querySelectorAll('.drawer-item').forEach(d => d.classList.toggle('active', d.dataset.nav === page));
+        document.querySelectorAll('.top-tab').forEach(t => t.classList.toggle('active', t.dataset.nav === page));
+        closeDrawer();
+      });
+    });
+
+    /* ── filter panel (shared expand/collapse) ── */
+    const filterPanel = document.getElementById('filter-panel');
+    const toggle = document.getElementById('filter-toggle');
+
+    function openPanel() {
+      filterPanel.classList.add('open');
+      toggle.classList.add('expanded'); toggle.setAttribute('aria-expanded', 'true');
+    }
+    function closePanel() {
+      filterPanel.classList.remove('open');
+      toggle.classList.remove('expanded'); toggle.setAttribute('aria-expanded', 'false');
+    }
+    function togglePanel() {
+      if (filterPanel.classList.contains('open')) closePanel();
+      else openPanel();
+    }
+
+    toggle.addEventListener('click', togglePanel);
+
+    /* ── filter chips (panel) ── */
+    filterPanel.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip, .chip-tag');
+      if (!chip || chip.dataset.filter === undefined) return;
+      const key = chip.dataset.filter === 'tag' ? 'tag' : chip.dataset.filter;
+      const raw = chip.dataset.value;
+      const val = chip.dataset.filter === 'size' ? Number(raw) : raw;
+      if (filters[key].has(val)) {
+        filters[key].delete(val);
+      } else {
+        filters[key].add(val);
+      }
+      renderAll();
+    });
+
+    /* ── shared clear filters button (panel) ── */
+    document.getElementById('clear-filters').addEventListener('click', () => {
+      filters.state.clear();
+      filters.size.clear();
+      filters.model.clear();
+      filters.tag.clear();
+      renderAll();
+    });
+
+    /* ── search ── */
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      filters.search = e.target.value;
+      renderAll();
+    });
+
+    /* ── Escape key ── */
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (drawerOpen) closeDrawer();
+        if (filterPanel.classList.contains('open')) closePanel();
+      }
+    });
+
+    /* ── initial render ── */
+    renderAll();
+  </script>
+</body>
+</html>

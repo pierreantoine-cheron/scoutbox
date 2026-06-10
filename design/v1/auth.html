@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ScoutBox · Connexion</title>
+  <style>
+    :root {
+      --bg:      oklch(98.5% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(20% 0.014 250);
+      --muted:   oklch(52% 0.012 250);
+      --border:  oklch(91% 0.006 250);
+      --accent:  oklch(46% 0.13 145);
+
+      --accent-soft:  color-mix(in oklch, var(--accent) 12%, transparent);
+      --accent-hover: color-mix(in oklch, var(--accent) 88%, black);
+      --fg-soft:      color-mix(in oklch, var(--fg) 5%, transparent);
+      --error:        oklch(52% 0.22 25);
+      --error-bg:     oklch(94% 0.04 25);
+
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+      --fs-h1: 22px;  --fs-h2: 17px;  --fs-h3: 14px;
+      --fs-body: 14px; --fs-meta: 12px;
+      --radius-sm: 6px; --radius: 10px; --radius-lg: 14px; --radius-xl: 18px; --radius-pill: 999px;
+      --gap-xs: 6px; --gap-sm: 10px; --gap-md: 16px; --gap-lg: 24px; --gap-xl: 36px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: var(--font-body); font-size: var(--fs-body);
+      line-height: 1.5; -webkit-font-smoothing: antialiased;
+      min-height: 100vh; min-height: 100dvh;
+    }
+    button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+    input { font: inherit; color: inherit; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       AUTH CARD
+       ═══════════════════════════════════════════════════════════════════ */
+    .auth-card {
+      width: 100%; min-height: 100dvh;
+      background: var(--surface);
+      padding: 32px 24px 28px;
+    }
+    @media (min-width: 481px) {
+      body {
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+      }
+      .auth-card {
+        max-width: 400px; min-height: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+      }
+    }
+    @media (max-width: 380px) {
+      .auth-card { padding: 24px 16px 20px; }
+    }
+
+    /* ── Logo + title ── */
+    .logo-row {
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      margin-bottom: 28px;
+    }
+    .logo-icon {
+      display: grid; place-items: center;
+      width: 48px; height: 48px; border-radius: var(--radius);
+      background: var(--accent); color: var(--surface);
+    }
+    .logo-icon svg { width: 26px; height: 26px; }
+    .app-title {
+      font-family: var(--font-display); font-size: 20px; font-weight: 620;
+      letter-spacing: -0.015em;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       MODE TOGGLE (TabBar style)
+       ═══════════════════════════════════════════════════════════════════ */
+    .mode-toggle {
+      display: flex; gap: 0;
+      background: var(--fg-soft); border-radius: var(--radius);
+      padding: 3px; margin-bottom: 24px;
+    }
+    .mode-btn {
+      flex: 1; padding: 10px 14px; border-radius: calc(var(--radius) - 2px);
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+    .mode-btn.active {
+      background: var(--surface); color: var(--fg); font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       FORM FIELDS
+       ═══════════════════════════════════════════════════════════════════ */
+    .field-group { margin-bottom: var(--gap-md); }
+    .field-label {
+      display: block; font-size: 13px; font-weight: 500;
+      color: var(--fg); margin-bottom: 6px;
+    }
+    .field-label .required { color: var(--error); margin-left: 2px; }
+
+    .text-input {
+      display: block; width: 100%;
+      padding: 12px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--surface);
+      font-size: var(--fs-body); line-height: 1.4;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+    .text-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2.5px var(--accent-soft);
+    }
+    .text-input.has-error {
+      border-color: var(--error);
+      box-shadow: 0 0 0 2.5px var(--error-bg);
+    }
+    .text-input::placeholder { color: var(--muted); }
+
+    .field-error {
+      font-size: var(--fs-meta); color: var(--error);
+      margin-top: 4px; display: none;
+    }
+    .field-error.on { display: block; }
+
+    /* ── Password wrapper ── */
+    .pw-wrapper {
+      position: relative;
+    }
+    .pw-wrapper .text-input { padding-right: 44px; }
+    .pw-toggle {
+      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      display: grid; place-items: center;
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
+      color: var(--muted); transition: color 0.12s, background 0.12s;
+    }
+    .pw-toggle:hover { background: var(--fg-soft); color: var(--fg); }
+    .pw-toggle svg { width: 18px; height: 18px; }
+
+    /* ── Hint text ── */
+    .field-hint {
+      font-size: var(--fs-meta); color: var(--muted); margin-top: 4px;
+    }
+
+    /* ── Char counter ── */
+    .char-counter {
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--muted); text-align: right; margin-top: 3px;
+    }
+
+    /* ── Remember me checkbox ── */
+    .remember-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: var(--gap-md);
+    }
+    .checkbox {
+      display: grid; place-items: center;
+      width: 20px; height: 20px; border-radius: 4px;
+      border: 2px solid var(--border); flex-shrink: 0;
+      transition: background 0.12s, border-color 0.12s;
+      cursor: pointer;
+    }
+    .checkbox.checked {
+      background: var(--accent); border-color: var(--accent);
+    }
+    .checkbox svg {
+      width: 13px; height: 13px; color: var(--surface); display: none;
+    }
+    .checkbox.checked svg { display: block; }
+    .remember-label {
+      font-size: var(--fs-body); color: var(--muted); cursor: pointer;
+      user-select: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       ERROR BANNER
+       ═══════════════════════════════════════════════════════════════════ */
+    .error-banner {
+      display: none; align-items: flex-start; gap: 10px;
+      padding: 12px 14px; border-radius: var(--radius);
+      background: var(--error-bg); color: var(--error);
+      font-size: 13px; line-height: 1.45; margin-bottom: var(--gap-md);
+    }
+    .error-banner.on { display: flex; }
+    .error-banner svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       BUTTONS
+       ═══════════════════════════════════════════════════════════════════ */
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px 20px; border-radius: var(--radius);
+      background: var(--accent); color: var(--surface);
+      font-size: 15px; font-weight: 600;
+      transition: background 0.12s, opacity 0.12s;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled {
+      background: var(--border); color: var(--muted); cursor: not-allowed;
+    }
+    .btn-primary svg { width: 18px; height: 18px; }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 20px; height: 20px; border: 2.5px solid var(--surface);
+      border-top-color: transparent; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+     AUTH CARD
+     ═══════════════════════════════════════════════════════════════════ -->
+  <div class="auth-card" data-od-id="auth-card">
+    <!-- Logo + title -->
+    <div class="logo-row" data-od-id="auth-header">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16"/><path d="M2 10h20"/></svg>
+      </div>
+      <span class="app-title">ScoutBox</span>
+    </div>
+
+    <!-- Mode toggle -->
+    <div class="mode-toggle" data-od-id="mode-toggle" role="tablist" aria-label="Mode d'authentification">
+      <button class="mode-btn active" data-mode="login" role="tab" aria-selected="true">Connexion</button>
+      <button class="mode-btn" data-mode="register" role="tab" aria-selected="false">Inscription</button>
+    </div>
+
+    <!-- Server URL (shared) -->
+    <div class="field-group" data-od-id="server-field">
+      <label class="field-label" for="server-url">URL du serveur<span class="required">*</span></label>
+      <input class="text-input" type="url" id="server-url" placeholder="https://votre-serveur.com" autocomplete="url" inputmode="url" autocorrect="off" />
+      <p class="field-error" id="server-error"></p>
+    </div>
+
+    <!-- Invite code (register only) -->
+    <div class="field-group" id="invite-group" style="display:none" data-od-id="invite-field">
+      <label class="field-label" for="invite-code">Code d'invitation<span class="required">*</span></label>
+      <input class="text-input" type="text" id="invite-code" placeholder="Entrez votre code" maxlength="64" autocomplete="off" style="text-transform:uppercase;letter-spacing:0.03em;" />
+      <p class="field-error" id="invite-error"></p>
+    </div>
+
+    <!-- Username -->
+    <div class="field-group" data-od-id="username-field">
+      <label class="field-label" for="username">Nom d'utilisateur<span class="required">*</span></label>
+      <input class="text-input" type="text" id="username" placeholder="Votre nom d'utilisateur" maxlength="50" autocomplete="username" />
+      <p class="field-hint" id="username-hint">3 à 50 caractères</p>
+      <p class="field-error" id="username-error"></p>
+    </div>
+
+    <!-- Password -->
+    <div class="field-group" data-od-id="password-field">
+      <label class="field-label" for="password">Mot de passe<span class="required">*</span></label>
+      <div class="pw-wrapper">
+        <input class="text-input" type="password" id="password" placeholder="8 caractères minimum" autocomplete="current-password" />
+        <button class="pw-toggle" id="pw-toggle" type="button" aria-label="Afficher le mot de passe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <p class="field-error" id="password-error"></p>
+    </div>
+
+    <!-- Confirm password (register only) -->
+    <div class="field-group" id="confirm-group" style="display:none" data-od-id="confirm-field">
+      <label class="field-label" for="confirm-password">Confirmer le mot de passe<span class="required">*</span></label>
+      <div class="pw-wrapper">
+        <input class="text-input" type="password" id="confirm-password" placeholder="Répétez le mot de passe" autocomplete="new-password" />
+        <button class="pw-toggle" id="confirm-toggle" type="button" aria-label="Afficher la confirmation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <p class="field-error" id="confirm-error"></p>
+    </div>
+
+    <!-- Remember me (login only) -->
+    <div class="remember-row" id="remember-row" data-od-id="remember-me">
+      <div class="checkbox checked" id="remember-checkbox" role="checkbox" aria-checked="true" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <span class="remember-label" id="remember-label">Se souvenir de moi</span>
+    </div>
+
+    <!-- Error banner -->
+    <div class="error-banner" id="error-banner" role="alert" data-od-id="error-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <span id="error-text"></span>
+    </div>
+
+    <!-- Submit -->
+    <button class="btn-primary" id="submit-btn" disabled data-od-id="submit-btn">
+      Se connecter
+    </button>
+
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════════
+       STATE
+       ═══════════════════════════════════════════════════════════════════ */
+    let mode = 'login';           // 'login' | 'register'
+    let rememberMe = true;
+    let isLoading = false;
+
+    /* ═══════════════════════════════════════════════════════════════════
+       DOM REFS
+       ═══════════════════════════════════════════════════════════════════ */
+    const modeBtns       = document.querySelectorAll('.mode-btn');
+    const inviteGroup    = document.getElementById('invite-group');
+    const confirmGroup   = document.getElementById('confirm-group');
+    const rememberRow    = document.getElementById('remember-row');
+    const submitBtn      = document.getElementById('submit-btn');
+    const errorBanner    = document.getElementById('error-banner');
+    const errorText      = document.getElementById('error-text');
+    const rememberCb     = document.getElementById('remember-checkbox');
+    const usernameHint   = document.getElementById('username-hint');
+
+    const serverInput    = document.getElementById('server-url');
+    const inviteInput    = document.getElementById('invite-code');
+    const usernameInput  = document.getElementById('username');
+    const passwordInput  = document.getElementById('password');
+    const confirmInput   = document.getElementById('confirm-password');
+
+    const serverErr      = document.getElementById('server-error');
+    const inviteErr      = document.getElementById('invite-error');
+    const usernameErr    = document.getElementById('username-error');
+    const passwordErr    = document.getElementById('password-error');
+    const confirmErr     = document.getElementById('confirm-error');
+
+    /* ═══════════════════════════════════════════════════════════════════
+       MODE SWITCHING
+       ═══════════════════════════════════════════════════════════════════ */
+    function setMode(newMode) {
+      mode = newMode;
+      const isLogin = mode === 'login';
+
+      modeBtns.forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === mode);
+        b.setAttribute('aria-selected', b.dataset.mode === mode);
+      });
+
+      inviteGroup.style.display = isLogin ? 'none' : 'block';
+      confirmGroup.style.display = isLogin ? 'none' : 'block';
+      rememberRow.style.display = isLogin ? 'flex' : 'none';
+      usernameHint.style.display = isLogin ? 'block' : 'none';
+
+      submitBtn.textContent = isLogin ? 'Se connecter' : "S'inscrire";
+
+      document.title = `ScoutBox · ${isLogin ? 'Connexion' : 'Inscription'}`;
+
+      clearErrors();
+      hideError();
+      validateForm();
+    }
+
+    modeBtns.forEach(b => {
+      b.addEventListener('click', () => setMode(b.dataset.mode));
+    });
+
+    /* ═══════════════════════════════════════════════════════════════════
+       REMEMBER ME
+       ═══════════════════════════════════════════════════════════════════ */
+    function toggleRemember() {
+      rememberMe = !rememberMe;
+      rememberCb.classList.toggle('checked', rememberMe);
+      rememberCb.setAttribute('aria-checked', rememberMe);
+    }
+
+    rememberCb.addEventListener('click', toggleRemember);
+    document.getElementById('remember-label').addEventListener('click', toggleRemember);
+    rememberCb.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleRemember(); }
+    });
+
+    /* ═══════════════════════════════════════════════════════════════════
+       PASSWORD TOGGLE
+       ═══════════════════════════════════════════════════════════════════ */
+    function setupPwToggle(toggleBtn, inputEl) {
+      toggleBtn.addEventListener('click', () => {
+        const isPassword = inputEl.type === 'password';
+        inputEl.type = isPassword ? 'text' : 'password';
+        toggleBtn.setAttribute('aria-label', isPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+      });
+    }
+    setupPwToggle(document.getElementById('pw-toggle'), passwordInput);
+    setupPwToggle(document.getElementById('confirm-toggle'), confirmInput);
+
+    /* ═══════════════════════════════════════════════════════════════════
+       VALIDATION
+       ═══════════════════════════════════════════════════════════════════ */
+    function clearErrors() {
+      [serverErr, inviteErr, usernameErr, passwordErr, confirmErr].forEach(e => e.classList.remove('on'));
+      [serverInput, inviteInput, usernameInput, passwordInput, confirmInput].forEach(i => i.classList.remove('has-error'));
+    }
+
+    function showError(el, inputEl, msg) {
+      el.textContent = msg;
+      el.classList.add('on');
+      if (inputEl) inputEl.classList.add('has-error');
+    }
+
+    function hideError() {
+      errorBanner.classList.remove('on');
+    }
+
+    function validateForm() {
+      clearErrors();
+
+      const server   = serverInput.value.trim();
+      const invite   = inviteInput.value.trim();
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+      const confirm  = confirmInput.value;
+      let valid = true;
+
+      if (!server) {
+        showError(serverErr, serverInput, "L'URL du serveur est requise");
+        valid = false;
+      } else if (!server.startsWith('http://') && !server.startsWith('https://')) {
+        showError(serverErr, serverInput, "L'URL doit commencer par http:// ou https://");
+        valid = false;
+      }
+
+      if (mode === 'register') {
+        if (!invite) {
+          showError(inviteErr, inviteInput, "Le code d'invitation est requis");
+          valid = false;
+        }
+      }
+
+      if (!username) {
+        showError(usernameErr, usernameInput, "Le nom d'utilisateur est requis");
+        valid = false;
+      } else if (username.length < 3) {
+        showError(usernameErr, usernameInput, "Le nom d'utilisateur doit contenir au moins 3 caractères");
+        valid = false;
+      }
+
+      if (!password) {
+        showError(passwordErr, passwordInput, 'Le mot de passe est requis');
+        valid = false;
+      } else if (password.length < 8) {
+        showError(passwordErr, passwordInput, 'Le mot de passe doit contenir au moins 8 caractères');
+        valid = false;
+      }
+
+      if (mode === 'register') {
+        if (!confirm) {
+          showError(confirmErr, confirmInput, 'Veuillez confirmer le mot de passe');
+          valid = false;
+        } else if (confirm !== password) {
+          showError(confirmErr, confirmInput, 'Les mots de passe ne correspondent pas');
+          valid = false;
+        }
+      }
+
+      submitBtn.disabled = !valid || isLoading;
+    }
+
+    /* re-validate on input — clear specific field error on first keypress */
+    function wireInput(inputEl, errorEl, isPassword) {
+      const type = isPassword ? 'input' : 'input';
+      inputEl.addEventListener(type, () => {
+        errorEl.classList.remove('on');
+        inputEl.classList.remove('has-error');
+        hideError();
+        validateForm();
+      });
+    }
+
+    wireInput(serverInput,   serverErr);
+    wireInput(inviteInput,   inviteErr);
+    wireInput(usernameInput, usernameErr);
+    wireInput(passwordInput, passwordErr, true);
+    wireInput(confirmInput,  confirmErr, true);
+
+    /* ═══════════════════════════════════════════════════════════════════
+       ERROR BANNER (server-side errors)
+       ═══════════════════════════════════════════════════════════════════ */
+    function showBanner(msg) {
+      errorText.textContent = msg;
+      errorBanner.classList.add('on');
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SUBMIT
+       ═══════════════════════════════════════════════════════════════════ */
+    submitBtn.addEventListener('click', async () => {
+      clearErrors();
+      hideError();
+      validateForm();
+      if (submitBtn.disabled) return;
+
+      isLoading = true;
+      submitBtn.disabled = true;
+      const originalText = submitBtn.textContent;
+      submitBtn.innerHTML = '<span class="spinner"></span>';
+
+      /* simulate network delay (real Flutter: call authProvider.login/.register) */
+      await new Promise(r => setTimeout(r, 800));
+
+      isLoading = false;
+      validateForm();
+
+      /* In Flutter these error codes come from the backend.
+         For the prototype we simulate success for the demo credentials. */
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      if (username === 'admin' && password === 'password') {
+        /* success — in Flutter this would Navigator.pop + navigate to tent-list */
+        location.href = 'tent-list.html';
+      } else {
+        showBanner(
+          mode === 'login'
+            ? 'Identifiants invalides. Vérifiez votre nom d\'utilisateur et mot de passe.'
+            : "Le code d'invitation est invalide ou a déjà été utilisé."
+        );
+      }
+    });
+
+    /* ═══════════════════════════════════════════════════════════════════
+       KEYBOARD
+       ═══════════════════════════════════════════════════════════════════ */
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !submitBtn.disabled) {
+        e.preventDefault();
+        submitBtn.click();
+      }
+    });
+
+    /* initial */
+    validateForm();
+  </script>
+</body>
+</html>

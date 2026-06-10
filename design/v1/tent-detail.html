@@ -1,0 +1,1312 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ScoutBox · Détail tente</title>
+  <style>
+    :root {
+      --bg:      oklch(98.5% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(20% 0.014 250);
+      --muted:   oklch(52% 0.012 250);
+      --border:  oklch(91% 0.006 250);
+      --accent:  oklch(46% 0.13 145);
+
+      --accent-soft:  color-mix(in oklch, var(--accent) 12%, transparent);
+      --accent-hover: color-mix(in oklch, var(--accent) 88%, black);
+      --fg-soft:      color-mix(in oklch, var(--fg) 5%, transparent);
+      --state-perfect:     oklch(58% 0.17 145);
+      --state-perfect-bg:  oklch(94% 0.04 145);
+      --state-usable:      oklch(68% 0.15 82);
+      --state-usable-bg:   oklch(95% 0.06 82);
+      --state-unusable:    oklch(52% 0.22 25);
+      --state-unusable-bg: oklch(93% 0.05 25);
+
+      --tag-red:    oklch(58% 0.22 25);
+      --tag-orange: oklch(66% 0.18 62);
+      --tag-green:  oklch(58% 0.17 145);
+      --tag-blue:   oklch(56% 0.20 255);
+      --tag-violet: oklch(46% 0.18 300);
+      --tag-pink:   oklch(56% 0.22 350);
+      --tag-teal:   oklch(54% 0.13 190);
+      --tag-brown:  oklch(42% 0.08 58);
+
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+      --fs-h1: 22px; --fs-h2: 17px; --fs-h3: 14px;
+      --fs-body: 14px; --fs-meta: 12px;
+      --radius-sm: 6px; --radius: 10px; --radius-lg: 14px; --radius-xl: 18px; --radius-pill: 999px;
+      --gap-xs: 6px; --gap-sm: 10px; --gap-md: 16px; --gap-lg: 24px; --gap-xl: 36px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: var(--font-body); font-size: var(--fs-body);
+      line-height: 1.5; -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+    input, textarea { font: inherit; color: inherit; }
+    svg { display: block; }
+    hr { border: 0; border-top: 1px solid var(--border); margin: var(--gap-md) 0; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SCIM
+       ═══════════════════════════════════════════════════════════════════ */
+    .scrim {
+      position: fixed; inset: 0; z-index: 55;
+      background: rgba(0,0,0,0.32); opacity: 0; pointer-events: none;
+      transition: opacity 0.22s;
+    }
+    .scrim.on { opacity: 1; pointer-events: auto; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       APPBAR
+       ═══════════════════════════════════════════════════════════════════ */
+    .appbar {
+      display: flex; align-items: center; gap: var(--gap-sm);
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      background: color-mix(in oklch, var(--surface) 94%, transparent);
+      backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 10;
+    }
+    @media (min-width: 768px) {
+      .appbar { padding: 12px 24px; }
+    }
+
+    .back-btn {
+      display: grid; place-items: center;
+      width: 40px; height: 40px; border-radius: var(--radius-sm);
+      color: var(--fg); flex-shrink: 0;
+      transition: background 0.12s;
+    }
+    .back-btn:hover { background: var(--fg-soft); }
+    .back-btn svg { width: 22px; height: 22px; }
+
+    .appbar-title {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-family: var(--font-display); font-size: var(--fs-h1);
+      font-weight: 620; letter-spacing: -0.015em;
+      text-align: center; white-space: nowrap;
+    }
+
+    .spacer { flex: 1; }
+
+    .archive-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 7px 12px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500; color: var(--state-unusable);
+      transition: background 0.12s, color 0.12s;
+    }
+    .archive-btn:hover { background: var(--state-unusable-bg); color: var(--state-unusable); }
+    .archive-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .archive-btn .archive-label { display: inline; }
+    @media (max-width: 480px) {
+      .archive-btn { padding: 0; width: 40px; height: 40px; justify-content: center; }
+      .archive-btn .archive-label { display: none; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       CONTENT
+       ═══════════════════════════════════════════════════════════════════ */
+    .content {
+      padding: 16px 16px 40px;
+      margin: 0 auto;
+      max-width: 600px;
+    }
+    @media (min-width: 768px) {
+      .content { padding: 24px 32px 48px; max-width: 920px; }
+    }
+
+    .card-header {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       LIGHTWEIGHT SECTION (no card chrome)
+       ═══════════════════════════════════════════════════════════════════ */
+    .section {
+      padding-bottom: 14px; margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child {
+      margin-bottom: 0; border-bottom: 0; padding-bottom: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       IDENTITY CARD
+       ═══════════════════════════════════════════════════════════════════ */
+    .identity-block {
+      padding-bottom: var(--gap-md); margin-bottom: var(--gap-sm);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tent-name-hero {
+      font-family: var(--font-display); font-size: 22px; font-weight: 650;
+      letter-spacing: -0.015em; line-height: 1.25; margin-bottom: 4px;
+      cursor: pointer; border-radius: 4px; padding: 2px 0;
+      transition: color 0.12s;
+    }
+    .tent-name-hero:hover { color: var(--accent); }
+    @media (min-width: 768px) {
+      .tent-name-hero { font-size: 26px; }
+    }
+
+    /* ── archived banner ── */
+    .archive-banner {
+      display: flex; align-items: center; gap: 8px;
+      font-size: var(--fs-meta); color: var(--muted); font-style: italic;
+      margin-bottom: 16px;
+    }
+    .archive-banner svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* ── state pill (tap to change) ── */
+    .state-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: var(--radius-pill);
+      font-size: 13px; font-weight: 600; white-space: nowrap;
+      cursor: pointer; flex-shrink: 0;
+      transition: opacity 0.12s, box-shadow 0.12s;
+    }
+    .state-pill:hover { opacity: 0.82; }
+    .state-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .dot-perfect    { background: var(--state-perfect); }
+    .dot-usable     { background: var(--state-usable); }
+    .dot-unusable   { background: var(--state-unusable); }
+    .state-pill.sg-good       { background: var(--state-perfect-bg); color: var(--state-perfect); }
+    .state-pill.sg-needs      { background: var(--state-usable-bg); color: var(--state-usable); }
+    .state-pill.sg-unusable   { background: var(--state-unusable-bg); color: var(--state-unusable); }
+
+    /* ── info chips (size + model) ── */
+    .info-chips-row {
+      display: flex; flex-wrap: wrap; gap: var(--gap-sm); margin-bottom: var(--gap-md);
+    }
+    .info-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius-pill); font-size: 13px; font-weight: 500;
+      background: var(--surface); cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .info-chip:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .info-chip svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+    .info-chip.archived { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── comments area ── */
+    .comments-area {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 12px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--bg); min-height: 42px;
+      cursor: pointer; transition: border-color 0.12s, background 0.12s;
+    }
+    .comments-area:hover { border-color: var(--muted); background: var(--surface); }
+    .comments-area .comment-text {
+      flex: 1; font-size: 13px; color: var(--fg); line-height: 1.45;
+    }
+    .comments-area .comment-empty {
+      flex: 1; font-size: 13px; color: var(--muted); font-style: italic;
+    }
+    .comments-area .comment-edit-icon {
+      flex-shrink: 0; color: var(--muted); width: 15px; height: 15px; margin-top: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       TAGS CARD
+       ═══════════════════════════════════════════════════════════════════ */
+    .tags-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .tags-card-header .card-header { margin-bottom: 0; }
+    .tags-row {
+      display: flex; flex-wrap: wrap; gap: 7px; align-items: center;
+    }
+    .tag-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 13px; border-radius: var(--radius-pill);
+      font-size: 12px; font-weight: 500; color: var(--surface);
+      white-space: nowrap;
+    }
+    .tag-empty {
+      font-size: 13px; color: var(--muted); font-style: italic;
+    }
+    .btn-minimal {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: var(--radius-pill);
+      font-size: 12px; font-weight: 600; color: var(--accent);
+      transition: background 0.12s;
+    }
+    .btn-minimal:hover { background: var(--accent-soft); }
+    .btn-minimal svg { width: 14px; height: 14px; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       PARTS CARD
+       ═══════════════════════════════════════════════════════════════════ */
+    .parts-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .parts-card-header .card-header { margin-bottom: 0; }
+    .btn-add-part {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: var(--radius-pill);
+      font-size: 12px; font-weight: 600; color: var(--accent);
+      transition: background 0.12s;
+    }
+    .btn-add-part:hover { background: var(--accent-soft); }
+    .btn-add-part svg { width: 14px; height: 14px; }
+
+    .part-empty {
+      font-size: 13px; color: var(--muted); font-style: italic; padding: 4px 0;
+    }
+    .part-row {
+      display: flex; align-items: center; gap: var(--gap-sm);
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .part-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .part-row:first-child { padding-top: 0; }
+    .part-name {
+      flex: 1; min-width: 0; font-size: var(--fs-body); font-weight: 500;
+    }
+    .part-state-badge {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: var(--radius-pill);
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+      cursor: pointer; flex-shrink: 0;
+      transition: opacity 0.12s, box-shadow 0.12s;
+    }
+    .part-state-badge:hover { opacity: 0.82; }
+    .part-state-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .part-state-badge.ps-good       { background: var(--state-perfect-bg); color: var(--state-perfect); }
+    .part-state-badge.ps-needs      { background: var(--state-usable-bg); color: var(--state-usable); }
+    .part-state-badge.ps-missing    { background: oklch(93% 0.04 300); color: oklch(52% 0.14 290); }
+    .part-state-badge.ps-unusable   { background: var(--state-unusable-bg); color: var(--state-unusable); }
+    .part-comment-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+      flex-shrink: 0; margin-left: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       HISTORY CARD
+       ═══════════════════════════════════════════════════════════════════ */
+    .history-items { max-height: 200px; overflow: hidden; transition: max-height 0.3s; }
+    .history-items.expanded { max-height: 800px; }
+    .history-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .history-item:last-child { border-bottom: 0; }
+    .history-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--border);
+      flex-shrink: 0; margin-top: 5px;
+    }
+    .history-dot.action-create { background: var(--state-perfect); }
+    .history-dot.action-update { background: var(--accent); }
+    .history-dot.action-archive { background: oklch(52% 0.06 290); }
+    .history-dot.action-part   { background: var(--state-usable); }
+    .history-dot.action-tag    { background: var(--tag-violet); }
+    .history-content { flex: 1; min-width: 0; }
+    .history-summary { font-size: 13px; line-height: 1.4; }
+    .history-meta {
+      font-size: 11px; color: var(--muted); margin-top: 2px;
+    }
+
+    .btn-expand {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-top: 12px;
+      padding: 6px 0; font-size: 12px; font-weight: 600; color: var(--accent);
+      transition: opacity 0.12s;
+    }
+    .btn-expand:hover { opacity: 0.78; }
+    .btn-expand svg { width: 14px; height: 14px; transition: transform 0.2s; }
+    .btn-expand.open svg { transform: rotate(180deg); }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       ERROR BANNER
+       ═══════════════════════════════════════════════════════════════════ */
+    .error-banner {
+      display: none;
+      background: oklch(93% 0.05 25); color: var(--state-unusable);
+      border: 1px solid oklch(80% 0.08 25);
+      border-radius: var(--radius); padding: 12px 16px;
+      font-size: 13px; margin-top: var(--gap-sm);
+    }
+    .error-banner.on { display: flex; align-items: center; gap: 8px; }
+    .error-banner .error-msg { flex: 1; }
+    .error-banner .btn-retry {
+      font-size: 12px; font-weight: 600; color: var(--state-unusable);
+      text-decoration: underline; white-space: nowrap;
+    }
+    .error-banner .btn-dismiss {
+      font-size: 12px; color: var(--muted); padding: 2px 6px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       BOTTOM SHEETS
+       ═══════════════════════════════════════════════════════════════════ */
+    .sheet {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
+      max-height: 85vh; overflow-y: auto;
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+      padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0));
+    }
+    .sheet.open { transform: translateY(0); }
+    @media (min-width: 768px) {
+      .sheet {
+        left: 50%; right: auto; bottom: 50%;
+        transform: translate(-50%, 60%) scale(0.94);
+        width: 560px; max-height: 70vh;
+        border-radius: var(--radius-xl);
+        opacity: 0; pointer-events: none;
+        transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.18s;
+      }
+      .sheet.open { transform: translate(-50%, 50%) scale(1); opacity: 1; pointer-events: auto; }
+    }
+
+    .sheet-handle {
+      width: 32px; height: 4px; border-radius: 999px;
+      background: var(--border); margin: 8px auto 12px;
+    }
+    @media (min-width: 768px) {
+      .sheet-handle { display: none; }
+    }
+
+    .sheet-title {
+      font-family: var(--font-display); font-size: var(--fs-h2);
+      font-weight: 650; letter-spacing: -0.01em;
+      margin-bottom: 16px;
+    }
+
+    .sheet-field { margin-bottom: var(--gap-md); }
+    .sheet-field:last-child { margin-bottom: 0; }
+    .sheet-field-label {
+      display: block; font-size: 13px; font-weight: 500;
+      margin-bottom: 5px;
+    }
+    .sheet-text-input {
+      display: block; width: 100%;
+      padding: 11px 13px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--surface);
+      font-size: var(--fs-body); line-height: 1.4;
+      outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .sheet-text-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2.5px var(--accent-soft);
+    }
+    .sheet-text-input::placeholder { color: var(--muted); }
+    textarea.sheet-text-input { resize: vertical; min-height: 80px; }
+
+    .sheet-actions {
+      display: flex; gap: var(--gap-sm); justify-content: flex-end;
+      margin-top: 20px;
+    }
+    .btn-sheet-cancel {
+      padding: 10px 18px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      transition: background 0.12s;
+    }
+    .btn-sheet-cancel:hover { background: var(--fg-soft); color: var(--fg); }
+    .btn-sheet-save {
+      padding: 10px 22px; border-radius: var(--radius);
+      background: var(--accent); color: var(--surface);
+      font-size: 13px; font-weight: 600;
+      transition: background 0.12s;
+    }
+    .btn-sheet-save:hover { background: var(--accent-hover); }
+    .btn-sheet-save:disabled {
+      background: var(--border); color: var(--muted); cursor: not-allowed;
+    }
+
+    /* ── model selection sheet ── */
+    .sheet-model-list { display: flex; flex-direction: column; gap: 6px; }
+    .sheet-model-item {
+      display: flex; align-items: center;
+      padding: 14px 16px; border-radius: var(--radius);
+      font-size: 15px; font-weight: 550;
+      border: 1.5px solid var(--border);
+      cursor: pointer; transition: border-color 0.14s, background 0.14s, color 0.14s;
+    }
+    .sheet-model-item:hover { border-color: var(--accent); }
+    .sheet-model-item.selected {
+      border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+    }
+
+    /* ── tag toggle list in sheet ── */
+    .sheet-search {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; margin-bottom: var(--gap-md);
+      background: var(--fg-soft); border-radius: 10px;
+    }
+    .sheet-search svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--muted); }
+    .sheet-search input {
+      flex: 1; border: none; background: transparent; outline: none;
+      font-size: 14px; font-family: inherit; color: var(--fg);
+    }
+    .sheet-search input::placeholder { color: var(--muted); }
+    .sheet-tag-list { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: var(--gap-md); max-height: 280px; overflow-y: auto; padding: 8px; }
+    .sheet-tag-chip.hidden { display: none; }
+    .sheet-tag-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: var(--radius-pill);
+      font-size: 13px; font-weight: 500; color: var(--surface);
+      cursor: pointer; transition: opacity 0.12s, box-shadow 0.12s; user-select: none;
+    }
+    .sheet-tag-chip:hover { opacity: 0.84; }
+    .sheet-tag-chip.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4.5px var(--accent); }
+
+    /* ── part state selector in sheet ── */
+    .sheet-part-state-list { display: flex; flex-direction: column; gap: 2px; }
+    .sheet-part-state-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: var(--radius);
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      transition: background 0.1s;
+    }
+    .sheet-part-state-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .sheet-part-state-item:hover { background: var(--fg-soft); }
+    .sheet-part-state-item.selected { background: var(--accent-soft); }
+
+    .sheet-part-state-item[data-state="good"]          { color: var(--state-perfect); }
+    .sheet-part-state-item[data-state="needs-repair"]  { color: var(--state-usable); }
+    .sheet-part-state-item[data-state="missing"]       { color: oklch(52% 0.14 290); }
+    .sheet-part-state-item[data-state="unusable"]      { color: var(--state-unusable); }
+
+    /* ── add part sheet ── */
+    .sheet-poll-list { display: flex; flex-direction: column; gap: 2px; max-height: 240px; overflow-y: auto; }
+    .sheet-poll-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 14px; border-radius: var(--radius);
+      font-size: 14px; cursor: pointer; transition: background 0.1s;
+    }
+    .sheet-poll-item:hover { background: var(--fg-soft); }
+    .sheet-poll-item .poll-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid var(--accent);
+      transition: background 0.12s, border-color 0.12s; flex-shrink: 0;
+    }
+    .sheet-poll-item.selected .poll-dot {
+      background: var(--accent); border-color: var(--accent);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       DIALOG (archive confirmation)
+       ═══════════════════════════════════════════════════════════════════ */
+    .dialog-scrim {
+      position: fixed; inset: 0; z-index: 75;
+      background: rgba(0,0,0,0.32); opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .dialog-scrim.on { opacity: 1; pointer-events: auto; }
+
+    .dialog-card {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.94);
+      width: 90vw; max-width: 360px; z-index: 80;
+      background: var(--surface); border-radius: var(--radius-xl);
+      padding: 22px 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.16);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.18s, transform 0.2s;
+    }
+    .dialog-card.on { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+    .dialog-title {
+      font-family: var(--font-display); font-size: var(--fs-h2); font-weight: 620;
+      letter-spacing: -0.01em; margin-bottom: 6px;
+    }
+    .dialog-body { font-size: var(--fs-body); color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+    .dialog-actions { display: flex; gap: var(--gap-sm); justify-content: flex-end; }
+    .btn-flat {
+      padding: 9px 18px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      transition: background 0.12s, color 0.12s;
+    }
+    .btn-flat:hover { background: var(--fg-soft); color: var(--fg); }
+    .btn-flat.danger { color: var(--state-unusable); }
+    .btn-flat.danger:hover { background: var(--state-unusable-bg); }
+
+    @media (max-width: 420px) {
+      .tent-name-hero { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     SCIM (for bottom sheets + drawer)
+     ═══════════════════════════════════════════════════════════════ -->
+  <div class="scrim" id="sheet-scrim"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     APPBAR
+     ═══════════════════════════════════════════════════════════════ -->
+  <header class="appbar" data-od-id="detail-appbar">
+    <button class="back-btn" id="back-btn" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="appbar-title">Détail tente</span>
+    <span class="spacer"></span>
+    <button class="archive-btn" id="archive-btn" aria-label="Archiver la tente">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+      <span class="archive-label">Archiver</span>
+    </button>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     CONTENT
+     ═══════════════════════════════════════════════════════════════ -->
+  <div class="content" data-od-id="detail-content">
+
+    <!-- ── IDENTITY CARD ────────────────────────────────────────── -->
+    <div class="identity-block" data-od-id="identity-card">
+      <div class="tent-name-hero" id="tent-name-display"></div>
+
+      <div class="archive-banner" id="archive-banner" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+        Cette tente est archivée
+      </div>
+
+      <div class="info-chips-row" data-od-id="state-pill-row">
+        <button class="state-pill" id="state-pill" data-od-id="state-pill">
+        </button>
+        <button class="info-chip" id="size-chip" title="Modifier la taille">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span id="size-label">4 places</span>
+        </button>
+        <button class="info-chip" id="model-chip" title="Modifier le modèle">
+          <span id="model-label">Dôme</span>
+        </button>
+      </div>
+
+      <div class="comments-area" id="comments-area" data-od-id="comments-area" title="Modifier les commentaires">
+        <span class="comment-empty" id="comment-text">Aucun commentaire</span>
+        <svg class="comment-edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+    </div>
+
+    <!-- ── TAGS CARD ─────────────────────────────────────────────── -->
+    <div class="section" data-od-id="tags-card">
+      <div class="tags-card-header">
+        <div class="card-header">Étiquettes</div>
+        <button class="btn-minimal" id="tags-edit-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Modifier
+        </button>
+      </div>
+      <div class="tags-row" id="tags-row"></div>
+    </div>
+
+    <!-- ── PARTS CARD ────────────────────────────────────────────── -->
+    <div class="section" data-od-id="parts-card">
+      <div class="parts-card-header">
+        <div class="card-header" id="parts-count">Éléments</div>
+        <button class="btn-add-part" id="add-part-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Modifier
+        </button>
+      </div>
+      <div id="parts-list"></div>
+    </div>
+
+    <!-- ── HISTORY CARD ──────────────────────────────────────────── -->
+    <div class="section" data-od-id="history-card">
+      <div class="card-header">Historique</div>
+      <div class="history-items" id="history-items"></div>
+      <button class="btn-expand" id="history-expand" style="display:none;">
+        Voir tout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
+
+    <!-- ── ERROR BANNER ──────────────────────────────────────────── -->
+    <div class="error-banner" id="error-banner" data-od-id="error-banner">
+      <span class="error-msg" id="error-msg"></span>
+      <button class="btn-retry" id="error-retry">Réessayer</button>
+      <button class="btn-dismiss" id="error-dismiss">×</button>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     BOTTOM SHEET — Name edit
+     ═══════════════════════════════════════════════════════════════ -->
+  <div class="sheet" id="sheet-name">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Modifier le nom</div>
+    <div class="sheet-field">
+      <label class="sheet-field-label" for="input-name">Nom de la tente</label>
+      <input class="sheet-text-input" type="text" id="input-name" maxlength="120" placeholder="ex: Tente #23 — Arizona Pro" />
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-sheet-cancel" data-sheet-close>Annuler</button>
+      <button class="btn-sheet-save" id="btn-save-name">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     BOTTOM SHEET — Size edit
+     ═══════════════════════════════════════════════════════════════ -->
+  <div class="sheet" id="sheet-size">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Modifier la taille</div>
+    <div class="sheet-field">
+      <label class="sheet-field-label" for="input-size">Nombre de places</label>
+      <input class="sheet-text-input" type="number" id="input-size" inputmode="numeric" placeholder="ex: 6" min="1" max="99" />
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-sheet-cancel" data-sheet-close>Annuler</button>
+      <button class="btn-sheet-save" id="btn-save-size">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     BOTTOM SHEET — Model edit
+     ═══════════════════════════════════════════════════════════════ -->
+  <div class="sheet" id="sheet-model">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Modifier le modèle</div>
+    <div class="sheet-model-list" id="model-list"></div>
+    <div class="sheet-actions">
+      <button class="btn-sheet-cancel" data-sheet-close>Annuler</button>
+      <button class="btn-sheet-save" id="btn-save-model">Appliquer</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     BOTTOM SHEET — Comments edit
+     ═══════════════════════════════════════════════════════════════ -->
+  <div class="sheet" id="sheet-comments">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Commentaires</div>
+    <div class="sheet-field">
+      <textarea class="sheet-text-input" id="input-comments" rows="4" maxlength="500" placeholder="Notes, historique, remarques…"></textarea>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-sheet-cancel" data-sheet-close>Annuler</button>
+      <button class="btn-sheet-save" id="btn-save-comments">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     BOTTOM SHEET — Tags edit
+     ═════════════════════════════════════════════════════════════════ -->
+  <div class="sheet" id="sheet-tags">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Modifier les étiquettes</div>
+    <div class="sheet-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="tag-search-input" placeholder="Rechercher une étiquette…" />
+    </div>
+    <div class="sheet-tag-list" id="sheet-tag-list"></div>
+    <div class="sheet-actions">
+      <button class="btn-sheet-cancel" data-sheet-close>Terminé</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+      BOTTOM SHEET — Manage parts
+      ═══════════════════════════════════════════════════════════════ -->
+  <div class="sheet" id="sheet-add-part">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Modifier les éléments</div>
+    <div class="sheet-poll-list" id="add-part-list"></div>
+    <div class="sheet-actions">
+      <button class="btn-sheet-cancel" data-sheet-close>Annuler</button>
+      <button class="btn-sheet-save" id="btn-save-add-part">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     BOTTOM SHEET — State selection (shared by tent & parts)
+     ═══════════════════════════════════════════════════════════════ -->
+  <div class="sheet" id="sheet-state">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-state-title">Modifier l'état</div>
+    <div class="sheet-part-state-list" id="state-list"></div>
+    <div class="sheet-actions">
+      <button class="btn-sheet-cancel" data-sheet-close>Annuler</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+      ARCHIVE DIALOG
+     ═══════════════════════════════════════════════════════════════ -->
+  <div class="dialog-scrim" id="dialog-scrim"></div>
+  <div class="dialog-card" id="archive-dialog" role="dialog" aria-modal="true">
+    <div class="dialog-title">Archiver la tente</div>
+    <div class="dialog-body">Cette tente n'apparaîtra plus dans la liste mais restera consultable. Confirmer l'archivage ?</div>
+    <div class="dialog-actions">
+      <button class="btn-flat" id="dialog-cancel">Annuler</button>
+      <button class="btn-flat danger" id="dialog-confirm">Archiver</button>
+    </div>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════
+       TENT DATA (stand-in for Riverpod provider)
+       ═══════════════════════════════════════════════════════════════ */
+    const tent = {
+      id: 't23',
+      name: 'Tente #23 — Arizona Pro',
+      size: 4,
+      modelId: 'dome',
+      modelName: 'Dôme',
+      state: 'good',
+      isArchived: false,
+      comments: 'Double-toit changé en mars. Armature vérifiée, RAS.',
+      parts: [
+        { id:'p1', name:'Toile extérieure', kindId:'k1', state:'good', comments:'Pas de déchirure' },
+        { id:'p2', name:'Double-toit', kindId:'k2', state:'good', comments:'' },
+        { id:'p3', name:'Arceaux', kindId:'k3', state:'needs-repair', comments:'Un arceau fendu, à remplacer' },
+        { id:'p4', name:'Sardines', kindId:'k4', state:'missing', comments:'' },
+        { id:'p5', name:'Tapis de sol', kindId:'k5', state:'good', comments:'Nettoyé' },
+        { id:'p6', name:'Haubans', kindId:'k6', state:'good', comments:'' },
+        { id:'p7', name:'Sac de transport', kindId:'k7', state:'unusable', comments:'Fermeture cassée' },
+      ],
+      tags: [
+        { id:'t1', name:'Réserve', color:'var(--tag-teal)' },
+        { id:'t2', name:'Loups', color:'var(--tag-green)' },
+        { id:'t5', name:'Hiver', color:'var(--tag-orange)' },
+      ],
+      history: [
+        { action:'tent_updated',   summary:'Commentaires modifiés',      date:'12 juin 2026',   time:'16:22', actor:'Marc L.',  dotClass:'action-update' },
+        { action:'tag_assigned',   summary:'Étiquette ajoutée : Hiver',    date:'8 juin 2026',    time:'10:05', actor:'Sophie D.',dotClass:'action-tag' },
+        { action:'part_state_changed', summary:'État Arceaux : Parfait → À réparer', date:'3 juin 2026', time:'18:40', actor:'Marc L.', dotClass:'action-part' },
+        { action:'tag_assigned',   summary:'Étiquette ajoutée : Loups',    date:'25 mai 2026',   time:'09:15', actor:'Sophie D.',dotClass:'action-tag' },
+        { action:'part_added',     summary:'Pièce ajoutée : Tapis de sol', date:'18 mai 2026',   time:'14:30', actor:'Marc L.', dotClass:'action-part' },
+        { action:'tent_updated',   summary:'État global : À réparer → Parfait', date:'12 mai 2026', time:'11:00', actor:'Marc L.', dotClass:'action-update' },
+        { action:'tag_assigned',   summary:'Étiquette ajoutée : Réserve',  date:'5 mai 2026',    time:'16:45', actor:'Sophie D.',dotClass:'action-tag' },
+        { action:'tent_created',   summary:'Tente créée',                 date:'1 avr. 2026',   time:'09:00', actor:'Marc L.', dotClass:'action-create' },
+      ]
+    };
+
+    const allModels = [
+      { id:'dome', name:'Dôme' },
+      { id:'tunnel', name:'Tunnel' },
+      { id:'canadienne', name:'Canadienne' },
+    ];
+
+    const availableTags = [
+      { id:'t1', name:'Réserve', color:'var(--tag-teal)' },
+      { id:'t2', name:'Loups', color:'var(--tag-green)' },
+      { id:'t3', name:'Éclaireurs', color:'var(--tag-blue)' },
+      { id:'t4', name:'Pionniers', color:'var(--tag-pink)' },
+      { id:'t5', name:'Hiver', color:'var(--tag-orange)' },
+      { id:'t6', name:'Camp été', color:'var(--tag-violet)' },
+      { id:'t7', name:'À réparer', color:'var(--tag-brown)' },
+      { id:'t8', name:'Hors service', color:'var(--tag-red)' },
+    ];
+
+    const availablePartKinds = [
+      { id:'k1', name:'Toile extérieure' },
+      { id:'k2', name:'Double-toit' },
+      { id:'k3', name:'Arceaux' },
+      { id:'k4', name:'Sardines' },
+      { id:'k5', name:'Tapis de sol' },
+      { id:'k6', name:'Haubans' },
+      { id:'k7', name:'Sac de transport' },
+      { id:'k8', name:'Piquets' },
+      { id:'k9', name:'Maillet' },
+      { id:'k10', name:'Kit de réparation' },
+    ];
+
+    const partStates = [
+      { id:'good',       label:'Bon état',     cssClass:'ps-good' },
+      { id:'needs-repair', label:'À réparer',    cssClass:'ps-needs' },
+      { id:'missing',    label:'Manquant',       cssClass:'ps-missing' },
+      { id:'unusable',   label:'Inutilisable',    cssClass:'ps-unusable' },
+    ];
+
+    const tentStates = [
+      { id:'good',         label:'Parfait',       pillClass:'sg-good',       dotClass:'dot-perfect' },
+      { id:'needs-repair', label:'À réparer',      pillClass:'sg-needs',      dotClass:'dot-usable' },
+      { id:'unusable',     label:'Inutilisable',    pillClass:'sg-unusable',   dotClass:'dot-unusable' },
+    ];
+
+    const partStateIcons = {
+      good:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+      'needs-repair': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+      missing:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>',
+      unusable: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+    };
+    const tentStateIcons = {
+      good:         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+      'needs-repair': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+      unusable:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+    };
+
+    /* ═══════════════════════════════════════════════════════════════
+       SHEET MANAGEMENT
+       ═══════════════════════════════════════════════════════════════ */
+    const scrim = document.getElementById('sheet-scrim');
+    let activeSheet = null;
+
+    function openSheet(id) {
+      if (activeSheet) closeSheet(activeSheet);
+      const s = document.getElementById(id);
+      s.classList.add('open');
+      scrim.classList.add('on');
+      activeSheet = s;
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSheet(s) {
+      if (typeof s === 'string') s = document.getElementById(s);
+      s.classList.remove('open');
+      scrim.classList.remove('on');
+      activeSheet = null;
+      document.body.style.overflow = '';
+    }
+
+    scrim.addEventListener('click', () => {
+      if (activeSheet) closeSheet(activeSheet);
+    });
+    document.querySelectorAll('[data-sheet-close]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sheet = btn.closest('.sheet');
+        if (sheet) closeSheet(sheet.id);
+      });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && activeSheet) closeSheet(activeSheet);
+    });
+
+    /* ╌╌╌ Archive button → dialog ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ */
+    function renderAll() {
+      renderIdentity();
+      renderTags();
+      renderParts();
+      renderHistory();
+    }
+
+    /* ── Identity ── */
+    function renderIdentity() {
+      document.getElementById('tent-name-display').textContent = tent.name;
+      document.getElementById('size-label').textContent = tent.size === 1 ? '1 place' : `${tent.size} places`;
+      document.getElementById('model-label').textContent = tent.modelName;
+      document.getElementById('archive-banner').style.display = tent.isArchived ? 'flex' : 'none';
+
+      const commentEl = document.getElementById('comment-text');
+      if (tent.comments && tent.comments.trim()) {
+        commentEl.textContent = tent.comments;
+        commentEl.className = 'comment-text';
+      } else {
+        commentEl.textContent = 'Aucun commentaire';
+        commentEl.className = 'comment-empty';
+      }
+
+      const isArch = tent.isArchived;
+
+      const ts = tentStates.find(s => s.id === tent.state);
+      const pill = document.getElementById('state-pill');
+      pill.className = `state-pill ${ts.pillClass}`;
+      pill.innerHTML = `${tentStateIcons[tent.state]} ${ts.label}`;
+      pill.disabled = isArch;
+      document.getElementById('size-chip').classList.toggle('archived', isArch);
+      document.getElementById('model-chip').classList.toggle('archived', isArch);
+      document.getElementById('comments-area').style.cursor = isArch ? 'default' : 'pointer';
+      document.getElementById('comments-area').style.opacity = isArch ? '0.5' : '1';
+      document.getElementById('tags-edit-btn').style.display = isArch ? 'none' : '';
+      document.getElementById('add-part-btn').style.display = isArch ? 'none' : '';
+      document.getElementById('archive-btn').style.display = isArch ? 'none' : '';
+    }
+
+    /* ── Tags ── */
+    function renderTags() {
+      const row = document.getElementById('tags-row');
+      if (tent.tags.length === 0) {
+        row.innerHTML = '<span class="tag-empty">Aucune étiquette assignée</span>';
+      } else {
+        row.innerHTML = tent.tags.map(t =>
+          `<span class="tag-chip" style="background:${t.color};">${t.name}</span>`
+        ).join('');
+      }
+    }
+
+    /* ── Parts ── */
+    function renderParts() {
+      const list = document.getElementById('parts-list');
+      document.getElementById('parts-count').textContent = `Éléments (${tent.parts.length})`;
+
+      if (tent.parts.length === 0) {
+        list.innerHTML = '<div class="part-empty">Aucun élément associé à cette tente.</div>';
+        return;
+      }
+
+      list.innerHTML = tent.parts.map(p => {
+        const st = partStates.find(s => s.id === p.state);
+        const icon = partStateIcons[p.state] || '';
+        const dotHTML = p.comments && p.comments.trim() ? '<span class="part-comment-dot" title="'+p.comments+'"></span>' : '';
+        return `<div class="part-row">
+          <span class="part-name">${p.name}${dotHTML}</span>
+          <button class="part-state-badge ${st.cssClass}" data-part-id="${p.id}">
+            ${icon} ${st.label}
+          </button>
+        </div>`;
+      }).join('');
+    }
+
+    /* ── History ── */
+    function renderHistory() {
+      const container = document.getElementById('history-items');
+      const expandBtn = document.getElementById('history-expand');
+
+      const allItems = tent.history;
+      if (allItems.length === 0) {
+        container.innerHTML = '<div style="font-size:13px;color:var(--muted);font-style:italic;padding:4px 0;">Aucun historique.</div>';
+        expandBtn.style.display = 'none';
+        container.classList.remove('expanded');
+        return;
+      }
+
+      const visibleItems = allItems.slice(0, 3);
+      const hasMore = allItems.length > 3;
+
+      container.innerHTML = visibleItems.map(h =>
+        `<div class="history-item">
+          <span class="history-dot ${h.dotClass}"></span>
+          <div class="history-content">
+            <div class="history-summary">${h.summary}</div>
+            <div class="history-meta">${h.date} · ${h.time} — ${h.actor}</div>
+          </div>
+        </div>`
+      ).join('');
+
+      if (hasMore) {
+        expandBtn.style.display = 'inline-flex';
+        expandBtn.textContent = `Voir les ${allItems.length} événements `;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.innerHTML = '<polyline points="6 9 12 15 18 9"/>';
+        expandBtn.appendChild(svg);
+      } else {
+        expandBtn.style.display = 'none';
+      }
+      container.classList.remove('expanded');
+      expandBtn.classList.remove('open');
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SHARED STATE SHEET
+       ═══════════════════════════════════════════════════════════════ */
+
+    function openStateSheet({ title, states, icons, currentStateId, onSelect }) {
+      document.getElementById('sheet-state-title').textContent = title;
+      const list = document.getElementById('state-list');
+      list.innerHTML = states.map(s =>
+        `<button class="sheet-part-state-item ${s.id===currentStateId?'selected':''}" data-state="${s.id}">
+          ${icons[s.id]}
+          ${s.label}
+        </button>`
+      ).join('');
+      list.querySelectorAll('.sheet-part-state-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const prevId = currentStateId;
+          const prevLabel = states.find(s => s.id === prevId).label;
+          const newId = item.dataset.state;
+          const newLabel = states.find(s => s.id === newId).label;
+          if (prevId !== newId) {
+            onSelect(newId, prevLabel, newLabel);
+          }
+          closeSheet('sheet-state');
+        });
+      });
+      openSheet('sheet-state');
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       EVENTS
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* ── State pill → shared sheet ── */
+    document.getElementById('state-pill').addEventListener('click', () => {
+      if (tent.isArchived) return;
+      openStateSheet({
+        title: 'État global de la tente',
+        states: tentStates,
+        icons: tentStateIcons,
+        currentStateId: tent.state,
+        onSelect(newId, prevLabel, newLabel) {
+          tent.state = newId;
+          renderIdentity();
+          addHistoryEntry('tent_updated', `État global : ${prevLabel} → ${newLabel}`, 'action-update');
+        }
+      });
+    });
+
+    /* ── Name tap → sheet ── */
+    document.getElementById('tent-name-display').addEventListener('click', () => {
+      if (tent.isArchived) return;
+      document.getElementById('input-name').value = tent.name;
+      openSheet('sheet-name');
+    });
+    document.getElementById('btn-save-name').addEventListener('click', () => {
+      const v = document.getElementById('input-name').value.trim();
+      if (!v) return;
+      tent.name = v;
+      renderIdentity();
+      closeSheet('sheet-name');
+      addHistoryEntry('tent_updated', 'Nom modifié', 'action-update');
+    });
+
+    /* ── Size chip → sheet ── */
+    document.getElementById('size-chip').addEventListener('click', () => {
+      if (tent.isArchived) return;
+      document.getElementById('input-size').value = tent.size;
+      openSheet('sheet-size');
+    });
+    document.getElementById('btn-save-size').addEventListener('click', () => {
+      const v = parseInt(document.getElementById('input-size').value, 10);
+      if (!v || v < 1) return;
+      tent.size = v;
+      renderIdentity();
+      closeSheet('sheet-size');
+      addHistoryEntry('tent_updated', `Taille modifiée : ${v} place${v>1?'s':''}`, 'action-update');
+    });
+
+    /* ── Model chip → sheet ── */
+    document.getElementById('model-chip').addEventListener('click', () => {
+      if (tent.isArchived) return;
+      const list = document.getElementById('model-list');
+      list.innerHTML = allModels.map(m =>
+        `<button class="sheet-model-item ${m.id===tent.modelId?'selected':''}" data-model-id="${m.id}">${m.name}</button>`
+      ).join('');
+      document.getElementById('model-list').querySelectorAll('.sheet-model-item').forEach(item => {
+        item.addEventListener('click', () => {
+          document.getElementById('model-list').querySelectorAll('.sheet-model-item').forEach(i => i.classList.remove('selected'));
+          item.classList.add('selected');
+        });
+      });
+      openSheet('sheet-model');
+    });
+    document.getElementById('btn-save-model').addEventListener('click', () => {
+      const sel = document.getElementById('model-list').querySelector('.sheet-model-item.selected');
+      if (!sel) return;
+      const oldModel = tent.modelName;
+      tent.modelId = sel.dataset.modelId;
+      tent.modelName = sel.textContent.trim();
+      renderIdentity();
+      closeSheet('sheet-model');
+      if (tent.modelName !== oldModel) {
+        addHistoryEntry('tent_updated', `Modèle changé : ${oldModel} → ${tent.modelName}`, 'action-update');
+      }
+    });
+
+    /* ── Comments tap → sheet ── */
+    document.getElementById('comments-area').addEventListener('click', () => {
+      if (tent.isArchived) return;
+      document.getElementById('input-comments').value = tent.comments || '';
+      openSheet('sheet-comments');
+    });
+    document.getElementById('btn-save-comments').addEventListener('click', () => {
+      const v = document.getElementById('input-comments').value.trim();
+      tent.comments = v || '';
+      renderIdentity();
+      closeSheet('sheet-comments');
+      addHistoryEntry('tent_updated', 'Commentaires modifiés', 'action-update');
+    });
+
+    /* ── Tags edit → sheet ── */
+    document.getElementById('tags-edit-btn').addEventListener('click', () => {
+      const assignedIds = new Set(tent.tags.map(t => t.id));
+      const list = document.getElementById('sheet-tag-list');
+      list.innerHTML = availableTags.map(at => {
+        const isOn = assignedIds.has(at.id);
+        return `<button class="sheet-tag-chip ${isOn?'on':''}" style="background:${at.color}" data-tag-id="${at.id}">${at.name}</button>`;
+      }).join('');
+      list.querySelectorAll('.sheet-tag-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          chip.classList.toggle('on');
+        });
+      });
+      const searchInput = document.getElementById('tag-search-input');
+      searchInput.value = '';
+      searchInput.addEventListener('input', () => {
+        const q = searchInput.value.toLowerCase();
+        list.querySelectorAll('.sheet-tag-chip').forEach(chip => {
+          chip.classList.toggle('hidden', !chip.textContent.toLowerCase().includes(q));
+        });
+      });
+      openSheet('sheet-tags');
+    });
+    document.getElementById('sheet-tags').addEventListener('transitionend', () => {
+      /* commit on close */
+    });
+    /* When tags sheet closes, commit the selection */
+    const tagsSheet = document.getElementById('sheet-tags');
+    const tagsSheetObserver = new MutationObserver(() => {
+      if (!tagsSheet.classList.contains('open')) {
+        const selected = tagsSheet.querySelectorAll('.sheet-tag-chip.on');
+        tent.tags = Array.from(selected).map(chip => {
+          const id = chip.dataset.tagId;
+          const at = availableTags.find(t => t.id === id);
+          return { id, name: at.name, color: at.color };
+        });
+        renderTags();
+        addHistoryEntry('tag_assigned', 'Étiquettes mises à jour', 'action-tag');
+      }
+    });
+    tagsSheetObserver.observe(tagsSheet, { attributes: true, attributeFilter: ['class'] });
+
+    /* ── Add part → sheet ── */
+    document.getElementById('add-part-btn').addEventListener('click', () => {
+      const existingKindIds = new Set(tent.parts.map(p => p.kindId));
+      const list = document.getElementById('add-part-list');
+      list.innerHTML = availablePartKinds.map(pk => {
+        const exists = existingKindIds.has(pk.id);
+        return `<button class="sheet-poll-item ${exists?'selected':''}" data-kind-id="${pk.id}">
+          <span class="poll-dot"></span> ${pk.name}
+        </button>`;
+      }).join('');
+      list.querySelectorAll('.sheet-poll-item').forEach(item => {
+        item.addEventListener('click', () => {
+          item.classList.toggle('selected');
+        });
+      });
+      openSheet('sheet-add-part');
+    });
+    document.getElementById('btn-save-add-part').addEventListener('click', () => {
+      const list = document.getElementById('add-part-list');
+      const selected = list.querySelectorAll('.sheet-poll-item.selected');
+      const selectedKindIds = new Set(Array.from(selected).map(item => item.dataset.kindId));
+      const existingKindIds = new Set(tent.parts.map(p => p.kindId));
+      selectedKindIds.forEach(kindId => {
+        if (!existingKindIds.has(kindId)) {
+          const pk = availablePartKinds.find(k => k.id === kindId);
+          tent.parts.push({
+            id: 'p' + Date.now() + Math.random().toString(36).slice(2,5),
+            name: pk.name,
+            kindId: kindId,
+            state: 'good',
+            comments: ''
+          });
+          addHistoryEntry('part_added', `Pièce ajoutée : ${pk.name}`, 'action-part');
+        }
+      });
+      existingKindIds.forEach(kindId => {
+        if (!selectedKindIds.has(kindId)) {
+          const part = tent.parts.find(p => p.kindId === kindId);
+          tent.parts = tent.parts.filter(p => p.kindId !== kindId);
+          addHistoryEntry('part_removed', `Pièce retirée : ${part.name}`, 'action-part');
+        }
+      });
+      renderParts();
+      closeSheet('sheet-add-part');
+    });
+
+    /* ── Part state badge click → shared sheet ── */
+    document.getElementById('parts-list').addEventListener('click', (e) => {
+      if (tent.isArchived) return;
+      const badge = e.target.closest('.part-state-badge');
+      if (!badge) return;
+      const partId = badge.dataset.partId;
+      const part = tent.parts.find(p => p.id === partId);
+      if (!part) return;
+
+      openStateSheet({
+        title: `État : ${part.name}`,
+        states: partStates,
+        icons: partStateIcons,
+        currentStateId: part.state,
+        onSelect(newId, prevLabel, newLabel) {
+          part.state = newId;
+          renderParts();
+          addHistoryEntry('part_state_changed', `État ${part.name} : ${prevLabel} → ${newLabel}`, 'action-part');
+        }
+      });
+    });
+
+    /* ── History expand ── */
+    document.getElementById('history-expand').addEventListener('click', function() {
+      const container = document.getElementById('history-items');
+      const expanded = container.classList.contains('expanded');
+      if (expanded) {
+        container.classList.remove('expanded');
+        this.classList.remove('open');
+        this.innerHTML = `Voir les ${tent.history.length} événements <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>`;
+        container.innerHTML = tent.history.slice(0, 3).map(h =>
+          `<div class="history-item">
+            <span class="history-dot ${h.dotClass}"></span>
+            <div class="history-content">
+              <div class="history-summary">${h.summary}</div>
+              <div class="history-meta">${h.date} · ${h.time} — ${h.actor}</div>
+            </div>
+          </div>`
+        ).join('');
+      } else {
+        container.classList.add('expanded');
+        this.classList.add('open');
+        this.innerHTML = `Réduire <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>`;
+        container.innerHTML = tent.history.map(h =>
+          `<div class="history-item">
+            <span class="history-dot ${h.dotClass}"></span>
+            <div class="history-content">
+              <div class="history-summary">${h.summary}</div>
+              <div class="history-meta">${h.date} · ${h.time} — ${h.actor}</div>
+            </div>
+          </div>`
+        ).join('');
+      }
+    });
+
+    /* ── Archive button → dialog ── */
+    const dialogScrim = document.getElementById('dialog-scrim');
+    const dialogCard = document.getElementById('archive-dialog');
+
+    document.getElementById('archive-btn').addEventListener('click', () => {
+      if (tent.isArchived) return;
+      dialogScrim.classList.add('on');
+      dialogCard.classList.add('on');
+    });
+    function closeDialog() {
+      dialogScrim.classList.remove('on');
+      dialogCard.classList.remove('on');
+    }
+    document.getElementById('dialog-cancel').addEventListener('click', closeDialog);
+    dialogScrim.addEventListener('click', closeDialog);
+    document.getElementById('dialog-confirm').addEventListener('click', () => {
+      tent.isArchived = true;
+      addHistoryEntry('tent_archived', 'Tente archivée', 'action-archive');
+      renderAll();
+      closeDialog();
+    });
+
+    /* ── Back button → tent-list.html ── */
+    document.getElementById('back-btn').addEventListener('click', () => {
+      location.href = 'tent-list.html';
+    });
+
+    /* ── Error banner ── */
+    document.getElementById('error-dismiss').addEventListener('click', () => {
+      document.getElementById('error-banner').classList.remove('on');
+    });
+    document.getElementById('error-retry').addEventListener('click', () => {
+      document.getElementById('error-banner').classList.remove('on');
+    });
+
+    function showError(msg) {
+      document.getElementById('error-msg').textContent = msg;
+      document.getElementById('error-banner').classList.add('on');
+    }
+
+    function addHistoryEntry(action, summary, dotClass) {
+      const now = new Date();
+      const months = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+      const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+      const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      tent.history.unshift({ action, summary, date: dateStr, time: timeStr, actor: 'Vous', dotClass });
+      renderHistory();
+    }
+
+    /* ── Initial render ── */
+    renderAll();
+  </script>
+</body>
+</html>
