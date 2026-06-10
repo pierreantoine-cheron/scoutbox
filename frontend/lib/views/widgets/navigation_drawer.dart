@@ -205,7 +205,7 @@ class _DrawerItem extends StatelessWidget {
                     ),
                     child: Text(
                       badge.toString(),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: AppColors.scoutGreen,
