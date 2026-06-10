@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/providers/auth_provider.dart';
-import 'package:client/providers/success_indicator_provider.dart';
 import 'package:client/services/auth_service.dart';
 import 'package:client/views/screens/login_screen.dart';
 
@@ -20,12 +19,15 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
+      expect(find.text('ScoutBox'), findsOneWidget);
+      expect(find.text('Connexion'), findsOneWidget);
+      expect(find.text('Inscription'), findsOneWidget);
       expect(find.text('URL du serveur'), findsOneWidget);
       expect(find.text("Nom d'utilisateur"), findsOneWidget);
       expect(find.text('Mot de passe'), findsOneWidget);
+      expect(find.text(' *'), findsNWidgets(3));
       expect(find.text('Se souvenir de moi'), findsOneWidget);
       expect(find.text('Se connecter'), findsOneWidget);
-      expect(find.text("Pas de compte ? S'inscrire"), findsOneWidget);
     });
 
     testWidgets('shows validation when server url is empty', (
@@ -35,6 +37,8 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
+      await tester.ensureVisible(find.text('Se connecter'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Se connecter'));
       await tester.pump();
 
@@ -48,11 +52,10 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, "Nom d'utilisateur"),
-        'ab',
-      );
+      await tester.enterText(find.byType(TextFormField).at(1), 'ab');
 
+      await tester.ensureVisible(find.text('Se connecter'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Se connecter'));
       await tester.pump();
 
@@ -69,11 +72,10 @@ void main() {
         const ProviderScope(child: MaterialApp(home: LoginScreen())),
       );
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Mot de passe'),
-        'short',
-      );
+      await tester.enterText(find.byType(TextFormField).at(2), 'short');
 
+      await tester.ensureVisible(find.text('Se connecter'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Se connecter'));
       await tester.pump();
 
@@ -102,7 +104,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(container.read(successIndicatorProvider), equals(1));
+      expect(find.text('Déconnexion réussie'), findsOneWidget);
       expect(container.read(authProvider).logoutSuccessMessage, isNull);
     });
   });

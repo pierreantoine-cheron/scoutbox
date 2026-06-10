@@ -121,19 +121,12 @@ void main() {
 
     expect(find.byType(LoginScreen), findsOneWidget);
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'URL du serveur'),
-      'https://api.scoutbox.test',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, "Nom d'utilisateur"),
-      'testuser',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Mot de passe'),
-      'password123',
-    );
+    await tester.enterText(find.byType(TextFormField).at(0), 'https://api.scoutbox.test');
+    await tester.enterText(find.byType(TextFormField).at(1), 'testuser');
+    await tester.enterText(find.byType(TextFormField).at(2), 'password123');
 
+    await tester.ensureVisible(find.text('Se connecter'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Se connecter'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));

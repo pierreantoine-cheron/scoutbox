@@ -4,38 +4,20 @@ import 'package:flutter/material.dart';
 ///
 /// Manages its own visibility state internally while exposing
 /// all necessary TextFormField configuration options.
+///
+/// Uses the theme's [InputDecorationTheme] for border styling.
 class PasswordFormField extends StatefulWidget {
-  /// Controller for the text field
   final TextEditingController controller;
-
-  /// Focus node for the text field
   final FocusNode? focusNode;
-
-  /// Autovalidate mode for the field
   final AutovalidateMode autovalidateMode;
-
-  /// Label text for the input decoration
-  final String labelText;
-
-  /// Hint text for the tooltip when password is obscured
+  final String? labelText;
+  final String? hintText;
   final String? showPasswordTooltip;
-
-  /// Hint text for the tooltip when password is visible
   final String? hidePasswordTooltip;
-
-  /// Autofill hint for the field (defaults to password)
   final Iterable<String>? autofillHints;
-
-  /// Text input action for the field
   final TextInputAction? textInputAction;
-
-  /// Callback when field is submitted
   final ValueChanged<String>? onFieldSubmitted;
-
-  /// Callback when editing is complete
   final VoidCallback? onEditingComplete;
-
-  /// Validator function
   final FormFieldValidator<String>? validator;
 
   const PasswordFormField({
@@ -43,7 +25,8 @@ class PasswordFormField extends StatefulWidget {
     required this.controller,
     this.focusNode,
     this.autovalidateMode = AutovalidateMode.disabled,
-    required this.labelText,
+    this.labelText,
+    this.hintText,
     this.showPasswordTooltip,
     this.hidePasswordTooltip,
     this.autofillHints = const [AutofillHints.password],
@@ -68,7 +51,7 @@ class _PasswordFormFieldState extends State<PasswordFormField> {
       autovalidateMode: widget.autovalidateMode,
       decoration: InputDecoration(
         labelText: widget.labelText,
-        border: const OutlineInputBorder(),
+        hintText: widget.hintText,
         suffixIcon: IconButton(
           onPressed: () {
             setState(() {

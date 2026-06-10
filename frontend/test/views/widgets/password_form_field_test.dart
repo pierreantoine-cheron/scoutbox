@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:client/views/widgets/password_form_field.dart';
 
 void main() {
@@ -16,6 +17,7 @@ void main() {
 
     Widget buildField({String? Function(String?)? validator}) {
       return MaterialApp(
+        theme: AppTheme.minimal(),
         home: Scaffold(
           body: PasswordFormField(
             controller: controller,
@@ -41,16 +43,13 @@ void main() {
     testWidgets('toggles visibility on icon tap', (tester) async {
       await tester.pumpWidget(buildField());
 
-      // Initial state: show visibility icon
       expect(find.byIcon(Icons.visibility), findsOneWidget);
 
-      // Tap to reveal
       await tester.tap(find.byIcon(Icons.visibility));
       await tester.pump();
 
       expect(find.byIcon(Icons.visibility_off), findsOneWidget);
 
-      // Tap to hide again
       await tester.tap(find.byIcon(Icons.visibility_off));
       await tester.pump();
 
@@ -69,6 +68,7 @@ void main() {
     testWidgets('shows custom tooltip labels', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal(),
           home: Scaffold(
             body: PasswordFormField(
               controller: controller,

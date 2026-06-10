@@ -146,6 +146,9 @@ class AppTheme {
     return ThemeData(
       colorScheme: _colorScheme(),
       extensions: const [_semanticColors],
+      inputDecorationTheme: const InputDecorationTheme(
+        border: OutlineInputBorder(),
+      ),
       splashFactory: InkRipple.splashFactory,
       useMaterial3: true,
     );

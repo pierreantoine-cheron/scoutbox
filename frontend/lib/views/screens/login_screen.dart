@@ -7,6 +7,6 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AuthScreen(mode: AuthMode.login);
+    return const AuthScreen(initialMode: AuthMode.login);
   }
 }

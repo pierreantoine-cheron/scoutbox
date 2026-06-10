@@ -27,34 +27,37 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final appBarConfig = ref.watch(appBarConfigProvider);
-    final successTrigger = ref.watch(successIndicatorProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: appBarConfig.showBackButton
-            ? BackButton(onPressed: () => _navigatorKey.currentState?.pop())
-            : null,
-        title: appBarConfig.title,
-        actions: [
-          FadingCloudDoneIcon(trigger: successTrigger),
-          if (appBarConfig.actions != null) ...appBarConfig.actions!,
-        ],
-      ),
-      floatingActionButton: appBarConfig.fab,
-      body: authState.isAuthenticated
-          ? Navigator(
-              key: _navigatorKey,
-              observers: [_routeObserver],
-              onGenerateInitialRoutes: (navigator, initialRoute) {
-                return [
-                  MaterialPageRoute(builder: (_) => const TentListScreen()),
-                ];
-              },
-            )
-          : authState.showLoginScreen
-          ? const LoginScreen()
-          : const RegisterScreen(),
-    );
+    if (authState.isAuthenticated) {
+      final appBarConfig = ref.watch(appBarConfigProvider);
+      final successTrigger = ref.watch(successIndicatorProvider);
+
+      return Scaffold(
+        appBar: AppBar(
+          leading: appBarConfig.showBackButton
+              ? BackButton(onPressed: () => _navigatorKey.currentState?.pop())
+              : null,
+          title: appBarConfig.title,
+          actions: [
+            FadingCloudDoneIcon(trigger: successTrigger),
+            if (appBarConfig.actions != null) ...appBarConfig.actions!,
+          ],
+        ),
+        floatingActionButton: appBarConfig.fab,
+        body: Navigator(
+          key: _navigatorKey,
+          observers: [_routeObserver],
+          onGenerateInitialRoutes: (navigator, initialRoute) {
+            return [
+              MaterialPageRoute(builder: (_) => const TentListScreen()),
+            ];
+          },
+        ),
+      );
+    }
+
+    return authState.showLoginScreen
+        ? const LoginScreen()
+        : const RegisterScreen();
   }
 }

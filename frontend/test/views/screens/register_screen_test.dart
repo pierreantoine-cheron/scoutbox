@@ -15,8 +15,10 @@ void main() {
       expect(find.text("Nom d'utilisateur"), findsOneWidget);
       expect(find.text('Mot de passe'), findsOneWidget);
       expect(find.text('Confirmer le mot de passe'), findsOneWidget);
+      expect(find.text(' *'), findsNWidgets(5));
       expect(find.text("S'inscrire"), findsOneWidget);
-      expect(find.text('Déjà un compte ? Se connecter'), findsOneWidget);
+      expect(find.text('Connexion'), findsOneWidget);
+      expect(find.text('Inscription'), findsOneWidget);
       expect(find.byIcon(Icons.visibility), findsNWidgets(2));
     });
 
@@ -27,8 +29,10 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
+      await tester.ensureVisible(find.byTooltip('Afficher le mot de passe').first);
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Afficher le mot de passe').first);
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.visibility_off), findsOneWidget);
     });
@@ -40,6 +44,8 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
+      await tester.ensureVisible(find.text("S'inscrire"));
+      await tester.pumpAndSettle();
       await tester.tap(find.text("S'inscrire"));
       await tester.pump();
 
@@ -53,11 +59,10 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'URL du serveur'),
-        'invalid-url',
-      );
+      await tester.enterText(find.byType(TextFormField).at(0), 'invalid-url');
 
+      await tester.ensureVisible(find.text("S'inscrire"));
+      await tester.pumpAndSettle();
       await tester.tap(find.text("S'inscrire"));
       await tester.pump();
 
@@ -67,32 +72,30 @@ void main() {
       );
     });
 
-    testWidgets('invite code field accepts input', (WidgetTester tester) async {
+    testWidgets('invite code field accepts input', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
-      // Verify the field exists and can receive input
-      await tester.enterText(
-        find.widgetWithText(TextFormField, "Code d'invitation"),
-        'TESTCODE123',
-      );
+      await tester.enterText(find.byType(TextFormField).at(1), 'TESTCODE123');
       await tester.pump();
 
-      // Verify the text was entered
       expect(find.text('TESTCODE123'), findsOneWidget);
     });
 
-    testWidgets('shows error for short password', (WidgetTester tester) async {
+    testWidgets('shows error for short password', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Mot de passe'),
-        'short',
-      );
+      await tester.enterText(find.byType(TextFormField).at(3), 'short');
 
+      await tester.ensureVisible(find.text("S'inscrire"));
+      await tester.pumpAndSettle();
       await tester.tap(find.text("S'inscrire"));
       await tester.pump();
 
@@ -109,15 +112,11 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Mot de passe'),
-        'password123',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Confirmer le mot de passe'),
-        'different123',
-      );
+      await tester.enterText(find.byType(TextFormField).at(3), 'password123');
+      await tester.enterText(find.byType(TextFormField).at(4), 'different123');
 
+      await tester.ensureVisible(find.text("S'inscrire"));
+      await tester.pumpAndSettle();
       await tester.tap(find.text("S'inscrire"));
       await tester.pump();
 
@@ -134,24 +133,19 @@ void main() {
         const ProviderScope(child: MaterialApp(home: RegisterScreen())),
       );
 
-      // Type in server URL field - this should NOT trigger validation on other fields
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'URL du serveur'),
-        'http',
-      );
+      await tester.enterText(find.byType(TextFormField).at(0), 'http');
       await tester.pump();
 
-      // No validation errors should be visible yet
       expect(find.text("L'URL du serveur est requise"), findsNothing);
       expect(find.text("Le code d'invitation est requis"), findsNothing);
       expect(find.text("Le nom d'utilisateur est requis"), findsNothing);
       expect(find.text('Le mot de passe est requis'), findsNothing);
 
-      // Now submit the form
+      await tester.ensureVisible(find.text("S'inscrire"));
+      await tester.pumpAndSettle();
       await tester.tap(find.text("S'inscrire"));
       await tester.pump();
 
-      // Validation errors should now be visible
       expect(find.text("L'URL du serveur est requise"), findsNothing);
       expect(
         find.text("L'URL doit commencer par http:// ou https://"),
