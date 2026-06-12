@@ -6,6 +6,8 @@ class AppBarConfig {
   final Widget? title;
   final List<Widget>? actions;
   final Widget? fab;
+  final VoidCallback? desktopCreateAction;
+  final String? desktopCreateLabel;
   final bool showBackButton;
 
   const AppBarConfig({
@@ -13,6 +15,8 @@ class AppBarConfig {
     this.title,
     this.actions,
     this.fab,
+    this.desktopCreateAction,
+    this.desktopCreateLabel,
     this.showBackButton = false,
   });
 }

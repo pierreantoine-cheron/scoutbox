@@ -67,7 +67,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Nom'), findsAtLeast(1));
-      expect(find.text('Etat'), findsAtLeast(1));
+      expect(find.text('État'), findsAtLeast(1));
       expect(find.text('Taille'), findsAtLeast(1));
       expect(find.text('Modèle'), findsAtLeast(1));
       expect(find.text('Étiquettes'), findsAtLeast(1));
@@ -95,14 +95,14 @@ void main() {
       await tester.pumpWidget(buildTable(tents: [_tent(size: 3)]));
       await tester.pumpAndSettle();
 
-      expect(find.text('3 places'), findsOneWidget);
+      expect(find.text('3 pl.'), findsOneWidget);
     });
 
-    testWidgets('renders "1 place" for size 1', (tester) async {
+    testWidgets('renders "1 pl." for size 1', (tester) async {
       await tester.pumpWidget(buildTable(tents: [_tent(size: 1)]));
       await tester.pumpAndSettle();
 
-      expect(find.text('1 place'), findsOneWidget);
+      expect(find.text('1 pl.'), findsOneWidget);
     });
 
     testWidgets('renders shape name', (tester) async {
@@ -143,7 +143,7 @@ void main() {
       await tester.pumpWidget(buildTable(tents: const []));
       await tester.pumpAndSettle();
 
-      expect(find.text('Aucune tente disponible'), findsOneWidget);
+      expect(find.text('Aucune tente trouvée'), findsOneWidget);
     });
 
     testWidgets('calls onOpenTent when row is tapped', (tester) async {
@@ -179,25 +179,25 @@ void main() {
       expect(opened?.name, 'Tente T');
     });
 
-    testWidgets('keeps sort indicator aligned after tag column insertion', (
+    testWidgets('keeps sort indicator aligned', (
       tester,
     ) async {
       _setWideViewport(tester);
       await tester.pumpWidget(
         buildTable(
           tents: [
-            _tent(name: 'Tente A', updatedAt: DateTime(2026, 1, 1)),
-            _tent(id: 't-2', name: 'Tente B', updatedAt: DateTime(2026, 1, 2)),
+            _tent(name: 'Tente A'),
+            _tent(id: 't-2', name: 'Tente B'),
           ],
         ),
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Derniere mise a jour'));
+      await tester.tap(find.text('Nom'));
       await tester.pumpAndSettle();
 
       final table = tester.widget<DataTable2>(find.byType(DataTable2));
-      expect(table.sortColumnIndex, 5);
+      expect(table.sortColumnIndex, 1);
     });
   });
 }

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../models/tag.dart';
 import '../../models/tent.dart';
 import '../../utils/app_colors.dart';
-import 'tent_tag_filter_sheet.dart';
 
 class TentTypeFilterOption {
   final String id;
@@ -12,7 +11,7 @@ class TentTypeFilterOption {
   const TentTypeFilterOption({required this.id, required this.label});
 }
 
-class TentListFilterBar extends StatelessWidget {
+class TentListFilterBar extends StatefulWidget {
   final bool isDesktop;
   final TextEditingController searchController;
   final Set<TentOverallState> selectedStates;
@@ -22,6 +21,7 @@ class TentListFilterBar extends StatelessWidget {
   final List<int> availableSizes;
   final List<TentTypeFilterOption> availableModelOptions;
   final List<Tag> allTags;
+  final int visibleTentCount;
   final bool isFilteredMode;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<TentOverallState> onToggleState;
@@ -43,6 +43,7 @@ class TentListFilterBar extends StatelessWidget {
     required this.availableSizes,
     required this.availableModelOptions,
     required this.allTags,
+    required this.visibleTentCount,
     required this.isFilteredMode,
     required this.onSearchChanged,
     required this.onToggleState,
@@ -55,305 +56,463 @@ class TentListFilterBar extends StatelessWidget {
   });
 
   @override
+  State<TentListFilterBar> createState() => _TentListFilterBarState();
+}
+
+class _TentListFilterBarState extends State<TentListFilterBar> {
+  bool _panelExpanded = true;
+
+  List<_ActivePill> get _activePills {
+    final pills = <_ActivePill>[];
+    for (final state in widget.selectedStates) {
+      pills.add(_ActivePill(
+        value: state.name,
+        label: state.toFrenchLabel(),
+        color: _stateColor(state),
+        onTap: () => widget.onToggleState(state),
+      ));
+    }
+    for (final size in widget.selectedSizes) {
+      pills.add(_ActivePill(
+        value: size.toString(),
+        label: size == 1 ? '1 place' : '$size places',
+        onTap: () => widget.onToggleSize(size),
+      ));
+    }
+    for (final modelId in widget.selectedModelIds) {
+      final model =
+          widget.availableModelOptions.where((m) => m.id == modelId).firstOrNull;
+      pills.add(_ActivePill(
+        value: modelId,
+        label: model?.label ?? modelId,
+        onTap: () => widget.onToggleModel(modelId),
+      ));
+    }
+    for (final tagId in widget.selectedTagIds) {
+      final tag = widget.allTags.where((t) => t.id == tagId).firstOrNull;
+      if (tag != null) {
+        pills.add(_ActivePill(
+          value: tagId,
+          label: tag.name,
+          tagColor: TagPalette.colorFromHex(tag.color),
+          onTap: () => widget.onToggleTag(tagId),
+        ));
+      }
+    }
+    return pills;
+  }
+
+  Color _stateColor(TentOverallState state) {
+    return switch (state) {
+      TentOverallState.good => AppColors.statePerfect,
+      TentOverallState.needsRepair => AppColors.stateUsable,
+      TentOverallState.unusable => AppColors.stateUnusable,
+    };
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Material(
-      color: Theme.of(context).colorScheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _SearchField(
-              searchController: searchController,
-              onSearchChanged: onSearchChanged,
+      color: colorScheme.surface,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _FilterBarBase(
+            pills: _activePills,
+            tentCount: widget.visibleTentCount,
+            isPanelExpanded: _panelExpanded,
+            onTogglePanel: () => setState(() => _panelExpanded = !_panelExpanded),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: _FilterPanel(
+              selectedStates: widget.selectedStates,
+              selectedSizes: widget.selectedSizes,
+              selectedModelIds: widget.selectedModelIds,
+              selectedTagIds: widget.selectedTagIds,
+              availableSizes: widget.availableSizes,
+              availableModelOptions: widget.availableModelOptions,
+              allTags: widget.allTags,
+              isFilteredMode: widget.isFilteredMode,
+              onToggleState: widget.onToggleState,
+              onToggleSize: widget.onToggleSize,
+              onToggleModel: widget.onToggleModel,
+              onToggleTag: widget.onToggleTag,
+              onClearAll: widget.onClearAll,
+              onManageTags: widget.onManageTags,
             ),
-            const SizedBox(height: 12),
-            if (isDesktop)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 24,
-                    runSpacing: 16,
-                    children: [
-                      _DesktopCategory(
-                        label: 'Etat',
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final state in TentOverallState.values)
-                              FilterChip(
-                                label: Text(state.toFrenchLabel()),
-                                selected: selectedStates.contains(state),
-                                onSelected: (_) => onToggleState(state),
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (availableSizes.isNotEmpty)
-                        _DesktopCategory(
-                          label: 'Taille',
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final size in availableSizes)
-                                FilterChip(
-                                  label: Text(_sizeLabel(size)),
-                                  selected: selectedSizes.contains(size),
-                                  onSelected: (_) => onToggleSize(size),
-                                ),
-                            ],
-                          ),
-                        ),
-                      if (availableModelOptions.isNotEmpty)
-                        _DesktopCategory(
-                          label: 'Type',
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final option in availableModelOptions)
-                                FilterChip(
-                                  label: Text(option.label),
-                                  selected: selectedModelIds.contains(
-                                    option.id,
-                                  ),
-                                  onSelected: (_) => onToggleModel(option.id),
-                                ),
-                            ],
-                          ),
-                        ),
-                      if (allTags.isNotEmpty)
-                        _DesktopCategory(
-                          label: 'Étiquettes',
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final tag in _sortedTags().take(6))
-                                _TagFilterChip(
-                                  tag: tag,
-                                  selected: selectedTagIds.contains(tag.id),
-                                  onToggleTag: onToggleTag,
-                                ),
-                              if (allTags.length > 6)
-                                FilledButton.tonalIcon(
-                                  onPressed: () => _openTagFilterSheet(context),
-                                  icon: const Icon(Icons.label_outline),
-                                  label: Text('Tags (${allTags.length})'),
-                                ),
-                            ],
-                          ),
-                        )
-                      else if (!isFilteredMode)
-                        _NoTagsMessage(onManageTags: onManageTags),
-                    ],
-                  ),
-                  if (isFilteredMode) ...[
-                    const SizedBox(height: 12),
-                    ActionChip(
-                      avatar: const Icon(Icons.clear_all),
-                      label: const Text('Effacer tout'),
-                      onPressed: onClearAll,
-                    ),
-                  ],
-                ],
-              )
-            else
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _SectionLabel(label: 'Etat'),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final state in TentOverallState.values)
-                        FilterChip(
-                          label: Text(state.toFrenchLabel()),
-                          selected: selectedStates.contains(state),
-                          onSelected: (_) => onToggleState(state),
-                        ),
-                      if (_hasSecondaryFilters)
-                        FilledButton.tonalIcon(
-                          onPressed: () => _openMobileFilters(context),
-                          icon: const Icon(Icons.tune),
-                          label: Text(_mobileFiltersLabel()),
-                        ),
-                      if (isFilteredMode)
-                        ActionChip(
-                          avatar: const Icon(Icons.clear_all),
-                          label: const Text('Effacer tout'),
-                          onPressed: onClearAll,
-                        ),
-                    ],
-                  ),
-                  if (allTags.isEmpty && !isFilteredMode) ...[
-                    const SizedBox(height: 8),
-                    _NoTagsMessage(onManageTags: onManageTags),
-                  ],
-                ],
-              ),
-          ],
+            crossFadeState: _panelExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 280),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterBarBase extends StatelessWidget {
+  final List<_ActivePill> pills;
+  final int tentCount;
+  final bool isPanelExpanded;
+  final VoidCallback onTogglePanel;
+
+  const _FilterBarBase({
+    required this.pills,
+    required this.tentCount,
+    required this.isPanelExpanded,
+    required this.onTogglePanel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: colorScheme.outlineVariant),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _PillsOverflow(pills: pills),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '$tentCount tente${tentCount != 1 ? 's' : ''}',
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 12,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 6),
+          _ExpandToggle(
+            isExpanded: isPanelExpanded,
+            onTap: onTogglePanel,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpandToggle extends StatelessWidget {
+  final bool isExpanded;
+  final VoidCallback onTap;
+
+  const _ExpandToggle({required this.isExpanded, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: isExpanded
+              ? colorScheme.primary.withValues(alpha: 0.12)
+              : colorScheme.surface,
+          border: Border.all(
+            color: isExpanded
+                ? colorScheme.primary.withValues(alpha: 0.12)
+                : colorScheme.outlineVariant,
+          ),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: AnimatedRotation(
+          turns: isExpanded ? 0.5 : 0,
+          duration: const Duration(milliseconds: 220),
+          child: Icon(
+            Icons.expand_more,
+            size: 18,
+            color: colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
   }
+}
 
-  bool get _hasSecondaryFilters =>
-      availableSizes.isNotEmpty ||
-      availableModelOptions.isNotEmpty ||
-      allTags.isNotEmpty;
+class _PillsOverflow extends StatelessWidget {
+  final List<_ActivePill> pills;
 
-  String _mobileFiltersLabel() {
-    final activeCount =
-        selectedSizes.length + selectedModelIds.length + selectedTagIds.length;
-    if (activeCount == 0) {
-      return 'Filtres';
+  const _PillsOverflow({required this.pills});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (pills.isEmpty) {
+      return Text(
+        'Aucun filtre actif',
+        style: TextStyle(
+          fontSize: 12,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      );
     }
-    return 'Filtres ($activeCount)';
-  }
 
-  Future<void> _openMobileFilters(BuildContext context) async {
-    final sheetSelectedSizes = Set<int>.from(selectedSizes);
-    final sheetSelectedModelIds = Set<String>.from(selectedModelIds);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 8.0;
+        const tokenHeight = 38.0;
+        const maxRows = 2;
+        final maxTokens = _fitCount(constraints.maxWidth, spacing);
 
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      useRootNavigator: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return SafeArea(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+        return ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxHeight: tokenHeight * maxRows + spacing * (maxRows - 1),
+          ),
+          child: Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: [
+              for (var i = 0; i < pills.length && i < maxTokens; i++)
+                _PillChip(
+                  label: pills[i].label,
+                  color: pills[i].color,
+                  tagColor: pills[i].tagColor,
+                  onTap: pills[i].onTap,
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (availableSizes.isNotEmpty) ...[
-                        const Text(
-                          'Taille',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final size in availableSizes)
-                              FilterChip(
-                                label: Text(_sizeLabel(size)),
-                                selected: sheetSelectedSizes.contains(size),
-                                onSelected: (_) {
-                                  setSheetState(() {
-                                    if (sheetSelectedSizes.contains(size)) {
-                                      sheetSelectedSizes.remove(size);
-                                    } else {
-                                      sheetSelectedSizes.add(size);
-                                    }
-                                  });
-                                  onToggleSize(size);
-                                },
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      if (availableModelOptions.isNotEmpty) ...[
-                        const Text(
-                          'Type',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final option in availableModelOptions)
-                              FilterChip(
-                                label: Text(option.label),
-                                selected: sheetSelectedModelIds.contains(
-                                  option.id,
-                                ),
-                                onSelected: (_) {
-                                  setSheetState(() {
-                                    if (sheetSelectedModelIds.contains(
-                                      option.id,
-                                    )) {
-                                      sheetSelectedModelIds.remove(option.id);
-                                    } else {
-                                      sheetSelectedModelIds.add(option.id);
-                                    }
-                                  });
-                                  onToggleModel(option.id);
-                                },
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      if (allTags.isNotEmpty) ...[
-                        const Text(
-                          'Étiquettes',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          height: 260,
-                          child: TentTagFilterSheet(
-                            tags: allTags,
-                            onToggleTag: onToggleTag,
-                            onClearTags: onClearTags ?? onClearAll,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: FilledButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Fermer'),
-                        ),
+              if (pills.length > maxTokens)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  constraints: const BoxConstraints(minHeight: 38),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '+${pills.length - maxTokens}',
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurfaceVariant,
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+            ],
+          ),
         );
       },
     );
   }
 
-  Future<void> _openTagFilterSheet(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      useRootNavigator: true,
-      builder: (context) {
-        return ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+  int _fitCount(double maxWidth, double spacing) {
+    var used = spacing;
+    for (var i = 0; i < pills.length; i++) {
+      final w = pills[i].estimatedWidth + spacing;
+      if (used + w > maxWidth && i >= 1) return i;
+      used += w;
+    }
+    return pills.length;
+  }
+}
+
+class _PillChip extends StatelessWidget {
+  final String label;
+  final Color? color;
+  final Color? tagColor;
+  final VoidCallback onTap;
+
+  const _PillChip({
+    required this.label,
+    required this.color,
+    this.tagColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (tagColor != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: tagColor,
+            borderRadius: BorderRadius.circular(999),
           ),
-          child: TentTagFilterSheet(
-            tags: allTags,
-            onToggleTag: onToggleTag,
-            onClearTags: onClearTags ?? onClearAll,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    final bgColor =
+        color?.withValues(alpha: 0.15) ?? colorScheme.primaryContainer;
+    final fgColor = color ?? colorScheme.primary;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: fgColor,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterPanel extends StatelessWidget {
+  final Set<TentOverallState> selectedStates;
+  final Set<int> selectedSizes;
+  final Set<String> selectedModelIds;
+  final Set<String> selectedTagIds;
+  final List<int> availableSizes;
+  final List<TentTypeFilterOption> availableModelOptions;
+  final List<Tag> allTags;
+  final bool isFilteredMode;
+  final ValueChanged<TentOverallState> onToggleState;
+  final ValueChanged<int> onToggleSize;
+  final ValueChanged<String> onToggleModel;
+  final ValueChanged<String> onToggleTag;
+  final VoidCallback onClearAll;
+  final VoidCallback? onManageTags;
+
+  const _FilterPanel({
+    required this.selectedStates,
+    required this.selectedSizes,
+    required this.selectedModelIds,
+    required this.selectedTagIds,
+    required this.availableSizes,
+    required this.availableModelOptions,
+    required this.allTags,
+    required this.isFilteredMode,
+    required this.onToggleState,
+    required this.onToggleSize,
+    required this.onToggleModel,
+    required this.onToggleTag,
+    required this.onClearAll,
+    this.onManageTags,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        border: Border(
+          bottom: BorderSide(color: colorScheme.outlineVariant),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _FilterRow(
+            label: 'État',
+            children: [
+              for (final state in TentOverallState.values)
+                _ProtoChip(
+                  label: state.toFrenchLabel(),
+                  selected: selectedStates.contains(state),
+                  onTap: () => onToggleState(state),
+                ),
+            ],
+          ),
+          if (availableSizes.isNotEmpty)
+            _FilterRow(
+              label: 'Taille',
+              children: [
+                for (final size in availableSizes)
+                  _ProtoChip(
+                    label: size == 1 ? '$size place' : '$size places',
+                    selected: selectedSizes.contains(size),
+                    onTap: () => onToggleSize(size),
+                  ),
+              ],
+            ),
+          if (availableModelOptions.isNotEmpty)
+            _FilterRow(
+              label: 'Modèle',
+              children: [
+                for (final option in availableModelOptions)
+                  _ProtoChip(
+                    label: option.label,
+                    selected: selectedModelIds.contains(option.id),
+                    onTap: () => onToggleModel(option.id),
+                  ),
+              ],
+            ),
+          if (allTags.isNotEmpty)
+            _FilterRow(
+              label: 'Étiquettes',
+              children: [
+                for (final tag in _sortedTags())
+                  _ProtoTagChip(
+                    tag: tag,
+                    selected: selectedTagIds.contains(tag.id),
+                    onTap: () => onToggleTag(tag.id),
+                  ),
+              ],
+            ),
+          if (isFilteredMode)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: SizedBox(
+                  height: 28,
+                  child: OutlinedButton(
+                    onPressed: onClearAll,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      side: BorderSide(color: colorScheme.outlineVariant),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    child: Text(
+                      'Effacer les filtres',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -361,135 +520,144 @@ class TentListFilterBar extends StatelessWidget {
     final tags = [...allTags];
     tags.sort((left, right) {
       final countCompare = right.tentCount.compareTo(left.tentCount);
-      if (countCompare != 0) {
-        return countCompare;
-      }
+      if (countCompare != 0) return countCompare;
       return left.name.toLowerCase().compareTo(right.name.toLowerCase());
     });
     return tags;
   }
-
-  String _sizeLabel(int size) {
-    if (size <= 1) {
-      return '$size place';
-    }
-
-    return '$size places';
-  }
 }
 
-class _TagFilterChip extends StatelessWidget {
-  final Tag tag;
-  final bool selected;
-  final ValueChanged<String> onToggleTag;
-
-  const _TagFilterChip({
-    required this.tag,
-    required this.selected,
-    required this.onToggleTag,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FilterChip(
-      avatar: CircleAvatar(backgroundColor: TagPalette.colorFromHex(tag.color)),
-      label: Text('${tag.name} (${tag.tentCount})'),
-      selected: selected,
-      onSelected: (_) => onToggleTag(tag.id),
-    );
-  }
-}
-
-class _NoTagsMessage extends StatelessWidget {
-  final VoidCallback? onManageTags;
-
-  const _NoTagsMessage({this.onManageTags});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        const Text('Aucune étiquette disponible'),
-        if (onManageTags != null)
-          TextButton(
-            onPressed: onManageTags,
-            child: const Text('Créer des étiquettes'),
-          ),
-      ],
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
+class _FilterRow extends StatelessWidget {
   final String label;
+  final List<Widget> children;
 
-  const _SectionLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(label, style: const TextStyle(fontWeight: FontWeight.w600));
-  }
-}
-
-class _DesktopCategory extends StatelessWidget {
-  final String label;
-  final Widget child;
-
-  const _DesktopCategory({required this.label, required this.child});
+  const _FilterRow({required this.label, required this.children});
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 220),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 13),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 8,
+        runSpacing: 8,
         children: [
-          _SectionLabel(label: label),
-          const SizedBox(height: 8),
-          child,
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.55,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          ...children,
         ],
       ),
     );
   }
 }
 
-class _SearchField extends StatelessWidget {
-  final TextEditingController searchController;
-  final ValueChanged<String> onSearchChanged;
+class _ProtoChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
 
-  const _SearchField({
-    required this.searchController,
-    required this.onSearchChanged,
+  const _ProtoChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<TextEditingValue>(
-      valueListenable: searchController,
-      builder: (context, value, _) {
-        return TextField(
-          controller: searchController,
-          onChanged: onSearchChanged,
-          decoration: InputDecoration(
-            labelText: 'Rechercher une tente',
-            hintText: 'Nom de la tente',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: value.text.isEmpty
-                ? null
-                : IconButton(
-                    tooltip: 'Effacer la recherche',
-                    onPressed: () {
-                      searchController.clear();
-                      onSearchChanged('');
-                    },
-                    icon: const Icon(Icons.clear),
-                  ),
-            border: const OutlineInputBorder(),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+        decoration: BoxDecoration(
+          color: selected ? colorScheme.primary : Colors.transparent,
+          border: Border.all(
+            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
           ),
-        );
-      },
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
+          ),
+        ),
+      ),
     );
   }
+}
+
+class _ProtoTagChip extends StatelessWidget {
+  final Tag tag;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ProtoTagChip({
+    required this.tag,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tagColor = TagPalette.colorFromHex(tag.color);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+        decoration: BoxDecoration(
+          color: tagColor,
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: tagColor.withValues(alpha: 0.3),
+                    spreadRadius: 2,
+                    blurRadius: 4,
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          tag.name,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActivePill {
+  final String value;
+  final String label;
+  final Color? color;
+  final Color? tagColor;
+  final VoidCallback onTap;
+
+  const _ActivePill({
+    required this.value,
+    required this.label,
+    this.color,
+    this.tagColor,
+    required this.onTap,
+  });
+
+  double get estimatedWidth => (label.length * 9.0) + 28;
 }

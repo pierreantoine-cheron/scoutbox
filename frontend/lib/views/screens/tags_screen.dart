@@ -45,6 +45,8 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
     return AppBarConfig(
       screenId: 'tags',
       title: const Text('Étiquettes'),
+      desktopCreateAction: _showCreateDialog,
+      desktopCreateLabel: 'Créer',
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),

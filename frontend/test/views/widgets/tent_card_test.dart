@@ -64,7 +64,7 @@ void main() {
         ),
       );
 
-      expect(find.text('1 place'), findsOneWidget);
+      expect(find.text('1 pl.'), findsOneWidget);
     });
 
     testWidgets('renders size with plural label for more than 1', (
@@ -78,7 +78,7 @@ void main() {
         ),
       );
 
-      expect(find.text('4 places'), findsOneWidget);
+      expect(find.text('4 pl.'), findsOneWidget);
     });
 
     testWidgets('renders shape name when provided', (tester) async {
@@ -108,7 +108,7 @@ void main() {
       expect(find.text('À réparer'), findsOneWidget);
     });
 
-    testWidgets('renders "Voir le detail" text', (tester) async {
+    testWidgets('renders chevron icon', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -117,7 +117,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Voir le detail'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
     });
 
     testWidgets('calls onTap when tapped', (tester) async {
@@ -219,7 +219,7 @@ void main() {
       );
 
       // Semantics node should contain tent name
-      final node = tester.getSemantics(find.byType(Card));
+      final node = tester.getSemantics(find.byType(TentCard));
       expect(node.label, contains('Tente Test'));
     });
 

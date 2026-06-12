@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/tent.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
+import '../../utils/app_colors.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 import 'tent_creation_screen.dart';
@@ -60,8 +61,23 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
 
     return AppBarConfig(
       screenId: 'tent_list',
+      title: isDesktop
+          ? null
+          : _AppBarSearchField(
+              controller: _searchController,
+              onChanged: (value) =>
+                  ref.read(tentListFilterProvider.notifier).setSearchText(value),
+            ),
+      desktopCreateAction: () => _openTentCreation(context),
+      desktopCreateLabel: 'Ajouter',
       actions: [
-        if (isDesktop)
+        if (isDesktop) ...[
+          _DesktopSearchField(
+            controller: _searchController,
+            onChanged: (value) =>
+                ref.read(tentListFilterProvider.notifier).setSearchText(value),
+          ),
+          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Actualiser la liste',
@@ -69,6 +85,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
                 ? null
                 : () => ref.read(tentListProvider.notifier).refresh(),
           ),
+        ],
       ],
       fab: FloatingActionButton(
         onPressed: () => _openTentCreation(context),
@@ -153,6 +170,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             availableSizes,
             availableModelOptions,
             allTags,
+            0,
           ),
           Expanded(
             child: RefreshIndicator(
@@ -177,6 +195,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             availableSizes,
             availableModelOptions,
             allTags,
+            0,
           ),
           Expanded(
             child: RefreshIndicator(
@@ -204,6 +223,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             availableSizes,
             availableModelOptions,
             allTags,
+            visibleTents.length,
           ),
           if (warning != null) _RefreshWarningCard(message: warning),
           Expanded(
@@ -229,6 +249,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
           availableSizes,
           availableModelOptions,
           allTags,
+          visibleTents.length,
         ),
         Expanded(
           child: RefreshIndicator(
@@ -265,35 +286,38 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     List<int> availableSizes,
     List<TentTypeFilterOption> availableModelOptions,
     List allTags,
+    int visibleTentCount,
   ) {
-    return TentListFilterBar(
-      isDesktop: isDesktop,
-      searchController: _searchController,
-      selectedStates: filterState.selectedStates,
-      selectedSizes: filterState.selectedSizes,
-      selectedModelIds: filterState.selectedModelIds,
-      selectedTagIds: filterState.selectedTagIds,
-      availableSizes: availableSizes,
-      availableModelOptions: availableModelOptions,
-      allTags: allTags.cast(),
-      isFilteredMode: isFilteredMode,
-      onSearchChanged: (value) {
-        ref.read(tentListFilterProvider.notifier).setSearchText(value);
-      },
-      onToggleState: (state) {
-        ref.read(tentListFilterProvider.notifier).toggleState(state);
-      },
-      onToggleSize: (size) {
-        ref.read(tentListFilterProvider.notifier).toggleSize(size);
-      },
-      onToggleModel: (modelId) {
-        ref.read(tentListFilterProvider.notifier).toggleModel(modelId);
-      },
-      onToggleTag: _toggleTagFilter,
-      onClearAll: _clearFiltersHook,
-      onClearTags: () => ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
-      onManageTags: () => _switchToTags(),
-    );
+      return TentListFilterBar(
+        isDesktop: isDesktop,
+        searchController: _searchController,
+        selectedStates: filterState.selectedStates,
+        selectedSizes: filterState.selectedSizes,
+        selectedModelIds: filterState.selectedModelIds,
+        selectedTagIds: filterState.selectedTagIds,
+        availableSizes: availableSizes,
+        availableModelOptions: availableModelOptions,
+        allTags: allTags.cast(),
+        visibleTentCount: visibleTentCount,
+        isFilteredMode: isFilteredMode,
+        onSearchChanged: (value) {
+          ref.read(tentListFilterProvider.notifier).setSearchText(value);
+        },
+        onToggleState: (state) {
+          ref.read(tentListFilterProvider.notifier).toggleState(state);
+        },
+        onToggleSize: (size) {
+          ref.read(tentListFilterProvider.notifier).toggleSize(size);
+        },
+        onToggleModel: (modelId) {
+          ref.read(tentListFilterProvider.notifier).toggleModel(modelId);
+        },
+        onToggleTag: _toggleTagFilter,
+        onClearAll: _clearFiltersHook,
+        onClearTags: () =>
+            ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
+        onManageTags: () => _switchToTags(),
+      );
   }
 
   bool _hasOnlyTagFilters(TentListFilterState filterState) {
@@ -557,6 +581,80 @@ class _SkeletonLine extends StatelessWidget {
         decoration: BoxDecoration(
           color: baseColor,
           borderRadius: BorderRadius.circular(999),
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopSearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  const _DesktopSearchField({
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 220,
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          hintText: 'Rechercher...',
+          prefixIcon: const Icon(Icons.search, size: 18),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.scoutGreen),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AppBarSearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  const _AppBarSearchField({
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      style: const TextStyle(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: 'Rechercher...',
+        prefixIcon: const Icon(Icons.search, size: 18),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.scoutGreen),
         ),
       ),
     );

@@ -124,10 +124,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Nom'), findsOneWidget);
-      expect(find.text('Etat'), findsWidgets);
+      expect(find.text('État'), findsWidgets);
       expect(find.text('Taille'), findsWidgets);
       expect(find.text('Modèle'), findsOneWidget);
-      expect(find.text('Derniere mise a jour'), findsOneWidget);
       expect(find.text('Tente Atlas'), findsOneWidget);
       expect(find.text('Forme: Canadienne'), findsNothing);
     });
@@ -147,7 +146,7 @@ void main() {
                   name: 'Zulu',
                   size: 2,
                   tentModelId: 'shape-1',
-                  tentModelName: 'Tipi',
+                  tentModelName: 'null',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
@@ -228,7 +227,7 @@ void main() {
                   name: 'Bravo',
                   size: 4,
                   tentModelId: 'shape-2',
-                  tentModelName: 'Tipi',
+                  tentModelName: 'null',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
@@ -253,7 +252,7 @@ void main() {
       expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
     });
 
-    testWidgets('keeps missing updatedAt values last in both sort directions', (
+    testWidgets('keeps blank model values last in both sort directions', (
       WidgetTester tester,
     ) async {
       await _setViewportSize(tester, const Size(1200, 900));
@@ -268,7 +267,7 @@ void main() {
                   name: 'Alpha',
                   size: 2,
                   tentModelId: 'shape-1',
-                  tentModelName: 'Tipi',
+                  tentModelName: 'null',
                   overallState: TentOverallState.good,
                   comments: null,
                 ),
@@ -290,13 +289,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Derniere mise a jour'));
+      await tester.tap(find.text('Modèle'));
       await tester.pumpAndSettle();
 
       var textOrder = _extractTextData(tester);
       expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
 
-      await tester.tap(find.text('Derniere mise a jour'));
+      await tester.tap(find.text('Modèle'));
       await tester.pumpAndSettle();
 
       textOrder = _extractTextData(tester);
@@ -661,14 +660,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Etat'), findsWidgets);
+      expect(find.text('État'), findsWidgets);
       expect(find.text('Taille'), findsWidgets);
       expect(find.text('Type'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, '2 places'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, '4 places'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, '6 places'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, '2 pl.'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, '4 pl.'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, '6 pl.'), findsOneWidget);
       expect(find.widgetWithText(FilterChip, 'Canadienne'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, 'Tipi'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'null'), findsOneWidget);
     });
 
     testWidgets('mobile renders Filtres button instead of inline size chips', (
@@ -692,7 +691,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Filtres'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, '4 places'), findsNothing);
+      expect(find.widgetWithText(FilterChip, '4 pl.'), findsNothing);
     });
 
     testWidgets(
@@ -720,7 +719,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Fermer'), findsOneWidget);
-        await tester.tap(find.widgetWithText(FilterChip, '4 places'));
+        await tester.tap(find.widgetWithText(FilterChip, '4 pl.'));
         await tester.pumpAndSettle();
 
         expect(find.text('Tente Boreale'), findsOneWidget);
@@ -760,7 +759,7 @@ void main() {
         await tester.tap(find.text('Filtres'));
         await tester.pumpAndSettle();
 
-        await tester.tap(find.widgetWithText(FilterChip, 'Tipi'));
+        await tester.tap(find.widgetWithText(FilterChip, 'null'));
         await tester.pumpAndSettle();
 
         await tester.tapAt(const Offset(20, 20));
@@ -832,14 +831,14 @@ void main() {
         );
       }
 
-      expect(chip('4 places').selected, isFalse);
-      await tester.tap(find.widgetWithText(FilterChip, '4 places'));
+      expect(chip('4 pl.').selected, isFalse);
+      await tester.tap(find.widgetWithText(FilterChip, '4 pl.'));
       await tester.pumpAndSettle();
-      expect(chip('4 places').selected, isTrue);
+      expect(chip('4 pl.').selected, isTrue);
 
-      await tester.tap(find.widgetWithText(FilterChip, '4 places'));
+      await tester.tap(find.widgetWithText(FilterChip, '4 pl.'));
       await tester.pumpAndSettle();
-      expect(chip('4 places').selected, isFalse);
+      expect(chip('4 pl.').selected, isFalse);
     });
 
     testWidgets('mobile filter sheet scrolls on short viewports', (
@@ -893,7 +892,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.text('Filtres'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilterChip, 'Tipi'));
+      await tester.tap(find.widgetWithText(FilterChip, 'null'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Fermer'));
       await tester.pumpAndSettle();
@@ -931,7 +930,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(FilterChip, 'Canadienne'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, 'Tipi'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'null'), findsOneWidget);
     });
 
     testWidgets('type filters still available while shape metadata loads', (
@@ -957,7 +956,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(FilterChip, 'Canadienne'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, 'Tipi'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'null'), findsOneWidget);
       expect(find.widgetWithText(FilterChip, 'Dome'), findsOneWidget);
     });
 
@@ -992,7 +991,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(FilterChip, 'Canadienne'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, 'Tipi'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'null'), findsOneWidget);
       expect(find.widgetWithText(FilterChip, 'Dome'), findsOneWidget);
     });
 
@@ -1130,7 +1129,7 @@ List<Tent> _buildFilteringSampleTents() {
       name: 'Tente Boreale',
       size: 4,
       tentModelId: 'shape-2',
-      tentModelName: 'Tipi',
+      tentModelName: 'null',
       overallState: TentOverallState.needsRepair,
       comments: null,
     ),
@@ -1153,7 +1152,7 @@ List<Tent> _buildSecondaryFilteringSampleTents() {
       name: 'Tente Boreale',
       size: 4,
       tentModelId: 'shape-2',
-      tentModelName: 'Tipi',
+      tentModelName: 'null',
       overallState: TentOverallState.needsRepair,
       comments: null,
     ),
@@ -1192,7 +1191,7 @@ List<TentModel> _buildModelOptionsMetadata() {
       displayOrder: 1,
       isActive: true,
     ),
-    TentModel(id: 'shape-2', name: 'Tipi', displayOrder: 2, isActive: true),
+    TentModel(id: 'shape-2', name: 'null', displayOrder: 2, isActive: true),
   ];
 }
 

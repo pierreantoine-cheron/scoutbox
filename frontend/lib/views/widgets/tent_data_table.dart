@@ -1,12 +1,12 @@
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../models/tag.dart';
 import '../../models/tent.dart';
+import 'compact_state_badge.dart';
 import 'tent_tag_chips.dart';
 
-enum TentDesktopSortColumn { name, state, size, model, updatedAt }
+enum TentDesktopSortColumn { name, state, size, model }
 
 class TentDataTable extends StatefulWidget {
   final List<Tent> tents;
@@ -25,7 +25,6 @@ class TentDataTable extends StatefulWidget {
 }
 
 class _TentDataTableState extends State<TentDataTable> {
-  static final _updatedAtFormatter = DateFormat('dd/MM/yyyy HH:mm');
   static const _stateOrder = {
     TentOverallState.good: 0,
     TentOverallState.needsRepair: 1,
@@ -41,20 +40,20 @@ class _TentDataTableState extends State<TentDataTable> {
 
     return DataTable2(
       fixedTopRows: 1,
-      fixedLeftColumns: 1,
-      minWidth: 1140,
+      minWidth: 700,
       sortColumnIndex: _sortColumn == null ? null : _sortIndexFor(_sortColumn!),
       sortAscending: _sortAscending,
       columns: [
         DataColumn2(
+          label: const Text('État'),
+          onSort: (_, _) => _toggleSort(TentDesktopSortColumn.state),
+          size: ColumnSize.M,
+          fixedWidth: 140,
+        ),
+        DataColumn2(
           label: const Text('Nom'),
           onSort: (_, _) => _toggleSort(TentDesktopSortColumn.name),
           size: ColumnSize.L,
-        ),
-        DataColumn2(
-          label: const Text('Etat'),
-          onSort: (_, _) => _toggleSort(TentDesktopSortColumn.state),
-          size: ColumnSize.M,
         ),
         DataColumn2(
           numeric: true,
@@ -68,14 +67,9 @@ class _TentDataTableState extends State<TentDataTable> {
           size: ColumnSize.M,
         ),
         const DataColumn2(label: Text('Étiquettes'), size: ColumnSize.M),
-        DataColumn2(
-          label: const Text('Derniere mise a jour'),
-          onSort: (_, _) => _toggleSort(TentDesktopSortColumn.updatedAt),
-          size: ColumnSize.M,
-        ),
       ],
       rows: [for (final tent in tents) _buildDataRow(context, tent)],
-      empty: const Center(child: Text('Aucune tente disponible')),
+      empty: _EmptyTableState(),
     );
   }
 
@@ -83,23 +77,32 @@ class _TentDataTableState extends State<TentDataTable> {
     return DataRow2(
       onTap: () => widget.onOpenTent(tent),
       cells: [
-        DataCell(Text(tent.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
-        DataCell(Text(tent.overallState.toFrenchLabel())),
-        DataCell(Text(tent.size == 1 ? '1 place' : '${tent.size} places')),
+        DataCell(CompactStateBadge.forTent(context, tent.overallState)),
+        DataCell(
+          Text(
+            tent.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.075,
+            ),
+          ),
+        ),
+        DataCell(Text(tent.size == 1 ? '1 pl.' : '${tent.size} pl.')),
         DataCell(_EllipsisCell(value: tent.tentModelName)),
         DataCell(_TagsCell(tags: tent.tags, onTagTap: widget.onTagTap)),
-        DataCell(Text(tent.toFrenchUpdatedAtLabel(_updatedAtFormatter))),
       ],
     );
   }
 
   int _sortIndexFor(TentDesktopSortColumn column) {
     return switch (column) {
-      TentDesktopSortColumn.name => 0,
-      TentDesktopSortColumn.state => 1,
+      TentDesktopSortColumn.state => 0,
+      TentDesktopSortColumn.name => 1,
       TentDesktopSortColumn.size => 2,
       TentDesktopSortColumn.model => 3,
-      TentDesktopSortColumn.updatedAt => 5,
     };
   }
 
@@ -113,22 +116,18 @@ class _TentDataTableState extends State<TentDataTable> {
     copy.sort((left, right) {
       return switch (column) {
         TentDesktopSortColumn.name => _applySortDirection(
-          left.name.toLowerCase().compareTo(right.name.toLowerCase()),
-        ),
+            left.name.toLowerCase().compareTo(right.name.toLowerCase()),
+          ),
         TentDesktopSortColumn.state => _applySortDirection(
-          _compareState(left, right),
-        ),
+            _compareState(left, right),
+          ),
         TentDesktopSortColumn.size => _applySortDirection(
-          left.size.compareTo(right.size),
-        ),
+            left.size.compareTo(right.size),
+          ),
         TentDesktopSortColumn.model => _compareNullableText(
-          left.tentModelName,
-          right.tentModelName,
-        ),
-        TentDesktopSortColumn.updatedAt => _compareNullableDate(
-          left.updatedAt,
-          right.updatedAt,
-        ),
+            left.tentModelName,
+            right.tentModelName,
+          ),
       };
     });
 
@@ -164,20 +163,6 @@ class _TentDataTableState extends State<TentDataTable> {
     );
   }
 
-  int _compareNullableDate(DateTime? left, DateTime? right) {
-    if (left == null && right == null) {
-      return 0;
-    }
-    if (left == null) {
-      return 1;
-    }
-    if (right == null) {
-      return -1;
-    }
-
-    return _applySortDirection(left.compareTo(right));
-  }
-
   void _toggleSort(TentDesktopSortColumn column) {
     setState(() {
       if (_sortColumn == column) {
@@ -198,9 +183,8 @@ class _EllipsisCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final normalized = value?.trim();
-    final displayValue = normalized == null || normalized.isEmpty
-        ? '-'
-        : normalized;
+    final displayValue =
+        normalized == null || normalized.isEmpty ? '-' : normalized;
 
     return Tooltip(
       message: displayValue,
@@ -224,6 +208,42 @@ class _TagsCell extends StatelessWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 220),
       child: TentTagChips(tags: tags, onTagTap: onTagTap),
+    );
+  }
+}
+
+class _EmptyTableState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cabin, size: 48, color: colorScheme.onSurfaceVariant),
+            const SizedBox(height: 16),
+            Text(
+              'Aucune tente trouvée',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Essayez d\'ajuster vos filtres ou d\'en créer une nouvelle.',
+              style: TextStyle(
+                fontSize: 14,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

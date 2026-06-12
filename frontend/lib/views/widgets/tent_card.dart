@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/tent.dart';
-import 'state_badge.dart';
+import 'compact_state_badge.dart';
 import 'tent_tag_chips.dart';
 
 class TentCard extends StatelessWidget {
@@ -18,69 +18,66 @@ class TentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final modelName = tent.tentModelName?.trim();
     final hasModelName = modelName != null && modelName.isNotEmpty;
+    final hasTags = tent.tags.isNotEmpty;
 
     return Semantics(
       button: true,
       label: 'Tente ${tent.name}',
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        child: Material(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
+                CompactStateBadge.forTent(context, tent.overallState),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
                         tent.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.17,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    StateBadge.forTent(context, tent.overallState),
-                  ],
-                ),
-                if (tent.tags.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  TentTagChips(tags: tent.tags, onTagTap: onTagTap),
-                ],
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      tent.size == 1
-                          ? '${tent.size} place'
-                          : '${tent.size} places',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-
-                    if (hasModelName) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        modelName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      const SizedBox(height: 4),
+                      _MetaRow(
+                        modelName: hasModelName ? modelName : null,
+                        size: tent.size,
                       ),
+                      if (hasTags) ...[
+                        const SizedBox(height: 9),
+                        TentTagChips(tags: tent.tags, onTagTap: onTagTap),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                const SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('Voir le detail'),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -88,6 +85,47 @@ class TentCard extends StatelessWidget {
           ),
         ),
       ),
+    ));
+  }
+}
+class _MetaRow extends StatelessWidget {
+  final String? modelName;
+  final int size;
+
+  const _MetaRow({this.modelName, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        if (modelName != null) ...[
+          Icon(Icons.cabin, size: 13, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              modelName!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+        ],
+        Icon(Icons.people_outline, size: 13, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Text(
+          size == 1 ? '$size pl.' : '$size pl.',
+          style: TextStyle(
+            fontSize: 12,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

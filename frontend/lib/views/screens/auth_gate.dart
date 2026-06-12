@@ -61,7 +61,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
                   },
                 ),
               ),
-        floatingActionButton: appBarConfig.fab,
+        floatingActionButton: isDesktop ? null : appBarConfig.fab,
         body: Navigator(
           key: _navigatorKey,
           observers: [_routeObserver],
@@ -115,8 +115,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     required NavigationSection section,
     required int successTrigger,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     Widget? leading;
     if (isRootScreen && !isDesktop) {
       leading = IconButton(
@@ -131,29 +129,25 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     }
 
     Widget? title;
-    if (isRootScreen && isDesktop) {
+    if (config.title != null) {
+      title = config.title;
+    } else if (isRootScreen && isDesktop) {
       title = _DesktopTitleRow(
         section: section,
         onSectionTap: (s) {
           if (s.isEnabled) _navigateToSection(s);
         },
       );
-    } else if (isRootScreen && !isDesktop) {
-      title = Text(
-        'ScoutBox',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: colorScheme.onSurface,
-        ),
-      );
-    } else if (config.title != null) {
-      title = config.title;
     }
 
     final actions = <Widget>[
       FadingCloudDoneIcon(trigger: successTrigger),
       if (config.actions != null) ...config.actions!,
+      if (isDesktop && config.desktopCreateAction != null)
+        _DesktopCreateButton(
+          label: config.desktopCreateLabel ?? 'Créer',
+          onPressed: config.desktopCreateAction!,
+        ),
       _LogoutButton(
         onPressed: () => _showLogoutConfirmationDialog(),
       ),
@@ -279,6 +273,51 @@ class _TopTab extends StatelessWidget {
                     ),
                   ),
                 ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopCreateButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const _DesktopCreateButton({
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Material(
+        color: colorScheme.primary,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add, size: 14, color: colorScheme.onPrimary),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onPrimary,
+                  ),
+                ),
               ],
             ),
           ),

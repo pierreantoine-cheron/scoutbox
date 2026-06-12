@@ -42,6 +42,7 @@ void main() {
             ],
             allTags: [_tagA, _tagB],
             isFilteredMode: false,
+            visibleTentCount: 3,
             onSearchChanged: (_) {},
             onToggleState: (_) {},
             onToggleSize: (_) {},
@@ -54,12 +55,6 @@ void main() {
       );
     }
 
-    testWidgets('renders search field', (tester) async {
-      await tester.pumpWidget(buildBar());
-
-      expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('Rechercher une tente'), findsOneWidget);
-    });
 
     testWidgets('renders state filter chips on desktop', (tester) async {
       await tester.pumpWidget(buildBar(isDesktop: true));
@@ -103,6 +98,7 @@ void main() {
               availableModelOptions: const [],
               allTags: const [],
               isFilteredMode: false,
+            visibleTentCount: 3,
               onSearchChanged: (_) {},
               onToggleState: (s) => toggledState = s,
               onToggleSize: (_) {},
@@ -136,6 +132,7 @@ void main() {
               availableModelOptions: const [],
               allTags: const [],
               isFilteredMode: true,
+            visibleTentCount: 3,
               onSearchChanged: (_) {},
               onToggleState: (_) {},
               onToggleSize: (_) {},
@@ -167,50 +164,7 @@ void main() {
       expect(find.text('Filtres'), findsOneWidget);
     });
 
-    testWidgets('shows search clear button when text entered', (tester) async {
-      await tester.pumpWidget(buildBar());
 
-      searchController.text = 'test';
-      await tester.pump();
-
-      expect(find.byIcon(Icons.clear), findsOneWidget);
-    });
-
-    testWidgets('clears search on clear button tap', (tester) async {
-      String? searchValue;
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
-          home: Scaffold(
-            body: TentListFilterBar(
-              isDesktop: true,
-              searchController: searchController,
-              selectedStates: selectedStates,
-              selectedSizes: selectedSizes,
-              selectedModelIds: selectedModelIds,
-              selectedTagIds: selectedTagIds,
-              availableSizes: const [],
-              availableModelOptions: const [],
-              allTags: const [],
-              isFilteredMode: false,
-              onSearchChanged: (v) => searchValue = v,
-              onToggleState: (_) {},
-              onToggleSize: (_) {},
-              onToggleModel: (_) {},
-              onToggleTag: (_) {},
-              onClearAll: () {},
-            ),
-          ),
-        ),
-      );
-
-      searchController.text = 'search term';
-      await tester.pump();
-
-      await tester.tap(find.byIcon(Icons.clear));
-      expect(searchValue, '');
-      expect(searchController.text, '');
-    });
 
     testWidgets('renders tag chips with counts on desktop', (tester) async {
       await tester.pumpWidget(buildBar(isDesktop: true));
@@ -240,6 +194,7 @@ void main() {
               availableModelOptions: const [],
               allTags: [_tagA],
               isFilteredMode: false,
+            visibleTentCount: 3,
               onSearchChanged: (_) {},
               onToggleState: (_) {},
               onToggleSize: (_) {},
@@ -277,6 +232,7 @@ void main() {
               availableModelOptions: const [],
               allTags: const [],
               isFilteredMode: false,
+            visibleTentCount: 3,
               onSearchChanged: (_) {},
               onToggleState: (_) {},
               onToggleSize: (_) {},
