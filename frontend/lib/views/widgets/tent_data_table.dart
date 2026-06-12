@@ -53,19 +53,19 @@ class _TentDataTableState extends State<TentDataTable> {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (tents.isEmpty) {
-      return Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outlineVariant),
+      return Material(
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: colorScheme.outlineVariant),
         ),
         child: _EmptyTableState(),
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: colorScheme.outlineVariant),
+    return Material(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
       child: Table(
