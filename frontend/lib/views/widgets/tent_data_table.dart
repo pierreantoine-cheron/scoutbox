@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 
@@ -39,43 +41,63 @@ class _TentDataTableState extends State<TentDataTable> {
     final tents = _sortedTents(widget.tents);
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: DataTable2(
-        sortColumnIndex: _sortColumn == null ? null : _sortIndexFor(_sortColumn!),
-      sortAscending: _sortAscending,
-      columns: [
-        DataColumn2(
-          label: const Text('État'),
-          onSort: (_, _) => _toggleSort(TentDesktopSortColumn.state),
-          size: ColumnSize.M,
-          fixedWidth: 140,
-        ),
-        DataColumn2(
-          label: const Text('Nom'),
-          onSort: (_, _) => _toggleSort(TentDesktopSortColumn.name),
-          size: ColumnSize.L,
-        ),
-        DataColumn2(
-          numeric: true,
-          label: const Text('Taille'),
-          onSort: (_, _) => _toggleSort(TentDesktopSortColumn.size),
-          size: ColumnSize.S,
-        ),
-        DataColumn2(
-          label: const Text('Modèle'),
-          onSort: (_, _) => _toggleSort(TentDesktopSortColumn.model),
-          size: ColumnSize.M,
-        ),
-        const DataColumn2(label: Text('Étiquettes'), size: ColumnSize.M),
-      ],
-      rows: [for (final tent in tents) _buildDataRow(context, tent)],
-        empty: _EmptyTableState(),
-      ),
+    const headerHeight = 56.0;
+    const rowHeight = 48.0;
+    final neededHeight = headerHeight + tents.length * rowHeight;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final effectiveHeight = math.min(
+          neededHeight,
+          constraints.maxHeight.isInfinite ? neededHeight : constraints.maxHeight,
+        );
+
+        return SizedBox(
+          height: effectiveHeight,
+          width: double.infinity,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: colorScheme.outlineVariant),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: DataTable2(
+              sortColumnIndex:
+                  _sortColumn == null ? null : _sortIndexFor(_sortColumn!),
+              sortAscending: _sortAscending,
+              columns: [
+                DataColumn2(
+                  label: const Text('État'),
+                  onSort: (_, _) => _toggleSort(TentDesktopSortColumn.state),
+                  size: ColumnSize.M,
+                  fixedWidth: 140,
+                ),
+                DataColumn2(
+                  label: const Text('Nom'),
+                  onSort: (_, _) => _toggleSort(TentDesktopSortColumn.name),
+                  size: ColumnSize.L,
+                ),
+                DataColumn2(
+                  numeric: true,
+                  label: const Text('Taille'),
+                  onSort: (_, _) => _toggleSort(TentDesktopSortColumn.size),
+                  size: ColumnSize.S,
+                ),
+                DataColumn2(
+                  label: const Text('Modèle'),
+                  onSort: (_, _) =>
+                      _toggleSort(TentDesktopSortColumn.model),
+                  size: ColumnSize.M,
+                ),
+                const DataColumn2(
+                    label: Text('Étiquettes'), size: ColumnSize.M),
+              ],
+              rows: [for (final tent in tents) _buildDataRow(context, tent)],
+              empty: _EmptyTableState(),
+            ),
+          ),
+        );
+      },
     );
   }
 
