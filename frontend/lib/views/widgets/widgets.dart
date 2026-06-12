@@ -1,4 +1,5 @@
 export 'async_error_view.dart';
+export 'desktop_create_button.dart';
 export 'compact_state_badge.dart';
 export 'confirm_dialog.dart';
 export 'fading_cloud_done_icon.dart';
