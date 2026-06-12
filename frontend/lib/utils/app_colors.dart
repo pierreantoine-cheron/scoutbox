@@ -71,11 +71,17 @@ class TagPalette {
   ];
 
   static Color colorFromHex(String hex) {
-    for (final option in options) {
-      if (option.hex == hex) return option.color;
+    final normalized = hex.startsWith('#') ? hex.substring(1) : hex;
+    if (normalized.length == 6 || normalized.length == 8) {
+      final value = int.tryParse(normalized, radix: 16);
+      if (value != null) {
+        final withAlpha =
+            normalized.length == 8 ? value : (0xFF000000 | value);
+        return Color(withAlpha);
+      }
     }
     debugPrint(
-      'TagPalette: unknown color hex "$hex", falling back to default blue',
+      'TagPalette: invalid color hex "$hex", falling back to default blue',
     );
     return const Color(0xFF1A70E5);
   }
