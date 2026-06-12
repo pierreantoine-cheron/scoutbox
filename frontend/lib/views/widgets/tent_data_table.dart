@@ -37,11 +37,16 @@ class _TentDataTableState extends State<TentDataTable> {
   @override
   Widget build(BuildContext context) {
     final tents = _sortedTents(widget.tents);
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return DataTable2(
-      fixedTopRows: 1,
-      minWidth: 700,
-      sortColumnIndex: _sortColumn == null ? null : _sortIndexFor(_sortColumn!),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: DataTable2(
+        sortColumnIndex: _sortColumn == null ? null : _sortIndexFor(_sortColumn!),
       sortAscending: _sortAscending,
       columns: [
         DataColumn2(
@@ -69,7 +74,8 @@ class _TentDataTableState extends State<TentDataTable> {
         const DataColumn2(label: Text('Étiquettes'), size: ColumnSize.M),
       ],
       rows: [for (final tent in tents) _buildDataRow(context, tent)],
-      empty: _EmptyTableState(),
+        empty: _EmptyTableState(),
+      ),
     );
   }
 
