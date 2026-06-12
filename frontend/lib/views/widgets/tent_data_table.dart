@@ -1,10 +1,8 @@
-import 'dart:math' as math;
-
-import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/tag.dart';
 import '../../models/tent.dart';
+import '../../utils/app_colors.dart';
 import 'compact_state_badge.dart';
 import 'tent_tag_chips.dart';
 
@@ -36,109 +34,138 @@ class _TentDataTableState extends State<TentDataTable> {
   TentDesktopSortColumn? _sortColumn;
   bool _sortAscending = true;
 
+  static const _headerStyle = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.55,
+    color: AppColors.muted,
+  );
+
+  static const _nameStyle = TextStyle(
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.075,
+  );
+
   @override
   Widget build(BuildContext context) {
     final tents = _sortedTents(widget.tents);
     final colorScheme = Theme.of(context).colorScheme;
 
-    const headerHeight = 56.0;
-    const rowHeight = 48.0;
-    final neededHeight = headerHeight + tents.length * rowHeight;
+    if (tents.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: _EmptyTableState(),
+      );
+    }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final effectiveHeight = math.min(
-          neededHeight,
-          constraints.maxHeight.isInfinite ? neededHeight : constraints.maxHeight,
-        );
-
-        return SizedBox(
-          height: effectiveHeight,
-          width: double.infinity,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outlineVariant),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: DataTable2(
-              sortColumnIndex:
-                  _sortColumn == null ? null : _sortIndexFor(_sortColumn!),
-              sortAscending: _sortAscending,
-              columns: [
-                DataColumn2(
-                  label: const Text('État'),
-                  onSort: (_, _) => _toggleSort(TentDesktopSortColumn.state),
-                  size: ColumnSize.M,
-                  fixedWidth: 140,
-                ),
-                DataColumn2(
-                  label: const Text('Nom'),
-                  onSort: (_, _) => _toggleSort(TentDesktopSortColumn.name),
-                  size: ColumnSize.L,
-                ),
-                DataColumn2(
-                  numeric: true,
-                  label: const Text('Taille'),
-                  onSort: (_, _) => _toggleSort(TentDesktopSortColumn.size),
-                  size: ColumnSize.S,
-                ),
-                DataColumn2(
-                  label: const Text('Modèle'),
-                  onSort: (_, _) =>
-                      _toggleSort(TentDesktopSortColumn.model),
-                  size: ColumnSize.M,
-                ),
-                const DataColumn2(
-                    label: Text('Étiquettes'), size: ColumnSize.M),
-              ],
-              rows: [for (final tent in tents) _buildDataRow(context, tent)],
-              empty: _EmptyTableState(),
-            ),
-          ),
-        );
-      },
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Table(
+        columnWidths: const {
+          0: FixedColumnWidth(130),
+          1: FlexColumnWidth(),
+          2: FixedColumnWidth(100),
+          3: FixedColumnWidth(130),
+          4: FlexColumnWidth(),
+        },
+        children: [
+          _buildHeaderRow(colorScheme),
+          for (final tent in tents)
+            _buildDataRow(context, tent, colorScheme),
+        ],
+      ),
     );
   }
 
-  DataRow2 _buildDataRow(BuildContext context, Tent tent) {
-    return DataRow2(
-      onTap: () => widget.onOpenTent(tent),
-      cells: [
-        DataCell(CompactStateBadge.forTent(context, tent.overallState)),
-        DataCell(
-          Text(
-            tent.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.075,
-            ),
-          ),
+  TableRow _buildHeaderRow(ColorScheme colorScheme) {
+    return TableRow(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        border: const Border(
+          bottom: BorderSide(color: AppColors.border),
         ),
-        DataCell(Text(tent.size == 1 ? '1 pl.' : '${tent.size} pl.')),
-        DataCell(_EllipsisCell(value: tent.tentModelName)),
-        DataCell(_TagsCell(tags: tent.tags, onTagTap: widget.onTagTap)),
+      ),
+      children: [
+        _SortableHeaderCell(
+          label: 'État',
+          isActive: _sortColumn == TentDesktopSortColumn.state,
+          ascending: _sortAscending,
+          onTap: () => _toggleSort(TentDesktopSortColumn.state),
+        ),
+        _SortableHeaderCell(
+          label: 'Nom',
+          isActive: _sortColumn == TentDesktopSortColumn.name,
+          ascending: _sortAscending,
+          onTap: () => _toggleSort(TentDesktopSortColumn.name),
+        ),
+        _SortableHeaderCell(
+          label: 'Taille',
+          isActive: _sortColumn == TentDesktopSortColumn.size,
+          ascending: _sortAscending,
+          onTap: () => _toggleSort(TentDesktopSortColumn.size),
+        ),
+        _SortableHeaderCell(
+          label: 'Modèle',
+          isActive: _sortColumn == TentDesktopSortColumn.model,
+          ascending: _sortAscending,
+          onTap: () => _toggleSort(TentDesktopSortColumn.model),
+        ),
+        const _HeaderCell(label: 'Étiquettes'),
       ],
     );
   }
 
-  int _sortIndexFor(TentDesktopSortColumn column) {
-    return switch (column) {
-      TentDesktopSortColumn.state => 0,
-      TentDesktopSortColumn.name => 1,
-      TentDesktopSortColumn.size => 2,
-      TentDesktopSortColumn.model => 3,
-    };
+  TableRow _buildDataRow(BuildContext context, Tent tent, ColorScheme colorScheme) {
+    void onTap() => widget.onOpenTent(tent);
+
+    return TableRow(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(80)),
+        ),
+      ),
+      children: [
+        _DataCell(
+          onTap: onTap,
+          child: CompactStateBadge.forTent(context, tent.overallState),
+        ),
+        _DataCell(
+          onTap: onTap,
+          child: Text(
+            tent.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _nameStyle,
+          ),
+        ),
+        _DataCell(
+          onTap: onTap,
+          child: Text(tent.size == 1 ? '1 pl.' : '${tent.size} pl.'),
+        ),
+        _DataCell(
+          onTap: onTap,
+          child: _EllipsisCell(value: tent.tentModelName),
+        ),
+        _DataCell(
+          onTap: onTap,
+          last: true,
+          child: _TagsCell(tags: tent.tags, onTagTap: widget.onTagTap),
+        ),
+      ],
+    );
   }
 
   List<Tent> _sortedTents(List<Tent> tents) {
     final column = _sortColumn;
-    if (column == null) {
-      return tents;
-    }
+    if (column == null) return tents;
 
     final copy = [...tents];
     copy.sort((left, right) {
@@ -176,15 +203,9 @@ class _TentDataTableState extends State<TentDataTable> {
     final leftMissing = leftValue == null || leftValue.isEmpty;
     final rightMissing = rightValue == null || rightValue.isEmpty;
 
-    if (leftMissing && rightMissing) {
-      return 0;
-    }
-    if (leftMissing) {
-      return 1;
-    }
-    if (rightMissing) {
-      return -1;
-    }
+    if (leftMissing && rightMissing) return 0;
+    if (leftMissing) return 1;
+    if (rightMissing) return -1;
 
     return _applySortDirection(
       leftValue.toLowerCase().compareTo(rightValue.toLowerCase()),
@@ -200,6 +221,84 @@ class _TentDataTableState extends State<TentDataTable> {
         _sortAscending = true;
       }
     });
+  }
+}
+
+class _SortableHeaderCell extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final bool ascending;
+  final VoidCallback onTap;
+
+  const _SortableHeaderCell({
+    required this.label,
+    required this.isActive,
+    required this.ascending,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const headerStyle = _TentDataTableState._headerStyle;
+    const arrowSize = 12.0;
+
+    return _DataCell(
+      onTap: onTap,
+      child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(label, style: headerStyle, overflow: TextOverflow.ellipsis),
+            ),
+            if (isActive) ...[
+              const SizedBox(width: 4),
+              Icon(
+                ascending ? Icons.arrow_upward : Icons.arrow_downward,
+                size: arrowSize,
+                color: AppColors.muted,
+              ),
+            ],
+          ],
+        ),
+      );
+  }
+}
+
+class _HeaderCell extends StatelessWidget {
+  final String label;
+
+  const _HeaderCell({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return _DataCell(
+      child: Text(label, style: _TentDataTableState._headerStyle),
+    );
+  }
+}
+
+class _DataCell extends StatelessWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  final bool last;
+
+  const _DataCell({
+    required this.child,
+    this.onTap,
+    this.last = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+        child: child,
+      ),
+    );
   }
 }
 

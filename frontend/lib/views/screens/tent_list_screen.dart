@@ -230,7 +230,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
           ),
           if (warning != null) _RefreshWarningCard(message: warning),
           Expanded(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: TentDataTable(
                 tents: visibleTents,

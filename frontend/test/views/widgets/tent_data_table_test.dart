@@ -1,4 +1,3 @@
-import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/models/tag.dart';
@@ -179,25 +178,33 @@ void main() {
       expect(opened?.name, 'Tente T');
     });
 
-    testWidgets('keeps sort indicator aligned', (
+    testWidgets('sorts rows when header is tapped', (
       tester,
     ) async {
       _setWideViewport(tester);
       await tester.pumpWidget(
         buildTable(
           tents: [
-            _tent(name: 'Tente A'),
-            _tent(id: 't-2', name: 'Tente B'),
+            _tent(name: 'Zèbre'),
+            _tent(id: 't-2', name: 'Alpaga'),
           ],
         ),
       );
       await tester.pumpAndSettle();
 
+      // Initial order: Zèbre first, Alpaga second
+      final nameTextsBefore = _nameTextsInOrder(tester);
+      expect(nameTextsBefore[0], 'Zèbre');
+      expect(nameTextsBefore[1], 'Alpaga');
+
+      // Tap "Nom" to sort ascending
       await tester.tap(find.text('Nom'));
       await tester.pumpAndSettle();
 
-      final table = tester.widget<DataTable2>(find.byType(DataTable2));
-      expect(table.sortColumnIndex, 1);
+      // After sort: Alpaga first, Zèbre second
+      final nameTextsAfter = _nameTextsInOrder(tester);
+      expect(nameTextsAfter[0], 'Alpaga');
+      expect(nameTextsAfter[1], 'Zèbre');
     });
   });
 }
@@ -207,4 +214,12 @@ void _setWideViewport(WidgetTester tester) {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+List<String> _nameTextsInOrder(WidgetTester tester) {
+  return tester
+      .widgetList<Text>(find.byType(Text))
+      .where((w) => w.style?.fontSize == 15)
+      .map((w) => w.data ?? '')
+      .toList();
 }
