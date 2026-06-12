@@ -489,29 +489,38 @@ class _FilteredEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         if (warningMessage != null)
           _RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
-        const Icon(Icons.filter_alt_off, size: 64),
+        Icon(Icons.filter_alt_off, size: 64, color: colorScheme.onSurfaceVariant),
         const SizedBox(height: 16),
         Center(
           child: Text(
-            tagFiltersOnly
-                ? 'Aucune tente ne correspond aux étiquettes sélectionnées'
-                : 'Aucune tente ne correspond à vos critères',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            textAlign: TextAlign.center,
+            'Aucune tente trouvée',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
           ),
         ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: OutlinedButton(
-            onPressed: onClearFilters,
-            child: const Text('Effacer les filtres'),
+        const SizedBox(height: 8),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Text(
+            'Essayez d\'ajuster vos filtres ou d\'en créer une nouvelle.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
           ),
         ),
       ],
@@ -610,6 +619,18 @@ class _DesktopSearchField extends StatelessWidget {
         decoration: InputDecoration(
           hintText: 'Rechercher...',
           prefixIcon: const Icon(Icons.search, size: 18),
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.close, size: 16),
+                onPressed: () => onChanged(''),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              );
+            },
+          ),
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
           border: OutlineInputBorder(
@@ -647,6 +668,18 @@ class _AppBarSearchField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: 'Rechercher...',
         prefixIcon: const Icon(Icons.search, size: 18),
+        suffixIcon: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            if (value.text.isEmpty) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.close, size: 16),
+              onPressed: () => onChanged(''),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+            );
+          },
+        ),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         filled: true,

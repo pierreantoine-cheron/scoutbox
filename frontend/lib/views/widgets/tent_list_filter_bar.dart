@@ -630,6 +630,7 @@ class _ProtoTagChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tagColor = TagPalette.colorFromHex(tag.color);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: onTap,
@@ -638,12 +639,14 @@ class _ProtoTagChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: tagColor,
           borderRadius: BorderRadius.circular(999),
+          border: selected
+              ? Border.all(color: Colors.white, width: 2)
+              : null,
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: tagColor.withValues(alpha: 0.3),
+                    color: colorScheme.primary,
                     spreadRadius: 2,
-                    blurRadius: 4,
                   ),
                 ]
               : null,
