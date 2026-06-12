@@ -103,7 +103,10 @@ void main() {
       await tester.tap(find.text('Créer une tente'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Étape 1 : choisissez un modèle'), findsOneWidget);
+      expect(
+        find.text('Aucun modèle de tente disponible pour le moment.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('renders desktop table for wide screens', (
@@ -1027,7 +1030,10 @@ void main() {
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
 
-      expect(find.text('Étape 1 : choisissez un modèle'), findsOneWidget);
+      expect(
+        find.text('Aucun modèle de tente disponible pour le moment.'),
+        findsOneWidget,
+      );
     });
   });
 }

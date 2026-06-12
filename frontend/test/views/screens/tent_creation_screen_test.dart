@@ -8,7 +8,7 @@ import 'package:client/views/screens/tent_creation_screen.dart';
 
 void main() {
   group('TentCreationScreen', () {
-    testWidgets('requires selected shape before continue', (
+    testWidgets('requires selected model before submit', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -21,18 +21,27 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final continueButton = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, 'Continuer'),
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-name-input')),
+        'TentA',
       );
-      expect(continueButton.onPressed, isNull);
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-size-input')),
+        '6',
+      );
 
-      await tester.tap(find.text('Canadienne'));
+      final submitButton = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Créer la tente'),
+      );
+      expect(submitButton.onPressed, isNotNull);
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer la tente'));
       await tester.pumpAndSettle();
 
-      final enabledContinueButton = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, 'Continuer'),
+      expect(
+        find.text('Veuillez sélectionner un modèle de tente'),
+        findsOneWidget,
       );
-      expect(enabledContinueButton.onPressed, isNotNull);
     });
 
     testWidgets('keeps form values on submit failure', (
@@ -48,9 +57,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Canadienne'));
+      await tester.tap(
+        find.byKey(const ValueKey('tent-model-dropdown')),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.tap(find.text('Canadienne'));
       await tester.pumpAndSettle();
 
       await tester.enterText(
@@ -65,7 +76,8 @@ void main() {
         find.byKey(const ValueKey('tent-comments-input')),
         'Commentaire',
       );
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer la tente'));
       await tester.pumpAndSettle();
 
       expect(find.text('Une tente avec ce nom existe déjà'), findsOneWidget);
@@ -74,7 +86,7 @@ void main() {
       expect(find.text('Commentaire'), findsOneWidget);
     });
 
-    testWidgets('preserves draft when navigating back to shape step', (
+    testWidgets('shows success after successful creation', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -87,50 +99,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await tester.tap(
+        find.byKey(const ValueKey('tent-model-dropdown')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Canadienne'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.byKey(const ValueKey('tent-name-input')),
-        'Tente Brouillon',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('tent-size-input')),
-        '8',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('tent-comments-input')),
-        'Conserver ce brouillon',
-      );
-
-      await tester.tap(find.widgetWithText(TextButton, 'Modifier'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Tente Brouillon'), findsOneWidget);
-      expect(find.text('8'), findsOneWidget);
-      expect(find.text('Conserver ce brouillon'), findsOneWidget);
-    });
-
-    testWidgets('shows success indicator after successful creation', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
-          ],
-          child: const MaterialApp(home: TentCreationScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Canadienne'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
       await tester.pumpAndSettle();
 
       await tester.enterText(
@@ -141,7 +114,7 @@ void main() {
         find.byKey(const ValueKey('tent-size-input')),
         '4',
       );
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer la tente'));
       await tester.pump();
     });
 
@@ -156,11 +129,6 @@ void main() {
           child: const MaterialApp(home: TentCreationScreen()),
         ),
       );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Canadienne'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
       await tester.pumpAndSettle();
 
       final sizeFinder = find.byKey(const ValueKey('tent-size-input'));
@@ -196,7 +164,10 @@ void main() {
       await tester.tap(find.text('Rester'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Étape 1 : choisissez un modèle'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('tent-model-dropdown')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('back confirmation quitter closes the screen', (
@@ -214,7 +185,10 @@ void main() {
 
       await tester.tap(find.text('Ouvrir création'));
       await tester.pumpAndSettle();
-      expect(find.text('Étape 1 : choisissez un modèle'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('tent-model-dropdown')),
+        findsOneWidget,
+      );
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -222,10 +196,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Écran hôte'), findsOneWidget);
-      expect(find.text('Étape 1 : choisissez un modèle'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('tent-model-dropdown')),
+        findsNothing,
+      );
     });
 
-    testWidgets('shows empty state when no shape is available', (
+    testWidgets('shows empty state when no model is available', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -244,13 +221,9 @@ void main() {
         find.text('Aucun modèle de tente disponible pour le moment.'),
         findsOneWidget,
       );
-      final continueButton = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, 'Continuer'),
-      );
-      expect(continueButton.onPressed, isNull);
     });
 
-    testWidgets('shows error state and retries shape loading', (
+    testWidgets('shows error state and retries model loading', (
       WidgetTester tester,
     ) async {
       final repo = _RetryableModelsTentRepository();
@@ -272,7 +245,10 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Réessayer'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Canadienne'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('tent-model-dropdown')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('validates name field at widget level', (
@@ -288,9 +264,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Canadienne'));
+      await tester.tap(
+        find.byKey(const ValueKey('tent-model-dropdown')),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.tap(find.text('Canadienne'));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byKey(const ValueKey('tent-name-input')), '');
@@ -298,7 +276,7 @@ void main() {
         find.byKey(const ValueKey('tent-size-input')),
         '6',
       );
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer la tente'));
       await tester.pumpAndSettle();
 
       expect(find.text('Le nom de la tente est requis'), findsOneWidget);
@@ -316,7 +294,7 @@ void main() {
           find.byKey(const ValueKey('tent-size-input')),
           size,
         );
-        await tester.tap(find.widgetWithText(ElevatedButton, 'Créer'));
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Créer la tente'));
         await tester.pumpAndSettle();
       }
 
@@ -330,9 +308,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Canadienne'));
+      await tester.tap(
+        find.byKey(const ValueKey('tent-model-dropdown')),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
+      await tester.tap(find.text('Canadienne'));
       await tester.pumpAndSettle();
 
       await submitWithSize('Tente Min', '1');
@@ -359,21 +339,32 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Canadienne'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Continuer'));
-      await tester.pumpAndSettle();
-
       final commentsField = tester.widget<TextFormField>(
         find.byKey(const ValueKey('tent-comments-input')),
       );
-
-      final validator = commentsField.validator;
-      expect(validator, isNotNull);
+      expect(commentsField.validator, isNotNull);
       expect(
-        validator!.call('a' * 501),
+        commentsField.validator!.call('a' * 501),
         equals('Le commentaire ne doit pas dépasser 500 caractères'),
       );
+    });
+
+    testWidgets('selects state with segmented button', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: const MaterialApp(home: TentCreationScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bon état'), findsOneWidget);
+      expect(find.text('À réparer'), findsOneWidget);
+      expect(find.text('Inutilisable'), findsOneWidget);
     });
   });
 }
