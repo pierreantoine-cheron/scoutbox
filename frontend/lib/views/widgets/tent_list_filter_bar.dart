@@ -113,6 +113,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final horizontalPadding = widget.isDesktop ? 24.0 : 16.0;
 
     return Material(
       color: colorScheme.surface,
@@ -123,30 +124,39 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
             pills: _activePills,
             tentCount: widget.visibleTentCount,
             isPanelExpanded: _panelExpanded,
+            horizontalPadding: horizontalPadding,
             onTogglePanel: () => setState(() => _panelExpanded = !_panelExpanded),
           ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox(width: double.infinity),
-            secondChild: _FilterPanel(
-              selectedStates: widget.selectedStates,
-              selectedSizes: widget.selectedSizes,
-              selectedModelIds: widget.selectedModelIds,
-              selectedTagIds: widget.selectedTagIds,
-              availableSizes: widget.availableSizes,
-              availableModelOptions: widget.availableModelOptions,
-              allTags: widget.allTags,
-              isFilteredMode: widget.isFilteredMode,
-              onToggleState: widget.onToggleState,
-              onToggleSize: widget.onToggleSize,
-              onToggleModel: widget.onToggleModel,
-              onToggleTag: widget.onToggleTag,
-              onClearAll: widget.onClearAll,
-              onManageTags: widget.onManageTags,
-            ),
-            crossFadeState: _panelExpanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
+          AnimatedSize(
             duration: const Duration(milliseconds: 280),
+            alignment: Alignment.topCenter,
+            curve: Curves.easeInOut,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SizedBox(
+                  width: constraints.maxWidth,
+                  child: _panelExpanded
+                      ? _FilterPanel(
+                          selectedStates: widget.selectedStates,
+                          selectedSizes: widget.selectedSizes,
+                          selectedModelIds: widget.selectedModelIds,
+                          selectedTagIds: widget.selectedTagIds,
+                          availableSizes: widget.availableSizes,
+                          availableModelOptions: widget.availableModelOptions,
+                          allTags: widget.allTags,
+                          isFilteredMode: widget.isFilteredMode,
+                          horizontalPadding: horizontalPadding,
+                          onToggleState: widget.onToggleState,
+                          onToggleSize: widget.onToggleSize,
+                          onToggleModel: widget.onToggleModel,
+                          onToggleTag: widget.onToggleTag,
+                          onClearAll: widget.onClearAll,
+                          onManageTags: widget.onManageTags,
+                        )
+                      : const SizedBox(width: double.infinity),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -158,12 +168,14 @@ class _FilterBarBase extends StatelessWidget {
   final List<_ActivePill> pills;
   final int tentCount;
   final bool isPanelExpanded;
+  final double horizontalPadding;
   final VoidCallback onTogglePanel;
 
   const _FilterBarBase({
     required this.pills,
     required this.tentCount,
     required this.isPanelExpanded,
+    required this.horizontalPadding,
     required this.onTogglePanel,
   });
 
@@ -172,7 +184,10 @@ class _FilterBarBase extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: colorScheme.outlineVariant),
@@ -395,6 +410,7 @@ class _FilterPanel extends StatelessWidget {
   final List<TentTypeFilterOption> availableModelOptions;
   final List<Tag> allTags;
   final bool isFilteredMode;
+  final double horizontalPadding;
   final ValueChanged<TentOverallState> onToggleState;
   final ValueChanged<int> onToggleSize;
   final ValueChanged<String> onToggleModel;
@@ -411,6 +427,7 @@ class _FilterPanel extends StatelessWidget {
     required this.availableModelOptions,
     required this.allTags,
     required this.isFilteredMode,
+    required this.horizontalPadding,
     required this.onToggleState,
     required this.onToggleSize,
     required this.onToggleModel,
@@ -424,7 +441,7 @@ class _FilterPanel extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         border: Border(
