@@ -5,6 +5,7 @@ import '../../models/tent.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/design_constants.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 import 'tent_creation_screen.dart';
@@ -76,23 +77,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
                 ref.read(tentListFilterProvider.notifier).setSearchText(value),
           ),
           const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: () => _openTentCreation(context),
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Ajouter'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              textStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
+          _DesktopCreateButton(onPressed: () => _openTentCreation(context)),
           const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -635,6 +620,44 @@ class _DesktopSearchField extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(color: AppColors.scoutGreen),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopCreateButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _DesktopCreateButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colorScheme.primary,
+      borderRadius: BorderRadius.circular(AppRadii.md),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 14, color: colorScheme.onPrimary),
+              const SizedBox(width: 6),
+              Text(
+                'Ajouter',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onPrimary,
+                ),
+              ),
+            ],
           ),
         ),
       ),
