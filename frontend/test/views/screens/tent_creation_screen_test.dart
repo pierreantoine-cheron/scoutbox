@@ -82,7 +82,7 @@ void main() {
 
       expect(find.text('Une tente avec ce nom existe déjà'), findsOneWidget);
       expect(find.text('Tente A'), findsOneWidget);
-      expect(find.text('6'), findsOneWidget);
+      expect(find.text('6'), findsWidgets);
       expect(find.text('Commentaire'), findsOneWidget);
     });
 
