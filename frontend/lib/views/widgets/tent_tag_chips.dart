@@ -53,11 +53,9 @@ class _CompactTagChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tagColor = TagPalette.colorFromHex(tag.color);
-    final textColor = TagPalette.textColorFor(tagColor);
 
     final chip = Container(
-      constraints: const BoxConstraints(maxWidth: 96),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
       decoration: BoxDecoration(
         color: tagColor,
         borderRadius: BorderRadius.circular(999),
@@ -66,9 +64,10 @@ class _CompactTagChip extends StatelessWidget {
         tag.name,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.w700,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
         ),
       ),
     );
@@ -110,7 +109,7 @@ class _OverflowTagChip extends StatelessWidget {
         label: '$countLabel $plural : $hiddenNames',
         child: ExcludeSemantics(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(999),
@@ -120,9 +119,10 @@ class _OverflowTagChip extends StatelessWidget {
               countLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
                 color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
               ),
             ),
           ),
