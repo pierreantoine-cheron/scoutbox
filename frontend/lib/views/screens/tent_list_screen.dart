@@ -68,14 +68,30 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
               onChanged: (value) =>
                   ref.read(tentListFilterProvider.notifier).setSearchText(value),
             ),
-      desktopCreateAction: () => _openTentCreation(context),
-      desktopCreateLabel: 'Ajouter',
       actions: [
         if (isDesktop) ...[
           _DesktopSearchField(
             controller: _searchController,
             onChanged: (value) =>
                 ref.read(tentListFilterProvider.notifier).setSearchText(value),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: () => _openTentCreation(context),
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Ajouter'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              textStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           IconButton(

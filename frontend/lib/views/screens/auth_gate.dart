@@ -143,11 +143,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     final actions = <Widget>[
       FadingCloudDoneIcon(trigger: successTrigger),
       if (config.actions != null) ...config.actions!,
-      if (isDesktop && config.desktopCreateAction != null)
-        _DesktopCreateButton(
-          label: config.desktopCreateLabel ?? 'Créer',
-          onPressed: config.desktopCreateAction!,
-        ),
       _LogoutButton(
         onPressed: () => _showLogoutConfirmationDialog(),
       ),
@@ -273,51 +268,6 @@ class _TopTab extends StatelessWidget {
                     ),
                   ),
                 ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DesktopCreateButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onPressed;
-
-  const _DesktopCreateButton({
-    required this.label,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: Material(
-        color: colorScheme.primary,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add, size: 14, color: colorScheme.onPrimary),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onPrimary,
-                  ),
-                ),
               ],
             ),
           ),
