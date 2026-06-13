@@ -70,6 +70,10 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
     final tentAsync = ref.watch(tentDetailProvider(widget.tentId));
     final editState = ref.watch(tentEditProvider(widget.tentId));
 
+    ref.listen(tentDetailProvider(widget.tentId), (_, __) {
+      dispatchAppBarConfig();
+    });
+
     if (editState.lastSaveTime != null &&
         editState.lastSaveTime != _lastSeenSaveTime) {
       _lastSeenSaveTime = editState.lastSaveTime;
