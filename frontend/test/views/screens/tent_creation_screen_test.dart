@@ -33,15 +33,19 @@ void main() {
       final submitButton = tester.widget<ElevatedButton>(
         find.widgetWithText(ElevatedButton, 'Créer la tente'),
       );
-      expect(submitButton.onPressed, isNotNull);
+      expect(submitButton.onPressed, isNull);
 
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer la tente'));
+      await tester.tap(
+        find.byKey(const ValueKey('tent-model-dropdown')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Canadienne'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Veuillez sélectionner un modèle de tente'),
-        findsOneWidget,
+      final enabledButton = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Créer la tente'),
       );
+      expect(enabledButton.onPressed, isNotNull);
     });
 
     testWidgets('keeps form values on submit failure', (
@@ -271,15 +275,31 @@ void main() {
       await tester.tap(find.text('Canadienne'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byKey(const ValueKey('tent-name-input')), '');
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-name-input')),
+        'Un nom',
+      );
       await tester.enterText(
         find.byKey(const ValueKey('tent-size-input')),
         '6',
       );
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Créer la tente'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Le nom de la tente est requis'), findsOneWidget);
+      final enabledButton = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Créer la tente'),
+      );
+      expect(enabledButton.onPressed, isNotNull);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('tent-name-input')),
+        '',
+      );
+      await tester.pumpAndSettle();
+
+      final disabledButton = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Créer la tente'),
+      );
+      expect(disabledButton.onPressed, isNull);
     });
 
     testWidgets('validates size boundaries at widget level', (

@@ -523,6 +523,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
 
   Widget _buildBottomBar(TentCreationState creationState) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isValid = _isFormComplete(creationState);
 
     return ClipRect(
       child: BackdropFilter(
@@ -559,7 +560,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              onPressed: creationState.isSubmitting
+              onPressed: creationState.isSubmitting || !isValid
                   ? null
                   : () => _submit(
                       ref.read(tentCreationProvider.notifier)),
@@ -600,6 +601,14 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     if (width >= 900) return 720;
     if (width >= 600) return 640;
     return double.infinity;
+  }
+
+  bool _isFormComplete(TentCreationState state) {
+    if (state.selectedModel == null) return false;
+    if (state.name.trim().isEmpty) return false;
+    final size = int.tryParse(state.sizeInput);
+    if (size == null || size < 1 || size > 100) return false;
+    return true;
   }
 
   Future<void> _submit(TentCreationNotifier notifier) async {
