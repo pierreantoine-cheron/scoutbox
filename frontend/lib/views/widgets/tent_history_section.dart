@@ -5,7 +5,12 @@ import 'package:intl/intl.dart';
 import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
-import 'state_badge.dart';
+
+class _FilterOption {
+  final String label;
+  final String? value;
+  const _FilterOption({required this.label, required this.value});
+}
 
 class TentHistorySection extends ConsumerStatefulWidget {
   final String tentId;
@@ -19,7 +24,9 @@ class TentHistorySection extends ConsumerStatefulWidget {
 class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
   String? _selectedCategory;
   String _searchQuery = '';
+  bool _isExpanded = false;
   final _searchController = TextEditingController();
+  static const int _collapsedCount = 3;
 
   static const _categories = <_FilterOption>[
     _FilterOption(label: 'Tout', value: null),
@@ -42,121 +49,138 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
       tentHistoryProvider(widget.tentId, category: _selectedCategory),
     );
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Historique', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 32,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 4),
-                itemBuilder: (context, index) {
-                  final cat = _categories[index];
-                  final isSelected = _selectedCategory == cat.value;
-                  return ChoiceChip(
-                    label: Text(cat.label),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedCategory = selected ? cat.value : null;
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Rechercher dans l\'historique',
-                prefixIcon: Icon(Icons.search),
-                isDense: true,
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Historique',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
                 ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 32,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 4),
+              itemBuilder: (context, index) {
+                final cat = _categories[index];
+                final isSelected = _selectedCategory == cat.value;
+                return ChoiceChip(
+                  label: Text(cat.label),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedCategory = selected ? cat.value : null;
+                    });
+                  },
+                );
               },
             ),
-            const SizedBox(height: 12),
-            historyAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              hintText: 'Rechercher dans l\'historique',
+              prefixIcon: Icon(Icons.search),
+              isDense: true,
+              border: OutlineInputBorder(),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value.toLowerCase();
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          historyAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (error, _) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _toHistoryErrorMessage(error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
                       ),
-                      SizedBox(width: 12),
-                      Text('Chargement de l\'historique...'),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              error: (error, _) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _toHistoryErrorMessage(error),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
+                  TextButton.icon(
+                    onPressed: () => ref.invalidate(
+                      tentHistoryProvider(
+                        widget.tentId,
+                        category: _selectedCategory,
                       ),
                     ),
-                    TextButton.icon(
-                      onPressed: () => ref.invalidate(
-                        tentHistoryProvider(
-                          widget.tentId,
-                          category: _selectedCategory,
-                        ),
-                      ),
-                      icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text('Réessayer'),
-                    ),
-                  ],
-                ),
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Réessayer'),
+                  ),
+                ],
               ),
-              data: (items) {
-                final filtered = items.where((item) {
-                  if (_searchQuery.isEmpty) return true;
-                  final query = _searchQuery;
-                  return _historySummary(item).toLowerCase().contains(query) ||
-                      item.actorDisplayName.toLowerCase().contains(query) ||
-                      item.action.toLowerCase().contains(query);
-                }).toList();
-
-                if (filtered.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: Text('Aucun historique à afficher.')),
-                  );
-                }
-
-                final grouped = _groupByDate(filtered);
-                return _HistoryList(grouped: grouped);
-              },
             ),
-          ],
-        ),
+            data: (items) => _buildHistoryList(items),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildHistoryList(List<TentHistoryItem> items) {
+    final filtered = items.where((item) {
+      if (_searchQuery.isEmpty) return true;
+      final query = _searchQuery;
+      return _historySummary(item).toLowerCase().contains(query) ||
+          item.actorDisplayName.toLowerCase().contains(query) ||
+          item.action.toLowerCase().contains(query);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: Text('Aucun historique à afficher.')),
+      );
+    }
+
+    final reversed = filtered.reversed.toList();
+    final displayed =
+        _isExpanded ? reversed : reversed.take(_collapsedCount).toList();
+    final hasMore = reversed.length > _collapsedCount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...displayed.map((item) => _CompactHistoryItem(item: item)),
+        if (hasMore)
+          TextButton.icon(
+            onPressed: () => setState(() => _isExpanded = !_isExpanded),
+            icon: Icon(
+              _isExpanded
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
+              size: 16,
+            ),
+            label: Text(
+              _isExpanded ? 'Réduire' : 'Afficher tout',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.only(top: 8),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+      ],
     );
   }
 
@@ -170,243 +194,142 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
     }
     return 'Impossible de charger l\'historique.';
   }
-
-  Map<String, List<TentHistoryItem>> _groupByDate(List<TentHistoryItem> items) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final dayFormatter = DateFormat('d MMMM yyyy', 'fr');
-
-    final grouped = <String, List<TentHistoryItem>>{};
-    for (final item in items) {
-      final localDate = item.occurredAt.toLocal();
-      final itemDay = DateTime(localDate.year, localDate.month, localDate.day);
-      String label;
-      if (itemDay == today) {
-        label = "Aujourd'hui";
-      } else if (itemDay == yesterday) {
-        label = 'Hier';
-      } else {
-        label = dayFormatter.format(localDate);
-      }
-      grouped.putIfAbsent(label, () => []).add(item);
-    }
-    return grouped;
-  }
 }
 
-class _FilterOption {
-  final String label;
-  final String? value;
-  const _FilterOption({required this.label, this.value});
-}
-
-class _HistoryList extends StatelessWidget {
-  final Map<String, List<TentHistoryItem>> grouped;
-
-  const _HistoryList({required this.grouped});
-
-  @override
-  Widget build(BuildContext context) {
-    final entries = grouped.entries.toList();
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: entries.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 4),
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                entry.key,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-            ...entry.value.map((item) => _HistoryEntry(item: item)),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _HistoryEntry extends StatelessWidget {
+class _CompactHistoryItem extends StatelessWidget {
   final TentHistoryItem item;
 
-  const _HistoryEntry({required this.item});
+  const _CompactHistoryItem({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     final icon = _actionIcon(item.action);
+    final dotColor = _actionDotColor(item.action, theme);
     final time = DateFormat('HH:mm', 'fr').format(item.occurredAt.toLocal());
+    final date = DateFormat('dd/MM/yyyy', 'fr').format(item.occurredAt.toLocal());
     final summary = _buildHistorySummary(item);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 2),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        leading: Icon(icon, size: 20, color: colorScheme.primary),
-        title: Text(summary, style: Theme.of(context).textTheme.bodyMedium),
-        subtitle: Text(
-          '$time • ${item.actorDisplayName}',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
-        ),
-        enabled: item.details.isNotEmpty,
-        children: item.details.map((detail) {
-          return _buildDetail(context, detail);
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildDetail(BuildContext context, TentHistoryDetail detail) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    if (detail.valueType == 'state' || detail.valueType == 'old_new') {
-      final hasOldNew = detail.oldValue != null && detail.newValue != null;
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 4,
-          runSpacing: 4,
-          children: [
-            Text(
-              '${detail.label}:',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            if (hasOldNew) ...[
-              _buildStateValue(context, detail.oldValue),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
-                child: Icon(Icons.arrow_forward, size: 14),
-              ),
-              _buildStateValue(context, detail.newValue),
-            ] else
-              Text(
-                detail.value ?? '',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-          ],
-        ),
-      );
-    }
-
-    if (detail.valueType == 'flag') {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Text(
-          detail.value ?? '',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontStyle: FontStyle.italic,
-            color: colorScheme.outline,
-          ),
-        ),
-      );
-    }
-
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Text(
-        '${detail.label}: ${detail.value ?? detail.newValue ?? detail.oldValue ?? ''}',
-        style: Theme.of(context).textTheme.bodySmall,
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Icon(icon, size: 16, color: theme.colorScheme.outline),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  summary,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$date • $time • ${item.actorDisplayName}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildStateValue(BuildContext context, String? value) {
-    if (value == null) return const Text('-');
-
-    final parsedPartState = PartState.values
-        .where((s) => s.toApiValue() == value || s.toFrenchLabel() == value)
-        .firstOrNull;
-
-    if (parsedPartState != null) {
-      return StateBadge.forPart(context, parsedPartState);
-    }
-
-    final parsedTentState = TentOverallState.values
-        .where((s) => s.toApiValue() == value || s.toFrenchLabel() == value)
-        .firstOrNull;
-
-    if (parsedTentState != null) {
-      return StateBadge.forTent(context, parsedTentState);
-    }
-
-    return Text(value);
+Color _actionDotColor(String action, ThemeData theme) {
+  switch (action) {
+    case 'tent_created':
+      return theme.colorScheme.primary;
+    case 'tent_updated':
+      return theme.colorScheme.primary;
+    case 'tent_archived':
+      return theme.colorScheme.error;
+    case 'part_state_changed':
+      return theme.colorScheme.tertiary;
+    case 'part_comments_changed':
+      return theme.colorScheme.primary;
+    case 'part_added':
+      return theme.colorScheme.tertiary;
+    case 'part_deleted':
+      return theme.colorScheme.error;
+    case 'tag_assigned':
+    case 'tag_removed':
+      return theme.colorScheme.secondary;
+    default:
+      return theme.colorScheme.outline;
   }
+}
 
-  IconData _actionIcon(String action) {
-    switch (action) {
-      case 'tent_created':
-        return Icons.add_circle_outline;
-      case 'tent_updated':
-        return Icons.edit_outlined;
-      case 'tent_archived':
-        return Icons.archive_outlined;
-      case 'part_state_changed':
-        return Icons.swap_horiz;
-      case 'part_comments_changed':
-        return Icons.comment_outlined;
-      case 'part_added':
-        return Icons.add_box_outlined;
-      case 'part_deleted':
-        return Icons.remove_circle_outline;
-      case 'tag_assigned':
-        return Icons.label_outlined;
-      case 'tag_removed':
-        return Icons.label_off_outlined;
-      default:
-        return Icons.info_outline;
-    }
+IconData _actionIcon(String action) {
+  switch (action) {
+    case 'tent_created':
+      return Icons.add_circle_outline;
+    case 'tent_updated':
+      return Icons.edit_outlined;
+    case 'tent_archived':
+      return Icons.archive_outlined;
+    case 'part_state_changed':
+      return Icons.swap_horiz;
+    case 'part_comments_changed':
+      return Icons.comment_outlined;
+    case 'part_added':
+      return Icons.add_box_outlined;
+    case 'part_deleted':
+      return Icons.remove_circle_outline;
+    case 'tag_assigned':
+      return Icons.label_outlined;
+    case 'tag_removed':
+      return Icons.label_off_outlined;
+    default:
+      return Icons.info_outline;
   }
 }
 
 String _buildHistorySummary(TentHistoryItem item) {
-  final localDate = item.occurredAt.toLocal();
-  final date = DateFormat('dd/MM/yyyy', 'fr').format(localDate);
-  final time = DateFormat('HH:mm', 'fr').format(localDate);
-  final suffix = 'le $date à $time par ${item.actorDisplayName}';
   final subject = item.subjectName ?? 'Pièce inconnue';
 
   switch (item.action) {
     case 'tent_created':
-      return 'Tente créée $suffix';
+      return 'Tente créée';
     case 'tent_updated':
-      return 'Informations mises à jour $suffix';
+      return 'Informations mises à jour';
     case 'tent_archived':
-      return 'Tente archivée $suffix';
+      return 'Tente archivée';
     case 'part_state_changed':
-      final stateDetail = item.details
-          .where((d) => d.valueType == 'state')
-          .firstOrNull;
+      final stateDetail =
+          item.details.where((d) => d.valueType == 'state').firstOrNull;
       final oldState = _historyStateLabel(stateDetail?.oldValue);
       final newState = _historyStateLabel(stateDetail?.newValue);
-      return 'État de $subject changé de $oldState à $newState $suffix';
+      return 'État de $subject changé de $oldState à $newState';
     case 'part_comments_changed':
-      return 'Commentaire de $subject modifié $suffix';
+      return 'Commentaire de $subject modifié';
     case 'part_added':
-      return 'Pièce ajoutée : $subject $suffix';
+      return 'Pièce ajoutée : $subject';
     case 'part_deleted':
-      return 'Pièce supprimée : $subject $suffix';
+      return 'Pièce supprimée : $subject';
     case 'tag_assigned':
-      return 'Étiquette ajoutée : $subject $suffix';
+      return 'Étiquette ajoutée : $subject';
     case 'tag_removed':
-      return 'Étiquette retirée : $subject $suffix';
+      return 'Étiquette retirée : $subject';
     default:
-      return 'Action ${item.action} $suffix';
+      return 'Action ${item.action}';
   }
 }
 

@@ -26,8 +26,8 @@ StateBadgeStyle tentStateBadgeStyle(
   final (icon, background, foreground) = switch (state) {
     TentOverallState.good => (
       Icons.check_circle_outline,
-      colorScheme.primaryContainer,
-      colorScheme.onPrimaryContainer,
+      semanticColors?.statePerfectBackground ?? colorScheme.primaryContainer,
+      semanticColors?.statePerfect ?? colorScheme.onPrimaryContainer,
     ),
     TentOverallState.needsRepair => (
       Icons.build_circle_outlined,
@@ -36,8 +36,8 @@ StateBadgeStyle tentStateBadgeStyle(
     ),
     TentOverallState.unusable => (
       Icons.cancel_outlined,
-      colorScheme.errorContainer,
-      colorScheme.onErrorContainer,
+      semanticColors?.stateUnusableBackground ?? colorScheme.errorContainer,
+      semanticColors?.stateUnusable ?? colorScheme.onErrorContainer,
     ),
   };
 
@@ -55,8 +55,8 @@ StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
   final (icon, background, foreground) = switch (state) {
     PartState.good => (
       Icons.check_circle_outline,
-      colorScheme.primaryContainer,
-      colorScheme.onPrimaryContainer,
+      semanticColors?.statePerfectBackground ?? colorScheme.primaryContainer,
+      semanticColors?.statePerfect ?? colorScheme.onPrimaryContainer,
     ),
     PartState.needsRepair => (
       Icons.build_circle_outlined,
@@ -65,13 +65,13 @@ StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
     ),
     PartState.missing => (
       Icons.remove_circle_outline,
-      colorScheme.secondaryContainer,
-      colorScheme.onSecondaryContainer,
+      semanticColors?.stateMissingBackground ?? colorScheme.secondaryContainer,
+      semanticColors?.stateMissing ?? colorScheme.onSecondaryContainer,
     ),
     PartState.unusable => (
       Icons.cancel_outlined,
-      colorScheme.errorContainer,
-      colorScheme.onErrorContainer,
+      semanticColors?.stateUnusableBackground ?? colorScheme.errorContainer,
+      semanticColors?.stateUnusable ?? colorScheme.onErrorContainer,
     ),
   };
 
