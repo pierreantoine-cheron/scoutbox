@@ -54,9 +54,15 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: _CountBadge(count: tagCount),
           ),
-        DesktopCreateButton(
-          label: 'Créer',
-          onPressed: () => _showCreateSheet(),
+        Builder(
+          builder: (context) {
+            final isDesktop = MediaQuery.of(context).size.width >= 768;
+            if (!isDesktop) return const SizedBox.shrink();
+            return DesktopCreateButton(
+              label: 'Créer',
+              onPressed: () => _showCreateSheet(),
+            );
+          },
         ),
         IconButton(
           icon: const Icon(Icons.refresh),
@@ -67,11 +73,10 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
         ),
         const LogoutButton(),
       ],
-      fab: FloatingActionButton.extended(
+      fab: FloatingActionButton(
         onPressed: () => _showCreateSheet(),
         tooltip: 'Créer une étiquette',
-        icon: const Icon(Icons.add),
-        label: const Text('Créer une étiquette'),
+        child: const Icon(Icons.add),
       ),
     );
   }

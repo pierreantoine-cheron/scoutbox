@@ -4,6 +4,7 @@ import '../../repositories/tag_repository.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
+import 'sheet_footer.dart';
 
 class TagSheet extends StatefulWidget {
   final Future<void> Function(String name, String color) onCreate;
@@ -93,7 +94,12 @@ class _TagSheetState extends State<TagSheet> {
                 ),
               ),
             ),
-            _buildFooter(context),
+            SheetFooter(
+              isLoading: _isSubmitting,
+              saveLabel: 'Créer',
+              onCancel: () => Navigator.of(context).pop(),
+              onSave: _submit,
+            ),
           ],
         ),
       ),
@@ -386,35 +392,6 @@ class _TagSheetState extends State<TagSheet> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildFooter(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          OutlinedButton(
-            onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          FilledButton(
-            onPressed: _isSubmitting ? null : _submit,
-            child: _isSubmitting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Créer'),
-          ),
-        ],
-      ),
     );
   }
 

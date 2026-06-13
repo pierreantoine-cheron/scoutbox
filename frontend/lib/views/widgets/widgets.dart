@@ -9,6 +9,7 @@ export 'logout_button.dart';
 export 'navigation_drawer.dart';
 export 'password_form_field.dart';
 export 'search_field.dart';
+export 'sheet_footer.dart';
 export 'state_badge.dart';
 export 'state_selector.dart';
 export 'tag_chip.dart';
