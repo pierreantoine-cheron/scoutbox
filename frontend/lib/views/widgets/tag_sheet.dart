@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../../repositories/tag_repository.dart';
 import '../../utils/app_colors.dart';
@@ -18,7 +19,6 @@ class TagSheet extends StatefulWidget {
 class _TagSheetState extends State<TagSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _customHexController = TextEditingController();
   String? _selectedColorKey;
   String _customHex = '';
   String? _submitError;
@@ -28,23 +28,23 @@ class _TagSheetState extends State<TagSheet> {
       _nameController.text.trim().length >=
       ValidationConstants.tagNameMinLength;
 
+  bool get _isCustomSelected => _selectedColorKey == 'Personnalisée';
+
   @override
   void initState() {
     super.initState();
     _selectedColorKey = TagPalette.options.first.label;
-    _customHexController.text = TagPalette.options.first.hex;
     _customHex = TagPalette.options.first.hex;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _customHexController.dispose();
     super.dispose();
   }
 
   String get _effectiveColor =>
-      (_selectedColorKey == 'Personnalisée') ? _customHex : _presetHex;
+      _isCustomSelected ? _customHex : _presetHex;
 
   String get _presetHex {
     for (final option in TagPalette.options) {
@@ -82,8 +82,10 @@ class _TagSheetState extends State<TagSheet> {
                       _buildColorLabel(colorScheme),
                       const SizedBox(height: 8),
                       _buildColorGrid(colorScheme),
-                      const SizedBox(height: 12),
-                      _buildCustomColorRow(colorScheme),
+                      if (_isCustomSelected) ...[
+                        const SizedBox(height: 8),
+                        _buildCustomColorPicker(),
+                      ],
                       const SizedBox(height: 12),
                       _buildPreview(colorScheme),
                       if (_submitError != null) ...[
@@ -175,20 +177,16 @@ class _TagSheetState extends State<TagSheet> {
           controller: _nameController,
           autofocus: true,
           maxLength: ValidationConstants.tagNameMaxLength,
-          decoration: const InputDecoration(hintText: 'Nom de l\'étiquette'),
-          validator: _validateName,
-          onChanged: (_) => setState(() => _submitError = null),
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            '${_nameController.text.length} / ${ValidationConstants.tagNameMaxLength}',
-            style: TextStyle(
+          decoration: const InputDecoration(
+            hintText: 'Nom de l\'étiquette',
+            counterStyle: TextStyle(
               fontSize: 12,
               fontFamily: 'monospace',
               color: AppColors.muted,
             ),
           ),
+          validator: _validateName,
+          onChanged: (_) => setState(() => _submitError = null),
         ),
       ],
     );
@@ -272,27 +270,29 @@ class _TagSheetState extends State<TagSheet> {
   }
 
   Widget _buildCustomColorSwatch(ColorScheme colorScheme) {
-    final isSelected = _selectedColorKey == 'Personnalisée';
+    final customColor = _customHex.isNotEmpty
+        ? TagPalette.colorFromHex(_customHex)
+        : TagPalette.colorFromHex(TagPalette.defaultColor);
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedColorKey = 'Personnalisée';
-          if (_customHex.isEmpty) {
-            _customHex = TagPalette.defaultColor;
-            _customHexController.text = TagPalette.defaultColor;
-          }
-        });
+        if (_customHex.isEmpty) {
+          _customHex = TagPalette.defaultColor;
+        }
+        setState(() => _selectedColorKey = 'Personnalisée');
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
+          color: _isCustomSelected ? customColor : null,
           borderRadius: BorderRadius.circular(AppRadii.md),
           border: Border.all(
-            color: isSelected ? colorScheme.onSurface : AppColors.border,
+            color: _isCustomSelected
+                ? colorScheme.onSurface
+                : AppColors.border,
             width: 2.5,
           ),
-          boxShadow: isSelected
+          boxShadow: _isCustomSelected
               ? [
                   BoxShadow(
                     color: colorScheme.onSurface.withValues(alpha: 0.2),
@@ -302,61 +302,35 @@ class _TagSheetState extends State<TagSheet> {
                 ]
               : null,
         ),
-        child: isSelected
-            ? const Icon(Icons.colorize, size: 18)
-            : Icon(Icons.colorize, size: 18, color: AppColors.muted),
+        child: _isCustomSelected
+            ? Icon(
+                Icons.check,
+                color: TagPalette.textColorFor(customColor),
+                size: 18,
+              )
+            : const Icon(Icons.colorize, size: 18, color: AppColors.muted),
       ),
     );
   }
 
-  Widget _buildCustomColorRow(ColorScheme colorScheme) {
-    final colorPreview = _effectiveColorValue;
+  Widget _buildCustomColorPicker() {
+    final currentColor = _customHex.isNotEmpty
+        ? TagPalette.colorFromHex(_customHex)
+        : TagPalette.colorFromHex(TagPalette.defaultColor);
 
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () => setState(() => _selectedColorKey = 'Personnalisée'),
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: colorPreview,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: _selectedColorKey == 'Personnalisée'
-                    ? colorScheme.onSurface
-                    : AppColors.border,
-                width: _selectedColorKey == 'Personnalisée' ? 2.5 : 1,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: TextField(
-            controller: _customHexController,
-            style: TextStyle(
-              fontSize: 13,
-              fontFamily: 'monospace',
-              color: AppColors.muted,
-            ),
-            decoration: const InputDecoration(
-              hintText: '#RRGGBB',
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            ),
-            onChanged: (value) {
-              final normalized = value.startsWith('#') ? value : '#$value';
-              if (_isValidHex(normalized) || value.isEmpty) {
-                setState(() {
-                  _customHex = normalized;
-                  _selectedColorKey = 'Personnalisée';
-                });
-              }
-            },
-          ),
-        ),
-      ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadii.md),
+      child: ColorPicker(
+        pickerColor: currentColor,
+        onColorChanged: (color) {
+          setState(() {
+            _customHex = _colorToHex(color);
+          });
+        },
+        enableAlpha: false,
+        labelTypes: const [],
+        showLabel: false,
+      ),
     );
   }
 
@@ -412,19 +386,12 @@ class _TagSheetState extends State<TagSheet> {
     return null;
   }
 
-  bool _isValidHex(String value) {
-    if (!value.startsWith('#')) return false;
-    final hex = value.substring(1);
-    return hex.length == 6 && int.tryParse(hex, radix: 16) != null;
+  String _colorToHex(Color color) {
+    return '#${color.red.toRadixString(16).padLeft(2, '0').toUpperCase()}${color.green.toRadixString(16).padLeft(2, '0').toUpperCase()}${color.blue.toRadixString(16).padLeft(2, '0').toUpperCase()}';
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-
-    if (_selectedColorKey == 'Personnalisée' && !_isValidHex(_customHex)) {
-      setState(() => _submitError = 'Format de couleur invalide (ex: #1A70E5)');
-      return;
-    }
 
     setState(() {
       _isSubmitting = true;
