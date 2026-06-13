@@ -153,7 +153,8 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
       );
     }
 
-    final reversed = filtered.reversed.toList();
+    final reversed = filtered.toList()
+      ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
     final displayed =
         _isExpanded ? reversed : reversed.take(_collapsedCount).toList();
     final hasMore = reversed.length > _collapsedCount;

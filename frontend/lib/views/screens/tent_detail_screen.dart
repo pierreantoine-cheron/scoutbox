@@ -911,7 +911,6 @@ class _PartsBlock extends ConsumerStatefulWidget {
 class _PartsBlockState extends ConsumerState<_PartsBlock> {
   bool _isSelectionMode = false;
   final Set<String> _selectedPartIds = {};
-  String? _editingCommentPartId;
 
   void _exitSelectionMode() {
     setState(() {
@@ -957,41 +956,6 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
     }
 
     if (allSucceeded) _exitSelectionMode();
-  }
-
-  void _startEditComment(Part part) {
-    setState(() => _editingCommentPartId = part.id);
-  }
-
-  void _cancelEditComment() {
-    setState(() => _editingCommentPartId = null);
-  }
-
-  Future<void> _saveComment(Part part, String value) async {
-    final normalized = value.trim().isEmpty ? null : value.trim();
-    if (normalized == part.comments?.trim() ||
-        (normalized == null && (part.comments?.trim().isEmpty ?? true))) {
-      _cancelEditComment();
-      return;
-    }
-
-    final notifier = ref.read(partUpdateProvider(widget.tentId).notifier);
-    final updateState = ref.read(partUpdateProvider(widget.tentId));
-    final displayedState = updateState.resolveDisplayedState(part);
-
-    final result = await notifier.updatePartState(
-      partId: part.id,
-      previousState: displayedState,
-      newState: displayedState,
-      previousComments: part.comments,
-      newComments: normalized,
-    );
-
-    if (!mounted) return;
-    if (result == PartUpdateResult.success) {
-      ref.read(successIndicatorProvider.notifier).fire();
-      _cancelEditComment();
-    }
   }
 
   @override
@@ -1059,7 +1023,6 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
 
   Widget _buildPartRow(Part part, ThemeData theme) {
     final isSelected = _selectedPartIds.contains(part.id);
-    final isEditingThisComment = _editingCommentPartId == part.id;
     final updateState = ref.watch(partUpdateProvider(widget.tentId));
     final displayedState = updateState.resolveDisplayedState(part);
     final inlineError = updateState.errorFor(part.id);
@@ -1069,6 +1032,9 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
         .contains(part.id);
 
     return InkWell(
+      onTap: widget.isArchived
+          ? null
+          : () => _showEditPartCommentSheet(part),
       onLongPress: widget.isArchived
           ? null
           : () {
@@ -1083,7 +1049,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
       child: Opacity(
         opacity: isRemoving ? 0.4 : 1,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1097,11 +1063,36 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
                       visualDensity: VisualDensity.compact,
                     ),
                   Expanded(
-                    child: Text(
-                      part.partKindName,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 140,
+                          child: Text(
+                            part.partKindName,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (!_isSelectionMode)
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                _partCommentDisplay(part.comments),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.outline,
+                                  fontStyle: _hasNoComment(part.comments)
+                                      ? FontStyle.italic
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1117,15 +1108,6 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
                     ),
                 ],
               ),
-              if (!_isSelectionMode)
-                _PartCommentRow(
-                  part: part,
-                  isEditing: isEditingThisComment,
-                  isArchived: widget.isArchived,
-                  onStartEdit: () => _startEditComment(part),
-                  onCancelEdit: _cancelEditComment,
-                  onSave: (value) => _saveComment(part, value),
-                ),
               if (inlineError != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -1154,6 +1136,68 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
         ),
       ),
     );
+  }
+
+  Future<void> _showEditPartCommentSheet(Part part) async {
+    final controller = TextEditingController(text: part.comments ?? '');
+    final focusNode = FocusNode();
+
+    final result = await showResponsiveSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return _EditSheetContent(
+          title: 'Modifier le commentaire',
+          controller: controller,
+          focusNode: focusNode,
+          maxLength: ValidationConstants.tentCommentsMaxLength,
+          label: 'Commentaire',
+          maxLines: 4,
+          onCancel: () => Navigator.of(sheetContext).pop(false),
+          onSave: () => Navigator.of(sheetContext).pop(true),
+        );
+      },
+    );
+
+    controller.dispose();
+    focusNode.dispose();
+
+    if (result != true || !mounted) return;
+
+    final newComments = controller.text.trim();
+    final normalized = newComments.isEmpty ? null : newComments;
+    if (normalized == part.comments?.trim() ||
+        (normalized == null && (part.comments?.trim().isEmpty ?? true))) {
+      return;
+    }
+
+    final updateState = ref.read(partUpdateProvider(widget.tentId));
+    final displayedState = updateState.resolveDisplayedState(part);
+
+    final notifier = ref.read(partUpdateProvider(widget.tentId).notifier);
+    final updateResult = await notifier.updatePartState(
+      partId: part.id,
+      previousState: displayedState,
+      newState: displayedState,
+      previousComments: part.comments,
+      newComments: normalized,
+    );
+
+    if (!mounted) return;
+    if (updateResult == PartUpdateResult.success) {
+      ref.read(successIndicatorProvider.notifier).fire();
+    }
+  }
+
+  String _partCommentDisplay(String? comments) {
+    final normalized = comments?.trim();
+    if (normalized == null || normalized.isEmpty) return 'Pas de commentaire';
+    return normalized;
+  }
+
+  bool _hasNoComment(String? comments) {
+    final normalized = comments?.trim();
+    return normalized == null || normalized.isEmpty;
   }
 
   void _showEditPartsSheet() {
@@ -1247,88 +1291,6 @@ class _PartStateBadge extends ConsumerWidget {
         ref.read(successIndicatorProvider.notifier).fire();
       }
     }
-  }
-}
-
-class _PartCommentRow extends StatelessWidget {
-  final Part part;
-  final bool isEditing;
-  final bool isArchived;
-  final VoidCallback onStartEdit;
-  final VoidCallback onCancelEdit;
-  final void Function(String) onSave;
-
-  const _PartCommentRow({
-    required this.part,
-    required this.isEditing,
-    required this.isArchived,
-    required this.onStartEdit,
-    required this.onCancelEdit,
-    required this.onSave,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    if (isEditing) {
-      return InlineTextEditor(
-        value: part.comments ?? '',
-        isEditing: true,
-        isEnabled: true,
-        hintText: 'Ajouter un commentaire...',
-        maxLength: ValidationConstants.tentCommentsMaxLength,
-        minLines: 1,
-        maxLines: 3,
-        dense: true,
-        validator: (_) => null,
-        onStartEditing: () {},
-        onCancel: onCancelEdit,
-        onConfirm: onSave,
-        readOnlyBuilder: (_, _) => const SizedBox.shrink(),
-      );
-    }
-
-    return InkWell(
-      onTap: isArchived ? null : onStartEdit,
-      borderRadius: BorderRadius.circular(4),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                _displayComment(part.comments),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
-                  fontStyle:
-                      _hasNoComment(part.comments) ? FontStyle.italic : null,
-                ),
-              ),
-            ),
-            if (!isArchived) ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.edit_outlined,
-                size: 14,
-                color: theme.colorScheme.outline,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _displayComment(String? comments) {
-    final normalized = comments?.trim();
-    if (normalized == null || normalized.isEmpty) return 'Ajouter un commentaire';
-    return normalized;
-  }
-
-  bool _hasNoComment(String? comments) {
-    final normalized = comments?.trim();
-    return normalized == null || normalized.isEmpty;
   }
 }
 
