@@ -1429,7 +1429,8 @@ class _EditSheetContentState extends State<_EditSheetContent> {
                   labelText: widget.label,
                   border: const OutlineInputBorder(),
                 ),
-                textInputAction: TextInputAction.done,
+                textInputAction:
+                    (widget.maxLines ?? 1) > 1 ? TextInputAction.newline : TextInputAction.done,
                 validator: widget.validator ??
                     (value) {
                       if ((value ?? '').trim().isEmpty) {
@@ -1437,7 +1438,6 @@ class _EditSheetContentState extends State<_EditSheetContent> {
                       }
                       return null;
                     },
-                onFieldSubmitted: (_) => widget.onSave(),
               ),
             ),
           ),
