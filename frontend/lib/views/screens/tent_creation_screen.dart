@@ -287,9 +287,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                 ],
-                textAlign: TextAlign.center,
                 decoration: InputDecoration(
-                  hintText: '6',
                   filled: false,
                   fillColor: Colors.transparent,
                   counterText: '',
