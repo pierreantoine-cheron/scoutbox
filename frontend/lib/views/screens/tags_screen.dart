@@ -5,6 +5,7 @@ import '../../models/tag.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tag_repository.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/design_constants.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 
@@ -42,21 +43,32 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
 
   @override
   AppBarConfig buildAppBarConfig() {
+    final tagCount = ref.read(tagsProvider).value?.length ?? 0;
+    final isLoading = ref.read(tagsProvider).isLoading;
+
     return AppBarConfig(
       screenId: 'tags',
-      title: const Text('Étiquettes'),
       actions: [
+        if (tagCount > 0)
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: _CountBadge(count: tagCount),
+          ),
+        DesktopCreateButton(
+          label: 'Créer',
+          onPressed: () => _showCreateSheet(),
+        ),
         IconButton(
           icon: const Icon(Icons.refresh),
           tooltip: 'Actualiser les étiquettes',
-          onPressed: ref.read(tagsProvider).isLoading
+          onPressed: isLoading
               ? null
               : () => ref.read(tagsProvider.notifier).refresh(),
         ),
         const LogoutButton(),
       ],
       fab: FloatingActionButton.extended(
-        onPressed: _showCreateDialog,
+        onPressed: () => _showCreateSheet(),
         tooltip: 'Créer une étiquette',
         icon: const Icon(Icons.add),
         label: const Text('Créer une étiquette'),
@@ -69,7 +81,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
     final tagsState = ref.watch(tagsProvider);
     final refreshIssue = ref.watch(tagListRefreshIssueProvider);
 
-    ref.listen(tagsProvider.select((state) => state.isLoading), (_, _) {
+    ref.listen(tagsProvider, (_, _) {
       dispatchAppBarConfig();
     });
 
@@ -89,68 +101,103 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
 
   Widget _buildDataState(List<Tag> tags, Object? refreshIssue) {
     if (tags.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: () => ref.read(tagsProvider.notifier).refresh(),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(24),
-          children: [
-            if (refreshIssue != null)
-              _RefreshWarningCard(message: _refreshWarning(refreshIssue)),
-            const SizedBox(height: 96),
-            const Icon(Icons.label_outline, size: 64),
-            const SizedBox(height: 16),
-            const Center(
-              child: Text(
-                'Aucune étiquette disponible',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Center(child: Text('Créez votre première étiquette.')),
-          ],
-        ),
-      );
+      return _buildEmptyState(refreshIssue);
     }
 
     return RefreshIndicator(
       onRefresh: () => ref.read(tagsProvider.notifier).refresh(),
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        itemCount: tags.length + (refreshIssue == null ? 0 : 1),
-        itemBuilder: (context, index) {
-          if (refreshIssue != null && index == 0) {
-            return _RefreshWarningCard(message: _refreshWarning(refreshIssue));
-          }
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final crossAxisCount = width >= 1100
+              ? 3
+              : width >= 768
+              ? 2
+              : 1;
+          final spacing = AppSpacing.sm;
+          final cardWidth =
+              (width - 2 * 16 - (crossAxisCount - 1) * spacing) /
+              crossAxisCount;
 
-          final tagIndex = refreshIssue == null ? index : index - 1;
-          final tag = tags[tagIndex];
-          return Card(
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: TagPalette.colorFromHex(tag.color),
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (refreshIssue != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: _RefreshWarningCard(
+                    message: _refreshWarning(refreshIssue),
+                  ),
+                ),
+              Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: tags.map((tag) {
+                  return SizedBox(
+                    width: cardWidth,
+                    child: _TagCard(tag: tag),
+                  );
+                }).toList(),
               ),
-              title: Text(tag.name),
-              subtitle: Text(
-                '${tag.tentCount} tente${tag.tentCount > 1 ? 's' : ''}',
-              ),
-              trailing: TagChip(
-                name: tag.name,
-                color: TagPalette.colorFromHex(tag.color),
-              ),
-            ),
+            ],
           );
         },
       ),
     );
   }
 
-  Future<void> _showCreateDialog() async {
-    final created = await showDialog<bool>(
+  Widget _buildEmptyState(Object? refreshIssue) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(tagsProvider.notifier).refresh(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: [
+          if (refreshIssue != null)
+            _RefreshWarningCard(message: _refreshWarning(refreshIssue)),
+          const SizedBox(height: 96),
+          Icon(Icons.label_outline, size: 48, color: AppColors.muted),
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              'Aucune étiquette',
+              style: TextStyle(fontSize: 17, color: colorScheme.onSurface),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Center(
+            child: Text(
+              'Créez des étiquettes pour organiser vos tentes.',
+              style: TextStyle(color: AppColors.muted),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: FilledButton.icon(
+              onPressed: () => _showCreateSheet(),
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Nouvelle étiquette'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showCreateSheet() async {
+    final created = await showModalBottomSheet<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (_) => TagCreationDialog(
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
+      ),
+      builder: (_) => TagSheet(
         onCreate: (name, color) =>
             ref.read(tagsProvider.notifier).createTag(name: name, color: color),
       ),
@@ -172,6 +219,165 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
         ? issue.message
         : 'Impossible d\'actualiser les étiquettes pour le moment.';
     return 'Les données affichées peuvent être anciennes. $detail';
+  }
+}
+
+class _CountBadge extends StatelessWidget {
+  final int count;
+
+  const _CountBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '$count étiquette${count > 1 ? 's' : ''}',
+      style: const TextStyle(
+        fontSize: 12,
+        fontFamily: 'monospace',
+        color: AppColors.muted,
+      ),
+    );
+  }
+}
+
+class _TagCard extends StatelessWidget {
+  final Tag tag;
+
+  const _TagCard({required this.tag});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final tagColor = TagPalette.colorFromHex(tag.color);
+
+    return Material(
+      color: colorScheme.surface,
+      borderRadius: BorderRadius.circular(AppRadii.xl),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppRadii.xl),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: tagColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: tagColor.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      tag.name,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${tag.tentCount} tente${tag.tentCount > 1 ? 's' : ''}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 13,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: tagColor,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                ),
+                child: Text(
+                  tag.name,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert, color: AppColors.muted, size: 18),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                offset: const Offset(0, 4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                elevation: AppElevation.dropdown,
+                color: colorScheme.surface,
+                itemBuilder: (_) => [
+                  PopupMenuItem<String>(
+                    value: 'edit',
+                    enabled: false,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 16, color: AppColors.muted),
+                        const SizedBox(width: AppSpacing.sm),
+                        const Text('Modifier'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    enabled: false,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          size: 16,
+                          color: AppColors.stateUnusable,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Supprimer',
+                          style: TextStyle(color: AppColors.stateUnusable),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

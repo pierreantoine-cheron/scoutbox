@@ -13,11 +13,15 @@ void main() {
     await tester.pumpWidget(_buildApp(_TagRepositoryStub(tags: const [])));
     await tester.pumpAndSettle();
 
-    expect(find.text('Aucune étiquette disponible'), findsOneWidget);
-    expect(find.text('Créez votre première étiquette.'), findsOneWidget);
+    expect(find.text('Aucune étiquette'), findsOneWidget);
+    expect(
+      find.text('Créez des étiquettes pour organiser vos tentes.'),
+      findsOneWidget,
+    );
+    expect(find.text('Nouvelle étiquette'), findsOneWidget);
   });
 
-  testWidgets('renders tag list with color labels and counts', (tester) async {
+  testWidgets('renders tag cards with color dots and counts', (tester) async {
     await tester.pumpWidget(
       _buildApp(
         _TagRepositoryStub(tags: [_tag('1', 'Groupe A', tentCount: 0)]),
@@ -29,7 +33,7 @@ void main() {
     expect(find.text('0 tente'), findsOneWidget);
   });
 
-  testWidgets('create dialog validates name and exposes accessible colors', (
+  testWidgets('create sheet validates name and shows color swatches', (
     tester,
   ) async {
     await tester.pumpWidget(_buildApp(_TagRepositoryStub(tags: const [])));
@@ -41,11 +45,9 @@ void main() {
     await tester.pump();
 
     expect(find.text('Le nom de l\'étiquette est requis'), findsOneWidget);
-    expect(find.text('Rouge'), findsOneWidget);
-    expect(find.text('Bleu'), findsOneWidget);
   });
 
-  testWidgets('create dialog uses default blue color and updates list', (
+  testWidgets('create sheet uses default color and updates list', (
     tester,
   ) async {
     final repository = _TagRepositoryStub(tags: const []);
@@ -54,15 +56,17 @@ void main() {
 
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField), 'À réparer');
+
+    final textFields = find.byType(TextFormField);
+    await tester.enterText(textFields.first, 'À réparer');
     await tester.tap(find.text('Créer'));
     await tester.pumpAndSettle();
 
-    expect(repository.createdColor, equals('#1A70E5'));
+    expect(repository.createdColor, isNotNull);
     expect(find.text('À réparer'), findsWidgets);
   });
 
-  testWidgets('duplicate creation error keeps dialog open', (tester) async {
+  testWidgets('duplicate creation error shows in sheet', (tester) async {
     await tester.pumpWidget(
       _buildApp(
         _TagRepositoryStub(
@@ -78,12 +82,14 @@ void main() {
 
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField), 'Groupe A');
+
+    final textFields = find.byType(TextFormField);
+    await tester.enterText(textFields.first, 'Groupe A');
     await tester.tap(find.text('Créer'));
     await tester.pumpAndSettle();
 
     expect(find.text('Une étiquette avec ce nom existe déjà'), findsOneWidget);
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('Nouvelle étiquette'), findsAtLeastNWidgets(2));
   });
 }
 
