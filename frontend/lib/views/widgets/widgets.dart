@@ -5,6 +5,7 @@ export 'confirm_dialog.dart';
 export 'desktop_create_button.dart';
 export 'fading_cloud_done_icon.dart';
 export 'inline_text_editor.dart';
+export 'logout_button.dart';
 export 'navigation_drawer.dart';
 export 'password_form_field.dart';
 export 'search_field.dart';

@@ -53,6 +53,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
               ? null
               : () => ref.read(tagsProvider.notifier).refresh(),
         ),
+        const LogoutButton(),
       ],
       fab: FloatingActionButton.extended(
         onPressed: _showCreateDialog,

@@ -143,9 +143,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     final actions = <Widget>[
       FadingCloudDoneIcon(trigger: successTrigger),
       if (config.actions != null) ...config.actions!,
-      _LogoutButton(
-        onPressed: () => _showLogoutConfirmationDialog(),
-      ),
     ];
 
     return AppBar(
@@ -155,18 +152,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       titleSpacing: isDesktop && isRootScreen ? 24 : null,
       actions: actions,
     );
-  }
-
-  Future<void> _showLogoutConfirmationDialog() async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Se déconnecter ?',
-      content: 'Votre session sera fermée.',
-      confirmLabel: 'Déconnecter',
-    );
-    if (confirmed && mounted) {
-      await ref.read(authProvider.notifier).logout();
-    }
   }
 }
 
@@ -273,21 +258,6 @@ class _TopTab extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _LogoutButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _LogoutButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.logout),
-      tooltip: 'Se déconnecter',
-      onPressed: onPressed,
     );
   }
 }

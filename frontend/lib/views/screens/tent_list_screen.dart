@@ -91,6 +91,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
                 : () => ref.read(tentListProvider.notifier).refresh(),
           ),
         ],
+        const LogoutButton(),
       ],
       fab: FloatingActionButton(
         onPressed: () => _openTentCreation(context),
