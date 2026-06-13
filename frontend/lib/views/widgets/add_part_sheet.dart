@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
+import '../../repositories/tent_repository.dart';
 import '../../utils/design_constants.dart';
 
 class AddPartSheet extends ConsumerStatefulWidget {
@@ -19,12 +20,14 @@ class AddPartSheet extends ConsumerStatefulWidget {
 }
 
 class _AddPartSheetState extends ConsumerState<AddPartSheet> {
-  final Set<String> _selectedIds = {};
-  final TextEditingController _searchController = TextEditingController();
+  late Set<String> _selectedIds;
+  String? _errorMessage;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    _selectedIds = {...widget.existingPartKindIds};
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(partManagementProvider(widget.tentId).notifier).loadPartKinds();
@@ -32,225 +35,257 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
   }
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final state = ref.watch(partManagementProvider(widget.tentId));
     final theme = Theme.of(context);
-    final canSubmit =
-        _selectedIds.isNotEmpty &&
-        !state.isAdding &&
-        !_hasEmptySearchResults(state);
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
-    return FractionallySizedBox(
-      heightFactor: 0.9,
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Ajouter une pièce', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Rechercher...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!isDesktop) const _SheetHandle(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+            child: Text(
+              'Modifier les éléments',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
-              onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 12),
-            if (state.isLoadingPartKinds)
-              const Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 8),
-                        Text('Chargement des pièces…'),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            else if (state.partKindsError != null)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Text(
-                    state.partKindsError!,
-                    style: TextStyle(color: theme.colorScheme.error),
-                  ),
-                ),
-              )
-            else
-              Expanded(child: _buildPartKindList(state, theme)),
-            if (state.addError != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                state.addError!,
-                style: TextStyle(color: theme.colorScheme.error),
+          ),
+          if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+              child: Text(
+                _errorMessage!,
+                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
               ),
-            ],
-            const SizedBox(height: 16),
-            Row(
+            ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxHeight: 350,
+            ),
+            child: _buildPartKindList(state, theme),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.colorScheme.onSurface,
-                      side: BorderSide(color: theme.colorScheme.outlineVariant),
-                      minimumSize: const Size(0, 48),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                    ),
-                    child: const Text('Annuler'),
+                OutlinedButton(
+                  onPressed: _isSaving
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.onSurface,
+                    side: BorderSide(color: theme.colorScheme.outlineVariant),
+                    minimumSize: const Size(0, 48),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                   ),
+                  child: const Text('Annuler'),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: canSubmit ? _onConfirm : null,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 48),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.md),
-                      ),
+                const SizedBox(width: 10),
+                FilledButton(
+                  onPressed: _isSaving ? null : _onSave,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 48),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
-                    child: state.isAdding
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Ajouter'),
                   ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Enregistrer'),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  bool _hasEmptySearchResults(PartManagementState state) {
-    final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) return false;
-    return !state.partKinds.any((pk) => pk.name.toLowerCase().contains(query));
-  }
-
   Widget _buildPartKindList(PartManagementState state, ThemeData theme) {
-    final query = _searchController.text.trim().toLowerCase();
-    final partKinds = state.partKinds.where((pk) {
-      if (query.isEmpty) return true;
-      return pk.name.toLowerCase().contains(query);
-    }).toList();
+    if (state.isLoadingPartKinds) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-    final existingIds = widget.existingPartKindIds;
-
-    if (partKinds.isEmpty && query.isNotEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(
+    if (state.partKindsError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
-            'Aucun type de pièce trouvé',
-            textAlign: TextAlign.center,
+            state.partKindsError!,
+            style: TextStyle(color: theme.colorScheme.error),
           ),
         ),
       );
     }
 
-    final existingPartKinds = partKinds
-        .where((pk) => existingIds.contains(pk.id))
-        .toList();
-    final availablePartKinds = partKinds
-        .where((pk) => !existingIds.contains(pk.id))
-        .toList();
+    final partKinds = state.partKinds.toList()
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
-    final allPresent = availablePartKinds.isEmpty && partKinds.isNotEmpty;
+    if (partKinds.isEmpty) {
+      return const Center(child: Text('Aucun élément disponible.'));
+    }
 
-    return ListView(
-      children: [
-        if (allPresent)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Center(
-              child: Text(
-                'Toutes les pièces sont déjà présentes sur cette tente.',
-                textAlign: TextAlign.center,
-              ),
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      itemCount: partKinds.length,
+      itemBuilder: (context, index) {
+        final pk = partKinds[index];
+        final isSelected = _selectedIds.contains(pk.id);
+
+        return InkWell(
+          onTap: _isSaving ? null : () => _togglePartKind(pk.id),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: theme.colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    pk.name,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ...availablePartKinds.map(
-          (pk) => CheckboxListTile(
-            value: _selectedIds.contains(pk.id),
-            onChanged: (checked) {
-              setState(() {
-                if (checked == true) {
-                  _selectedIds.add(pk.id);
-                } else {
-                  _selectedIds.remove(pk.id);
-                }
-              });
-            },
-            title: Text(pk.name),
-            subtitle: Text('Ordre : ${pk.displayOrder}'),
-            controlAffinity: ListTileControlAffinity.leading,
-            dense: true,
-          ),
-        ),
-        if (existingPartKinds.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
-            child: Text(
-              'Déjà présente',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          ...existingPartKinds.map(
-            (pk) => CheckboxListTile(
-              value: false,
-              onChanged: null,
-              title: Text(
-                pk.name,
-                style: TextStyle(color: theme.colorScheme.outline),
-              ),
-              subtitle: Text(
-                'Ordre : ${pk.displayOrder}',
-                style: TextStyle(color: theme.colorScheme.outline),
-              ),
-              controlAffinity: ListTileControlAffinity.leading,
-              dense: true,
-            ),
-          ),
-        ],
-      ],
+        );
+      },
     );
   }
 
-  Future<void> _onConfirm() async {
-    final success = await ref
-        .read(partManagementProvider(widget.tentId).notifier)
-        .addParts(_selectedIds.toList());
-    if (success && mounted) {
+  void _togglePartKind(String partKindId) {
+    setState(() {
+      _errorMessage = null;
+      if (_selectedIds.contains(partKindId)) {
+        _selectedIds.remove(partKindId);
+      } else {
+        _selectedIds.add(partKindId);
+      }
+    });
+  }
+
+  Future<void> _onSave() async {
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final toAdd = _selectedIds
+          .where((id) => !widget.existingPartKindIds.contains(id))
+          .toList();
+      final toRemove = widget.existingPartKindIds
+          .where((id) => !_selectedIds.contains(id))
+          .toList();
+
+      if (toAdd.isEmpty && toRemove.isEmpty) {
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+
+      final repository = ref.read(tentRepositoryProvider);
+
+      if (toAdd.isNotEmpty) {
+        await repository.addPartsToTent(
+          tentId: widget.tentId,
+          partKindIds: toAdd,
+        );
+      }
+
+      if (toRemove.isNotEmpty) {
+        final partsAsync = ref.read(tentDetailProvider(widget.tentId));
+        final parts = partsAsync.asData?.value.parts ?? [];
+        for (final partKindId in toRemove) {
+          final part = parts
+              .where((p) => p.partKindId == partKindId)
+              .firstOrNull;
+          if (part != null) {
+            await repository.removePart(partId: part.id);
+          }
+        }
+      }
+
+      if (!mounted) return;
+
+      ref.invalidate(tentDetailProvider(widget.tentId));
+      invalidateTentHistory(ref, widget.tentId);
       Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+
+      final message = error is TentRepositoryException
+          ? error.message
+          : 'Impossible de modifier les éléments. Réessayez.';
+      setState(() {
+        _errorMessage = message;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
+  }
+}
+
+class _SheetHandle extends StatelessWidget {
+  const _SheetHandle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Container(
+          width: 36,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            borderRadius: BorderRadius.circular(AppRadii.pill),
+          ),
+        ),
+      ),
+    );
   }
 }
