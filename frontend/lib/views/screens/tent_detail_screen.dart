@@ -705,14 +705,9 @@ class _CommentsPreview extends ConsumerWidget {
 
     return InkWell(
       onTap: isArchived ? null : () => _showEditCommentsSheet(context, ref),
-      borderRadius: BorderRadius.circular(AppRadii.md),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(AppRadii.md),
-        ),
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
