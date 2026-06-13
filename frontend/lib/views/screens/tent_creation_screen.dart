@@ -97,7 +97,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
                   child: modelsState.when(
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
-                    error: (_, __) => _buildModelsError(),
+                    error: (_, _) => _buildModelsError(),
                     data: (models) => models.isEmpty
                         ? _buildModelsEmpty()
                         : _buildForm(models, creationState),
