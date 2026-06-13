@@ -216,19 +216,7 @@ class _CompactHistoryItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: dotColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Icon(icon, size: 16, color: theme.colorScheme.outline),
+          Icon(icon, size: 16, color: dotColor),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
