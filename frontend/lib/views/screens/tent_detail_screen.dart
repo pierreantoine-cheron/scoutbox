@@ -1490,19 +1490,6 @@ class _EditSheetContentState extends State<_EditSheetContent> {
               ),
             ),
           ),
-          if (widget.maxLength != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  '${widget.controller.text.length} / ${widget.maxLength}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
-                ),
-              ),
-            ),
           const SizedBox(height: 4),
           const Divider(),
           Padding(
