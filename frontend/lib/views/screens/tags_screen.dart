@@ -6,6 +6,7 @@ import '../../providers/providers.dart';
 import '../../repositories/tag_repository.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
+import '../../utils/responsive_sheet.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 
@@ -194,14 +195,9 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
   }
 
   Future<void> _showCreateSheet() async {
-    final created = await showModalBottomSheet<bool>(
+    final created = await showResponsiveSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
-      ),
+      useRootNavigator: true,
       builder: (_) => TagSheet(
         onCreate: (name, color) =>
             ref.read(tagsProvider.notifier).createTag(name: name, color: color),

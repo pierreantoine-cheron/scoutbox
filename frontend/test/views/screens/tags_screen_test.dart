@@ -33,7 +33,7 @@ void main() {
     expect(find.text('0 tente'), findsOneWidget);
   });
 
-  testWidgets('create sheet validates name and shows color swatches', (
+  testWidgets('create sheet disables save button when name is empty', (
     tester,
   ) async {
     await tester.pumpWidget(_buildApp(_TagRepositoryStub(tags: const [])));
@@ -41,10 +41,16 @@ void main() {
 
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Créer'));
+
+    final createButton = find.widgetWithText(FilledButton, 'Créer');
+    expect(tester.widget<FilledButton>(createButton).onPressed, isNull);
+
+    final textFields = find.byType(TextFormField);
+    await tester.enterText(textFields.first, 'AB');
     await tester.pump();
 
-    expect(find.text('Le nom de l\'étiquette est requis'), findsOneWidget);
+    final enabledButton = find.widgetWithText(FilledButton, 'Créer');
+    expect(tester.widget<FilledButton>(enabledButton).onPressed, isNotNull);
   });
 
   testWidgets('create sheet uses default color and updates list', (
@@ -59,7 +65,10 @@ void main() {
 
     final textFields = find.byType(TextFormField);
     await tester.enterText(textFields.first, 'À réparer');
-    await tester.tap(find.text('Créer'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Créer'));
+    await tester.pump();
+    await tester.pump();
     await tester.pumpAndSettle();
 
     expect(repository.createdColor, isNotNull);
@@ -85,7 +94,10 @@ void main() {
 
     final textFields = find.byType(TextFormField);
     await tester.enterText(textFields.first, 'Groupe A');
-    await tester.tap(find.text('Créer'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Créer'));
+    await tester.pump();
+    await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('Une étiquette avec ce nom existe déjà'), findsOneWidget);

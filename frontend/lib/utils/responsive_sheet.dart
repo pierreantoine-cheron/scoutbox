@@ -11,6 +11,7 @@ Future<T?> showResponsiveSheet<T>({
   required WidgetBuilder builder,
   bool useSafeArea = true,
   bool isScrollControlled = true,
+  bool useRootNavigator = false,
 }) {
   final isDesktop = MediaQuery.sizeOf(context).width >= _desktopBreakpoint;
 
@@ -43,6 +44,8 @@ Future<T?> showResponsiveSheet<T>({
     context: context,
     isScrollControlled: isScrollControlled,
     useSafeArea: useSafeArea,
+    useRootNavigator: useRootNavigator,
+    backgroundColor: Theme.of(context).colorScheme.surface,
     builder: builder,
   );
 }

@@ -24,6 +24,10 @@ class _TagSheetState extends State<TagSheet> {
   String? _submitError;
   bool _isSubmitting = false;
 
+  bool get _isSaveEnabled =>
+      _nameController.text.trim().length >=
+      ValidationConstants.tagNameMinLength;
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +100,7 @@ class _TagSheetState extends State<TagSheet> {
             ),
             SheetFooter(
               isLoading: _isSubmitting,
+              saveEnabled: _isSaveEnabled,
               saveLabel: 'Créer',
               onCancel: () => Navigator.of(context).pop(),
               onSave: _submit,

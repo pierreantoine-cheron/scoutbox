@@ -4,6 +4,7 @@ import '../../utils/design_constants.dart';
 
 class SheetFooter extends StatelessWidget {
   final bool isLoading;
+  final bool saveEnabled;
   final VoidCallback? onCancel;
   final VoidCallback? onSave;
   final String cancelLabel;
@@ -12,6 +13,7 @@ class SheetFooter extends StatelessWidget {
   const SheetFooter({
     super.key,
     this.isLoading = false,
+    this.saveEnabled = true,
     this.onCancel,
     this.onSave,
     this.cancelLabel = 'Annuler',
@@ -39,7 +41,7 @@ class SheetFooter extends StatelessWidget {
               if (onSave != null) ...[
                 const SizedBox(width: 10),
                 FilledButton(
-                  onPressed: isLoading ? null : onSave,
+                  onPressed: (isLoading || !saveEnabled) ? null : onSave,
                   style: _filledStyle(theme),
                   child: isLoading
                       ? const SizedBox(
