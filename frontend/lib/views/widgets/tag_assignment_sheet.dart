@@ -5,8 +5,10 @@ import '../../models/tag.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
 import '../screens/tags_screen.dart';
+import 'tag_chip.dart';
 
 class TagAssignmentSheet extends ConsumerStatefulWidget {
   final String tentId;
@@ -19,14 +21,15 @@ class TagAssignmentSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TagAssignmentSheet> createState() => _TagAssignmentSheetState();
+  ConsumerState<TagAssignmentSheet> createState() =>
+      _TagAssignmentSheetState();
 }
 
 class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
   late Set<String> _selectedTagIds;
-  final Set<String> _savingTagIds = {};
   final TextEditingController _searchController = TextEditingController();
   String? _errorMessage;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -44,66 +47,119 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
   Widget build(BuildContext context) {
     final tagsAsync = ref.watch(tagsProvider);
     final theme = Theme.of(context);
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
-    return FractionallySizedBox(
-      heightFactor: 0.85,
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text('Étiquettes', style: theme.textTheme.titleLarge),
-                ),
-                IconButton(
-                  tooltip: 'Fermer',
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                style: TextStyle(color: theme.colorScheme.error),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!isDesktop) const _SheetHandle(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+            child: Text(
+              'Modifier les étiquettes',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
-            ],
-            const SizedBox(height: 12),
-            TextField(
+            ),
+          ),
+          if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+              child: Text(
+                _errorMessage!,
+                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
+              ),
+            ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+            child: Text(
+              'Rechercher',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: TextField(
               controller: _searchController,
               decoration: const InputDecoration(
-                hintText: 'Rechercher...',
+                hintText: 'Rechercher une étiquette...',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: tagsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => _TagLoadError(
-                  message: 'Impossible de charger les étiquettes.',
-                  onRetry: () => ref.read(tagsProvider.notifier).retry(),
-                ),
-                data: (tags) => _buildTagContent(tags, theme),
+          ),
+          const SizedBox(height: 16),
+          Flexible(
+            child: tagsAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (error, _) => _TagLoadError(
+                message: 'Impossible de charger les étiquettes.',
+                onRetry: () => ref.read(tagsProvider.notifier).retry(),
               ),
+              data: (tags) => _buildTagContent(tags),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton(
+                  onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.onSurface,
+                    side: BorderSide(color: theme.colorScheme.outlineVariant),
+                    minimumSize: const Size(0, 48),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  child: const Text('Annuler'),
+                ),
+                const SizedBox(width: 10),
+                FilledButton(
+                  onPressed: _isSaving ? null : _onSave,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 48),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                    ),
+                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Enregistrer'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTagContent(List<Tag> tags, ThemeData theme) {
+  Widget _buildTagContent(List<Tag> tags) {
     if (tags.isEmpty) {
       return Center(
         child: Column(
@@ -115,9 +171,9 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
             ),
             const SizedBox(height: 8),
             TextButton(
-              onPressed: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TagsScreen()),
+              ),
               child: const Text('Créer une étiquette'),
             ),
           ],
@@ -129,100 +185,72 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
     final filteredTags = tags.where((tag) {
       if (query.isEmpty) return true;
       return tag.name.toLowerCase().contains(query);
-    }).toList();
+    }).toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
 
     if (filteredTags.isEmpty) {
       return const Center(child: Text('Aucune étiquette trouvée'));
     }
 
-    final assigned =
-        filteredTags.where((tag) => _selectedTagIds.contains(tag.id)).toList()
-          ..sort(_compareTagsByName);
-    final unassigned =
-        filteredTags.where((tag) => !_selectedTagIds.contains(tag.id)).toList()
-          ..sort(_compareTagsByName);
-
-    return ListView(
-      children: [
-        if (assigned.isNotEmpty) ...[
-          Text('Assignées', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
-          _TagWrap(tags: assigned, chipBuilder: _buildChip),
-          const SizedBox(height: 16),
-        ],
-        if (unassigned.isNotEmpty) ...[
-          if (assigned.isNotEmpty)
-            Text('Disponibles', style: theme.textTheme.titleSmall),
-          if (assigned.isNotEmpty) const SizedBox(height: 8),
-          _TagWrap(tags: unassigned, chipBuilder: _buildChip),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildChip(Tag tag) {
-    final tagColor = TagPalette.colorFromHex(tag.color);
-    final isSelected = _selectedTagIds.contains(tag.id);
-    final isSaving = _savingTagIds.contains(tag.id);
-
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 180),
-      opacity: isSaving ? 0.72 : 1,
-      child: FilterChip(
-        selected: isSelected,
-        avatar: isSaving
-            ? const SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : CircleAvatar(backgroundColor: tagColor, radius: 8),
-        label: Text(tag.name),
-        onSelected: isSaving ? null : (_) => _toggleTag(tag),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: filteredTags
+            .map((tag) => SelectableTagChip(
+                  name: tag.name,
+                  color: TagPalette.colorFromHex(tag.color),
+                  selected: _selectedTagIds.contains(tag.id),
+                  onTap: _isSaving ? null : () => _toggleLocal(tag.id),
+                ))
+            .toList(),
       ),
     );
   }
 
-  Future<void> _toggleTag(Tag tag) async {
-    final wasSelected = _selectedTagIds.contains(tag.id);
-    final nextIds = {..._selectedTagIds};
-    if (wasSelected) {
-      nextIds.remove(tag.id);
-    } else {
-      nextIds.add(tag.id);
-    }
-
+  void _toggleLocal(String tagId) {
     setState(() {
       _errorMessage = null;
-      _selectedTagIds = nextIds;
-      _savingTagIds.add(tag.id);
+      if (_selectedTagIds.contains(tagId)) {
+        _selectedTagIds.remove(tagId);
+      } else {
+        _selectedTagIds.add(tagId);
+      }
+    });
+  }
+
+  Future<void> _onSave() async {
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
     });
 
     try {
       final updatedTent = await ref
           .read(tentRepositoryProvider)
-          .setTentTags(tentId: widget.tentId, tagIds: nextIds.toList());
+          .setTentTags(
+            tentId: widget.tentId,
+            tagIds: _selectedTagIds.toList(),
+          );
+
       if (!mounted) return;
-      setState(() {
-        _selectedTagIds = updatedTent.tags.map((tag) => tag.id).toSet();
-      });
+
       ref.invalidate(tentDetailProvider(widget.tentId));
       ref.invalidate(tentListProvider);
       invalidateTentHistory(ref, widget.tentId);
+
+      Navigator.of(context).pop(updatedTent);
     } catch (error) {
       if (!mounted) return;
-      if (error is! TentRepositoryException) {
-        debugPrint('Tag toggle failed: $error');
-      }
+
       final message = error is TentRepositoryException
           ? error.message
           : 'Impossible de modifier les étiquettes. Réessayez.';
       setState(() {
-        _selectedTagIds = {..._selectedTagIds}
-          ..remove(tag.id)
-          ..addAll(wasSelected ? [tag.id] : const <String>[]);
         _errorMessage = message;
       });
+
       if (error is TentRepositoryException &&
           error.code == ErrorCodes.tagNotFound) {
         await ref.read(tagsProvider.notifier).refresh();
@@ -230,28 +258,30 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
     } finally {
       if (mounted) {
         setState(() {
-          _savingTagIds.remove(tag.id);
+          _isSaving = false;
         });
       }
     }
   }
-
-  int _compareTagsByName(Tag left, Tag right) =>
-      left.name.compareTo(right.name);
 }
 
-class _TagWrap extends StatelessWidget {
-  final List<Tag> tags;
-  final Widget Function(Tag tag) chipBuilder;
-
-  const _TagWrap({required this.tags, required this.chipBuilder});
+class _SheetHandle extends StatelessWidget {
+  const _SheetHandle();
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: tags.map(chipBuilder).toList(),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Container(
+          width: 36,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            borderRadius: BorderRadius.circular(AppRadii.pill),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -265,13 +295,16 @@ class _TagLoadError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          TextButton(onPressed: onRetry, child: const Text('Réessayer')),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            TextButton(onPressed: onRetry, child: const Text('Réessayer')),
+          ],
+        ),
       ),
     );
   }

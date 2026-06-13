@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/tag.dart';
 import '../../models/tent.dart';
 import '../../utils/app_colors.dart';
+import 'tag_chip.dart';
 
 class TentTypeFilterOption {
   final String id;
@@ -491,8 +492,9 @@ class _FilterPanel extends StatelessWidget {
               label: 'Étiquettes',
               children: [
                 for (final tag in _sortedTags())
-                  _ProtoTagChip(
-                    tag: tag,
+                  SelectableTagChip(
+                    name: tag.name,
+                    color: TagPalette.colorFromHex(tag.color),
                     selected: selectedTagIds.contains(tag.id),
                     onTap: () => onToggleTag(tag.id),
                   ),
@@ -609,54 +611,6 @@ class _ProtoChip extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProtoTagChip extends StatelessWidget {
-  final Tag tag;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _ProtoTagChip({
-    required this.tag,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tagColor = TagPalette.colorFromHex(tag.color);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
-        decoration: BoxDecoration(
-          color: tagColor,
-          borderRadius: BorderRadius.circular(999),
-          border: selected
-              ? Border.all(color: Colors.white, width: 2)
-              : null,
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary,
-                    spreadRadius: 2,
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          tag.name,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
           ),
         ),
       ),

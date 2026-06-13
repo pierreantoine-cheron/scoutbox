@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
+import '../../utils/design_constants.dart';
 
 class AddPartSheet extends ConsumerStatefulWidget {
   final String tentId;
@@ -110,6 +111,13 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.onSurface,
+                      side: BorderSide(color: theme.colorScheme.outlineVariant),
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
                     child: const Text('Annuler'),
                   ),
                 ),
@@ -117,6 +125,14 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
                 Expanded(
                   child: FilledButton(
                     onPressed: canSubmit ? _onConfirm : null,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                      ),
+                    ),
                     child: state.isAdding
                         ? const SizedBox(
                             width: 20,
