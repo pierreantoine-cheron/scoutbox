@@ -409,7 +409,9 @@ class _TentNameHero extends ConsumerWidget {
           onCancel: () => Navigator.of(sheetContext).pop(false),
           onSave: () {
             if (!formKey.currentState!.validate()) return;
-            Navigator.of(sheetContext).pop(true);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.of(sheetContext).pop(true);
+            });
           },
         );
       },
@@ -596,7 +598,9 @@ class _SizeChip extends ConsumerWidget {
           onCancel: () => Navigator.of(sheetContext).pop(false),
           onSave: () {
             if (!formKey.currentState!.validate()) return;
-            Navigator.of(sheetContext).pop(true);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.of(sheetContext).pop(true);
+            });
           },
         );
       },
@@ -753,7 +757,9 @@ class _CommentsPreview extends ConsumerWidget {
           label: 'Commentaire',
           maxLines: 4,
           onCancel: () => Navigator.of(sheetContext).pop(false),
-          onSave: () => Navigator.of(sheetContext).pop(true),
+          onSave: () => WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(sheetContext).pop(true);
+          }),
         );
       },
     );
@@ -1109,7 +1115,9 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
           label: 'Commentaire',
           maxLines: 4,
           onCancel: () => Navigator.of(sheetContext).pop(false),
-          onSave: () => Navigator.of(sheetContext).pop(true),
+          onSave: () => WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(sheetContext).pop(true);
+          }),
         );
       },
     );
@@ -1435,6 +1443,11 @@ class _EditSheetContentState extends State<_EditSheetContent> {
                 ),
                 textInputAction:
                     (widget.maxLines ?? 1) > 1 ? TextInputAction.newline : TextInputAction.done,
+                onFieldSubmitted: (widget.maxLines ?? 1) > 1
+                    ? null
+                    : (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
+                        Navigator.of(context).pop(true);
+                      }),
                 validator: widget.validator ??
                     (value) {
                       if ((value ?? '').trim().isEmpty) {
