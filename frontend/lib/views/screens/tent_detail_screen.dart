@@ -708,23 +708,7 @@ class _CommentsPreview extends ConsumerWidget {
       borderRadius: BorderRadius.circular(4),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _displayComments(theme),
-            ),
-            if (!isArchived)
-              Padding(
-                padding: const EdgeInsets.only(left: 8, top: 1),
-                child: Icon(
-                  Icons.edit_outlined,
-                  size: 15,
-                  color: theme.colorScheme.outline,
-                ),
-              ),
-          ],
-        ),
+        child: _displayComments(theme),
       ),
     );
   }
@@ -831,7 +815,7 @@ class _TagsBlock extends ConsumerWidget {
               runSpacing: 6,
               children: tent.tags
                   .map(
-                    (tag) => _DetailTagChip(
+                    (tag) => SelectableTagChip(
                       name: tag.name,
                       color: TagPalette.colorFromHex(tag.color),
                     ),
@@ -857,34 +841,6 @@ class _TagsBlock extends ConsumerWidget {
       ),
     );
     ref.invalidate(tentDetailProvider(tentId));
-  }
-}
-
-class _DetailTagChip extends StatelessWidget {
-  final String name;
-  final Color color;
-
-  const _DetailTagChip({required this.name, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final textColor = TagPalette.textColorFor(color);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-      ),
-      child: Text(
-        name,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: textColor,
-        ),
-      ),
-    );
   }
 }
 
@@ -1713,13 +1669,6 @@ class _ModelPickerSheet extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.terrain_outlined,
-                      size: 18,
-                      color: isCurrent
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.outline,
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         model.name,
@@ -1729,8 +1678,6 @@ class _ModelPickerSheet extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (isCurrent)
-                      Icon(Icons.check, size: 18, color: theme.colorScheme.primary),
                   ],
                 ),
               ),
