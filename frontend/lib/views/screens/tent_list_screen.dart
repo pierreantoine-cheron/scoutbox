@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/tent.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
-import '../../utils/app_colors.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 import 'tent_creation_screen.dart';
@@ -63,14 +62,17 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       screenId: 'tent_list',
       title: isDesktop
           ? null
-          : _AppBarSearchField(
+          : SearchField(
               controller: _searchController,
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               onChanged: (value) =>
                   ref.read(tentListFilterProvider.notifier).setSearchText(value),
             ),
       actions: [
         if (isDesktop) ...[
-          _DesktopSearchField(
+          SearchField(
+            width: 220,
             controller: _searchController,
             onChanged: (value) =>
                 ref.read(tentListFilterProvider.notifier).setSearchText(value),
@@ -593,104 +595,6 @@ class _SkeletonLine extends StatelessWidget {
         decoration: BoxDecoration(
           color: baseColor,
           borderRadius: BorderRadius.circular(999),
-        ),
-      ),
-    );
-  }
-}
-
-class _DesktopSearchField extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-
-  const _DesktopSearchField({
-    required this.controller,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 220,
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        style: const TextStyle(fontSize: 14),
-        decoration: InputDecoration(
-          hintText: 'Rechercher...',
-          prefixIcon: const Icon(Icons.search, size: 18),
-          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
-            builder: (context, value, _) {
-              if (value.text.isEmpty) return const SizedBox.shrink();
-              return IconButton(
-                icon: const Icon(Icons.close, size: 16),
-                onPressed: () => onChanged(''),
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-              );
-            },
-          ),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.scoutGreen),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AppBarSearchField extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-
-  const _AppBarSearchField({
-    required this.controller,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      style: const TextStyle(fontSize: 14),
-      decoration: InputDecoration(
-        hintText: 'Rechercher...',
-        prefixIcon: const Icon(Icons.search, size: 18),
-        suffixIcon: ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            if (value.text.isEmpty) return const SizedBox.shrink();
-            return IconButton(
-              icon: const Icon(Icons.close, size: 16),
-              onPressed: () => onChanged(''),
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-            );
-          },
-        ),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.scoutGreen),
         ),
       ),
     );

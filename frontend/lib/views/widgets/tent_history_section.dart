@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
+import 'search_field.dart';
 
 class _FilterOption {
   final String label;
@@ -83,16 +84,9 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
             ),
           ),
           const SizedBox(height: 8),
-          TextField(
+          SearchField(
             controller: _searchController,
-            decoration: const InputDecoration(
-              hintText: 'Rechercher dans l\'historique',
-              prefixIcon: Icon(Icons.search),
-              isDense: true,
-              border: OutlineInputBorder(),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
+            hintText: 'Rechercher dans l\'historique',
             onChanged: (value) {
               setState(() {
                 _searchQuery = value.toLowerCase();
