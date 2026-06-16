@@ -52,9 +52,6 @@ class _TagSheetState extends State<TagSheet> {
     }
     return TagPalette.defaultColor;
   }
-
-  Color get _effectiveColorValue => TagPalette.colorFromHex(_effectiveColor);
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -87,7 +84,6 @@ class _TagSheetState extends State<TagSheet> {
                         _buildCustomColorPicker(),
                       ],
                       const SizedBox(height: 12),
-                      _buildPreview(colorScheme),
                       if (_submitError != null) ...[
                         const SizedBox(height: 12),
                         Text(
@@ -270,10 +266,6 @@ class _TagSheetState extends State<TagSheet> {
   }
 
   Widget _buildCustomColorSwatch(ColorScheme colorScheme) {
-    final customColor = _customHex.isNotEmpty
-        ? TagPalette.colorFromHex(_customHex)
-        : TagPalette.colorFromHex(TagPalette.defaultColor);
-
     return GestureDetector(
       onTap: () {
         if (_customHex.isEmpty) {
@@ -284,7 +276,6 @@ class _TagSheetState extends State<TagSheet> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          color: _isCustomSelected ? customColor : null,
           borderRadius: BorderRadius.circular(AppRadii.md),
           border: Border.all(
             color: _isCustomSelected
@@ -303,12 +294,8 @@ class _TagSheetState extends State<TagSheet> {
               : null,
         ),
         child: _isCustomSelected
-            ? Icon(
-                Icons.check,
-                color: TagPalette.textColorFor(customColor),
-                size: 18,
-              )
-            : const Icon(Icons.colorize, size: 18, color: AppColors.muted),
+            ? const Icon(Icons.colorize, size: 18)
+            : Icon(Icons.colorize, size: 18, color: AppColors.muted),
       ),
     );
   }
@@ -331,46 +318,6 @@ class _TagSheetState extends State<TagSheet> {
         labelTypes: const [],
         showLabel: false,
       ),
-    );
-  }
-
-  Widget _buildPreview(ColorScheme colorScheme) {
-    final color = _effectiveColorValue;
-    final name = _nameController.text.trim().isEmpty
-        ? 'Aperçu'
-        : _nameController.text.trim();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Aperçu',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-            ),
-            child: Text(
-              name,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: TagPalette.textColorFor(color),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
