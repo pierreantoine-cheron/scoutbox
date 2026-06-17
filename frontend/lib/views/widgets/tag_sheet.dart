@@ -307,16 +307,22 @@ class _TagSheetState extends State<TagSheet> {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadii.md),
-      child: ColorPicker(
-        pickerColor: currentColor,
-        onColorChanged: (color) {
-          setState(() {
-            _customHex = _colorToHex(color);
-          });
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return ColorPicker(
+            pickerColor: currentColor,
+            onColorChanged: (color) {
+              setState(() {
+                _customHex = _colorToHex(color);
+              });
+            },
+            enableAlpha: false,
+            portraitOnly: true,
+            displayThumbColor: true,
+            labelTypes: const [],
+            colorPickerWidth: constraints.maxWidth,
+          );
         },
-        enableAlpha: false,
-        labelTypes: const [],
-        showLabel: false,
       ),
     );
   }
