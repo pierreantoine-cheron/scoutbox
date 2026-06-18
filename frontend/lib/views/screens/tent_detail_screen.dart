@@ -1375,7 +1375,6 @@ class _EditSheetContent extends StatefulWidget {
   final VoidCallback onSave;
 
   const _EditSheetContent({
-    super.key,
     required this.title,
     required this.controller,
     required this.focusNode,
@@ -1631,7 +1630,6 @@ class _ModelPickerSheet extends StatelessWidget {
   final VoidCallback onCancel;
 
   const _ModelPickerSheet({
-    super.key,
     required this.title,
     required this.models,
     required this.currentModelId,
