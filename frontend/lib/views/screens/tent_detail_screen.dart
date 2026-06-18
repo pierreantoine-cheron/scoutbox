@@ -10,7 +10,6 @@ import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
 import '../../utils/responsive_sheet.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
-import '../widgets/tent_history_section.dart';
 import '../widgets/widgets.dart';
 
 class TentDetailScreen extends ConsumerStatefulWidget {
