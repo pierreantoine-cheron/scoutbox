@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/tag.dart';
 import '../../utils/app_colors.dart';
+import 'filter_chip.dart';
 
 enum TentTagChipsMode { compact }
 
@@ -33,7 +34,13 @@ class TentTagChips extends StatelessWidget {
       children: [
         for (final tag in visibleTags) ...[
           Flexible(
-            child: _CompactTagChip(tag: tag, onTagTap: onTagTap),
+            child: ScoutChip.tag(
+              label: tag.name,
+              color: TagPalette.colorFromHex(tag.color),
+              onTap: onTagTap != null ? () => onTagTap!(tag.id) : null,
+              tooltip: tag.name,
+              semanticLabel: 'Étiquette : ${tag.name}',
+            ),
           ),
           if (tag != visibleTags.last || hiddenTags.isNotEmpty)
             const SizedBox(width: 4),
@@ -44,52 +51,6 @@ class TentTagChips extends StatelessWidget {
   }
 }
 
-class _CompactTagChip extends StatelessWidget {
-  final Tag tag;
-  final ValueChanged<String>? onTagTap;
-
-  const _CompactTagChip({required this.tag, this.onTagTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final tagColor = TagPalette.colorFromHex(tag.color);
-
-    final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
-      decoration: BoxDecoration(
-        color: tagColor,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        tag.name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: Colors.white,
-        ),
-      ),
-    );
-
-    return Tooltip(
-      message: tag.name,
-      child: Semantics(
-        label: 'Étiquette : ${tag.name}',
-        button: onTagTap != null,
-        child: ExcludeSemantics(
-          child: onTagTap == null
-              ? chip
-              : InkWell(
-                  borderRadius: BorderRadius.circular(999),
-                  onTap: () => onTagTap!(tag.id),
-                  child: chip,
-                ),
-        ),
-      ),
-    );
-  }
-}
 
 class _OverflowTagChip extends StatelessWidget {
   final List<Tag> tags;

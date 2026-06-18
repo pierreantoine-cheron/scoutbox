@@ -9,8 +9,8 @@ import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
 import '../screens/tags_screen.dart';
+import 'filter_chip.dart';
 import 'sheet_handle.dart';
-import 'tag_chip.dart';
 
 class TagAssignmentSheet extends ConsumerStatefulWidget {
   final String tentId;
@@ -200,10 +200,11 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
         spacing: 10,
         runSpacing: 10,
         children: filteredTags
-            .map((tag) => SelectableTagChip(
+            .map((tag) => ScoutChip.selectableTag(
                   name: tag.name,
                   color: TagPalette.colorFromHex(tag.color),
                   selected: _selectedTagIds.contains(tag.id),
+                  colorScheme: Theme.of(context).colorScheme,
                   onTap: _isSaving ? null : () => _toggleLocal(tag.id),
                 ))
             .toList(),

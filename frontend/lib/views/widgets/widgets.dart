@@ -4,6 +4,7 @@ export 'compact_state_badge.dart';
 export 'confirm_dialog.dart';
 export 'desktop_create_button.dart';
 export 'fading_cloud_done_icon.dart';
+export 'filter_chip.dart';
 export 'inline_text_editor.dart';
 export 'logout_button.dart';
 export 'navigation_drawer.dart';

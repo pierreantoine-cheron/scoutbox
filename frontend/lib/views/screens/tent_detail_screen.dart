@@ -71,7 +71,7 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
     final tentAsync = ref.watch(tentDetailProvider(widget.tentId));
     final editState = ref.watch(tentEditProvider(widget.tentId));
 
-    ref.listen(tentDetailProvider(widget.tentId), (_, __) {
+    ref.listen(tentDetailProvider(widget.tentId), (_, _) {
       dispatchAppBarConfig();
     });
 
@@ -822,8 +822,8 @@ class _TagsBlock extends ConsumerWidget {
               runSpacing: 6,
               children: tent.tags
                   .map(
-                    (tag) => SelectableTagChip(
-                      name: tag.name,
+                    (tag) => ScoutChip.tag(
+                      label: tag.name,
                       color: TagPalette.colorFromHex(tag.color),
                     ),
                   )

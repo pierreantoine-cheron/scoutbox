@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/tag.dart';
 import '../../models/tent.dart';
 import '../../utils/app_colors.dart';
-import 'tag_chip.dart';
+import 'filter_chip.dart';
 
 class TentTypeFilterOption {
   final String id;
@@ -295,12 +295,18 @@ class _PillsOverflow extends StatelessWidget {
             runSpacing: spacing,
             children: [
               for (var i = 0; i < pills.length && i < maxTokens; i++)
-                _PillChip(
-                  label: pills[i].label,
-                  color: pills[i].color,
-                  tagColor: pills[i].tagColor,
-                  onTap: pills[i].onTap,
-                ),
+                pills[i].tagColor != null
+                    ? ScoutChip.tag(
+                        label: pills[i].label,
+                        color: pills[i].tagColor!,
+                        onTap: pills[i].onTap,
+                      )
+                    : ScoutChip.state(
+                        label: pills[i].label,
+                        color: pills[i].color,
+                        colorScheme: colorScheme,
+                        onTap: pills[i].onTap,
+                      ),
               if (pills.length > maxTokens)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -339,68 +345,6 @@ class _PillsOverflow extends StatelessWidget {
   }
 }
 
-class _PillChip extends StatelessWidget {
-  final String label;
-  final Color? color;
-  final Color? tagColor;
-  final VoidCallback onTap;
-
-  const _PillChip({
-    required this.label,
-    required this.color,
-    this.tagColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    if (tagColor != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: tagColor,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      );
-    }
-
-    final bgColor =
-        color?.withValues(alpha: 0.15) ?? colorScheme.primaryContainer;
-    final fgColor = color ?? colorScheme.primary;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: fgColor,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _FilterPanel extends StatelessWidget {
   final Set<TentOverallState> selectedStates;
@@ -456,9 +400,10 @@ class _FilterPanel extends StatelessWidget {
             label: 'État',
             children: [
               for (final state in TentOverallState.values)
-                _ProtoChip(
+                ScoutChip.toggle(
                   label: state.toFrenchLabel(),
                   selected: selectedStates.contains(state),
+                  colorScheme: colorScheme,
                   onTap: () => onToggleState(state),
                 ),
             ],
@@ -468,9 +413,10 @@ class _FilterPanel extends StatelessWidget {
               label: 'Taille',
               children: [
                 for (final size in availableSizes)
-                  _ProtoChip(
+                  ScoutChip.toggle(
                     label: size == 1 ? '$size place' : '$size places',
                     selected: selectedSizes.contains(size),
+                    colorScheme: colorScheme,
                     onTap: () => onToggleSize(size),
                   ),
               ],
@@ -480,9 +426,10 @@ class _FilterPanel extends StatelessWidget {
               label: 'Modèle',
               children: [
                 for (final option in availableModelOptions)
-                  _ProtoChip(
+                  ScoutChip.toggle(
                     label: option.label,
                     selected: selectedModelIds.contains(option.id),
+                    colorScheme: colorScheme,
                     onTap: () => onToggleModel(option.id),
                   ),
               ],
@@ -492,10 +439,11 @@ class _FilterPanel extends StatelessWidget {
               label: 'Étiquettes',
               children: [
                 for (final tag in _sortedTags())
-                  SelectableTagChip(
+                  ScoutChip.selectableTag(
                     name: tag.name,
                     color: TagPalette.colorFromHex(tag.color),
                     selected: selectedTagIds.contains(tag.id),
+                    colorScheme: colorScheme,
                     onTap: () => onToggleTag(tag.id),
                   ),
               ],
@@ -579,44 +527,7 @@ class _FilterRow extends StatelessWidget {
   }
 }
 
-class _ProtoChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
 
-  const _ProtoChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
-        decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : Colors.transparent,
-          border: Border.all(
-            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
-          ),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _ActivePill {
   final String value;
