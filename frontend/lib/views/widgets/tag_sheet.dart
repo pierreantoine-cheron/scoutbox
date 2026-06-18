@@ -45,8 +45,7 @@ class _TagSheetState extends State<TagSheet> {
     super.dispose();
   }
 
-  String get _effectiveColor =>
-      _isCustomSelected ? _customHex : _presetHex;
+  String get _effectiveColor => _isCustomSelected ? _customHex : _presetHex;
 
   String get _presetHex {
     for (final option in TagPalette.options) {
@@ -54,6 +53,7 @@ class _TagSheetState extends State<TagSheet> {
     }
     return TagPalette.defaultColor;
   }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -111,8 +111,6 @@ class _TagSheetState extends State<TagSheet> {
       ),
     );
   }
-
-
 
   Widget _buildHeader(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -264,9 +262,7 @@ class _TagSheetState extends State<TagSheet> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadii.md),
           border: Border.all(
-            color: _isCustomSelected
-                ? colorScheme.onSurface
-                : AppColors.border,
+            color: _isCustomSelected ? colorScheme.onSurface : AppColors.border,
             width: 2.5,
           ),
           boxShadow: _isCustomSelected
@@ -281,7 +277,7 @@ class _TagSheetState extends State<TagSheet> {
         ),
         child: _isCustomSelected
             ? const Icon(Icons.colorize, size: 18)
-            : Icon(Icons.colorize, size: 18, color: AppColors.muted),
+            : const Icon(Icons.colorize, size: 18, color: AppColors.muted),
       ),
     );
   }
@@ -343,7 +339,10 @@ class _TagSheetState extends State<TagSheet> {
     } on TagRepositoryException catch (error) {
       if (mounted) {
         setState(() {
-          _submitError = ErrorLocalizer.localize(error.code, fallback: error.message);
+          _submitError = ErrorLocalizer.localize(
+            error.code,
+            fallback: error.message,
+          );
           _isSubmitting = false;
         });
       }

@@ -165,7 +165,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
           if (refreshIssue != null)
             RefreshWarningCard(message: _refreshWarning(refreshIssue)),
           const SizedBox(height: 96),
-          Icon(Icons.label_outline, size: 48, color: AppColors.muted),
+          const Icon(Icons.label_outline, size: 48, color: AppColors.muted),
           const SizedBox(height: 16),
           Center(
             child: Text(
@@ -174,7 +174,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
             ),
           ),
           const SizedBox(height: 6),
-          Center(
+          const Center(
             child: Text(
               'Créez des étiquettes pour organiser vos tentes.',
               style: TextStyle(color: AppColors.muted),
@@ -302,7 +302,7 @@ class _TagCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, color: AppColors.muted, size: 18),
+                icon: const Icon(Icons.more_vert, color: AppColors.muted, size: 18),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 offset: const Offset(0, 4),
@@ -313,25 +313,25 @@ class _TagCard extends StatelessWidget {
                 elevation: AppElevation.dropdown,
                 color: colorScheme.surface,
                 itemBuilder: (_) => [
-                  PopupMenuItem<String>(
+                  const PopupMenuItem<String>(
                     value: 'edit',
                     enabled: false,
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
                     ),
                     child: Row(
                       children: [
                         Icon(Icons.edit, size: 16, color: AppColors.muted),
-                        const SizedBox(width: AppSpacing.sm),
-                        const Text('Modifier'),
+                        SizedBox(width: AppSpacing.sm),
+                        Text('Modifier'),
                       ],
                     ),
                   ),
-                  PopupMenuItem<String>(
+                  const PopupMenuItem<String>(
                     value: 'delete',
                     enabled: false,
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
                     ),
@@ -342,7 +342,7 @@ class _TagCard extends StatelessWidget {
                           size: 16,
                           color: AppColors.stateUnusable,
                         ),
-                        const SizedBox(width: AppSpacing.sm),
+                        SizedBox(width: AppSpacing.sm),
                         Text(
                           'Supprimer',
                           style: TextStyle(color: AppColors.stateUnusable),
