@@ -15,7 +15,6 @@ class ScoutPill extends StatelessWidget {
   final Border? baseBorder;
   final Color? selectedBorderColor;
   final List<BoxShadow>? selectedBoxShadow;
-  final String? tooltip;
   final String? semanticLabel;
 
   const ScoutPill._({
@@ -30,7 +29,6 @@ class ScoutPill extends StatelessWidget {
     this.baseBorder,
     this.selectedBorderColor,
     this.selectedBoxShadow,
-    this.tooltip,
     this.semanticLabel,
   });
 
@@ -51,7 +49,6 @@ class ScoutPill extends StatelessWidget {
           selected: selected,
           variant: ScoutPillVariant.full,
           selectedBorderColor: Colors.white,
-          tooltip: tooltip,
           semanticLabel: semanticLabel,
         );
 
@@ -60,7 +57,6 @@ class ScoutPill extends StatelessWidget {
     required String label,
     required Color color,
     VoidCallback? onTap,
-    String? tooltip,
     String? semanticLabel,
   }) : this._(
           key: key,
@@ -69,7 +65,6 @@ class ScoutPill extends StatelessWidget {
           foregroundColor: Colors.white,
           onTap: onTap,
           variant: ScoutPillVariant.compact,
-          tooltip: tooltip,
           semanticLabel: semanticLabel,
         );
 
@@ -247,10 +242,6 @@ class ScoutPill extends StatelessWidget {
         button: onTap != null,
         child: ExcludeSemantics(child: pill),
       );
-    }
-
-    if (tooltip != null) {
-      pill = Tooltip(message: tooltip!, child: pill);
     }
 
     return pill;
