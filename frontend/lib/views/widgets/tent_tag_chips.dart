@@ -34,11 +34,11 @@ class TentTagChips extends StatelessWidget {
       children: [
         for (final tag in visibleTags) ...[
           Flexible(
-            child: ScoutPill.tag(
+            child: ScoutPill.tagCompact(
               label: tag.name,
               color: TagPalette.colorFromHex(tag.color),
-              variant: ScoutPillVariant.compact,
               onTap: onTagTap != null ? () => onTagTap!(tag.id) : null,
+              tooltip: tag.name,
               semanticLabel: 'Étiquette : ${tag.name}',
             ),
           ),

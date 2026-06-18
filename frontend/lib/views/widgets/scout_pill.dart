@@ -15,9 +15,10 @@ class ScoutPill extends StatelessWidget {
   final Border? baseBorder;
   final Color? selectedBorderColor;
   final List<BoxShadow>? selectedBoxShadow;
+  final String? tooltip;
   final String? semanticLabel;
 
-  const ScoutPill({
+  const ScoutPill._({
     super.key,
     required this.label,
     required this.backgroundColor,
@@ -29,6 +30,7 @@ class ScoutPill extends StatelessWidget {
     this.baseBorder,
     this.selectedBorderColor,
     this.selectedBoxShadow,
+    this.tooltip,
     this.semanticLabel,
   });
 
@@ -38,16 +40,54 @@ class ScoutPill extends StatelessWidget {
     required Color color,
     VoidCallback? onTap,
     bool selected = false,
-    ScoutPillVariant variant = ScoutPillVariant.full,
+    String? tooltip,
     String? semanticLabel,
-  }) : this(
+  }) : this._(
           key: key,
           label: label,
           backgroundColor: color,
           foregroundColor: Colors.white,
           onTap: onTap,
           selected: selected,
-          variant: variant,
+          variant: ScoutPillVariant.full,
+          selectedBorderColor: Colors.white,
+          tooltip: tooltip,
+          semanticLabel: semanticLabel,
+        );
+
+  const ScoutPill.tagCompact({
+    Key? key,
+    required String label,
+    required Color color,
+    VoidCallback? onTap,
+    String? tooltip,
+    String? semanticLabel,
+  }) : this._(
+          key: key,
+          label: label,
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          onTap: onTap,
+          variant: ScoutPillVariant.compact,
+          tooltip: tooltip,
+          semanticLabel: semanticLabel,
+        );
+
+  ScoutPill.tagFilter({
+    Key? key,
+    required String label,
+    required Color color,
+    VoidCallback? onTap,
+    bool selected = false,
+    String? semanticLabel,
+  }) : this._(
+          key: key,
+          label: label,
+          backgroundColor: color.withValues(alpha: 0.15),
+          foregroundColor: color,
+          onTap: onTap,
+          selected: selected,
+          variant: ScoutPillVariant.full,
           semanticLabel: semanticLabel,
         );
 
@@ -56,9 +96,8 @@ class ScoutPill extends StatelessWidget {
     required StateBadgeStyle style,
     VoidCallback? onTap,
     bool selected = false,
-    ScoutPillVariant variant = ScoutPillVariant.full,
     String? semanticLabel,
-  }) : this(
+  }) : this._(
           key: key,
           label: style.label,
           backgroundColor: style.background,
@@ -66,7 +105,23 @@ class ScoutPill extends StatelessWidget {
           icon: style.icon,
           onTap: onTap,
           selected: selected,
-          variant: variant,
+          variant: ScoutPillVariant.full,
+          semanticLabel: semanticLabel,
+        );
+
+  ScoutPill.stateCompact({
+    Key? key,
+    required StateBadgeStyle style,
+    VoidCallback? onTap,
+    String? semanticLabel,
+  }) : this._(
+          key: key,
+          label: style.label,
+          backgroundColor: style.background,
+          foregroundColor: style.foreground,
+          icon: style.icon,
+          onTap: onTap,
+          variant: ScoutPillVariant.compact,
           semanticLabel: semanticLabel,
         );
 
@@ -77,7 +132,7 @@ class ScoutPill extends StatelessWidget {
     required Color foregroundColor,
     VoidCallback? onTap,
     bool selected = false,
-  }) : this(
+  }) : this._(
           key: key,
           label: label,
           backgroundColor: backgroundColor,
@@ -94,7 +149,7 @@ class ScoutPill extends StatelessWidget {
     required Color foregroundColor,
     VoidCallback? onTap,
     bool selected = false,
-  }) : this(
+  }) : this._(
           key: key,
           label: label,
           backgroundColor: backgroundColor,
@@ -102,6 +157,26 @@ class ScoutPill extends StatelessWidget {
           onTap: onTap,
           selected: selected,
           variant: ScoutPillVariant.full,
+        );
+
+  ScoutPill.neutral({
+    Key? key,
+    required String label,
+    required IconData icon,
+    required Color foregroundColor,
+    required Color borderColor,
+    VoidCallback? onTap,
+    String? semanticLabel,
+  }) : this._(
+          key: key,
+          label: label,
+          backgroundColor: Colors.transparent,
+          foregroundColor: foregroundColor,
+          icon: icon,
+          baseBorder: Border.all(color: borderColor),
+          onTap: onTap,
+          variant: ScoutPillVariant.full,
+          semanticLabel: semanticLabel,
         );
 
   @override
@@ -172,6 +247,10 @@ class ScoutPill extends StatelessWidget {
         button: onTap != null,
         child: ExcludeSemantics(child: pill),
       );
+    }
+
+    if (tooltip != null) {
+      pill = Tooltip(message: tooltip!, child: pill);
     }
 
     return pill;

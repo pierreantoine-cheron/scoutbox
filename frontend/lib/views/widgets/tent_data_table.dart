@@ -135,9 +135,8 @@ class _TentDataTableState extends State<TentDataTable> {
       children: [
         _DataCell(
           onTap: onTap,
-          child: ScoutPill.state(
+          child: ScoutPill.stateCompact(
             style: tentStateBadgeStyle(context, tent.overallState),
-            variant: ScoutPillVariant.compact,
             onTap: widget.onStateTap != null
                 ? () => widget.onStateTap!(tent.overallState)
                 : null,

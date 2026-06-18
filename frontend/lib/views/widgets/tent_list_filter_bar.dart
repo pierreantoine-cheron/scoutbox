@@ -380,11 +380,9 @@ class _PillsOverflow extends StatelessWidget {
   Widget _buildPill(_ActivePill pill, ColorScheme colorScheme) {
     switch (pill.type) {
       case _ActivePillType.tag:
-        return ScoutPill(
+        return ScoutPill.tagFilter(
           label: pill.label,
-          backgroundColor: pill.tagColor!.withValues(alpha: 0.15),
-          foregroundColor: pill.tagColor!,
-          selected: false,
+          color: pill.tagColor!,
           onTap: pill.onTap,
         );
       case _ActivePillType.state:
@@ -524,10 +522,9 @@ class _FilterPanel extends StatelessWidget {
                     builder: (_) {
                       final tagColor = TagPalette.colorFromHex(tag.color);
                       final isSelected = selectedTagIds.contains(tag.id);
-                      return ScoutPill(
+                      return ScoutPill.tagFilter(
                         label: tag.name,
-                        backgroundColor: tagColor.withValues(alpha: 0.15),
-                        foregroundColor: tagColor,
+                        color: tagColor,
                         selected: isSelected,
                         onTap: () => onToggleTag(tag.id),
                       );

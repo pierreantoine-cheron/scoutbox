@@ -203,10 +203,9 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
             .map((tag) {
                   final tagColor = TagPalette.colorFromHex(tag.color);
                   final isSelected = _selectedTagIds.contains(tag.id);
-                  return ScoutPill(
+                  return ScoutPill.tagFilter(
                     label: tag.name,
-                    backgroundColor: tagColor.withValues(alpha: 0.15),
-                    foregroundColor: tagColor,
+                    color: tagColor,
                     selected: isSelected,
                     onTap: _isSaving ? null : () => _toggleLocal(tag.id),
                   );

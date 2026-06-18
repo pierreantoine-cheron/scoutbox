@@ -46,9 +46,8 @@ class TentCard extends StatelessWidget {
               child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ScoutPill.state(
+                ScoutPill.stateCompact(
                   style: tentStateBadgeStyle(context, tent.overallState),
-                  variant: ScoutPillVariant.compact,
                   onTap: onStateTap != null
                       ? () => onStateTap!(tent.overallState)
                       : null,

@@ -465,21 +465,19 @@ class _InfoChipsRow extends ConsumerWidget {
               onTap: () => _showEditStateSheet(context, ref),
               semanticLabel: 'État : ${tent.overallState.toFrenchLabel()}',
             ),
-            ScoutPill(
+            ScoutPill.neutral(
               label: sizeLabel,
-              backgroundColor: Colors.transparent,
-              foregroundColor: theme.colorScheme.onSurface,
               icon: Icons.people_outline,
-              baseBorder: Border.all(color: theme.colorScheme.outlineVariant),
+              foregroundColor: theme.colorScheme.onSurface,
+              borderColor: theme.colorScheme.outlineVariant,
               onTap: () => _showEditSizeSheet(context, ref),
               semanticLabel: 'Taille : $sizeLabel',
             ),
-            ScoutPill(
+            ScoutPill.neutral(
               label: modelName,
-              backgroundColor: Colors.transparent,
-              foregroundColor: theme.colorScheme.onSurface,
               icon: Icons.terrain_outlined,
-              baseBorder: Border.all(color: theme.colorScheme.outlineVariant),
+              foregroundColor: theme.colorScheme.onSurface,
+              borderColor: theme.colorScheme.outlineVariant,
               onTap: () => _showEditModelSheet(context, ref),
               semanticLabel: 'Modèle : $modelName',
             ),
@@ -968,15 +966,13 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
                   ),
                   const SizedBox(width: 8),
                   if (_isSelectionMode) ...[
-                    ScoutPill.state(
+                    ScoutPill.stateCompact(
                       style: partStateBadgeStyle(context, displayedState),
-                      variant: ScoutPillVariant.compact,
                     ),
                     const SizedBox(width: 4),
                   ] else
-                    ScoutPill.state(
+                    ScoutPill.stateCompact(
                       style: partStateBadgeStyle(context, displayedState),
-                      variant: ScoutPillVariant.compact,
                       onTap: widget.isArchived
                           ? null
                           : () => _showEditPartStateSheet(part, displayedState),
