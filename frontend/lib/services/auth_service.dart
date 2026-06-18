@@ -76,6 +76,9 @@ class AuthService {
   // Keeps the latest access token available for immediate authenticated calls.
   String? _cachedAccessToken;
 
+  // Caches the full auth response to avoid repeated secure-storage reads
+  AuthResponse? _cachedAuthResponse;
+
   Future<void> _persistAuthResponse(
     AuthResponse authResponse, {
     String? serverUrl,
@@ -89,7 +92,7 @@ class AuthService {
     if (serverUrl != null) {
       await SecureStorageService.saveServerUrl(serverUrl);
     }
-    _cachedAccessToken = authResponse.accessToken;
+    _cacheAuthResponse(authResponse);
   }
 
   /// Validate that a server is reachable and has the health endpoint
@@ -288,6 +291,7 @@ class AuthService {
     // Always clear local auth tokens (never leave stale auth state)
     await SecureStorageService.clearAuthTokens();
     _cachedAccessToken = null;
+    _cachedAuthResponse = null;
     ApiClient.reset();
   }
 
@@ -549,7 +553,6 @@ class AuthService {
     // Check token status
     final tokenStatus = await validateAccessToken();
     if (tokenStatus == TokenStatus.valid) {
-      _cachedAccessToken = await SecureStorageService.getAccessToken();
       return const AuthInitializationResult(
         isAuthenticated: true,
         isSessionExpired: false,
@@ -581,6 +584,7 @@ class AuthService {
 
   /// Get stored auth response with expiration dates
   Future<AuthResponse?> _getStoredAuthResponse() async {
+    if (_cachedAuthResponse != null) return _cachedAuthResponse;
     final accessToken = await SecureStorageService.getAccessToken();
     final refreshToken = await SecureStorageService.getRefreshToken();
     final accessTokenExpires =
@@ -595,12 +599,19 @@ class AuthService {
       return null;
     }
 
-    return AuthResponse(
+    final response = AuthResponse(
       accessToken: accessToken,
       refreshToken: refreshToken,
       accessTokenExpires: accessTokenExpires,
       refreshTokenExpires: refreshTokenExpires,
     );
+    _cacheAuthResponse(response);
+    return response;
+  }
+
+  void _cacheAuthResponse(AuthResponse response) {
+    _cachedAuthResponse = response;
+    _cachedAccessToken = response.accessToken;
   }
 }
 
