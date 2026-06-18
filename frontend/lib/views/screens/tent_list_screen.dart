@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tent.dart';
 import '../../providers/providers.dart';
-import '../../repositories/tent_repository.dart';
-import '../../services/error_localizer.dart';
+import '../../utils/error_messages.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 import 'tent_creation_screen.dart';
@@ -147,9 +146,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   }
 
   Widget _buildErrorState(Object error) {
-    final message = error is TentRepositoryException
-        ? ErrorLocalizer.localize(error.code, fallback: error.message)
-        : 'Impossible de charger les tentes. Réessayez.';
+    final message = toUserFacingError(error, 'Impossible de charger les tentes. Réessayez.');
     return AsyncErrorView(
       message: message,
       onRetry: () => ref.read(tentListProvider.notifier).retry(),
@@ -409,17 +406,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   }
 
   String? _toRefreshWarningMessage(Object? refreshIssue) {
-    if (refreshIssue == null) {
-      return null;
-    }
-
-    final detail = refreshIssue is TentRepositoryException
-        ? ErrorLocalizer.localize(
-            refreshIssue.code,
-            fallback: refreshIssue.message,
-          )
-        : 'Impossible d\'actualiser la liste pour le moment.';
-    return 'Les données affichées peuvent être anciennes. $detail';
+    return toRefreshWarning(refreshIssue, 'Impossible d\'actualiser la liste pour le moment.');
   }
 
   Future<void> _openTentDetail(BuildContext context, Tent tent) async {

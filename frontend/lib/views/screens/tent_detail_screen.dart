@@ -8,6 +8,7 @@ import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
+import '../../utils/error_messages.dart';
 import '../../utils/responsive_sheet.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
@@ -97,11 +98,7 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
   }
 
   String _toErrorMessage(Object error) {
-    if (error is TentRepositoryException) {
-      return ErrorLocalizer.localize(error.code, fallback: error.message);
-    }
-
-    return 'Impossible de charger le détail de la tente.';
+    return toUserFacingError(error, 'Impossible de charger le détail de la tente.');
   }
 }
 
