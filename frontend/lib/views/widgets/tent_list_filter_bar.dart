@@ -33,7 +33,16 @@ class _ActivePill {
     required this.type,
   });
 
-  double get estimatedWidth => (label.length * 9.0) + 28;
+  double get estimatedWidth {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    return painter.width + 28;
+  }
 }
 
 class TentListFilterBar extends StatefulWidget {
