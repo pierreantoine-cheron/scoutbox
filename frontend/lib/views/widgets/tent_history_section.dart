@@ -180,7 +180,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
   }
 
   String _historySummary(TentHistoryItem item) {
-    return _buildHistorySummary(item);
+    return item.buildSummary();
   }
 
   String _toHistoryErrorMessage(Object error) {
@@ -196,11 +196,11 @@ class _CompactHistoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final icon = _actionIcon(item.action);
-    final dotColor = _actionDotColor(item.action, theme);
+    final icon = TentHistoryItem.actionIcon(item.action);
+    final dotColor = TentHistoryItem.actionDotColor(item.action, theme.colorScheme);
     final time = DateFormat('HH:mm', 'fr').format(item.occurredAt.toLocal());
     final date = DateFormat('dd/MM/yyyy', 'fr').format(item.occurredAt.toLocal());
-    final summary = _buildHistorySummary(item);
+    final summary = item.buildSummary();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -233,98 +233,3 @@ class _CompactHistoryItem extends StatelessWidget {
   }
 }
 
-Color _actionDotColor(String action, ThemeData theme) {
-  switch (action) {
-    case 'tent_created':
-      return theme.colorScheme.primary;
-    case 'tent_updated':
-      return theme.colorScheme.primary;
-    case 'tent_archived':
-      return theme.colorScheme.error;
-    case 'part_state_changed':
-      return theme.colorScheme.tertiary;
-    case 'part_comments_changed':
-      return theme.colorScheme.primary;
-    case 'part_added':
-      return theme.colorScheme.tertiary;
-    case 'part_deleted':
-      return theme.colorScheme.error;
-    case 'tag_assigned':
-    case 'tag_removed':
-      return theme.colorScheme.secondary;
-    default:
-      return theme.colorScheme.outline;
-  }
-}
-
-IconData _actionIcon(String action) {
-  switch (action) {
-    case 'tent_created':
-      return Icons.add_circle_outline;
-    case 'tent_updated':
-      return Icons.edit_outlined;
-    case 'tent_archived':
-      return Icons.archive_outlined;
-    case 'part_state_changed':
-      return Icons.swap_horiz;
-    case 'part_comments_changed':
-      return Icons.comment_outlined;
-    case 'part_added':
-      return Icons.add_box_outlined;
-    case 'part_deleted':
-      return Icons.remove_circle_outline;
-    case 'tag_assigned':
-      return Icons.label_outlined;
-    case 'tag_removed':
-      return Icons.label_off_outlined;
-    default:
-      return Icons.info_outline;
-  }
-}
-
-String _buildHistorySummary(TentHistoryItem item) {
-  final subject = item.subjectName ?? 'Pièce inconnue';
-
-  switch (item.action) {
-    case 'tent_created':
-      return 'Tente créée';
-    case 'tent_updated':
-      return 'Informations mises à jour';
-    case 'tent_archived':
-      return 'Tente archivée';
-    case 'part_state_changed':
-      final stateDetail =
-          item.details.where((d) => d.valueType == 'state').firstOrNull;
-      final oldState = _historyStateLabel(stateDetail?.oldValue);
-      final newState = _historyStateLabel(stateDetail?.newValue);
-      return 'État de $subject changé de $oldState à $newState';
-    case 'part_comments_changed':
-      return 'Commentaire de $subject modifié';
-    case 'part_added':
-      return 'Pièce ajoutée : $subject';
-    case 'part_deleted':
-      return 'Pièce supprimée : $subject';
-    case 'tag_assigned':
-      return 'Étiquette ajoutée : $subject';
-    case 'tag_removed':
-      return 'Étiquette retirée : $subject';
-    default:
-      return 'Action ${item.action}';
-  }
-}
-
-String _historyStateLabel(String? value) {
-  if (value == null || value.isEmpty) return '?';
-
-  final partState = PartState.values
-      .where((s) => s.toApiValue() == value || s.toFrenchLabel() == value)
-      .firstOrNull;
-  if (partState != null) return partState.toFrenchLabel();
-
-  final tentState = TentOverallState.values
-      .where((s) => s.toApiValue() == value || s.toFrenchLabel() == value)
-      .firstOrNull;
-  if (tentState != null) return tentState.toFrenchLabel();
-
-  return value;
-}
