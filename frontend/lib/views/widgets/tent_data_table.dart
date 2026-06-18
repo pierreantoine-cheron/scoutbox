@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import '../../models/tag.dart';
 import '../../models/tent.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/tent_sort.dart';
 import 'compact_state_badge.dart';
 import 'tent_tag_chips.dart';
-
-enum TentDesktopSortColumn { name, state, size, model }
 
 class TentDataTable extends StatefulWidget {
   final List<Tent> tents;
@@ -25,12 +24,6 @@ class TentDataTable extends StatefulWidget {
 }
 
 class _TentDataTableState extends State<TentDataTable> {
-  static const _stateOrder = {
-    TentOverallState.good: 0,
-    TentOverallState.needsRepair: 1,
-    TentOverallState.unusable: 2,
-  };
-
   TentDesktopSortColumn? _sortColumn;
   bool _sortAscending = true;
 
@@ -49,7 +42,11 @@ class _TentDataTableState extends State<TentDataTable> {
 
   @override
   Widget build(BuildContext context) {
-    final tents = _sortedTents(widget.tents);
+    final tents = sortTents(
+      widget.tents,
+      column: _sortColumn,
+      ascending: _sortAscending,
+    );
     final colorScheme = Theme.of(context).colorScheme;
 
     if (tents.isEmpty) {
@@ -163,54 +160,8 @@ class _TentDataTableState extends State<TentDataTable> {
     );
   }
 
-  List<Tent> _sortedTents(List<Tent> tents) {
-    final column = _sortColumn;
-    if (column == null) return tents;
 
-    final copy = [...tents];
-    copy.sort((left, right) {
-      return switch (column) {
-        TentDesktopSortColumn.name => _applySortDirection(
-            left.name.toLowerCase().compareTo(right.name.toLowerCase()),
-          ),
-        TentDesktopSortColumn.state => _applySortDirection(
-            _compareState(left, right),
-          ),
-        TentDesktopSortColumn.size => _applySortDirection(
-            left.size.compareTo(right.size),
-          ),
-        TentDesktopSortColumn.model => _compareNullableText(
-            left.tentModelName,
-            right.tentModelName,
-          ),
-      };
-    });
 
-    return copy;
-  }
-
-  int _applySortDirection(int value) => _sortAscending ? value : -value;
-
-  int _compareState(Tent left, Tent right) {
-    final leftRank = _stateOrder[left.overallState] ?? 99;
-    final rightRank = _stateOrder[right.overallState] ?? 99;
-    return leftRank.compareTo(rightRank);
-  }
-
-  int _compareNullableText(String? left, String? right) {
-    final leftValue = left?.trim();
-    final rightValue = right?.trim();
-    final leftMissing = leftValue == null || leftValue.isEmpty;
-    final rightMissing = rightValue == null || rightValue.isEmpty;
-
-    if (leftMissing && rightMissing) return 0;
-    if (leftMissing) return 1;
-    if (rightMissing) return -1;
-
-    return _applySortDirection(
-      leftValue.toLowerCase().compareTo(rightValue.toLowerCase()),
-    );
-  }
 
   void _toggleSort(TentDesktopSortColumn column) {
     setState(() {
@@ -374,3 +325,4 @@ class _EmptyTableState extends StatelessWidget {
     );
   }
 }
+
