@@ -348,7 +348,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           textInputAction: TextInputAction.next,
           validator: AuthValidators.validateUsername,
         ),
-        if (_isLogin)
+        if (!_isLogin)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
@@ -374,7 +374,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           autovalidateMode: _hasSubmitted
               ? AutovalidateMode.onUserInteraction
               : AutovalidateMode.disabled,
-          hintText: '8 caractères minimum',
+          hintText: _isLogin ? 'Mot de passe' : '8 caractères minimum',
           autofillHints: _isLogin ? null : const [AutofillHints.newPassword],
           textInputAction:
               _isLogin ? TextInputAction.done : TextInputAction.next,
