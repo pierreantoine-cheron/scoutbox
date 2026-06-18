@@ -388,7 +388,7 @@ class _TentNameHero extends ConsumerWidget {
     final result = await showResponsiveSheet<bool>(
       context: context,
       builder: (sheetContext) {
-        return _EditSheetContent(
+        return TextFieldSheet(
           title: 'Modifier le nom',
           controller: controller,
           focusNode: focusNode,
@@ -509,7 +509,7 @@ class _StatePill extends ConsumerWidget {
     final result = await showResponsiveSheet<TentOverallState>(
       context: context,
       builder: (sheetContext) {
-        return _StatePickerSheet<TentOverallState>(
+        return StatePickerSheet<TentOverallState>(
           title: 'Modifier l\'état',
           values: TentOverallState.values,
           currentValue: tent.overallState,
@@ -578,7 +578,7 @@ class _SizeChip extends ConsumerWidget {
     final result = await showResponsiveSheet<bool>(
       context: context,
       builder: (sheetContext) {
-        return _EditSheetContent(
+        return TextFieldSheet(
           title: 'Modifier la taille',
           controller: controller,
           focusNode: focusNode,
@@ -670,7 +670,7 @@ class _ModelChip extends ConsumerWidget {
     final result = await showResponsiveSheet<String>(
       context: context,
       builder: (sheetContext) {
-        return _ModelPickerSheet(
+        return ModelPickerSheet(
           title: 'Modifier le modèle',
           models: models,
           currentModelId: tent.tentModelId,
@@ -746,7 +746,7 @@ class _CommentsPreview extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) {
-        return _EditSheetContent(
+        return TextFieldSheet(
           title: 'Modifier le commentaire',
           controller: controller,
           focusNode: focusNode,
@@ -1104,7 +1104,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) {
-        return _EditSheetContent(
+        return TextFieldSheet(
           title: 'Modifier le commentaire',
           controller: controller,
           focusNode: focusNode,
@@ -1227,7 +1227,7 @@ class _PartStateBadge extends ConsumerWidget {
     final result = await showResponsiveSheet<PartState>(
       context: context,
       builder: (sheetContext) {
-        return _StatePickerSheet<PartState>(
+        return StatePickerSheet<PartState>(
           title: 'Modifier l\'état de l\'élément',
           values: PartState.values,
           currentValue: displayedState,
@@ -1358,345 +1358,7 @@ class _FieldErrorBanner extends StatelessWidget {
   }
 }
 
-class _EditSheetContent extends StatefulWidget {
-  final String title;
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final GlobalKey<FormState>? formKey;
-  final String label;
-  final TextInputType? keyboardType;
-  final int? maxLength;
-  final int? maxLines;
-  final String? Function(String?)? validator;
-  final VoidCallback onCancel;
-  final VoidCallback onSave;
-
-  const _EditSheetContent({
-    required this.title,
-    required this.controller,
-    required this.focusNode,
-    this.formKey,
-    required this.label,
-    this.keyboardType,
-    this.maxLength,
-    this.maxLines,
-    this.validator,
-    required this.onCancel,
-    required this.onSave,
-  });
-
-  @override
-  State<_EditSheetContent> createState() => _EditSheetContentState();
-}
-
-class _EditSheetContentState extends State<_EditSheetContent> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.focusNode.requestFocus();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
-
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (!isDesktop) const SheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              widget.title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Form(
-              key: widget.formKey,
-              child: TextFormField(
-                controller: widget.controller,
-                focusNode: widget.focusNode,
-                keyboardType: widget.keyboardType,
-                maxLength: widget.maxLength,
-                maxLines: widget.maxLines ?? 1,
-                minLines: widget.maxLines ?? 1,
-                decoration: InputDecoration(
-                  labelText: widget.label,
-                  border: const OutlineInputBorder(),
-                ),
-                textInputAction:
-                    (widget.maxLines ?? 1) > 1 ? TextInputAction.newline : TextInputAction.done,
-                onFieldSubmitted: (widget.maxLines ?? 1) > 1
-                    ? null
-                    : (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
-                        Navigator.of(context).pop(true);
-                      }),
-                validator: widget.validator ??
-                    (value) {
-                      if ((value ?? '').trim().isEmpty) {
-                        return 'Ce champ est requis';
-                      }
-                      return null;
-                    },
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(
-                  onPressed: widget.onCancel,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSurface,
-                    side: BorderSide(color: theme.colorScheme.outlineVariant),
-                    minimumSize: const Size(0, 48),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  child: const Text('Annuler'),
-                ),
-                const SizedBox(width: 10),
-                FilledButton(
-                  onPressed: widget.onSave,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 48),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                    ),
-                  ),
-                  child: const Text('Enregistrer'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 
-class _StatePickerSheet<T> extends StatelessWidget {
-  final String title;
-  final List<T> values;
-  final T currentValue;
-  final StateBadgeStyle Function(BuildContext, T) styleFor;
-  final void Function(T) onSelected;
-  final VoidCallback onCancel;
 
-  const _StatePickerSheet({
-    super.key,
-    required this.title,
-    required this.values,
-    required this.currentValue,
-    required this.styleFor,
-    required this.onSelected,
-    required this.onCancel,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!isDesktop) const SheetHandle(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        ...values.map((value) {
-          final style = styleFor(context, value);
-          final isCurrent = value == currentValue;
-
-          return InkWell(
-            onTap: () => onSelected(value),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: isCurrent
-                    ? theme.colorScheme.primaryContainer
-                        .withValues(alpha: 0.3)
-                    : null,
-                borderRadius: BorderRadius.circular(AppRadii.md),
-              ),
-              child: Row(
-                children: [
-                  Icon(style.icon, size: 20, color: style.foreground),
-                  const SizedBox(width: 10),
-                  Text(
-                    style.label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: style.foreground,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (isCurrent) ...[
-                    const Spacer(),
-                    Icon(
-                      Icons.check,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        }),
-        const Divider(),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton(
-                onPressed: onCancel,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: theme.colorScheme.onSurface,
-                  side: BorderSide(color: theme.colorScheme.outlineVariant),
-                  minimumSize: const Size(0, 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-                child: const Text('Annuler'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ModelPickerSheet extends StatelessWidget {
-  final String title;
-  final List<TentModel> models;
-  final String currentModelId;
-  final void Function(String) onSelected;
-  final VoidCallback onCancel;
-
-  const _ModelPickerSheet({
-    required this.title,
-    required this.models,
-    required this.currentModelId,
-    required this.onSelected,
-    required this.onCancel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!isDesktop) const SheetHandle(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        ...models.map((model) {
-          final isCurrent = model.id == currentModelId;
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: InkWell(
-              onTap: isCurrent ? null : () => onSelected(model.id),
-              borderRadius: BorderRadius.circular(AppRadii.md),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isCurrent
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.outlineVariant,
-                    width: isCurrent ? 1.5 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadii.md),
-                  color: isCurrent
-                      ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-                      : null,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        model.name,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isCurrent ? theme.colorScheme.primary : null,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-        const Divider(),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton(
-                onPressed: onCancel,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: theme.colorScheme.onSurface,
-                  side: BorderSide(color: theme.colorScheme.outlineVariant),
-                  minimumSize: const Size(0, 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-                child: const Text('Annuler'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
