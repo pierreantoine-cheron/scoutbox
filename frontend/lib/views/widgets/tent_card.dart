@@ -128,7 +128,7 @@ class _MetaRow extends StatelessWidget {
         Icon(Icons.people_outline, size: 13, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: 4),
         Text(
-          size == 1 ? '$size pl.' : '$size pl.',
+          '$size pl.',
           style: TextStyle(
             fontSize: 12,
             color: colorScheme.onSurfaceVariant,

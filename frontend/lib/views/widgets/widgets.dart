@@ -1,10 +1,8 @@
 export 'add_part_sheet.dart';
 export 'async_error_view.dart';
-export 'compact_state_badge.dart';
 export 'confirm_dialog.dart';
 export 'desktop_create_button.dart';
 export 'fading_cloud_done_icon.dart';
-export 'filter_chip.dart';
 export 'inline_text_editor.dart';
 export 'logout_button.dart';
 export 'model_picker_sheet.dart';
@@ -19,7 +17,6 @@ export 'sheet_handle.dart';
 export 'state_badge.dart';
 export 'state_picker_sheet.dart';
 export 'state_selector.dart';
-export 'tag_chip.dart';
 export 'tag_assignment_sheet.dart';
 export 'tag_sheet.dart';
 export 'tent_card.dart';

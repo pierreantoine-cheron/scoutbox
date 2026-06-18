@@ -15,7 +15,6 @@ class ScoutPill extends StatelessWidget {
   final ScoutPillVariant variant;
   final Border? baseBorder;
   final Color? selectedBorderColor;
-  final List<BoxShadow>? selectedBoxShadow;
   final String? semanticLabel;
 
   const ScoutPill._({
@@ -29,7 +28,6 @@ class ScoutPill extends StatelessWidget {
     this.variant = ScoutPillVariant.full,
     this.baseBorder,
     this.selectedBorderColor,
-    this.selectedBoxShadow,
     this.semanticLabel,
   });
 
@@ -195,16 +193,12 @@ class ScoutPill extends StatelessWidget {
             ))
         : baseBorder;
 
-    final effectiveShadows =
-        (selected && isFull) ? selectedBoxShadow : null;
-
     Widget pill = Container(
       padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(999),
         border: effectiveBorder,
-        boxShadow: effectiveShadows,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
