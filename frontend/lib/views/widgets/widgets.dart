@@ -8,6 +8,7 @@ export 'filter_chip.dart';
 export 'inline_text_editor.dart';
 export 'logout_button.dart';
 export 'model_picker_sheet.dart';
+export 'model_select_dropdown.dart';
 export 'navigation_drawer.dart';
 export 'password_form_field.dart';
 export 'refresh_warning_card.dart';
