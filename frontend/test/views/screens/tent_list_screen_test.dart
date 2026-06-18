@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/providers/auth_provider.dart';
+import 'package:client/models/auth_state.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/models/tent_model.dart';
 import 'package:client/providers/app_bar_config_provider.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:client/providers/auth_provider.dart';
+import 'package:client/models/auth_state.dart';
 import 'package:client/services/auth_service.dart';
 
 // Helper to create test AuthState instances

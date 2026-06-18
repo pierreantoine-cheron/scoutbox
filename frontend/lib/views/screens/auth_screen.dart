@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
+import '../../models/auth_state.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/auth_validators.dart';
