@@ -67,8 +67,9 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
               controller: _searchController,
               filled: true,
               fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              onChanged: (value) =>
-                  ref.read(tentListFilterProvider.notifier).setSearchText(value),
+              onChanged: (value) => ref
+                  .read(tentListFilterProvider.notifier)
+                  .setSearchText(value),
             ),
       actions: [
         if (isDesktop) ...[
@@ -232,7 +233,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             allTags,
             visibleTents.length,
           ),
-          if (warning != null) _RefreshWarningCard(message: warning),
+          if (warning != null) RefreshWarningCard(message: warning),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -266,7 +267,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
               itemCount: visibleTents.length + (refreshIssue == null ? 0 : 1),
               itemBuilder: (context, index) {
                 if (refreshIssue != null && index == 0) {
-                  return _RefreshWarningCard(
+                  return RefreshWarningCard(
                     message: _toRefreshWarningMessage(refreshIssue)!,
                   );
                 }
@@ -295,36 +296,36 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     List allTags,
     int visibleTentCount,
   ) {
-      return TentListFilterBar(
-        isDesktop: isDesktop,
-        searchController: _searchController,
-        selectedStates: filterState.selectedStates,
-        selectedSizes: filterState.selectedSizes,
-        selectedModelIds: filterState.selectedModelIds,
-        selectedTagIds: filterState.selectedTagIds,
-        availableSizes: availableSizes,
-        availableModelOptions: availableModelOptions,
-        allTags: allTags.cast(),
-        visibleTentCount: visibleTentCount,
-        isFilteredMode: isFilteredMode,
-        onSearchChanged: (value) {
-          ref.read(tentListFilterProvider.notifier).setSearchText(value);
-        },
-        onToggleState: (state) {
-          ref.read(tentListFilterProvider.notifier).toggleState(state);
-        },
-        onToggleSize: (size) {
-          ref.read(tentListFilterProvider.notifier).toggleSize(size);
-        },
-        onToggleModel: (modelId) {
-          ref.read(tentListFilterProvider.notifier).toggleModel(modelId);
-        },
-        onToggleTag: _toggleTagFilter,
-        onClearAll: _clearFiltersHook,
-        onClearTags: () =>
-            ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
-        onManageTags: () => _switchToTags(),
-      );
+    return TentListFilterBar(
+      isDesktop: isDesktop,
+      searchController: _searchController,
+      selectedStates: filterState.selectedStates,
+      selectedSizes: filterState.selectedSizes,
+      selectedModelIds: filterState.selectedModelIds,
+      selectedTagIds: filterState.selectedTagIds,
+      availableSizes: availableSizes,
+      availableModelOptions: availableModelOptions,
+      allTags: allTags.cast(),
+      visibleTentCount: visibleTentCount,
+      isFilteredMode: isFilteredMode,
+      onSearchChanged: (value) {
+        ref.read(tentListFilterProvider.notifier).setSearchText(value);
+      },
+      onToggleState: (state) {
+        ref.read(tentListFilterProvider.notifier).toggleState(state);
+      },
+      onToggleSize: (size) {
+        ref.read(tentListFilterProvider.notifier).toggleSize(size);
+      },
+      onToggleModel: (modelId) {
+        ref.read(tentListFilterProvider.notifier).toggleModel(modelId);
+      },
+      onToggleTag: _toggleTagFilter,
+      onClearAll: _clearFiltersHook,
+      onClearTags: () =>
+          ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
+      onManageTags: () => _switchToTags(),
+    );
   }
 
   bool _hasOnlyTagFilters(TentListFilterState filterState) {
@@ -413,7 +414,10 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     }
 
     final detail = refreshIssue is TentRepositoryException
-        ? ErrorLocalizer.localize(refreshIssue.code, fallback: refreshIssue.message)
+        ? ErrorLocalizer.localize(
+            refreshIssue.code,
+            fallback: refreshIssue.message,
+          )
         : 'Impossible d\'actualiser la liste pour le moment.';
     return 'Les données affichées peuvent être anciennes. $detail';
   }
@@ -425,12 +429,10 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   }
 
   void _switchToTags() {
-    ref.read(navigationSectionProvider.notifier).set(
-          NavigationSection.tags,
-        );
-    ref.read(appBarConfigProvider.notifier).set(
-          const AppBarConfig(screenId: ''),
-        );
+    ref.read(navigationSectionProvider.notifier).set(NavigationSection.tags);
+    ref
+        .read(appBarConfigProvider.notifier)
+        .set(const AppBarConfig(screenId: ''));
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const TagsScreen()),
       (_) => false,
@@ -454,7 +456,7 @@ class _EmptyState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         if (warningMessage != null)
-          _RefreshWarningCard(message: warningMessage!),
+          RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
         const Icon(Icons.cabin, size: 64),
         const SizedBox(height: 16),
@@ -499,9 +501,13 @@ class _FilteredEmptyState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         if (warningMessage != null)
-          _RefreshWarningCard(message: warningMessage!),
+          RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
-        Icon(Icons.filter_alt_off, size: 64, color: colorScheme.onSurfaceVariant),
+        Icon(
+          Icons.filter_alt_off,
+          size: 64,
+          color: colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(height: 16),
         Center(
           child: Text(
@@ -517,42 +523,17 @@ class _FilteredEmptyState extends StatelessWidget {
         Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Text(
-            'Essayez d\'ajuster vos filtres ou d\'en créer une nouvelle.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: colorScheme.onSurfaceVariant,
+            child: Text(
+              'Essayez d\'ajuster vos filtres ou d\'en créer une nouvelle.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _RefreshWarningCard extends StatelessWidget {
-  final String message;
-
-  const _RefreshWarningCard({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Card(
-        color: colorScheme.errorContainer,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            message,
-            style: TextStyle(color: colorScheme.onErrorContainer),
-          ),
-        ),
-      ),
     );
   }
 }

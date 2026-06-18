@@ -133,7 +133,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
               if (refreshIssue != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: _RefreshWarningCard(
+                  child: RefreshWarningCard(
                     message: _refreshWarning(refreshIssue),
                   ),
                 ),
@@ -164,7 +164,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
         padding: const EdgeInsets.all(24),
         children: [
           if (refreshIssue != null)
-            _RefreshWarningCard(message: _refreshWarning(refreshIssue)),
+            RefreshWarningCard(message: _refreshWarning(refreshIssue)),
           const SizedBox(height: 96),
           Icon(Icons.label_outline, size: 48, color: AppColors.muted),
           const SizedBox(height: 16),
@@ -359,28 +359,6 @@ class _TagCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RefreshWarningCard extends StatelessWidget {
-  final String message;
-
-  const _RefreshWarningCard({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
-
-    return Card(
-      color: semanticColors.stateUsableBackground,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Text(
-          message,
-          style: TextStyle(color: semanticColors.stateUsable),
         ),
       ),
     );
