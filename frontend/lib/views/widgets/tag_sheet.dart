@@ -321,6 +321,7 @@ class _TagSheetState extends State<TagSheet> {
     return null;
   }
 
+  /// flutter_colorpicker toHexString extension method is broken
   String _colorToHex(Color color) {
     final r = (color.r * 255).round().clamp(0, 255);
     final g = (color.g * 255).round().clamp(0, 255);
