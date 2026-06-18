@@ -3,13 +3,35 @@ import 'package:flutter/material.dart';
 import '../../models/tag.dart';
 import '../../models/tent.dart';
 import '../../utils/app_colors.dart';
-import 'filter_chip.dart';
+import 'scout_pill.dart';
 
 class TentTypeFilterOption {
   final String id;
   final String label;
 
   const TentTypeFilterOption({required this.id, required this.label});
+}
+
+enum _ActivePillType { state, neutral, tag }
+
+class _ActivePill {
+  final String value;
+  final String label;
+  final Color? color;
+  final Color? tagColor;
+  final VoidCallback onTap;
+  final _ActivePillType type;
+
+  const _ActivePill({
+    required this.value,
+    required this.label,
+    this.color,
+    this.tagColor,
+    required this.onTap,
+    required this.type,
+  });
+
+  double get estimatedWidth => (label.length * 9.0) + 28;
 }
 
 class TentListFilterBar extends StatefulWidget {
@@ -70,6 +92,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
         value: state.name,
         label: state.toFrenchLabel(),
         color: _stateColor(state),
+        type: _ActivePillType.state,
         onTap: () => widget.onToggleState(state),
       ));
     }
@@ -77,7 +100,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
       pills.add(_ActivePill(
         value: size.toString(),
         label: size == 1 ? '1 place' : '$size places',
-        color: AppColors.scoutGreen,
+        type: _ActivePillType.neutral,
         onTap: () => widget.onToggleSize(size),
       ));
     }
@@ -87,7 +110,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
       pills.add(_ActivePill(
         value: modelId,
         label: model?.label ?? modelId,
-        color: AppColors.scoutGreen,
+        type: _ActivePillType.neutral,
         onTap: () => widget.onToggleModel(modelId),
       ));
     }
@@ -98,6 +121,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
           value: tagId,
           label: tag.name,
           tagColor: TagPalette.colorFromHex(tag.color),
+          type: _ActivePillType.tag,
           onTap: () => widget.onToggleTag(tagId),
         ));
       }
@@ -325,21 +349,7 @@ class _PillsOverflow extends StatelessWidget {
             runSpacing: spacing,
             children: [
               for (var i = 0; i < pills.length && i < maxTokens; i++)
-                pills[i].tagColor != null
-                    ? ScoutChip.filterTag(
-                        name: pills[i].label,
-                        color: pills[i].tagColor!,
-                        selected: false,
-                        onTap: pills[i].onTap,
-                      )
-                    : ScoutChip.filter(
-                        label: pills[i].label,
-                        backgroundColor:
-                            pills[i].color!.withValues(alpha: 0.15),
-                        foregroundColor: pills[i].color!,
-                        selected: false,
-                        onTap: pills[i].onTap,
-                      ),
+                _buildPill(pills[i], colorScheme),
               if (pills.length > maxTokens)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -367,6 +377,35 @@ class _PillsOverflow extends StatelessWidget {
     );
   }
 
+  Widget _buildPill(_ActivePill pill, ColorScheme colorScheme) {
+    switch (pill.type) {
+      case _ActivePillType.tag:
+        return ScoutPill(
+          label: pill.label,
+          backgroundColor: pill.tagColor!.withValues(alpha: 0.15),
+          foregroundColor: pill.tagColor!,
+          selected: false,
+          onTap: pill.onTap,
+        );
+      case _ActivePillType.state:
+        return ScoutPill.filterState(
+          label: pill.label,
+          backgroundColor: pill.color!.withValues(alpha: 0.15),
+          foregroundColor: pill.color!,
+          selected: false,
+          onTap: pill.onTap,
+        );
+      case _ActivePillType.neutral:
+        return ScoutPill.filterNeutral(
+          label: pill.label,
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          foregroundColor: colorScheme.onSurfaceVariant,
+          selected: false,
+          onTap: pill.onTap,
+        );
+    }
+  }
+
   int _fitCount(double maxWidth, double spacing) {
     var used = spacing;
     for (var i = 0; i < pills.length; i++) {
@@ -377,7 +416,6 @@ class _PillsOverflow extends StatelessWidget {
     return pills.length;
   }
 }
-
 
 class _FilterPanel extends StatelessWidget {
   final Set<TentOverallState> selectedStates;
@@ -436,11 +474,12 @@ class _FilterPanel extends StatelessWidget {
                 Builder(
                   builder: (ctx) {
                     final colors = _filterChipColors(state, ctx);
-                    return ScoutChip.filter(
+                    final isSelected = selectedStates.contains(state);
+                    return ScoutPill.filterState(
                       label: state.toFrenchLabel(),
                       backgroundColor: colors.background,
                       foregroundColor: colors.foreground,
-                      selected: selectedStates.contains(state),
+                      selected: isSelected,
                       onTap: () => onToggleState(state),
                     );
                   },
@@ -453,10 +492,10 @@ class _FilterPanel extends StatelessWidget {
               label: 'Taille',
               children: [
                 for (final size in availableSizes)
-                  ScoutChip.filter(
+                  ScoutPill.filterNeutral(
                     label: size == 1 ? '$size place' : '$size places',
-                    backgroundColor: AppColors.accentSoft,
-                    foregroundColor: AppColors.scoutGreen,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    foregroundColor: colorScheme.onSurfaceVariant,
                     selected: selectedSizes.contains(size),
                     onTap: () => onToggleSize(size),
                   ),
@@ -467,10 +506,10 @@ class _FilterPanel extends StatelessWidget {
               label: 'Modèle',
               children: [
                 for (final option in availableModelOptions)
-                  ScoutChip.filter(
+                  ScoutPill.filterNeutral(
                     label: option.label,
-                    backgroundColor: AppColors.accentSoft,
-                    foregroundColor: AppColors.scoutGreen,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    foregroundColor: colorScheme.onSurfaceVariant,
                     selected: selectedModelIds.contains(option.id),
                     onTap: () => onToggleModel(option.id),
                   ),
@@ -481,11 +520,18 @@ class _FilterPanel extends StatelessWidget {
               label: 'Étiquettes',
               children: [
                 for (final tag in _sortedTags())
-                  ScoutChip.filterTag(
-                    name: tag.name,
-                    color: TagPalette.colorFromHex(tag.color),
-                    selected: selectedTagIds.contains(tag.id),
-                    onTap: () => onToggleTag(tag.id),
+                  Builder(
+                    builder: (_) {
+                      final tagColor = TagPalette.colorFromHex(tag.color);
+                      final isSelected = selectedTagIds.contains(tag.id);
+                      return ScoutPill(
+                        label: tag.name,
+                        backgroundColor: tagColor.withValues(alpha: 0.15),
+                        foregroundColor: tagColor,
+                        selected: isSelected,
+                        onTap: () => onToggleTag(tag.id),
+                      );
+                    },
                   ),
               ],
             ),
@@ -566,24 +612,4 @@ class _FilterRow extends StatelessWidget {
       ),
     );
   }
-}
-
-
-
-class _ActivePill {
-  final String value;
-  final String label;
-  final Color? color;
-  final Color? tagColor;
-  final VoidCallback onTap;
-
-  const _ActivePill({
-    required this.value,
-    required this.label,
-    this.color,
-    this.tagColor,
-    required this.onTap,
-  });
-
-  double get estimatedWidth => (label.length * 9.0) + 28;
 }

@@ -238,6 +238,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
                 tents: visibleTents,
                 onOpenTent: (tent) => _openTentDetail(context, tent),
                 onTagTap: _toggleTagFilter,
+                onStateTap: _toggleStateFilter,
               ),
             ),
           ),
@@ -275,6 +276,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
                   tent: tent,
                   onTap: () => _openTentDetail(context, tent),
                   onTagTap: _toggleTagFilter,
+                  onStateTap: _toggleStateFilter,
                 );
               },
             ),
@@ -335,6 +337,10 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
 
   void _toggleTagFilter(String tagId) {
     ref.read(tentListFilterProvider.notifier).toggleTag(tagId);
+  }
+
+  void _toggleStateFilter(TentOverallState state) {
+    ref.read(tentListFilterProvider.notifier).toggleState(state);
   }
 
   List<int> _buildSizeOptions(List<Tent> rawTents) {

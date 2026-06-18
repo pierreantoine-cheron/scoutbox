@@ -4,19 +4,22 @@ import '../../models/tag.dart';
 import '../../models/tent.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/tent_sort.dart';
-import 'compact_state_badge.dart';
+import 'scout_pill.dart';
+import 'state_badge.dart';
 import 'tent_tag_chips.dart';
 
 class TentDataTable extends StatefulWidget {
   final List<Tent> tents;
   final ValueChanged<Tent> onOpenTent;
   final ValueChanged<String>? onTagTap;
+  final ValueChanged<TentOverallState>? onStateTap;
 
   const TentDataTable({
     super.key,
     required this.tents,
     required this.onOpenTent,
     this.onTagTap,
+    this.onStateTap,
   });
 
   @override
@@ -132,7 +135,14 @@ class _TentDataTableState extends State<TentDataTable> {
       children: [
         _DataCell(
           onTap: onTap,
-          child: CompactStateBadge.forTent(context, tent.overallState),
+          child: ScoutPill.state(
+            style: tentStateBadgeStyle(context, tent.overallState),
+            variant: ScoutPillVariant.compact,
+            onTap: widget.onStateTap != null
+                ? () => widget.onStateTap!(tent.overallState)
+                : null,
+            semanticLabel: 'État : ${tent.overallState.toFrenchLabel()}',
+          ),
         ),
         _DataCell(
           onTap: onTap,

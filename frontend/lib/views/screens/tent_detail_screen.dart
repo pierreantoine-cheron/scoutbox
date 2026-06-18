@@ -445,7 +445,12 @@ class _InfoChipsRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final opacity = isArchived ? 0.55 : 1.0;
+    final sizeLabel = tent.size == 1 ? '1 place' : '${tent.size} places';
+    final modelName = (tent.tentModelName?.trim().isNotEmpty ?? false)
+        ? tent.tentModelName!
+        : 'Type inconnu';
 
     return Opacity(
       opacity: opacity,
@@ -455,46 +460,28 @@ class _InfoChipsRow extends ConsumerWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _StatePill(tentId: tentId, tent: tent),
-            _SizeChip(tentId: tentId, tent: tent),
-            _ModelChip(tentId: tentId, tent: tent),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatePill extends ConsumerWidget {
-  final String tentId;
-  final Tent tent;
-
-  const _StatePill({required this.tentId, required this.tent});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final style = tentStateBadgeStyle(context, tent.overallState);
-
-    return InkWell(
-      onTap: () => _showEditStateSheet(context, ref),
-      borderRadius: BorderRadius.circular(AppRadii.pill),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: style.background,
-          borderRadius: BorderRadius.circular(AppRadii.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(style.icon, size: 12, color: style.foreground),
-            const SizedBox(width: 6),
-            Text(
-              style.label,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: style.foreground,
-                    fontWeight: FontWeight.w600,
-                  ),
+            ScoutPill.state(
+              style: tentStateBadgeStyle(context, tent.overallState),
+              onTap: () => _showEditStateSheet(context, ref),
+              semanticLabel: 'État : ${tent.overallState.toFrenchLabel()}',
+            ),
+            ScoutPill(
+              label: sizeLabel,
+              backgroundColor: Colors.transparent,
+              foregroundColor: theme.colorScheme.onSurface,
+              icon: Icons.people_outline,
+              baseBorder: Border.all(color: theme.colorScheme.outlineVariant),
+              onTap: () => _showEditSizeSheet(context, ref),
+              semanticLabel: 'Taille : $sizeLabel',
+            ),
+            ScoutPill(
+              label: modelName,
+              backgroundColor: Colors.transparent,
+              foregroundColor: theme.colorScheme.onSurface,
+              icon: Icons.terrain_outlined,
+              baseBorder: Border.all(color: theme.colorScheme.outlineVariant),
+              onTap: () => _showEditModelSheet(context, ref),
+              semanticLabel: 'Modèle : $modelName',
             ),
           ],
         ),
@@ -529,42 +516,6 @@ class _StatePill extends ConsumerWidget {
             comments: tent.comments,
           );
     }
-  }
-}
-
-class _SizeChip extends ConsumerWidget {
-  final String tentId;
-  final Tent tent;
-
-  const _SizeChip({required this.tentId, required this.tent});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final label = tent.size == 1 ? '1 place' : '${tent.size} places';
-
-    return InkWell(
-      onTap: () => _showEditSizeSheet(context, ref),
-      borderRadius: BorderRadius.circular(AppRadii.pill),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(AppRadii.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.people_outline, size: 16, color: theme.colorScheme.outline),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: theme.textTheme.labelLarge,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _showEditSizeSheet(
@@ -618,44 +569,6 @@ class _SizeChip extends ConsumerWidget {
             );
       }
     }
-  }
-}
-
-class _ModelChip extends ConsumerWidget {
-  final String tentId;
-  final Tent tent;
-
-  const _ModelChip({required this.tentId, required this.tent});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final modelName = (tent.tentModelName?.trim().isNotEmpty ?? false)
-        ? tent.tentModelName!
-        : 'Type inconnu';
-
-    return InkWell(
-      onTap: () => _showEditModelSheet(context, ref),
-      borderRadius: BorderRadius.circular(AppRadii.pill),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(AppRadii.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.terrain_outlined, size: 16, color: theme.colorScheme.outline),
-            const SizedBox(width: 6),
-            Text(
-              modelName,
-              style: theme.textTheme.labelLarge,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _showEditModelSheet(
@@ -822,7 +735,7 @@ class _TagsBlock extends ConsumerWidget {
               runSpacing: 6,
               children: tent.tags
                   .map(
-                    (tag) => ScoutChip.tag(
+                    (tag) => ScoutPill.tag(
                       label: tag.name,
                       color: TagPalette.colorFromHex(tag.color),
                     ),
@@ -1055,14 +968,20 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
                   ),
                   const SizedBox(width: 8),
                   if (_isSelectionMode) ...[
-                    StateBadge.forPart(context, displayedState),
+                    ScoutPill.state(
+                      style: partStateBadgeStyle(context, displayedState),
+                      variant: ScoutPillVariant.compact,
+                    ),
                     const SizedBox(width: 4),
                   ] else
-                    _PartStateBadge(
-                      tentId: widget.tentId,
-                      part: part,
-                      displayedState: displayedState,
-                      isArchived: widget.isArchived,
+                    ScoutPill.state(
+                      style: partStateBadgeStyle(context, displayedState),
+                      variant: ScoutPillVariant.compact,
+                      onTap: widget.isArchived
+                          ? null
+                          : () => _showEditPartStateSheet(part, displayedState),
+                      semanticLabel:
+                          'État de la pièce : ${displayedState.toFrenchLabel()}',
                     ),
                 ],
               ),
@@ -1172,58 +1091,8 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
       ),
     );
   }
-}
 
-class _PartStateBadge extends ConsumerWidget {
-  final String tentId;
-  final Part part;
-  final PartState displayedState;
-  final bool isArchived;
-
-  const _PartStateBadge({
-    required this.tentId,
-    required this.part,
-    required this.displayedState,
-    required this.isArchived,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final style = partStateBadgeStyle(context, displayedState);
-
-    return InkWell(
-      onTap: isArchived
-          ? null
-          : () => _showEditPartStateSheet(context, ref),
-      borderRadius: BorderRadius.circular(AppRadii.pill),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: style.background,
-          borderRadius: BorderRadius.circular(AppRadii.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(style.icon, size: 12, color: style.foreground),
-            const SizedBox(width: 5),
-            Text(
-              style.label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: style.foreground,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showEditPartStateSheet(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _showEditPartStateSheet(Part part, PartState displayedState) async {
     final result = await showResponsiveSheet<PartState>(
       context: context,
       builder: (sheetContext) {
@@ -1238,8 +1107,8 @@ class _PartStateBadge extends ConsumerWidget {
       },
     );
 
-    if (result != null && context.mounted && result != displayedState) {
-      final notifier = ref.read(partUpdateProvider(tentId).notifier);
+    if (result != null && mounted && result != displayedState) {
+      final notifier = ref.read(partUpdateProvider(widget.tentId).notifier);
       final updateResult = await notifier.updatePartState(
         partId: part.id,
         previousState: displayedState,
@@ -1247,7 +1116,7 @@ class _PartStateBadge extends ConsumerWidget {
         previousComments: part.comments,
         newComments: part.comments,
       );
-      if (context.mounted && updateResult == PartUpdateResult.success) {
+      if (mounted && updateResult == PartUpdateResult.success) {
         ref.read(successIndicatorProvider.notifier).fire();
       }
     }

@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../../models/tent.dart';
-import 'compact_state_badge.dart';
+import 'scout_pill.dart';
+import 'state_badge.dart';
 import 'tent_tag_chips.dart';
 
 class TentCard extends StatelessWidget {
   final Tent tent;
   final VoidCallback onTap;
   final ValueChanged<String>? onTagTap;
+  final ValueChanged<TentOverallState>? onStateTap;
 
   const TentCard({
     super.key,
     required this.tent,
     required this.onTap,
     this.onTagTap,
+    this.onStateTap,
   });
 
   @override
@@ -43,7 +46,14 @@ class TentCard extends StatelessWidget {
               child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CompactStateBadge.forTent(context, tent.overallState),
+                ScoutPill.state(
+                  style: tentStateBadgeStyle(context, tent.overallState),
+                  variant: ScoutPillVariant.compact,
+                  onTap: onStateTap != null
+                      ? () => onStateTap!(tent.overallState)
+                      : null,
+                  semanticLabel: 'État : ${tent.overallState.toFrenchLabel()}',
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

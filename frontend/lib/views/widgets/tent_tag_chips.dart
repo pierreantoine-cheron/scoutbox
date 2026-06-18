@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/tag.dart';
 import '../../utils/app_colors.dart';
-import 'filter_chip.dart';
+import 'scout_pill.dart';
 
 enum TentTagChipsMode { compact }
 
@@ -34,11 +34,11 @@ class TentTagChips extends StatelessWidget {
       children: [
         for (final tag in visibleTags) ...[
           Flexible(
-            child: ScoutChip.tag(
+            child: ScoutPill.tag(
               label: tag.name,
               color: TagPalette.colorFromHex(tag.color),
+              variant: ScoutPillVariant.compact,
               onTap: onTagTap != null ? () => onTagTap!(tag.id) : null,
-              tooltip: tag.name,
               semanticLabel: 'Étiquette : ${tag.name}',
             ),
           ),

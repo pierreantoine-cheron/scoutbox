@@ -9,7 +9,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
 import '../screens/tags_screen.dart';
-import 'filter_chip.dart';
+import 'scout_pill.dart';
 import 'sheet_handle.dart';
 
 class TagAssignmentSheet extends ConsumerStatefulWidget {
@@ -200,12 +200,17 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
         spacing: 10,
         runSpacing: 10,
         children: filteredTags
-            .map((tag) => ScoutChip.filterTag(
-                  name: tag.name,
-                  color: TagPalette.colorFromHex(tag.color),
-                  selected: _selectedTagIds.contains(tag.id),
-                  onTap: _isSaving ? null : () => _toggleLocal(tag.id),
-                ))
+            .map((tag) {
+                  final tagColor = TagPalette.colorFromHex(tag.color);
+                  final isSelected = _selectedTagIds.contains(tag.id);
+                  return ScoutPill(
+                    label: tag.name,
+                    backgroundColor: tagColor.withValues(alpha: 0.15),
+                    foregroundColor: tagColor,
+                    selected: isSelected,
+                    onTap: _isSaving ? null : () => _toggleLocal(tag.id),
+                  );
+                })
             .toList(),
       ),
     );
