@@ -30,7 +30,7 @@ class ScoutChip extends StatelessWidget {
     this.fontSize = 13,
   });
 
-  const ScoutChip.tag({
+  ScoutChip.tag({
     Key? key,
     required String label,
     required Color color,
@@ -38,78 +38,57 @@ class ScoutChip extends StatelessWidget {
     String? tooltip,
     String? semanticLabel,
   }) : this(
-         key: key,
-         label: label,
-         backgroundColor: color,
-         foregroundColor: Colors.white,
-         onTap: onTap,
-         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
-         maxLines: 1,
-         overflow: TextOverflow.ellipsis,
-         fontSize: 12,
-         tooltip: tooltip,
-         semanticLabel: semanticLabel,
-       );
+          key: key,
+          label: label,
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          onTap: onTap,
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          fontSize: 12,
+          tooltip: tooltip,
+          semanticLabel: semanticLabel,
+        );
 
-  ScoutChip.state({
+  ScoutChip.filter({
     Key? key,
     required String label,
-    required Color? color,
-    required ColorScheme colorScheme,
-    VoidCallback? onTap,
-  }) : this(
-         key: key,
-         label: label,
-         backgroundColor:
-             color?.withValues(alpha: 0.15) ?? colorScheme.primaryContainer,
-         foregroundColor: color ?? colorScheme.primary,
-         onTap: onTap,
-         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-       );
-
-  ScoutChip.toggle({
-    Key? key,
-    required String label,
+    required Color color,
     required bool selected,
-    required ColorScheme colorScheme,
     VoidCallback? onTap,
   }) : this(
-         key: key,
-         label: label,
-         backgroundColor: selected ? colorScheme.primary : Colors.transparent,
-         foregroundColor: selected
-             ? colorScheme.onPrimary
-             : colorScheme.onSurface,
-         border: Border.all(
-           color: selected ? colorScheme.primary : colorScheme.outlineVariant,
-         ),
-         onTap: onTap,
-         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
-       );
+          key: key,
+          label: label,
+          backgroundColor: color.withValues(alpha: 0.15),
+          foregroundColor: color,
+          border: selected ? Border.all(color: color, width: 1.5) : null,
+          onTap: onTap,
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+        );
 
-  ScoutChip.selectableTag({
+  ScoutChip.filterTag({
     Key? key,
     required String name,
     required Color color,
     required bool selected,
-    required ColorScheme colorScheme,
     VoidCallback? onTap,
   }) : this(
-         key: key,
-         label: name,
-         backgroundColor: color,
-         foregroundColor: Colors.white,
-         border: Border.all(
-           color: selected ? Colors.white : Colors.transparent,
-           width: selected ? 2 : 0,
-         ),
-         boxShadow: selected
-             ? [BoxShadow(color: colorScheme.primary, spreadRadius: 2)]
-             : null,
-         onTap: onTap,
-         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
-         fontSize: 12,
-       );
+          key: key,
+          label: name,
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          border: Border.all(
+            color: selected ? Colors.white : Colors.transparent,
+            width: selected ? 2 : 0,
+          ),
+          boxShadow: selected
+              ? [BoxShadow(color: color, spreadRadius: 2)]
+              : null,
+          onTap: onTap,
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+          fontSize: 12,
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +131,10 @@ class ScoutChip extends StatelessWidget {
     }
 
     if (tooltip != null) {
-      result = Tooltip(message: tooltip!, child: result);
+      result = Tooltip(
+        message: tooltip!,
+        child: result,
+      );
     }
 
     return result;

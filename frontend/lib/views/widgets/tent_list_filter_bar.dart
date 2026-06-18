@@ -77,6 +77,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
       pills.add(_ActivePill(
         value: size.toString(),
         label: size == 1 ? '1 place' : '$size places',
+        color: AppColors.scoutGreen,
         onTap: () => widget.onToggleSize(size),
       ));
     }
@@ -86,6 +87,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
       pills.add(_ActivePill(
         value: modelId,
         label: model?.label ?? modelId,
+        color: AppColors.scoutGreen,
         onTap: () => widget.onToggleModel(modelId),
       ));
     }
@@ -101,14 +103,6 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
       }
     }
     return pills;
-  }
-
-  Color _stateColor(TentOverallState state) {
-    return switch (state) {
-      TentOverallState.good => AppColors.statePerfect,
-      TentOverallState.needsRepair => AppColors.stateUsable,
-      TentOverallState.unusable => AppColors.stateUnusable,
-    };
   }
 
   @override
@@ -163,6 +157,14 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
       ),
     );
   }
+}
+
+Color _stateColor(TentOverallState state) {
+  return switch (state) {
+    TentOverallState.good => AppColors.statePerfect,
+    TentOverallState.needsRepair => AppColors.stateUsable,
+    TentOverallState.unusable => AppColors.stateUnusable,
+  };
 }
 
 class _FilterBarBase extends StatelessWidget {
@@ -296,15 +298,16 @@ class _PillsOverflow extends StatelessWidget {
             children: [
               for (var i = 0; i < pills.length && i < maxTokens; i++)
                 pills[i].tagColor != null
-                    ? ScoutChip.tag(
-                        label: pills[i].label,
+                    ? ScoutChip.filterTag(
+                        name: pills[i].label,
                         color: pills[i].tagColor!,
+                        selected: false,
                         onTap: pills[i].onTap,
                       )
-                    : ScoutChip.state(
+                    : ScoutChip.filter(
                         label: pills[i].label,
-                        color: pills[i].color,
-                        colorScheme: colorScheme,
+                        color: pills[i].color!,
+                        selected: false,
                         onTap: pills[i].onTap,
                       ),
               if (pills.length > maxTokens)
@@ -400,10 +403,10 @@ class _FilterPanel extends StatelessWidget {
             label: 'État',
             children: [
               for (final state in TentOverallState.values)
-                ScoutChip.toggle(
+                ScoutChip.filter(
                   label: state.toFrenchLabel(),
+                  color: _stateColor(state),
                   selected: selectedStates.contains(state),
-                  colorScheme: colorScheme,
                   onTap: () => onToggleState(state),
                 ),
             ],
@@ -413,10 +416,10 @@ class _FilterPanel extends StatelessWidget {
               label: 'Taille',
               children: [
                 for (final size in availableSizes)
-                  ScoutChip.toggle(
+                  ScoutChip.filter(
                     label: size == 1 ? '$size place' : '$size places',
+                    color: AppColors.scoutGreen,
                     selected: selectedSizes.contains(size),
-                    colorScheme: colorScheme,
                     onTap: () => onToggleSize(size),
                   ),
               ],
@@ -426,10 +429,10 @@ class _FilterPanel extends StatelessWidget {
               label: 'Modèle',
               children: [
                 for (final option in availableModelOptions)
-                  ScoutChip.toggle(
+                  ScoutChip.filter(
                     label: option.label,
+                    color: AppColors.scoutGreen,
                     selected: selectedModelIds.contains(option.id),
-                    colorScheme: colorScheme,
                     onTap: () => onToggleModel(option.id),
                   ),
               ],
@@ -439,11 +442,10 @@ class _FilterPanel extends StatelessWidget {
               label: 'Étiquettes',
               children: [
                 for (final tag in _sortedTags())
-                  ScoutChip.selectableTag(
+                  ScoutChip.filterTag(
                     name: tag.name,
                     color: TagPalette.colorFromHex(tag.color),
                     selected: selectedTagIds.contains(tag.id),
-                    colorScheme: colorScheme,
                     onTap: () => onToggleTag(tag.id),
                   ),
               ],

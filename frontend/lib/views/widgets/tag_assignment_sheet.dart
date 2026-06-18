@@ -200,11 +200,10 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
         spacing: 10,
         runSpacing: 10,
         children: filteredTags
-            .map((tag) => ScoutChip.selectableTag(
+            .map((tag) => ScoutChip.filterTag(
                   name: tag.name,
                   color: TagPalette.colorFromHex(tag.color),
                   selected: _selectedTagIds.contains(tag.id),
-                  colorScheme: Theme.of(context).colorScheme,
                   onTap: _isSaving ? null : () => _toggleLocal(tag.id),
                 ))
             .toList(),
