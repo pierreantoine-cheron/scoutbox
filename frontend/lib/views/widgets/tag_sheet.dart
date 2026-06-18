@@ -7,6 +7,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
 import 'sheet_footer.dart';
+import 'sheet_handle.dart';
 
 class TagSheet extends StatefulWidget {
   final Future<void> Function(String name, String color) onCreate;
@@ -56,6 +57,7 @@ class _TagSheetState extends State<TagSheet> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
 
     return SafeArea(
       child: Padding(
@@ -65,7 +67,7 @@ class _TagSheetState extends State<TagSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildHandle(context),
+            if (!isDesktop) const SheetHandle(),
             _buildHeader(context),
             Flexible(
               child: SingleChildScrollView(
@@ -110,24 +112,7 @@ class _TagSheetState extends State<TagSheet> {
     );
   }
 
-  Widget _buildHandle(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width >= 768;
-    if (isDesktop) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 10, bottom: 6),
-      child: Center(
-        child: Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: AppColors.border,
-            borderRadius: BorderRadius.circular(AppRadii.pill),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildHeader(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;

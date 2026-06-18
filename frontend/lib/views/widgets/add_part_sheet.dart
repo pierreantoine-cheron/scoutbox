@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/design_constants.dart';
+import 'sheet_handle.dart';
 
 class AddPartSheet extends ConsumerStatefulWidget {
   final String tentId;
@@ -48,7 +49,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!isDesktop) const _SheetHandle(),
+          if (!isDesktop) const SheetHandle(),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
             child: Text(
@@ -269,23 +270,3 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
   }
 }
 
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            borderRadius: BorderRadius.circular(AppRadii.pill),
-          ),
-        ),
-      ),
-    );
-  }
-}

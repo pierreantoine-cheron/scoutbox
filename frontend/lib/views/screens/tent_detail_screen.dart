@@ -1415,7 +1415,7 @@ class _EditSheetContentState extends State<_EditSheetContent> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!isDesktop) const _SheetHandle(),
+          if (!isDesktop) const SheetHandle(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Text(
@@ -1498,26 +1498,6 @@ class _EditSheetContentState extends State<_EditSheetContent> {
   }
 }
 
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            borderRadius: BorderRadius.circular(AppRadii.pill),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _StatePickerSheet<T> extends StatelessWidget {
   final String title;
@@ -1546,7 +1526,7 @@ class _StatePickerSheet<T> extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!isDesktop) const _SheetHandle(),
+        if (!isDesktop) const SheetHandle(),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
@@ -1647,7 +1627,7 @@ class _ModelPickerSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!isDesktop) const _SheetHandle(),
+        if (!isDesktop) const SheetHandle(),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Text(

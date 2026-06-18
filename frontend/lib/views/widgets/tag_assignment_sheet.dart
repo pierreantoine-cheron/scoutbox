@@ -9,6 +9,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
 import '../screens/tags_screen.dart';
+import 'sheet_handle.dart';
 import 'tag_chip.dart';
 
 class TagAssignmentSheet extends ConsumerStatefulWidget {
@@ -58,7 +59,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!isDesktop) const _SheetHandle(),
+          if (!isDesktop) const SheetHandle(),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
             child: Text(
@@ -266,26 +267,6 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
   }
 }
 
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            borderRadius: BorderRadius.circular(AppRadii.pill),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _TagLoadError extends StatelessWidget {
   final String message;
