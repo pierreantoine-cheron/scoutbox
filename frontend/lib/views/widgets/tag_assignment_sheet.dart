@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/tag.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
+import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
@@ -245,7 +246,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
       if (!mounted) return;
 
       final message = error is TentRepositoryException
-          ? error.message
+          ? ErrorLocalizer.localize(error.code, fallback: error.message)
           : 'Impossible de modifier les étiquettes. Réessayez.';
       setState(() {
         _errorMessage = message;

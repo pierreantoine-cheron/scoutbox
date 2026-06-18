@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
+import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
@@ -98,7 +99,7 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
 
   String _toErrorMessage(Object error) {
     if (error is TentRepositoryException) {
-      return error.message;
+      return ErrorLocalizer.localize(error.code, fallback: error.message);
     }
 
     return 'Impossible de charger le détail de la tente.';
@@ -179,7 +180,7 @@ class _ArchiveAppBarButtonState extends ConsumerState<_ArchiveAppBarButton> {
     } catch (e) {
       if (mounted) {
         final message = e is TentRepositoryException
-            ? e.message
+            ? ErrorLocalizer.localize(e.code, fallback: e.message)
             : 'Impossible d\'archiver la tente. Réessayez.';
         await showDialog<void>(
           context: context,

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
+import '../../services/error_localizer.dart';
 import 'search_field.dart';
 
 class _FilterOption {
@@ -185,7 +186,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
 
   String _toHistoryErrorMessage(Object error) {
     if (error is TentRepositoryException) {
-      return error.message;
+      return ErrorLocalizer.localize(error.code, fallback: error.message);
     }
     return 'Impossible de charger l\'historique.';
   }

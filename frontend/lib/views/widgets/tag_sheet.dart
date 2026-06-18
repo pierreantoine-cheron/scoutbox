@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../../repositories/tag_repository.dart';
+import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
@@ -357,7 +358,7 @@ class _TagSheetState extends State<TagSheet> {
     } on TagRepositoryException catch (error) {
       if (mounted) {
         setState(() {
-          _submitError = error.message;
+          _submitError = ErrorLocalizer.localize(error.code, fallback: error.message);
           _isSubmitting = false;
         });
       }

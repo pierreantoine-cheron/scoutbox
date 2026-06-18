@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/tag.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tag_repository.dart';
+import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/responsive_sheet.dart';
@@ -211,13 +212,13 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
 
   String _errorMessage(Object error) {
     return error is TagRepositoryException
-        ? error.message
+        ? ErrorLocalizer.localize(error.code, fallback: error.message)
         : 'Impossible de charger les étiquettes. Réessayez.';
   }
 
   String _refreshWarning(Object issue) {
     final detail = issue is TagRepositoryException
-        ? issue.message
+        ? ErrorLocalizer.localize(issue.code, fallback: issue.message)
         : 'Impossible d\'actualiser les étiquettes pour le moment.';
     return 'Les données affichées peuvent être anciennes. $detail';
   }
