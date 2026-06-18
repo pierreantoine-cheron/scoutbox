@@ -5,6 +5,7 @@ class AppColors {
 
   static const scoutGreen = Color(0xFF186A23);
   static const accentSoft = Color(0x1F186A23); // scoutGreen at 12% opacity
+  static const double chipFilterAlpha = 0.15;
   static const success = scoutGreen;
 
   static const background = Color(0xFFF9FAFB);

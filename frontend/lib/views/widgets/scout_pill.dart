@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../utils/app_colors.dart';
 import 'state_badge.dart';
 
 enum ScoutPillVariant { full, compact }
@@ -78,7 +79,7 @@ class ScoutPill extends StatelessWidget {
   }) : this._(
           key: key,
           label: label,
-          backgroundColor: color.withValues(alpha: 0.15),
+          backgroundColor: color.withValues(alpha: AppColors.chipFilterAlpha),
           foregroundColor: color,
           onTap: onTap,
           selected: selected,
