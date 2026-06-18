@@ -167,6 +167,34 @@ Color _stateColor(TentOverallState state) {
   };
 }
 
+({Color background, Color foreground}) _filterChipColors(
+  TentOverallState state,
+  BuildContext context,
+) {
+  final semanticColors =
+      Theme.of(context).extension<AppSemanticColors>();
+  return switch (state) {
+    TentOverallState.good => (
+        background: semanticColors?.statePerfectBackground ??
+            AppColors.statePerfectBackground,
+        foreground:
+            semanticColors?.statePerfect ?? AppColors.statePerfect,
+      ),
+    TentOverallState.needsRepair => (
+        background: semanticColors?.stateUsableBackground ??
+            AppColors.stateUsableBackground,
+        foreground:
+            semanticColors?.stateUsable ?? AppColors.stateUsable,
+      ),
+    TentOverallState.unusable => (
+        background: semanticColors?.stateUnusableBackground ??
+            AppColors.stateUnusableBackground,
+        foreground: semanticColors?.stateUnusable ??
+            AppColors.stateUnusable,
+      ),
+  };
+}
+
 class _FilterBarBase extends StatelessWidget {
   final List<_ActivePill> pills;
   final int tentCount;
@@ -306,7 +334,9 @@ class _PillsOverflow extends StatelessWidget {
                       )
                     : ScoutChip.filter(
                         label: pills[i].label,
-                        color: pills[i].color!,
+                        backgroundColor:
+                            pills[i].color!.withValues(alpha: 0.15),
+                        foregroundColor: pills[i].color!,
                         selected: false,
                         onTap: pills[i].onTap,
                       ),
@@ -402,13 +432,20 @@ class _FilterPanel extends StatelessWidget {
           _FilterRow(
             label: 'État',
             children: [
-              for (final state in TentOverallState.values)
-                ScoutChip.filter(
-                  label: state.toFrenchLabel(),
-                  color: _stateColor(state),
-                  selected: selectedStates.contains(state),
-                  onTap: () => onToggleState(state),
+              for (final state in TentOverallState.values) ...[
+                Builder(
+                  builder: (ctx) {
+                    final colors = _filterChipColors(state, ctx);
+                    return ScoutChip.filter(
+                      label: state.toFrenchLabel(),
+                      backgroundColor: colors.background,
+                      foregroundColor: colors.foreground,
+                      selected: selectedStates.contains(state),
+                      onTap: () => onToggleState(state),
+                    );
+                  },
                 ),
+              ],
             ],
           ),
           if (availableSizes.isNotEmpty)
@@ -418,7 +455,8 @@ class _FilterPanel extends StatelessWidget {
                 for (final size in availableSizes)
                   ScoutChip.filter(
                     label: size == 1 ? '$size place' : '$size places',
-                    color: AppColors.scoutGreen,
+                    backgroundColor: AppColors.accentSoft,
+                    foregroundColor: AppColors.scoutGreen,
                     selected: selectedSizes.contains(size),
                     onTap: () => onToggleSize(size),
                   ),
@@ -431,7 +469,8 @@ class _FilterPanel extends StatelessWidget {
                 for (final option in availableModelOptions)
                   ScoutChip.filter(
                     label: option.label,
-                    color: AppColors.scoutGreen,
+                    backgroundColor: AppColors.accentSoft,
+                    foregroundColor: AppColors.scoutGreen,
                     selected: selectedModelIds.contains(option.id),
                     onTap: () => onToggleModel(option.id),
                   ),

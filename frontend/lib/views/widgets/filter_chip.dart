@@ -54,15 +54,18 @@ class ScoutChip extends StatelessWidget {
   ScoutChip.filter({
     Key? key,
     required String label,
-    required Color color,
+    required Color backgroundColor,
+    required Color foregroundColor,
     required bool selected,
     VoidCallback? onTap,
   }) : this(
           key: key,
           label: label,
-          backgroundColor: color.withValues(alpha: 0.15),
-          foregroundColor: color,
-          border: selected ? Border.all(color: color, width: 1.5) : null,
+          backgroundColor: backgroundColor,
+          foregroundColor: foregroundColor,
+          border: selected
+              ? Border.all(color: foregroundColor, width: 1.5)
+              : null,
           onTap: onTap,
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
         );
