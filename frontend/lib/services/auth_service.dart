@@ -76,6 +76,22 @@ class AuthService {
   // Keeps the latest access token available for immediate authenticated calls.
   String? _cachedAccessToken;
 
+  Future<void> _persistAuthResponse(
+    AuthResponse authResponse, {
+    String? serverUrl,
+  }) async {
+    await SecureStorageService.saveTokens(
+      accessToken: authResponse.accessToken,
+      refreshToken: authResponse.refreshToken,
+      accessTokenExpires: authResponse.accessTokenExpires,
+      refreshTokenExpires: authResponse.refreshTokenExpires,
+    );
+    if (serverUrl != null) {
+      await SecureStorageService.saveServerUrl(serverUrl);
+    }
+    _cachedAccessToken = authResponse.accessToken;
+  }
+
   /// Validate that a server is reachable and has the health endpoint
   Future<bool> validateServer(String serverUrl) async {
     try {
@@ -108,14 +124,7 @@ class AuthService {
         password: password,
       );
 
-      await SecureStorageService.saveTokens(
-        accessToken: authResponse.accessToken,
-        refreshToken: authResponse.refreshToken,
-        accessTokenExpires: authResponse.accessTokenExpires,
-        refreshTokenExpires: authResponse.refreshTokenExpires,
-      );
-      await SecureStorageService.saveServerUrl(serverUrl);
-      _cachedAccessToken = authResponse.accessToken;
+      await _persistAuthResponse(authResponse, serverUrl: serverUrl);
 
       return AuthResult.success(authResponse: authResponse);
     } on DioException catch (e) {
@@ -149,14 +158,7 @@ class AuthService {
 
       // Save auth data with error handling - don't fail login if preference storage fails
       try {
-        await SecureStorageService.saveTokens(
-          accessToken: authResponse.accessToken,
-          refreshToken: authResponse.refreshToken,
-          accessTokenExpires: authResponse.accessTokenExpires,
-          refreshTokenExpires: authResponse.refreshTokenExpires,
-        );
-        await SecureStorageService.saveServerUrl(serverUrl);
-        _cachedAccessToken = authResponse.accessToken;
+        await _persistAuthResponse(authResponse, serverUrl: serverUrl);
       } catch (e) {
         // Critical storage failure - tokens/server URL are required
         debugPrint('Failed to save critical auth data: $e');
@@ -389,13 +391,7 @@ class AuthService {
       final authResponse = await _authRepository.refreshToken(refreshToken);
 
       try {
-        await SecureStorageService.saveTokens(
-          accessToken: authResponse.accessToken,
-          refreshToken: authResponse.refreshToken,
-          accessTokenExpires: authResponse.accessTokenExpires,
-          refreshTokenExpires: authResponse.refreshTokenExpires,
-        );
-        _cachedAccessToken = authResponse.accessToken;
+        await _persistAuthResponse(authResponse);
 
         return RefreshResult.success(authResponse: authResponse);
       } catch (e) {
