@@ -17,6 +17,7 @@ enum _ActivePillType { state, neutral, tag }
 class _ActivePill {
   final String value;
   final String label;
+  final Color? backgroundColor;
   final Color? color;
   final Color? tagColor;
   final VoidCallback onTap;
@@ -25,6 +26,7 @@ class _ActivePill {
   const _ActivePill({
     required this.value,
     required this.label,
+    this.backgroundColor,
     this.color,
     this.tagColor,
     required this.onTap,
@@ -88,10 +90,12 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
   List<_ActivePill> get _activePills {
     final pills = <_ActivePill>[];
     for (final state in widget.selectedStates) {
+      final colors = _filterChipColors(state, context);
       pills.add(_ActivePill(
         value: state.name,
         label: state.toFrenchLabel(),
-        color: _stateColor(state),
+        backgroundColor: colors.background,
+        color: colors.foreground,
         type: _ActivePillType.state,
         onTap: () => widget.onToggleState(state),
       ));
@@ -181,14 +185,6 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
       ),
     );
   }
-}
-
-Color _stateColor(TentOverallState state) {
-  return switch (state) {
-    TentOverallState.good => AppColors.statePerfect,
-    TentOverallState.needsRepair => AppColors.stateUsable,
-    TentOverallState.unusable => AppColors.stateUnusable,
-  };
 }
 
 ({Color background, Color foreground}) _filterChipColors(
@@ -388,7 +384,7 @@ class _PillsOverflow extends StatelessWidget {
       case _ActivePillType.state:
         return ScoutPill.filterState(
           label: pill.label,
-          backgroundColor: pill.color!.withValues(alpha: 0.15),
+          backgroundColor: pill.backgroundColor!,
           foregroundColor: pill.color!,
           selected: false,
           onTap: pill.onTap,
