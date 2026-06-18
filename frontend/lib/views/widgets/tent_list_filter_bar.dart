@@ -61,7 +61,7 @@ class TentListFilterBar extends StatefulWidget {
 }
 
 class _TentListFilterBarState extends State<TentListFilterBar> {
-  bool _panelExpanded = true;
+  bool _panelExpanded = false;
 
   List<_ActivePill> get _activePills {
     final pills = <_ActivePill>[];
