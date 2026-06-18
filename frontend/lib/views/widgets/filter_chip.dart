@@ -30,7 +30,7 @@ class ScoutChip extends StatelessWidget {
     this.fontSize = 13,
   });
 
-  ScoutChip.tag({
+  const ScoutChip.tag({
     Key? key,
     required String label,
     required Color color,

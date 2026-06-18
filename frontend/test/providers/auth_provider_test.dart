@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:client/models/auth_response.dart';
-import 'package:client/models/auth_state.dart';
 import 'package:client/providers/auth_provider.dart';
 import 'package:client/services/auth_service.dart';
 

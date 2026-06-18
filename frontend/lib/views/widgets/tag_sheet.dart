@@ -322,7 +322,10 @@ class _TagSheetState extends State<TagSheet> {
   }
 
   String _colorToHex(Color color) {
-    return '#${color.red.toRadixString(16).padLeft(2, '0').toUpperCase()}${color.green.toRadixString(16).padLeft(2, '0').toUpperCase()}${color.blue.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+    final r = (color.r * 255).round().clamp(0, 255);
+    final g = (color.g * 255).round().clamp(0, 255);
+    final b = (color.b * 255).round().clamp(0, 255);
+    return '#${r.toRadixString(16).padLeft(2, '0').toUpperCase()}${g.toRadixString(16).padLeft(2, '0').toUpperCase()}${b.toRadixString(16).padLeft(2, '0').toUpperCase()}';
   }
 
   Future<void> _submit() async {

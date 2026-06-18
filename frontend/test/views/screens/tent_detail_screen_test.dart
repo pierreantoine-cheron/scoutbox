@@ -12,6 +12,7 @@ import 'package:client/providers/success_indicator_provider.dart';
 import 'package:client/providers/tent_models_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/views/screens/tent_detail_screen.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,7 +43,7 @@ void main() {
             ),
           ],
           child: MaterialApp(
-            theme: ThemeData(splashFactory: NoSplash.splashFactory),
+            theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
             home: const TentDetailScreen(tentId: 'tent-1'),
           ),
         ),
@@ -54,7 +55,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Tente Atlas'), findsOneWidget);
-      expect(find.text('Commentaires'), findsOneWidget);
+      expect(find.text('Ajouter un commentaire...'), findsOneWidget);
       expect(find.text('Une tente de test.'), findsOneWidget);
     });
 
@@ -65,7 +66,7 @@ void main() {
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repository)],
           child: MaterialApp(
-            theme: ThemeData(splashFactory: NoSplash.splashFactory),
+            theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
             home: const TentDetailScreen(tentId: 'tent-1'),
           ),
         ),
@@ -179,8 +180,8 @@ void main() {
       await tester.tap(find.text('Tente Atlas'));
       await tester.pumpAndSettle();
 
-      expect(find.byTooltip('Valider'), findsOneWidget);
-      expect(find.byTooltip('Annuler'), findsOneWidget);
+      expect(find.text('Enregistrer'), findsOneWidget);
+      expect(find.text('Annuler'), findsOneWidget);
     });
 
     testWidgets('cancelling name edit with no changes returns to read-only', (
@@ -200,7 +201,7 @@ void main() {
       await tester.tap(find.text('Tente Atlas'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Annuler'));
+      await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
 
       expect(find.text('Tente Atlas'), findsOneWidget);
@@ -228,7 +229,7 @@ void main() {
       await tester.enterText(textField.first, 'Nouveau nom');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Annuler'));
+      await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
 
       expect(find.text('Tente Atlas'), findsOneWidget);
@@ -257,14 +258,14 @@ void main() {
         await tester.enterText(textField.first, 'Tente Renommée');
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byTooltip('Valider'));
+        await tester.tap(find.text('Enregistrer'));
         await tester.pump(const Duration(milliseconds: 100));
         await tester.pump(const Duration(milliseconds: 100));
 
         expect(repo.updateCallCount, equals(1));
         expect(find.text('Tente Renommée'), findsOneWidget);
         expect(container.read(successIndicatorProvider), equals(1));
-        expect(find.byTooltip('Valider'), findsNothing);
+        expect(find.text('Enregistrer'), findsNothing);
       },
     );
 
@@ -287,13 +288,13 @@ void main() {
       await tester.enterText(textField.first, 'Tente Erreur');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Valider'));
+      await tester.tap(find.text('Enregistrer'));
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.textContaining('Une erreur est survenue'), findsOneWidget);
       expect(find.byType(TextButton), findsAtLeast(1));
-      expect(find.byTooltip('Valider'), findsOneWidget);
+      expect(find.text('Enregistrer'), findsOneWidget);
     });
 
     testWidgets('retry resubmits the failed attempted value', (tester) async {
@@ -316,7 +317,7 @@ void main() {
       await tester.enterText(textField.first, 'Tente Retentée');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Valider'));
+      await tester.tap(find.text('Enregistrer'));
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -350,7 +351,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, 'Tente Renommée');
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Valider'));
+      await tester.tap(find.text('Enregistrer'));
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -358,7 +359,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, '8');
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Valider'));
+      await tester.tap(find.text('Enregistrer'));
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -400,8 +401,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final archiveButton = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, 'Archiver'),
+      final archiveButton = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Archiver'),
       );
 
       expect(archiveButton.onPressed, isNotNull);
@@ -490,8 +491,8 @@ void main() {
 
       expect(find.text('Archivée'), findsOneWidget);
 
-      final archiveButton = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, 'Archiver'),
+      final archiveButton = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Archiver'),
       );
       expect(archiveButton.onPressed, isNull);
 
@@ -540,10 +541,10 @@ void main() {
       await tester.tap(find.text('6 places'));
       await tester.pumpAndSettle();
 
-      expect(find.byTooltip('Valider'), findsOneWidget);
-      expect(find.byTooltip('Annuler'), findsOneWidget);
+      expect(find.text('Enregistrer'), findsOneWidget);
+      expect(find.text('Annuler'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Annuler'));
+      await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
     });
 
@@ -559,7 +560,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.arrow_drop_down), findsWidgets);
+      expect(find.text('Bon état'), findsWidgets);
     });
 
     testWidgets('selecting the current overall state does not update', (
@@ -576,14 +577,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(PopupMenuButton<TentOverallState>));
-      await tester.pumpAndSettle();
-
       await tester.tap(find.text('Bon état').last);
       await tester.pumpAndSettle();
 
       expect(repo.updateCallCount, equals(0));
-      expect(find.byIcon(Icons.arrow_drop_down), findsWidgets);
+      expect(find.text('Bon état'), findsWidgets);
     });
 
     testWidgets('model chip shows model name and dropdown', (tester) async {
@@ -684,7 +682,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.longPress(find.text('Toile extérieure'));
         await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip('Supprimer les pièces sélectionnées'));
+        await tester.tap(find.text('Supprimer'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Supprimer'));
         await tester.pumpAndSettle();
@@ -693,7 +691,7 @@ void main() {
           find.text('Une erreur est survenue. Veuillez réessayer.'),
           findsOneWidget,
         );
-        expect(find.byTooltip('Annuler la sélection'), findsOneWidget);
+        expect(find.text('Annuler'), findsOneWidget);
       },
     );
 
@@ -710,7 +708,7 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Ajouter une pièce'));
+      await tester.tap(find.byIcon(Icons.add));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Double toit'));
@@ -745,14 +743,14 @@ void main() {
       await tester.tap(find.text('Tente Atlas'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, 'Tente Modifiée');
-      await tester.tap(find.byTooltip('Valider'));
+      await tester.tap(find.text('Enregistrer'));
       await tester.pumpAndSettle();
 
       expect(find.text('Toile extérieure'), findsOneWidget);
 
       await tester.longPress(find.text('Toile extérieure'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Supprimer les pièces sélectionnées'));
+      await tester.tap(find.text('Supprimer'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Supprimer'));
       await tester.pumpAndSettle();
@@ -760,7 +758,7 @@ void main() {
       expect(find.text('Toile extérieure'), findsNothing);
       expect(find.text('Aucun élément associé à cette tente.'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Ajouter une pièce'));
+      await tester.tap(find.byIcon(Icons.add));
       await tester.pumpAndSettle();
 
       expect(find.text('Toile extérieure'), findsOneWidget);
@@ -821,7 +819,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Historique'), findsOneWidget);
-      expect(find.textContaining('Tente créée le'), findsOneWidget);
+      expect(find.text('Tente créée'), findsOneWidget);
     });
 
     // Error/retry behavior is tested in tent_history_provider_test.dart
@@ -883,15 +881,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Historique'), findsOneWidget);
-      expect(find.textContaining('Tente créée le'), findsOneWidget);
-      expect(find.textContaining('Tente archivée le'), findsOneWidget);
+      expect(find.text('Tente créée'), findsOneWidget);
+      expect(find.text('Tente archivée'), findsOneWidget);
     });
   });
 }
 
 Widget _testApp() {
   return MaterialApp(
-    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
     home: const TentDetailScreen(tentId: 'tent-1'),
   );
 }

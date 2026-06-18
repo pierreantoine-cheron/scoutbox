@@ -6,13 +6,6 @@ import 'package:client/models/auth_state.dart';
 import 'package:client/providers/auth_provider.dart';
 import 'package:client/views/screens/auth_screen.dart';
 
-Widget _buildTestWidget({AuthMode initialMode = AuthMode.login, AuthState? state}) {
-  return ProviderScope(
-    overrides: [authProvider.overrideWithValue(state ?? const AuthState())],
-    child: const MaterialApp(home: AuthScreen(initialMode: AuthMode.login)),
-  );
-}
-
 void main() {
   group('AuthScreen', () {
     testWidgets('shows error banner when auth state has error', (

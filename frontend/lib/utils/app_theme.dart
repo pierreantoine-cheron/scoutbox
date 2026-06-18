@@ -50,6 +50,9 @@ class AppTheme {
   @visibleForTesting
   static ColorScheme colorSchemeForTests() => _colorScheme();
 
+  @visibleForTesting
+  static const AppSemanticColors semanticColorsForTests = _semanticColors;
+
   static const _semanticColors = AppSemanticColors(
     success: AppColors.success,
     statePerfect: AppColors.statePerfect,
