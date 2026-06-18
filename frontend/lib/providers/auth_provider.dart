@@ -63,6 +63,19 @@ class AuthNotifier extends _$AuthNotifier {
     });
   }
 
+  void _setAuthenticatedState(String serverUrl, String accessToken) {
+    _initializeApiClientWithAuth(serverUrl);
+    state = state.copyWith(
+      isLoading: false,
+      isAuthenticated: true,
+      accessToken: accessToken,
+      error: null,
+      errorCode: null,
+      isSessionExpired: false,
+      showLoginScreen: true,
+    );
+  }
+
   Future<void> register({
     required String serverUrl,
     required String inviteCode,
@@ -94,16 +107,8 @@ class AuthNotifier extends _$AuthNotifier {
       );
 
       if (result.success) {
-        // Initialize API client with auth interceptors
-        _initializeApiClientWithAuth(serverUrl);
-
         // Tokens are already saved by AuthService.register()
-        state = state.copyWith(
-          isLoading: false,
-          isAuthenticated: true,
-          accessToken: result.authResponse!.accessToken,
-          error: null,
-        );
+        _setAuthenticatedState(serverUrl, result.authResponse!.accessToken);
       } else {
         state = state.copyWith(isLoading: false, error: result.error);
       }
@@ -143,18 +148,8 @@ class AuthNotifier extends _$AuthNotifier {
       );
 
       if (result.success) {
-        // Initialize API client with auth interceptors
-        _initializeApiClientWithAuth(serverUrl);
-
-        state = state.copyWith(
-          isLoading: false,
-          isAuthenticated: true,
-          accessToken: result.authResponse!.accessToken,
-          error: null,
-          errorCode: null,
-          showLoginScreen: true,
-          logoutSuccessMessage: null,
-        );
+        _setAuthenticatedState(serverUrl, result.authResponse!.accessToken);
+        state = state.copyWith(logoutSuccessMessage: null);
       } else {
         state = state.copyWith(
           isLoading: false,
@@ -275,16 +270,7 @@ class AuthNotifier extends _$AuthNotifier {
           );
           return false;
         }
-        _initializeApiClientWithAuth(serverUrl);
-
-        state = state.copyWith(
-          isLoading: false,
-          isAuthenticated: true,
-          isSessionExpired: false,
-          accessToken: result.authResponse!.accessToken,
-          error: null,
-          showLoginScreen: true,
-        );
+        _setAuthenticatedState(serverUrl, result.authResponse!.accessToken);
         return true;
       } else {
         // Check if this is an unrecoverable auth failure
