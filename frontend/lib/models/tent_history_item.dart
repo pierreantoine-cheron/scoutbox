@@ -106,7 +106,7 @@ class TentHistoryItem {
       case 'tent_created':
         return 'Tente créée';
       case 'tent_updated':
-        return 'Informations mises à jour';
+        return _buildUpdateText();
       case 'tent_archived':
         return 'Tente archivée';
       case 'part_state_changed':
@@ -127,6 +127,135 @@ class TentHistoryItem {
         return 'Étiquette retirée : $subject';
       default:
         return 'Action $action';
+    }
+  }
+
+  InlineSpan buildSummarySpan(BuildContext context) {
+    final theme = Theme.of(context);
+    final normalStyle = theme.textTheme.bodyMedium ?? const TextStyle();
+    final boldStyle = normalStyle.copyWith(fontWeight: FontWeight.w600);
+    final subject = subjectName ?? 'Pièce inconnue';
+
+    switch (action) {
+      case 'tent_updated':
+        return _buildUpdateSpan(normalStyle, boldStyle);
+      case 'part_state_changed':
+        final stateDetail =
+            details.where((d) => d.valueType == 'state').firstOrNull;
+        final oldState = _historyStateLabel(stateDetail?.oldValue);
+        final newState = _historyStateLabel(stateDetail?.newValue);
+        return TextSpan(children: [
+          TextSpan(text: 'État de $subject changé de ', style: normalStyle),
+          TextSpan(text: oldState, style: boldStyle),
+          TextSpan(text: ' à ', style: normalStyle),
+          TextSpan(text: newState, style: boldStyle),
+        ], style: normalStyle);
+      case 'tag_assigned':
+        return TextSpan(children: [
+          TextSpan(text: 'Étiquette ajoutée : ', style: normalStyle),
+          TextSpan(text: subject, style: boldStyle),
+        ], style: normalStyle);
+      case 'tag_removed':
+        return TextSpan(children: [
+          TextSpan(text: 'Étiquette retirée : ', style: normalStyle),
+          TextSpan(text: subject, style: boldStyle),
+        ], style: normalStyle);
+      default:
+        return TextSpan(text: buildSummary(), style: normalStyle);
+    }
+  }
+
+  String _buildUpdateText() {
+    if (details.isEmpty) return 'Informations mises à jour';
+    return details.map(_detailToText).join(', ');
+  }
+
+  String _detailToText(TentHistoryDetail detail) {
+    switch (detail.label) {
+      case 'État':
+        return 'État général de la tente changé de ${_historyStateLabel(detail.oldValue)} à ${_historyStateLabel(detail.newValue)}';
+      case 'Taille':
+        return 'Taille de la tente changée de ${detail.oldValue} places à ${detail.newValue} places';
+      case 'Nom':
+        return 'Nom de la tente changé de ${detail.oldValue} à ${detail.newValue}';
+      case 'Modèle':
+        return 'Modèle de la tente changé de ${detail.oldValue} à ${detail.newValue}';
+      case 'Commentaire':
+        return 'Commentaire modifié';
+      default:
+        return '${detail.label} modifié';
+    }
+  }
+
+  InlineSpan _buildUpdateSpan(TextStyle normal, TextStyle bold) {
+    if (details.isEmpty) {
+      return TextSpan(text: 'Informations mises à jour', style: normal);
+    }
+
+    final spans = <InlineSpan>[];
+    for (var i = 0; i < details.length; i++) {
+      if (i > 0) spans.add(TextSpan(text: ', ', style: normal));
+      spans.addAll(_detailToSpans(details[i], normal, bold));
+    }
+    return TextSpan(children: spans, style: normal);
+  }
+
+  List<InlineSpan> _detailToSpans(
+    TentHistoryDetail detail,
+    TextStyle normal,
+    TextStyle bold,
+  ) {
+    switch (detail.label) {
+      case 'État':
+        return [
+          TextSpan(
+            text: 'État général de la tente changé de ',
+            style: normal,
+          ),
+          TextSpan(
+            text: _historyStateLabel(detail.oldValue),
+            style: bold,
+          ),
+          TextSpan(text: ' à ', style: normal),
+          TextSpan(
+            text: _historyStateLabel(detail.newValue),
+            style: bold,
+          ),
+        ];
+      case 'Taille':
+        return [
+          TextSpan(
+            text: 'Taille de la tente changée de ',
+            style: normal,
+          ),
+          TextSpan(
+            text: '${detail.oldValue} places',
+            style: bold,
+          ),
+          TextSpan(text: ' à ', style: normal),
+          TextSpan(
+            text: '${detail.newValue} places',
+            style: bold,
+          ),
+        ];
+      case 'Nom':
+        return [
+          TextSpan(text: 'Nom de la tente changé de ', style: normal),
+          TextSpan(text: detail.oldValue!, style: bold),
+          TextSpan(text: ' à ', style: normal),
+          TextSpan(text: detail.newValue!, style: bold),
+        ];
+      case 'Modèle':
+        return [
+          TextSpan(text: 'Modèle de la tente changé de ', style: normal),
+          TextSpan(text: detail.oldValue!, style: bold),
+          TextSpan(text: ' à ', style: normal),
+          TextSpan(text: detail.newValue!, style: bold),
+        ];
+      case 'Commentaire':
+        return [TextSpan(text: 'Commentaire modifié', style: normal)];
+      default:
+        return [TextSpan(text: '${detail.label} modifié', style: normal)];
     }
   }
 

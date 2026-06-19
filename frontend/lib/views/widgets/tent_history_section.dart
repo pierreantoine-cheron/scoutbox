@@ -187,7 +187,7 @@ class _CompactHistoryItem extends StatelessWidget {
     final dotColor = TentHistoryItem.actionDotColor(item.action, theme.colorScheme);
     final time = DateFormat('HH:mm', 'fr').format(item.occurredAt.toLocal());
     final date = DateFormat('dd/MM/yyyy', 'fr').format(item.occurredAt.toLocal());
-    final summary = item.buildSummary();
+    final summarySpan = item.buildSummarySpan(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -200,9 +200,8 @@ class _CompactHistoryItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  summary,
-                  style: theme.textTheme.bodyMedium,
+                Text.rich(
+                  summarySpan,
                 ),
                 const SizedBox(height: 2),
                 Text(
