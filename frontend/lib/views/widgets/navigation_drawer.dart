@@ -9,6 +9,15 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
   final NavigationSection selectedSection;
   final ValueChanged<NavigationSection> onSelectSection;
 
+  static const _topSections = [
+    NavigationSection.tents,
+    NavigationSection.tags,
+    NavigationSection.parts,
+    NavigationSection.models,
+  ];
+
+  static const _bottomSections = [NavigationSection.settings];
+
   const ScoutBoxNavigationDrawer({
     super.key,
     required this.selectedSection,
@@ -29,58 +38,42 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.sm),
-              children: [
-                _DrawerItem(
-                  section: NavigationSection.tents,
-                  icon: NavigationSection.tents.icon,
-                  label: NavigationSection.tents.label,
-                  badge: tentCount,
-                  isSelected: selectedSection == NavigationSection.tents,
-                  enabled: true,
-                  onTap: () => onSelectSection(NavigationSection.tents),
-                ),
-                _DrawerItem(
-                  section: NavigationSection.tags,
-                  icon: NavigationSection.tags.icon,
-                  label: NavigationSection.tags.label,
-                  badge: tagCount,
-                  isSelected: selectedSection == NavigationSection.tags,
-                  enabled: true,
-                  onTap: () => onSelectSection(NavigationSection.tags),
-                ),
-                _DrawerItem(
-                  section: NavigationSection.parts,
-                  icon: NavigationSection.parts.icon,
-                  label: NavigationSection.parts.label,
-                  isSelected: selectedSection == NavigationSection.parts,
-                  enabled: false,
-                  onTap: null,
-                ),
-                _DrawerItem(
-                  section: NavigationSection.models,
-                  icon: NavigationSection.models.icon,
-                  label: NavigationSection.models.label,
-                  isSelected: selectedSection == NavigationSection.models,
-                  enabled: false,
-                  onTap: null,
-                ),
-              ],
+              children: _topSections
+                  .map((s) => _buildItem(s, tentCount, tagCount))
+                  .toList(),
             ),
           ),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.sm),
-            child: _DrawerItem(
-              section: NavigationSection.settings,
-              icon: NavigationSection.settings.icon,
-              label: NavigationSection.settings.label,
-              isSelected: selectedSection == NavigationSection.settings,
-              enabled: false,
-              onTap: null,
-            ),
+            child: _bottomSections
+                .map((s) => _buildItem(s, tentCount, tagCount))
+                .first,
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildItem(
+    NavigationSection section,
+    int tentCount,
+    int tagCount,
+  ) {
+    final badge = switch (section) {
+      NavigationSection.tents => tentCount,
+      NavigationSection.tags => tagCount,
+      _ => null,
+    };
+
+    return _DrawerItem(
+      section: section,
+      icon: section.icon,
+      label: section.label,
+      badge: badge,
+      isSelected: selectedSection == section,
+      enabled: section.isEnabled,
+      onTap: section.isEnabled ? () => onSelectSection(section) : null,
     );
   }
 
