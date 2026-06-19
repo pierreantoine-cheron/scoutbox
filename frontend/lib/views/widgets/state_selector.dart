@@ -71,15 +71,7 @@ class StateSelector<T> extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (isCurrent)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Icon(
-                      Icons.check,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
+
               ],
             ),
           );

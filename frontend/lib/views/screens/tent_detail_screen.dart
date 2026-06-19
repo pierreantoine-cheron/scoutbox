@@ -473,11 +473,20 @@ class _InfoChipsRow extends ConsumerWidget {
     final result = await showResponsiveSheet<TentOverallState>(
       context: context,
       builder: (sheetContext) {
-        return StatePickerSheet<TentOverallState>(
+        return PickerSheet<TentOverallState>(
           title: 'Modifier l\'état',
-          values: TentOverallState.values,
+          items: TentOverallState.values
+              .map((s) {
+                final style = tentStateBadgeStyle(sheetContext, s);
+                return PickerItem(
+                  value: s,
+                  label: style.label,
+                  color: style.foreground,
+                  icon: style.icon,
+                );
+              })
+              .toList(),
           currentValue: tent.overallState,
-          styleFor: (context, state) => tentStateBadgeStyle(context, state),
           onSelected: (value) => Navigator.of(sheetContext).pop(value),
           onCancel: () => Navigator.of(sheetContext).pop(),
         );
@@ -560,10 +569,12 @@ class _InfoChipsRow extends ConsumerWidget {
     final result = await showResponsiveSheet<String>(
       context: context,
       builder: (sheetContext) {
-        return ModelPickerSheet(
+        return PickerSheet<String>(
           title: 'Modifier le modèle',
-          models: models,
-          currentModelId: tent.tentModelId,
+          items: models
+              .map((m) => PickerItem(value: m.id, label: m.name))
+              .toList(),
+          currentValue: tent.tentModelId,
           onSelected: (modelId) => Navigator.of(sheetContext).pop(modelId),
           onCancel: () => Navigator.of(sheetContext).pop(),
         );
@@ -1071,11 +1082,20 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
     final result = await showResponsiveSheet<PartState>(
       context: context,
       builder: (sheetContext) {
-        return StatePickerSheet<PartState>(
+        return PickerSheet<PartState>(
           title: 'Modifier l\'état de l\'élément',
-          values: PartState.values,
+          items: PartState.values
+              .map((s) {
+                final style = partStateBadgeStyle(sheetContext, s);
+                return PickerItem(
+                  value: s,
+                  label: style.label,
+                  color: style.foreground,
+                  icon: style.icon,
+                );
+              })
+              .toList(),
           currentValue: displayedState,
-          styleFor: (context, state) => partStateBadgeStyle(context, state),
           onSelected: (value) => Navigator.of(sheetContext).pop(value),
           onCancel: () => Navigator.of(sheetContext).pop(),
         );

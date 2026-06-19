@@ -2,22 +2,33 @@ import 'package:flutter/material.dart';
 
 import '../../utils/design_constants.dart';
 import 'sheet_scaffold.dart';
-import 'state_badge.dart';
 
-class StatePickerSheet<T> extends StatelessWidget {
+class PickerItem<T> {
+  final T value;
+  final String label;
+  final Color? color;
+  final IconData? icon;
+
+  const PickerItem({
+    required this.value,
+    required this.label,
+    this.color,
+    this.icon,
+  });
+}
+
+class PickerSheet<T> extends StatelessWidget {
   final String title;
-  final List<T> values;
+  final List<PickerItem<T>> items;
   final T currentValue;
-  final StateBadgeStyle Function(BuildContext, T) styleFor;
   final void Function(T) onSelected;
   final VoidCallback onCancel;
 
-  const StatePickerSheet({
+  const PickerSheet({
     super.key,
     required this.title,
-    required this.values,
+    required this.items,
     required this.currentValue,
-    required this.styleFor,
     required this.onSelected,
     required this.onCancel,
   });
@@ -31,17 +42,16 @@ class StatePickerSheet<T> extends StatelessWidget {
       onCancel: onCancel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: values.map((value) {
-          final style = styleFor(context, value);
-          final isCurrent = value == currentValue;
+        children: items.map((item) {
+          final selected = item.value == currentValue;
 
           return InkWell(
-            onTap: () => onSelected(value),
+            onTap: () => onSelected(item.value),
             child: Container(
               margin: const EdgeInsets.symmetric(vertical: 2),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: isCurrent
+                color: selected
                     ? theme.colorScheme.primaryContainer
                         .withValues(alpha: 0.3)
                     : null,
@@ -49,23 +59,19 @@ class StatePickerSheet<T> extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(style.icon, size: 20, color: style.foreground),
-                  const SizedBox(width: 10),
-                  Text(
-                    style.label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: style.foreground,
-                      fontWeight: FontWeight.w600,
+                  if (item.icon != null) ...[
+                    Icon(item.icon, size: 20, color: item.color),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: Text(
+                      item.label,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: item.color,
+                      ),
                     ),
                   ),
-                  if (isCurrent) ...[
-                    const Spacer(),
-                    Icon(
-                      Icons.check,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ],
                 ],
               ),
             ),
