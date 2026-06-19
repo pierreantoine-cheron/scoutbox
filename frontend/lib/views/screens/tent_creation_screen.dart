@@ -9,6 +9,7 @@ import '../../providers/providers.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
+import '../../utils/form_autovalidate.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 
@@ -27,7 +28,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
   final _sizeController = TextEditingController();
   final _commentsController = TextEditingController();
 
-  bool _didAttemptSubmit = false;
+  final _autovalidate = FormAutovalidate();
   bool _isRetryingModels = false;
 
   @override
@@ -141,9 +142,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
             ),
             child: Form(
               key: _formKey,
-              autovalidateMode: _didAttemptSubmit
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
+              autovalidateMode: _autovalidate.mode,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -264,8 +263,6 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     TentCreationState creationState,
     TentCreationNotifier notifier,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     int tryParse(String s) {
       final parsed = int.tryParse(s);
       return parsed ?? 1;
@@ -287,46 +284,10 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                 ],
-                decoration: InputDecoration(
-                  filled: false,
-                  fillColor: Colors.transparent,
-                  counterText: '',
-                  isDense: false,
+                decoration: _textInputDecoration().copyWith(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 10,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                    borderSide:
-                        BorderSide(color: colorScheme.outlineVariant),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                    borderSide:
-                        BorderSide(color: colorScheme.outlineVariant),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 1.5,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                    borderSide: BorderSide(color: colorScheme.error),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                    borderSide: BorderSide(
-                      color: colorScheme.error,
-                      width: 1.5,
-                    ),
-                  ),
-                  hintStyle: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 14,
                   ),
                 ),
                 validator: notifier.validateSize,
@@ -570,9 +531,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
   }
 
   Future<void> _submit(TentCreationNotifier notifier) async {
-    if (!_didAttemptSubmit) {
-      setState(() => _didAttemptSubmit = true);
-    }
+    if (_autovalidate.markAttempted()) setState(() {});
 
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;

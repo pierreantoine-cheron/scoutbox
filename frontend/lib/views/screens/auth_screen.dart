@@ -9,6 +9,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
+import '../../utils/form_autovalidate.dart';
 import '../widgets/primary_submit_button.dart';
 import '../widgets/field_label.dart';
 import '../widgets/password_form_field.dart';
@@ -40,7 +41,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   late AuthMode _mode;
   bool _rememberMe = true;
-  bool _hasSubmitted = false;
+  final _autovalidate = FormAutovalidate();
 
   bool get _isLogin => _mode == AuthMode.login;
 
@@ -115,7 +116,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (mode == _mode) return;
     setState(() {
       _mode = mode;
-      _hasSubmitted = false;
+      _autovalidate.reset();
     });
     _formKey.currentState?.reset();
     if (mode == AuthMode.login) {
@@ -298,9 +299,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         TextFormField(
           controller: _serverController,
           focusNode: _serverFocusNode,
-          autovalidateMode: _hasSubmitted
-              ? AutovalidateMode.onUserInteraction
-              : AutovalidateMode.disabled,
+          autovalidateMode: _autovalidate.mode,
           decoration: const InputDecoration(hintText: 'https://votre-serveur.com'),
           keyboardType: TextInputType.url,
           autocorrect: false,
@@ -323,9 +322,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         TextFormField(
           controller: _inviteController,
           focusNode: _inviteFocusNode,
-          autovalidateMode: _hasSubmitted
-              ? AutovalidateMode.onUserInteraction
-              : AutovalidateMode.disabled,
+          autovalidateMode: _autovalidate.mode,
           decoration: const InputDecoration(hintText: 'Entrez votre code'),
           maxLength: ValidationConstants.inviteCodeMaxLength,
           textCapitalization: TextCapitalization.characters,
@@ -345,9 +342,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         TextFormField(
           controller: _usernameController,
           focusNode: _usernameFocusNode,
-          autovalidateMode: _hasSubmitted
-              ? AutovalidateMode.onUserInteraction
-              : AutovalidateMode.disabled,
+          autovalidateMode: _autovalidate.mode,
           decoration: const InputDecoration(
             hintText: 'Votre nom d\'utilisateur',
           ),
@@ -379,9 +374,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         PasswordFormField(
           controller: _passwordController,
           focusNode: _passwordFocusNode,
-          autovalidateMode: _hasSubmitted
-              ? AutovalidateMode.onUserInteraction
-              : AutovalidateMode.disabled,
+          autovalidateMode: _autovalidate.mode,
           hintText: _isLogin ? 'Mot de passe' : '8 caractères minimum',
           autofillHints: _isLogin ? null : const [AutofillHints.newPassword],
           textInputAction:
@@ -405,9 +398,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         PasswordFormField(
           controller: _confirmPasswordController,
           focusNode: _confirmPasswordFocusNode,
-          autovalidateMode: _hasSubmitted
-              ? AutovalidateMode.onUserInteraction
-              : AutovalidateMode.disabled,
+          autovalidateMode: _autovalidate.mode,
           hintText: 'Répétez le mot de passe',
           showPasswordTooltip: 'Afficher la confirmation',
           hidePasswordTooltip: 'Masquer la confirmation',
@@ -493,9 +484,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
 
   Future<void> _submit() async {
-    setState(() {
-      _hasSubmitted = true;
-    });
+    if (_autovalidate.markAttempted()) setState(() {});
 
     if (!_formKey.currentState!.validate()) return;
 
