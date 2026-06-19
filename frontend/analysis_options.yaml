@@ -7,6 +7,10 @@ analyzer:
   errors:
     invalid_annotation_target: ignore
 
+formatter:
+  page_width: 100
+  trailing_commas: preserve
+
 linter:
   rules:
     prefer_single_quotes: true
