@@ -438,24 +438,10 @@ class _EmptyState extends StatelessWidget {
         if (warningMessage != null)
           RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
-        const Icon(Icons.cabin, size: 64),
-        const SizedBox(height: 16),
-        const Center(
-          child: Text(
-            'Aucune tente disponible',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          ),
-        ),
-        const SizedBox(height: 12),
-        const Center(child: Text('Commencez par créer votre première tente.')),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: FilledButton.icon(
-            onPressed: onCreateTent,
-            icon: const Icon(Icons.add),
-            label: const Text('Créer une tente'),
-          ),
+        EmptyStateView(
+          icon: Icons.cabin,
+          title: 'Aucune tente disponible',
+          subtitle: 'Commencez par cr\u00e9er votre premi\u00e8re tente.',
         ),
       ],
     );
@@ -475,47 +461,20 @@ class _FilteredEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         if (warningMessage != null)
           RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
-        Icon(
-          Icons.filter_alt_off,
-          size: 64,
-          color: colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(height: 16),
-        Center(
-          child: Text(
-            'Aucune tente trouvée',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'Essayez d\'ajuster vos filtres ou d\'en créer une nouvelle.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
+        const EmptyStateView(
+          icon: Icons.filter_alt_off,
+          title: 'Aucune tente trouv\u00e9e',
+          subtitle: 'Essayez d\'ajuster vos filtres ou d\'en cr\u00e9er une nouvelle.',
         ),
       ],
     );
-  }
+}
 }
 
 class _TentCardSkeleton extends StatelessWidget {

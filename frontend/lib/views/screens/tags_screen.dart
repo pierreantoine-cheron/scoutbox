@@ -148,40 +148,18 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
   }
 
   Widget _buildEmptyState(Object? refreshIssue) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return RefreshIndicator(
       onRefresh: () => ref.read(tagsProvider.notifier).refresh(),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(24),
         children: [
           if (refreshIssue != null)
             RefreshWarningCard(message: _refreshWarning(refreshIssue)),
-          const SizedBox(height: 96),
-          const Icon(Icons.label_outline, size: 48, color: AppColors.muted),
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              'Aucune étiquette',
-              style: TextStyle(fontSize: 17, color: colorScheme.onSurface),
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Center(
-            child: Text(
-              'Créez des étiquettes pour organiser vos tentes.',
-              style: TextStyle(color: AppColors.muted),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: FilledButton.icon(
-              onPressed: () => _showCreateSheet(),
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Nouvelle étiquette'),
-            ),
+          const SizedBox(height: 72),
+          EmptyStateView(
+            icon: Icons.label_outline,
+            title: 'Aucune \u00e9tiquette',
+            subtitle: 'Cr\u00e9ez des \u00e9tiquettes pour organiser vos tentes.',
           ),
         ],
       ),

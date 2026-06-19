@@ -4,6 +4,7 @@ import '../../models/tag.dart';
 import '../../models/tent.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/tent_sort.dart';
+import 'empty_state_view.dart';
 import 'scout_pill.dart';
 import 'state_badge.dart';
 import 'tent_tag_chips.dart';
@@ -58,7 +59,11 @@ class _TentDataTableState extends State<TentDataTable> {
           borderRadius: BorderRadius.circular(18),
           side: BorderSide(color: colorScheme.outlineVariant),
         ),
-        child: _EmptyTableState(),
+        child: const EmptyStateView(
+          icon: Icons.cabin,
+          title: 'Aucune tente trouv\u00e9e',
+          subtitle: 'Essayez d\'ajuster vos filtres ou d\'en cr\u00e9er une nouvelle.',
+        ),
       );
     }
 
@@ -295,42 +300,6 @@ class _TagsCell extends StatelessWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 220),
       child: TentTagChips(tags: tags, onTagTap: onTagTap),
-    );
-  }
-}
-
-class _EmptyTableState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 48),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.cabin, size: 48, color: colorScheme.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text(
-              'Aucune tente trouvée',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Essayez d\'ajuster vos filtres ou d\'en créer une nouvelle.',
-              style: TextStyle(
-                fontSize: 14,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
