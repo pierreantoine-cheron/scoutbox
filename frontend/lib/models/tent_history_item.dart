@@ -145,10 +145,28 @@ class TentHistoryItem {
         final oldState = _historyStateLabel(stateDetail?.oldValue);
         final newState = _historyStateLabel(stateDetail?.newValue);
         return TextSpan(children: [
-          TextSpan(text: 'État de $subject changé de ', style: normalStyle),
+          TextSpan(text: 'État de ', style: normalStyle),
+          TextSpan(text: subject, style: boldStyle),
+          TextSpan(text: ' changé de ', style: normalStyle),
           TextSpan(text: oldState, style: boldStyle),
           TextSpan(text: ' à ', style: normalStyle),
           TextSpan(text: newState, style: boldStyle),
+        ], style: normalStyle);
+      case 'part_comments_changed':
+        return TextSpan(children: [
+          TextSpan(text: 'Commentaire de ', style: normalStyle),
+          TextSpan(text: subject, style: boldStyle),
+          TextSpan(text: ' modifié', style: normalStyle),
+        ], style: normalStyle);
+      case 'part_added':
+        return TextSpan(children: [
+          TextSpan(text: 'Pièce ajoutée : ', style: normalStyle),
+          TextSpan(text: subject, style: boldStyle),
+        ], style: normalStyle);
+      case 'part_deleted':
+        return TextSpan(children: [
+          TextSpan(text: 'Pièce supprimée : ', style: normalStyle),
+          TextSpan(text: subject, style: boldStyle),
         ], style: normalStyle);
       case 'tag_assigned':
         return TextSpan(children: [
