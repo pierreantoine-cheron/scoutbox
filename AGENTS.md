@@ -349,6 +349,24 @@ Always use `ErrorLocalizer.localize(e.code, fallback: e.message)` when catching 
 **Barrel exports for new widgets:**
 When adding a new file under `frontend/lib/views/widgets/`, add it to the `widgets.dart` barrel export.
 
+**Private constructor + named constructors for mutually exclusive config:**
+When a widget has config combinations that are invalid (e.g. `compact` + `selected`), make the base constructor private and expose named constructors that prevent the bad combination at compile time. Callers cannot produce the invalid state.
+
+**Stable selection borders prevent layout shift:**
+When a border appears or disappears based on `selected` state, always render the border — transparent when unselected, colored when selected. This avoids pills shifting around when toggling selection.
+
+**Single color source per semantic role:**
+Every widget reading a given color (state, tag, etc.) must resolve it through the same function. Do not mix a direct `AppColors` access with a theme-aware `_filterChipColors()` depending on the call site — the same semantic color should resolve identically everywhere.
+
+**Use `TextPainter` for text width estimates:**
+Avoid `label.length * X` approximations that break with wide characters, uppercase, or accents. Use `TextPainter` with the actual `TextStyle` used in rendering.
+
+**Delete replaced components entirely:**
+When a widget is fully replaced by a new one, remove it from barrel exports AND delete the source file. Do not leave dead code for "future reference".
+
+**Push single-use concerns to call sites:**
+Do not add a parameter (tooltip, selectedBoxShadow, etc.) that only one caller uses. Wrap it at the call site instead of bloating the shared component.
+
 **Watch for name collisions with Flutter built-in widgets:**
 When naming custom widgets, check that the name doesn't collide with Flutter's `material.dart` exports (e.g., `FilterChip`, `ActionChip`). If a collision is unavoidable, prefix with project name like `ScoutChip`.
 
