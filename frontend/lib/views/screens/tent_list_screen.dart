@@ -438,7 +438,7 @@ class _EmptyState extends StatelessWidget {
         if (warningMessage != null)
           RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
-        EmptyStateView(
+        const EmptyStateView(
           icon: Icons.cabin,
           title: 'Aucune tente disponible',
           subtitle: 'Commencez par cr\u00e9er votre premi\u00e8re tente.',

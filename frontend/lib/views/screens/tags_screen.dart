@@ -156,7 +156,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
           if (refreshIssue != null)
             RefreshWarningCard(message: _refreshWarning(refreshIssue)),
           const SizedBox(height: 72),
-          EmptyStateView(
+          const EmptyStateView(
             icon: Icons.label_outline,
             title: 'Aucune \u00e9tiquette',
             subtitle: 'Cr\u00e9ez des \u00e9tiquettes pour organiser vos tentes.',
