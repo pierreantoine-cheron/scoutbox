@@ -14,6 +14,7 @@ export 'scout_pill.dart';
 export 'search_field.dart';
 export 'sheet_footer.dart';
 export 'sheet_handle.dart';
+export 'sheet_scaffold.dart';
 export 'state_badge.dart';
 export 'state_picker_sheet.dart';
 export 'state_selector.dart';

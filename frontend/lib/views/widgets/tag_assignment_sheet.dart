@@ -9,8 +9,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../screens/tags_screen.dart';
 import 'scout_pill.dart';
-import 'sheet_footer.dart';
-import 'sheet_handle.dart';
+import 'sheet_scaffold.dart';
 
 class TagAssignmentSheet extends ConsumerStatefulWidget {
   final String tentId;
@@ -49,75 +48,43 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
   Widget build(BuildContext context) {
     final tagsAsync = ref.watch(tagsProvider);
     final theme = Theme.of(context);
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+    return SheetScaffold(
+      title: 'Modifier les \u00e9tiquettes',
+      errorMessage: _errorMessage,
+      isLoading: _isSaving,
+      onCancel: () => Navigator.of(context).pop(),
+      onSave: _onSave,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!isDesktop) const SheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-            child: Text(
-              'Modifier les étiquettes',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
+          const SizedBox(height: 4),
+          Text(
+            'Rechercher',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.outline,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          if (_errorMessage != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-              child: Text(
-                _errorMessage!,
-                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
-              ),
+          const SizedBox(height: 4),
+          TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              hintText: 'Rechercher une \u00e9tiquette...',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
             ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
-            child: Text(
-              'Rechercher',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.outline,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Rechercher une étiquette...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
+            onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
-          Flexible(
-            child: tagsAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (error, _) => _TagLoadError(
-                message: 'Impossible de charger les étiquettes.',
-                onRetry: () => ref.read(tagsProvider.notifier).retry(),
-              ),
-              data: (tags) => _buildTagContent(tags),
+          tagsAsync.when(
+            loading: () =>
+                const Center(child: CircularProgressIndicator()),
+            error: (error, _) => _TagLoadError(
+              message: 'Impossible de charger les \u00e9tiquettes.',
+              onRetry: () => ref.read(tagsProvider.notifier).retry(),
             ),
-          ),
-          const SizedBox(height: 8),
-          SheetFooter(
-            isLoading: _isSaving,
-            onCancel: () => Navigator.of(context).pop(),
-            onSave: _onSave,
+            data: (tags) => _buildTagContent(tags),
           ),
         ],
       ),
@@ -131,7 +98,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Aucune étiquette disponible. Créez d\'abord des étiquettes.',
+              'Aucune \u00e9tiquette disponible. Cr\u00e9ez d\'abord des \u00e9tiquettes.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -139,7 +106,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const TagsScreen()),
               ),
-              child: const Text('Créer une étiquette'),
+              child: const Text('Cr\u00e9er une \u00e9tiquette'),
             ),
           ],
         ),
@@ -154,27 +121,24 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
       ..sort((a, b) => a.name.compareTo(b.name));
 
     if (filteredTags.isEmpty) {
-      return const Center(child: Text('Aucune étiquette trouvée'));
+      return const Center(child: Text('Aucune \u00e9tiquette trouv\u00e9e'));
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: filteredTags
-            .map((tag) {
-                  final tagColor = TagPalette.colorFromHex(tag.color);
-                  final isSelected = _selectedTagIds.contains(tag.id);
-                  return ScoutPill.tagFilter(
-                    label: tag.name,
-                    color: tagColor,
-                    selected: isSelected,
-                    onTap: _isSaving ? null : () => _toggleLocal(tag.id),
-                  );
-                })
-            .toList(),
-      ),
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: filteredTags
+          .map((tag) {
+                final tagColor = TagPalette.colorFromHex(tag.color);
+                final isSelected = _selectedTagIds.contains(tag.id);
+                return ScoutPill.tagFilter(
+                  label: tag.name,
+                  color: tagColor,
+                  selected: isSelected,
+                  onTap: _isSaving ? null : () => _toggleLocal(tag.id),
+                );
+              })
+          .toList(),
     );
   }
 
@@ -215,7 +179,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
 
       final message = error is TentRepositoryException
           ? ErrorLocalizer.localize(error.code, fallback: error.message)
-          : 'Impossible de modifier les étiquettes. Réessayez.';
+          : 'Impossible de modifier les \u00e9tiquettes. R\u00e9essayez.';
       setState(() {
         _errorMessage = message;
       });
@@ -244,16 +208,13 @@ class _TagLoadError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            TextButton(onPressed: onRetry, child: const Text('Réessayer')),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message, textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          TextButton(onPressed: onRetry, child: const Text('R\u00e9essayer')),
+        ],
       ),
     );
   }

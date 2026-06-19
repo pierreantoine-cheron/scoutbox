@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../utils/design_constants.dart';
-import 'sheet_footer.dart';
-import 'sheet_handle.dart';
+import 'sheet_scaffold.dart';
 import 'state_badge.dart';
 
 class StatePickerSheet<T> extends StatelessWidget {
@@ -26,32 +25,20 @@ class StatePickerSheet<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!isDesktop) const SheetHandle(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        ...values.map((value) {
+    return SheetScaffold(
+      title: title,
+      onCancel: onCancel,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: values.map((value) {
           final style = styleFor(context, value);
           final isCurrent = value == currentValue;
 
           return InkWell(
             onTap: () => onSelected(value),
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              margin: const EdgeInsets.symmetric(vertical: 2),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: isCurrent
@@ -83,11 +70,8 @@ class StatePickerSheet<T> extends StatelessWidget {
               ),
             ),
           );
-        }),
-        SheetFooter(
-          onCancel: onCancel,
-        ),
-      ],
+        }).toList(),
+      ),
     );
   }
 }

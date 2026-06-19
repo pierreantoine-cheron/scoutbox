@@ -4,8 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/design_constants.dart';
-import 'sheet_footer.dart';
-import 'sheet_handle.dart';
+import 'sheet_scaffold.dart';
 
 class AddPartSheet extends ConsumerStatefulWidget {
   final String tentId;
@@ -40,49 +39,14 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
   Widget build(BuildContext context) {
     final state = ref.watch(partManagementProvider(widget.tentId));
     final theme = Theme.of(context);
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (!isDesktop) const SheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-            child: Text(
-              'Modifier les éléments',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          if (_errorMessage != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-              child: Text(
-                _errorMessage!,
-                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
-              ),
-            ),
-          const SizedBox(height: 8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxHeight: 350,
-            ),
-            child: _buildPartKindList(state, theme),
-          ),
-          SheetFooter(
-            isLoading: _isSaving,
-            onCancel: () => Navigator.of(context).pop(),
-            onSave: _onSave,
-          ),
-        ],
-      ),
+    return SheetScaffold(
+      title: 'Modifier les \u00e9l\u00e9ments',
+      errorMessage: _errorMessage,
+      isLoading: _isSaving,
+      onCancel: () => Navigator.of(context).pop(),
+      onSave: _onSave,
+      child: _buildPartKindList(state, theme),
     );
   }
 
@@ -93,12 +57,9 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
 
     if (state.partKindsError != null) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Text(
-            state.partKindsError!,
-            style: TextStyle(color: theme.colorScheme.error),
-          ),
+        child: Text(
+          state.partKindsError!,
+          style: TextStyle(color: theme.colorScheme.error),
         ),
       );
     }
@@ -107,11 +68,13 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
     if (partKinds.isEmpty) {
-      return const Center(child: Text('Aucun élément disponible.'));
+      return const Center(child: Text('Aucun \u00e9l\u00e9ment disponible.'));
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
       itemCount: partKinds.length,
       itemBuilder: (context, index) {
         final pk = partKinds[index];
@@ -218,7 +181,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
 
       final message = error is TentRepositoryException
           ? error.message
-          : 'Impossible de modifier les éléments. Réessayez.';
+          : 'Impossible de modifier les \u00e9l\u00e9ments. R\u00e9essayez.';
       setState(() {
         _errorMessage = message;
       });
@@ -231,4 +194,3 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
     }
   }
 }
-

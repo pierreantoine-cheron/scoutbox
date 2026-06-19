@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/tent_model.dart';
 import '../../utils/design_constants.dart';
-import 'sheet_footer.dart';
-import 'sheet_handle.dart';
+import 'sheet_scaffold.dart';
 
 class ModelPickerSheet extends StatelessWidget {
   final String title;
@@ -24,28 +23,17 @@ class ModelPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!isDesktop) const SheetHandle(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        ...models.map((model) {
+    return SheetScaffold(
+      title: title,
+      onCancel: onCancel,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: models.map((model) {
           final isCurrent = model.id == currentModelId;
 
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: InkWell(
               onTap: isCurrent ? null : () => onSelected(model.id),
               borderRadius: BorderRadius.circular(AppRadii.md),
@@ -82,11 +70,8 @@ class ModelPickerSheet extends StatelessWidget {
               ),
             ),
           );
-        }),
-        SheetFooter(
-          onCancel: onCancel,
-        ),
-      ],
+        }).toList(),
+      ),
     );
   }
 }

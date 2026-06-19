@@ -6,8 +6,7 @@ import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
-import 'sheet_footer.dart';
-import 'sheet_handle.dart';
+import 'sheet_scaffold.dart';
 
 class TagSheet extends StatefulWidget {
   final Future<void> Function(String name, String color) onCreate;
@@ -56,86 +55,32 @@ class _TagSheetState extends State<TagSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    final theme = Theme.of(context);
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
+    return SheetScaffold(
+      title: 'Nouvelle étiquette',
+      errorMessage: _submitError,
+      isLoading: _isSubmitting,
+      saveEnabled: _isSaveEnabled,
+      saveLabel: 'Créer',
+      onCancel: () => Navigator.of(context).pop(),
+      onSave: _submit,
+      child: Form(
+        key: _formKey,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!isDesktop) const SheetHandle(),
-            _buildHeader(context),
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildNameField(colorScheme),
-                      const SizedBox(height: 16),
-                      _buildColorLabel(colorScheme),
-                      const SizedBox(height: 8),
-                      _buildColorGrid(colorScheme),
-                      if (_isCustomSelected) ...[
-                        const SizedBox(height: 8),
-                        _buildCustomColorPicker(),
-                      ],
-                      const SizedBox(height: 12),
-                      if (_submitError != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          _submitError!,
-                          style: TextStyle(color: colorScheme.error),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            SheetFooter(
-              isLoading: _isSubmitting,
-              saveEnabled: _isSaveEnabled,
-              saveLabel: 'Créer',
-              onCancel: () => Navigator.of(context).pop(),
-              onSave: _submit,
-            ),
+            _buildNameField(theme.colorScheme),
+            const SizedBox(height: 16),
+            _buildColorLabel(theme.colorScheme),
+            const SizedBox(height: 8),
+            _buildColorGrid(theme.colorScheme),
+            if (_isCustomSelected) ...[
+              const SizedBox(height: 8),
+              _buildCustomColorPicker(),
+            ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Nouvelle étiquette',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 20),
-            color: AppColors.muted,
-            onPressed: () => Navigator.of(context).pop(),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          ),
-        ],
       ),
     );
   }
