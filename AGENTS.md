@@ -391,3 +391,38 @@ theme: ThemeData(
 
 **`overrideWithValue` on generated providers prevents `.notifier` calls:**
 When overriding an `@riverpod` class provider with `overrideWithValue(StateProvider)`, calling `.notifier` on it will fail with a type cast error. For widget tests that trigger provider methods, either use `overrideWithProvider` with a real notifier, or test those interactions at the provider level instead.
+
+**Button styles live on the theme — override colors only:**
+The theme already defines `ElevatedButtonThemeData`, `OutlinedButtonThemeData`, and `FilledButtonThemeData` with sizing, padding, textStyle, and shape. Custom buttons (like `PrimarySubmitButton`) or wrappers (like `SheetFooter.outlinedStyle`/`filledStyle`) should only set `backgroundColor`/`foregroundColor` and disabled color variants. Never duplicate theme-level `minimumSize`, `padding`, `textStyle`, or `shape` in individual buttons.
+
+**Use `.copyWith()` over inline `InputDecoration` duplication:**
+When a shared helper like `_textInputDecoration()` already exists in the same class, call it and override only the differing properties via `.copyWith()`:
+```dart
+decoration: _textInputDecoration().copyWith(
+  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+),
+```
+This avoids duplicating all 5 border variants and keeps the decoration consistent with other fields on the screen.
+
+**Extract shared popup/sheet chrome:**
+When 3+ bottom sheets or dialogs share the same skeleton (SheetHandle + title + error + content + footer), extract a scaffold widget. Example: `SheetScaffold` replaced 6 sheets' duplicated chrome.
+
+**Extract screen-level scaffolds:**
+When 3+ screens share `Material > SafeArea > state.when(loading/error/data)` wrappers, extract a typed scaffold like `DataScreenScaffold<T>` that takes a `builder`, default loading/error widgets, and an error fallback message.
+
+**Single source of truth for UI primitives:**
+When a Flutter primitive (e.g. `CircularProgressIndicator`) is used 5+ times with different params, wrap it in a project-specific component (e.g. `AppProgressIndicator`) that hardcodes the canonical `strokeWidth`, color strategy, etc. Then use the wrapper everywhere.
+
+**Helper class over mixin when generics complicate:**
+When both `ConsumerState` and plain `State` subclasses need shared behavior, a helper class (like `FormAutovalidate`) is simpler than a mixin constrained on `State<T>` — Dart's invariant generics make `mixin on State<StatefulWidget>` fail on `ConsumerState<Foo>`.
+
+**Windows line endings break the edit tool:**
+Project files use `\r\n` line endings. The `edit` tool requires exact character-level match including line endings. When edits fail silently, inspect raw content with `cat -A <file>` and consider Python scripts for multi-line deletions.
+
+**Empty `setState(() {})` is legitimate:**
+When state lives outside the widget (e.g. text in a `TextEditingController`, or a helper class like `FormAutovalidate`), call `setState(() {})` to trigger a rebuild after the external mutation. Use a gating method that returns `bool` to avoid redundant rebuilds:
+```dart
+final _autovalidate = FormAutovalidate();
+// In submit handler:
+if (_autovalidate.markAttempted()) setState(() {});
+```
