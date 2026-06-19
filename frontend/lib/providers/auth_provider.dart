@@ -290,6 +290,7 @@ class AuthNotifier extends _$AuthNotifier {
             isLoading: false,
             error: result.error,
             canRefreshToken: true,
+            showLoginScreen: true,
           );
         }
         return false;
@@ -298,6 +299,7 @@ class AuthNotifier extends _$AuthNotifier {
       state = state.copyWith(
         isLoading: false,
         error: 'Erreur de connexion. Veuillez réessayer.',
+        showLoginScreen: true,
       );
       return false;
     }
