@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../utils/design_constants.dart';
+import 'sheet_footer.dart';
 import 'sheet_handle.dart';
 
 class TextFieldSheet extends StatefulWidget {
@@ -101,38 +101,9 @@ class _TextFieldSheetState extends State<TextFieldSheet> {
             ),
           ),
           const SizedBox(height: 4),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(
-                  onPressed: widget.onCancel,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSurface,
-                    side: BorderSide(color: theme.colorScheme.outlineVariant),
-                    minimumSize: const Size(0, 48),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  child: const Text('Annuler'),
-                ),
-                const SizedBox(width: 10),
-                FilledButton(
-                  onPressed: widget.onSave,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 48),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                    ),
-                  ),
-                  child: const Text('Enregistrer'),
-                ),
-              ],
-            ),
+          SheetFooter(
+            onCancel: widget.onCancel,
+            onSave: widget.onSave,
           ),
         ],
       ),

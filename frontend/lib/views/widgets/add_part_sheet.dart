@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/design_constants.dart';
+import 'sheet_footer.dart';
 import 'sheet_handle.dart';
 
 class AddPartSheet extends ConsumerStatefulWidget {
@@ -75,49 +76,10 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
             ),
             child: _buildPartKindList(state, theme),
           ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(
-                  onPressed: _isSaving
-                      ? null
-                      : () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSurface,
-                    side: BorderSide(color: theme.colorScheme.outlineVariant),
-                    minimumSize: const Size(0, 48),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  child: const Text('Annuler'),
-                ),
-                const SizedBox(width: 10),
-                FilledButton(
-                  onPressed: _isSaving ? null : _onSave,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 48),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                    ),
-                  ),
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Enregistrer'),
-                ),
-              ],
-            ),
+          SheetFooter(
+            isLoading: _isSaving,
+            onCancel: () => Navigator.of(context).pop(),
+            onSave: _onSave,
           ),
         ],
       ),

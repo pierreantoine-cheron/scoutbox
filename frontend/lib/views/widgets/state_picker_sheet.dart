@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../utils/design_constants.dart';
+import 'sheet_footer.dart';
 import 'sheet_handle.dart';
 import 'state_badge.dart';
 
@@ -83,25 +84,8 @@ class StatePickerSheet<T> extends StatelessWidget {
             ),
           );
         }),
-        const Divider(),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton(
-                onPressed: onCancel,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: theme.colorScheme.onSurface,
-                  side: BorderSide(color: theme.colorScheme.outlineVariant),
-                  minimumSize: const Size(0, 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-                child: const Text('Annuler'),
-              ),
-            ],
-          ),
+        SheetFooter(
+          onCancel: onCancel,
         ),
       ],
     );

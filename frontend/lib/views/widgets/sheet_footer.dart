@@ -35,14 +35,14 @@ class SheetFooter extends StatelessWidget {
             children: [
               OutlinedButton(
                 onPressed: isLoading ? null : onCancel,
-                style: _outlinedStyle(theme),
+                style: outlinedStyle(theme),
                 child: Text(cancelLabel),
               ),
               if (onSave != null) ...[
                 const SizedBox(width: 10),
                 FilledButton(
                   onPressed: (isLoading || !saveEnabled) ? null : onSave,
-                  style: _filledStyle(theme),
+                  style: filledStyle(theme),
                   child: isLoading
                       ? const SizedBox(
                           width: 20,
@@ -62,7 +62,7 @@ class SheetFooter extends StatelessWidget {
     );
   }
 
-  static ButtonStyle _outlinedStyle(ThemeData theme) {
+  static ButtonStyle outlinedStyle(ThemeData theme) {
     return OutlinedButton.styleFrom(
       foregroundColor: theme.colorScheme.onSurface,
       side: BorderSide(color: theme.colorScheme.outlineVariant),
@@ -72,7 +72,7 @@ class SheetFooter extends StatelessWidget {
     );
   }
 
-  static ButtonStyle _filledStyle(ThemeData theme) {
+  static ButtonStyle filledStyle(ThemeData theme) {
     return FilledButton.styleFrom(
       minimumSize: const Size(0, 48),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
