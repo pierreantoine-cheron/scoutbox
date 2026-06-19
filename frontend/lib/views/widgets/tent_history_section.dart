@@ -6,6 +6,7 @@ import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../utils/error_messages.dart';
 import 'search_field.dart';
+import 'app_progress_indicator.dart';
 import 'async_error_view.dart';
 
 class _FilterOption {
@@ -98,7 +99,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
           historyAsync.when(
             loading: () => const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: AppProgressIndicator()),
             ),
             error: (error, _) => AsyncErrorView(
               message: _toHistoryErrorMessage(error),

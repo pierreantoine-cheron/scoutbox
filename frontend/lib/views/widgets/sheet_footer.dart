@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../utils/design_constants.dart';
+import 'app_progress_indicator.dart';
 
 class SheetFooter extends StatelessWidget {
   final bool isLoading;
@@ -47,10 +48,7 @@ class SheetFooter extends StatelessWidget {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
+                          child: AppProgressIndicator(color: Colors.white),
                         )
                       : Text(saveLabel),
                 ),

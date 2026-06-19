@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'providers/providers.dart';
 import 'utils/app_theme.dart';
 import 'views/screens/auth_gate.dart';
+import 'views/widgets/widgets.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,7 +75,7 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
       return MaterialApp(
         title: 'ScoutBox',
         theme: AppTheme.minimal(),
-        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+        home: const Scaffold(body: Center(child: AppProgressIndicator())),
       );
     }
 

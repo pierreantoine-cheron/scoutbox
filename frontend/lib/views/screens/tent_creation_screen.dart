@@ -96,7 +96,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
                 Expanded(
                   child: modelsState.when(
                     loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                        const Center(child: AppProgressIndicator()),
                     error: (_, _) => _buildModelsError(),
                     data: (models) => models.isEmpty
                         ? _buildModelsEmpty()
@@ -547,10 +547,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.surface,
-                      ),
+                      child: AppProgressIndicator(color: Colors.white),
                     )
                   : const Icon(Icons.add, size: 18),
               label: const Text('Créer la tente'),

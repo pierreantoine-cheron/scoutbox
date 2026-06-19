@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../utils/design_constants.dart';
+import 'app_progress_indicator.dart';
 import 'sheet_scaffold.dart';
 
 class AddPartSheet extends ConsumerStatefulWidget {
@@ -52,7 +53,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
 
   Widget _buildPartKindList(PartManagementState state, ThemeData theme) {
     if (state.isLoadingPartKinds) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppProgressIndicator());
     }
 
     if (state.partKindsError != null) {

@@ -1,4 +1,5 @@
 export 'add_part_sheet.dart';
+export 'app_progress_indicator.dart';
 export 'async_error_view.dart';
 export 'confirm_dialog.dart';
 export 'data_screen_scaffold.dart';

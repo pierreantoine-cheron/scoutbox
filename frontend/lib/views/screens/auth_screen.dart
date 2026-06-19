@@ -9,6 +9,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
+import '../widgets/app_progress_indicator.dart';
 import '../widgets/field_label.dart';
 import '../widgets/password_form_field.dart';
 
@@ -502,10 +503,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           ? const SizedBox(
               height: 20,
               width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: AppColors.surface,
-              ),
+              child: AppProgressIndicator(color: Colors.white),
             )
           : Text(_submitLabel),
     );

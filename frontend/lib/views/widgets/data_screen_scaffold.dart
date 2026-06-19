@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../utils/error_messages.dart';
+import 'app_progress_indicator.dart';
 import 'async_error_view.dart';
 
 class DataScreenScaffold<T> extends StatelessWidget {
@@ -27,7 +28,7 @@ class DataScreenScaffold<T> extends StatelessWidget {
         child: state.when(
           loading: () =>
               loadingPlaceholder ??
-              const Center(child: CircularProgressIndicator()),
+              const Center(child: AppProgressIndicator()),
           error: (error, _) => AsyncErrorView(
             message: toUserFacingError(error, errorFallbackMessage),
             onRetry: onRetry,

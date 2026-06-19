@@ -10,6 +10,7 @@ import '../../utils/constants.dart';
 import '../screens/tags_screen.dart';
 import 'scout_pill.dart';
 import 'sheet_scaffold.dart';
+import 'app_progress_indicator.dart';
 import 'async_error_view.dart';
 
 class TagAssignmentSheet extends ConsumerStatefulWidget {
@@ -80,7 +81,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
           const SizedBox(height: 16),
           tagsAsync.when(
             loading: () =>
-                const Center(child: CircularProgressIndicator()),
+                const Center(child: AppProgressIndicator()),
             error: (error, _) => AsyncErrorView(
               message: 'Impossible de charger les \u00e9tiquettes.',
               onRetry: () => ref.read(tagsProvider.notifier).retry(),

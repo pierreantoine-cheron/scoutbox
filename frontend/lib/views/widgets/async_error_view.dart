@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_progress_indicator.dart';
+
 class AsyncErrorView extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
@@ -32,7 +34,7 @@ class AsyncErrorView extends StatelessWidget {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: AppProgressIndicator(color: Colors.white),
                   )
                 : const Icon(Icons.refresh),
             label: const Text('Réessayer'),
