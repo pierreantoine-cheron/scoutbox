@@ -69,6 +69,7 @@ class SheetScaffold extends StatelessWidget {
               child: child,
             ),
           ),
+          const SizedBox(height: 8),
           SheetFooter(
             isLoading: isLoading,
             saveEnabled: saveEnabled,
