@@ -9,7 +9,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
-import '../widgets/app_progress_indicator.dart';
+import '../widgets/primary_submit_button.dart';
 import '../widgets/field_label.dart';
 import '../widgets/password_form_field.dart';
 
@@ -228,7 +228,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 _buildErrorBanner(authState.error!),
               ],
               const SizedBox(height: AppSpacing.md),
-              _buildSubmitButton(authState.isLoading),
+              PrimarySubmitButton(
+                label: _submitLabel,
+                isLoading: authState.isLoading,
+                enabled: _isFormValid,
+                onPressed: _submit,
+              ),
             ],
           ),
         ),
@@ -486,28 +491,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 
-  Widget _buildSubmitButton(bool isLoading) {
-    final enabled = _isFormValid && !isLoading;
-
-    return ElevatedButton(
-      onPressed: enabled ? _submit : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.scoutGreen,
-        disabledBackgroundColor: AppColors.border,
-        foregroundColor: AppColors.surface,
-        disabledForegroundColor: AppColors.muted,
-        padding: const EdgeInsets.symmetric(vertical: 13),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-      ),
-      child: isLoading
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: AppProgressIndicator(color: Colors.white),
-            )
-          : Text(_submitLabel),
-    );
-  }
 
   Future<void> _submit() async {
     setState(() {

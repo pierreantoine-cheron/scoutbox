@@ -521,36 +521,17 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
             bottom: 14,
           ),
           child: Center(
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(200, 48),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 36,
-                  vertical: 14,
-                ),
-                backgroundColor: AppColors.scoutGreen,
-                disabledBackgroundColor:
-                    colorScheme.outlineVariant,
-                disabledForegroundColor:
-                    colorScheme.onSurfaceVariant,
-                foregroundColor: colorScheme.surface,
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+            child: SizedBox(
+              width: 200,
+              child: PrimarySubmitButton(
+                label: 'Cr\u00e9er la tente',
+                icon: Icons.add,
+                isLoading: creationState.isSubmitting,
+                enabled: isValid,
+                onPressed: () => _submit(
+                  ref.read(tentCreationProvider.notifier),
                 ),
               ),
-              onPressed: creationState.isSubmitting || !isValid
-                  ? null
-                  : () => _submit(
-                      ref.read(tentCreationProvider.notifier)),
-              icon: creationState.isSubmitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: AppProgressIndicator(color: Colors.white),
-                    )
-                  : const Icon(Icons.add, size: 18),
-              label: const Text('Créer la tente'),
             ),
           ),
         ),
