@@ -348,3 +348,28 @@ Always use `ErrorLocalizer.localize(e.code, fallback: e.message)` when catching 
 
 **Barrel exports for new widgets:**
 When adding a new file under `frontend/lib/views/widgets/`, add it to the `widgets.dart` barrel export.
+
+**Watch for name collisions with Flutter built-in widgets:**
+When naming custom widgets, check that the name doesn't collide with Flutter's `material.dart` exports (e.g., `FilterChip`, `ActionChip`). If a collision is unavoidable, prefix with project name like `ScoutChip`.
+
+**Redirecting constructors cannot use `super.key`:**
+Named constructors that redirect via `this(...)` must use `Key? key` as a regular parameter, not `super.key`. The `super.key` syntax is only valid in non-redirecting generative constructors.
+
+**`Color.red`, `Color.green`, `Color.blue` are deprecated:**
+Use `(color.r * 255).round().clamp(0, 255)` instead. The old direct `.red`/`.green`/`.blue` integer accessors are removed in newer Dart/Flutter versions.
+
+**Extract state classes together with their widgets:**
+When moving a private `StatefulWidget` to a public file, also move its associated `State` subclass. The state class must be renamed accordingly (the original `_FooState` becomes `_NewNameState`). Use a Python script or manual check to ensure no leftover classes remain in the source file.
+
+**Widget tests must include `AppSemanticColors` in the test theme:**
+Any screen using `Theme.of(context).extension<AppSemanticColors>()!` will crash in tests if the test theme doesn't register the extension. Always include `extensions: const [AppTheme.semanticColorsForTests]` in test `ThemeData`:
+
+```dart
+theme: ThemeData(
+  splashFactory: NoSplash.splashFactory,
+  extensions: const [AppTheme.semanticColorsForTests],
+),
+```
+
+**`overrideWithValue` on generated providers prevents `.notifier` calls:**
+When overriding an `@riverpod` class provider with `overrideWithValue(StateProvider)`, calling `.notifier` on it will fail with a type cast error. For widget tests that trigger provider methods, either use `overrideWithProvider` with a real notifier, or test those interactions at the provider level instead.
