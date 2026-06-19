@@ -10,6 +10,7 @@ import '../../utils/constants.dart';
 import '../screens/tags_screen.dart';
 import 'scout_pill.dart';
 import 'sheet_scaffold.dart';
+import 'async_error_view.dart';
 
 class TagAssignmentSheet extends ConsumerStatefulWidget {
   final String tentId;
@@ -80,7 +81,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
           tagsAsync.when(
             loading: () =>
                 const Center(child: CircularProgressIndicator()),
-            error: (error, _) => _TagLoadError(
+            error: (error, _) => AsyncErrorView(
               message: 'Impossible de charger les \u00e9tiquettes.',
               onRetry: () => ref.read(tagsProvider.notifier).retry(),
             ),
@@ -195,27 +196,5 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
         });
       }
     }
-  }
-}
-
-
-class _TagLoadError extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _TagLoadError({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          TextButton(onPressed: onRetry, child: const Text('R\u00e9essayer')),
-        ],
-      ),
-    );
   }
 }

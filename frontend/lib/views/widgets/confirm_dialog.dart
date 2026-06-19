@@ -44,3 +44,18 @@ Future<bool> showConfirmDialog(
   );
   return result ?? false;
 }
+
+Future<void> showErrorDialog(BuildContext context, String message) {
+  return showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
+}

@@ -6,6 +6,7 @@ import '../../models/models.dart';
 import '../../providers/providers.dart';
 import '../../utils/error_messages.dart';
 import 'search_field.dart';
+import 'async_error_view.dart';
 
 class _FilterOption {
   final String label;
@@ -99,29 +100,14 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(child: CircularProgressIndicator()),
             ),
-            error: (error, _) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _toHistoryErrorMessage(error),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => ref.invalidate(
-                      tentHistoryProvider(
-                        widget.tentId,
-                        category: _selectedCategory,
-                      ),
-                    ),
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Réessayer'),
-                  ),
-                ],
+            error: (error, _) => AsyncErrorView(
+              message: _toHistoryErrorMessage(error),
+              centered: false,
+              onRetry: () => ref.invalidate(
+                tentHistoryProvider(
+                  widget.tentId,
+                  category: _selectedCategory,
+                ),
               ),
             ),
             data: (items) => _buildHistoryList(items),

@@ -168,18 +168,7 @@ class _ArchiveAppBarButtonState extends ConsumerState<_ArchiveAppBarButton> {
         final message = e is TentRepositoryException
             ? ErrorLocalizer.localize(e.code, fallback: e.message)
             : 'Impossible d\'archiver la tente. Réessayez.';
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
+        await showErrorDialog(context, message);
       }
     } finally {
       if (mounted) setState(() => _isArchiving = false);
