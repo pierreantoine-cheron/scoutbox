@@ -4,6 +4,7 @@ export 'confirm_dialog.dart';
 export 'data_screen_scaffold.dart';
 export 'desktop_create_button.dart';
 export 'fading_cloud_done_icon.dart';
+export 'field_label.dart';
 export 'inline_text_editor.dart';
 export 'logout_button.dart';
 export 'model_picker_sheet.dart';

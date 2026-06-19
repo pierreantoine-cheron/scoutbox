@@ -239,7 +239,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildFieldLabel('Nom', required: true),
+        const FieldLabel('Nom', required: true),
         const SizedBox(height: 6),
         TextFormField(
           key: const ValueKey('tent-name-input'),
@@ -274,7 +274,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildFieldLabel('Taille (places)', required: true),
+        const FieldLabel('Taille (places)', required: true),
         const SizedBox(height: 6),
         Row(
           children: [
@@ -370,7 +370,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildFieldLabel('État global'),
+        const FieldLabel('État global'),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
@@ -422,7 +422,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildFieldLabel('Commentaires'),
+        const FieldLabel('Commentaires'),
         const SizedBox(height: 6),
         TextFormField(
           key: const ValueKey('tent-comments-input'),
@@ -444,27 +444,6 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     );
   }
 
-  Widget _buildFieldLabel(String label, {bool required = false}) {
-    return Text.rich(
-      TextSpan(
-        text: label,
-        children: required
-            ? [
-                TextSpan(
-                  text: ' *',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              ]
-            : null,
-      ),
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
 
   Widget _buildCharCounter(int current, int max) {
     return Align(

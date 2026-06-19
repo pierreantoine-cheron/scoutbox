@@ -9,6 +9,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/auth_validators.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
+import '../widgets/field_label.dart';
 import '../widgets/password_form_field.dart';
 
 enum AuthMode { login, register }
@@ -286,7 +287,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('URL du serveur', required: true),
+        const FieldLabel('URL du serveur', required: true),
         const SizedBox(height: 6),
         TextFormField(
           controller: _serverController,
@@ -311,7 +312,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel("Code d'invitation", required: true),
+        const FieldLabel("Code d'invitation", required: true),
         const SizedBox(height: 6),
         TextFormField(
           controller: _inviteController,
@@ -333,7 +334,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel("Nom d'utilisateur", required: true),
+        const FieldLabel("Nom d'utilisateur", required: true),
         const SizedBox(height: 6),
         TextFormField(
           controller: _usernameController,
@@ -367,7 +368,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('Mot de passe', required: true),
+        const FieldLabel('Mot de passe', required: true),
         const SizedBox(height: 6),
         PasswordFormField(
           controller: _passwordController,
@@ -393,7 +394,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('Confirmer le mot de passe', required: true),
+        const FieldLabel('Confirmer le mot de passe', required: true),
         const SizedBox(height: 6),
         PasswordFormField(
           controller: _confirmPasswordController,
@@ -416,21 +417,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 
-  Widget _fieldLabel(String text, {bool required = false}) {
-    return Text.rich(
-      TextSpan(
-        text: text,
-        style: Theme.of(context).textTheme.labelLarge,
-        children: [
-          if (required)
-            const TextSpan(
-              text: ' *',
-              style: TextStyle(color: AppColors.error),
-            ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildRememberMe(bool isLoading) {
     return Row(
