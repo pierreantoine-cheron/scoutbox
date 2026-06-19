@@ -91,17 +91,11 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
       dispatchAppBarConfig();
     });
 
-    return Material(
-      child: SafeArea(
-        child: tagsState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => AsyncErrorView(
-            message: _errorMessage(error),
-            onRetry: () => ref.read(tagsProvider.notifier).retry(),
-          ),
-          data: (tags) => _buildDataState(tags, refreshIssue),
-        ),
-      ),
+    return DataScreenScaffold<List<Tag>>(
+      state: tagsState,
+      errorFallbackMessage: 'Impossible de charger les étiquettes.',
+      onRetry: () => ref.read(tagsProvider.notifier).retry(),
+      builder: (tags) => _buildDataState(tags, refreshIssue),
     );
   }
 
@@ -209,9 +203,6 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
     }
   }
 
-  String _errorMessage(Object error) {
-    return toUserFacingError(error, 'Impossible de charger les étiquettes. Réessayez.');
-  }
 
   String _refreshWarning(Object issue) {
     final detail = toUserFacingError(issue, 'Impossible d\'actualiser les étiquettes pour le moment.');

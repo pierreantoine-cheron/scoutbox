@@ -8,7 +8,6 @@ import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
-import '../../utils/error_messages.dart';
 import '../../utils/responsive_sheet.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
@@ -83,23 +82,14 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
       });
     }
 
-    return Material(
-      child: SafeArea(
-        child: tentAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => AsyncErrorView(
-            message: _toErrorMessage(error),
-            onRetry: () => ref.invalidate(tentDetailProvider(widget.tentId)),
-          ),
-          data: (tent) => _DetailContent(tentId: widget.tentId, tent: tent),
-        ),
-      ),
+    return DataScreenScaffold(
+      state: tentAsync,
+      errorFallbackMessage: 'Impossible de charger le détail de la tente.',
+      onRetry: () => ref.invalidate(tentDetailProvider(widget.tentId)),
+      builder: (tent) => _DetailContent(tentId: widget.tentId, tent: tent),
     );
   }
 
-  String _toErrorMessage(Object error) {
-    return toUserFacingError(error, 'Impossible de charger le détail de la tente.');
-  }
 }
 
 class _ArchiveAppBarButton extends ConsumerStatefulWidget {

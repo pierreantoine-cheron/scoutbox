@@ -120,38 +120,25 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       (_, _) => dispatchAppBarConfig(),
     );
 
-    return Material(
-      child: SafeArea(
-        child: tentsState.when(
-          loading: _buildLoadingState,
-          error: (error, _) => _buildErrorState(error),
-          data: (tents) => _buildDataState(
-            rawTents: tents,
-            visibleTents: filteredTents,
-            refreshIssue: refreshIssue,
-            isFilteredMode: isFilteredMode,
-            filterState: filterState,
-            allTags: allTags,
-          ),
-        ),
+    return DataScreenScaffold<List<Tent>>(
+      state: tentsState,
+      loadingPlaceholder: ListView.builder(
+        itemCount: 6,
+        itemBuilder: (_, _) => const _TentCardSkeleton(),
+      ),
+      errorFallbackMessage: 'Impossible de charger les tentes. Réessayez.',
+      onRetry: () => ref.read(tentListProvider.notifier).retry(),
+      builder: (tents) => _buildDataState(
+        rawTents: tents,
+        visibleTents: filteredTents,
+        refreshIssue: refreshIssue,
+        isFilteredMode: isFilteredMode,
+        filterState: filterState,
+        allTags: allTags,
       ),
     );
   }
 
-  Widget _buildLoadingState() {
-    return ListView.builder(
-      itemCount: 6,
-      itemBuilder: (_, _) => const _TentCardSkeleton(),
-    );
-  }
-
-  Widget _buildErrorState(Object error) {
-    final message = toUserFacingError(error, 'Impossible de charger les tentes. Réessayez.');
-    return AsyncErrorView(
-      message: message,
-      onRetry: () => ref.read(tentListProvider.notifier).retry(),
-    );
-  }
 
   Widget _buildDataState({
     required List<Tent> rawTents,

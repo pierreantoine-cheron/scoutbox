@@ -1,6 +1,7 @@
 export 'add_part_sheet.dart';
 export 'async_error_view.dart';
 export 'confirm_dialog.dart';
+export 'data_screen_scaffold.dart';
 export 'desktop_create_button.dart';
 export 'fading_cloud_done_icon.dart';
 export 'inline_text_editor.dart';
