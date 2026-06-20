@@ -41,6 +41,7 @@ builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<TentService>();
 builder.Services.AddScoped<PartService>();
 builder.Services.AddScoped<TagService>();
+builder.Services.AddScoped<PartKindService>();
 
 var dataProtectionKeysRoot = builder.Configuration["Storage:DataProtectionKeysRoot"]
     ?? Path.Combine(AppContext.BaseDirectory, "data-protection-keys");

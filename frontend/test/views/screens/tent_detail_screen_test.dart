@@ -979,8 +979,8 @@ class _FailingRemovePartRepository extends _EditableTentRepository {
 class _PartKindTentRepository extends _EditableTentRepository {
   @override
   Future<List<PartKind>> getPartKinds() async => const [
-    PartKind(id: 'kind-1', name: 'Toile extérieure', displayOrder: 1),
-    PartKind(id: 'kind-2', name: 'Double toit', displayOrder: 2),
+    PartKind(id: 'kind-1', name: 'Toile extérieure', displayOrder: 1, tentCount: 0),
+    PartKind(id: 'kind-2', name: 'Double toit', displayOrder: 2, tentCount: 0),
   ];
 
   @override

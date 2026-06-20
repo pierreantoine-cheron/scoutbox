@@ -28,6 +28,7 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tentCount = _totalTentCount(ref);
     final tagCount = _totalTagCount(ref);
+    final partKindCount = _totalPartKindCount(ref);
 
     return Drawer(
       width: 300,
@@ -38,13 +39,13 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.sm),
-              children: _topSections.map((s) => _buildItem(s, tentCount, tagCount)).toList(),
+              children: _topSections.map((s) => _buildItem(s, tentCount, tagCount, partKindCount)).toList(),
             ),
           ),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.sm),
-            child: _bottomSections.map((s) => _buildItem(s, tentCount, tagCount)).first,
+            child: _bottomSections.map((s) => _buildItem(s, tentCount, tagCount, partKindCount)).first,
           ),
         ],
       ),
@@ -55,10 +56,12 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
     NavigationSection section,
     int tentCount,
     int tagCount,
+    int partKindCount,
   ) {
     final badge = switch (section) {
       NavigationSection.tents => tentCount,
       NavigationSection.tags => tagCount,
+      NavigationSection.parts => partKindCount,
       _ => null,
     };
 
@@ -81,6 +84,11 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
   int _totalTagCount(WidgetRef ref) {
     final tags = ref.watch(tagsProvider).asData?.value;
     return tags?.length ?? 0;
+  }
+
+  int _totalPartKindCount(WidgetRef ref) {
+    final partKinds = ref.watch(partKindsProvider).asData?.value;
+    return partKinds?.length ?? 0;
   }
 }
 

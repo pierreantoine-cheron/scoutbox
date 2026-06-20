@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ScoutBoxApi.Data;
+using ScoutBoxApi.Filters;
 using ScoutBoxApi.Models.DTOs;
+using ScoutBoxApi.Services;
 
 namespace ScoutBoxApi.Controllers;
 
@@ -11,21 +11,46 @@ namespace ScoutBoxApi.Controllers;
 [Authorize]
 public class PartKindsController : ControllerBase
 {
-    private readonly ScoutBoxDbContext _db;
+    private readonly PartKindService _partKindService;
 
-    public PartKindsController(ScoutBoxDbContext db)
+    public PartKindsController(PartKindService partKindService)
     {
-        _db = db;
+        _partKindService = partKindService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var partKinds = await _db.PartKinds
-            .OrderBy(pk => pk.DisplayOrder)
-            .Select(pk => new PartKindDto(pk.Id, pk.Name, pk.DisplayOrder))
-            .ToListAsync();
-
+        var partKinds = await _partKindService.GetAllAsync();
         return Ok(new { data = partKinds });
+    }
+
+    [HttpPost]
+    [ValidateUser]
+    public async Task<IActionResult> Create([FromBody] CreatePartKindRequest request)
+    {
+        var (response, error) = await _partKindService.CreateAsync(request);
+        if (error != null) return BadRequest(error);
+        return Ok(new { data = response });
+    }
+
+    [HttpPut("{id:guid}")]
+    [ValidateUser]
+    public async Task<IActionResult> Rename(Guid id, [FromBody] UpdatePartKindRequest request)
+    {
+        var (response, error, notFound) = await _partKindService.RenameAsync(id, request);
+        if (notFound) return NotFound(new ErrorResponse("Part kind not found", "PART_KIND_NOT_FOUND"));
+        if (error != null) return BadRequest(error);
+        return Ok(new { data = response });
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ValidateUser]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var (success, error, notFound) = await _partKindService.DeleteAsync(id);
+        if (notFound) return NotFound(new ErrorResponse("Part kind not found", "PART_KIND_NOT_FOUND"));
+        if (error != null) return BadRequest(error);
+        return NoContent();
     }
 }

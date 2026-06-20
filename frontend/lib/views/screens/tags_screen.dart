@@ -65,10 +65,16 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
             );
           },
         ),
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          tooltip: 'Actualiser les étiquettes',
-          onPressed: isLoading ? null : () => ref.read(tagsProvider.notifier).refresh(),
+        Builder(
+          builder: (context) {
+            final isDesktop = MediaQuery.of(context).size.width >= 768;
+            if (!isDesktop) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Actualiser les étiquettes',
+              onPressed: isLoading ? null : () => ref.read(tagsProvider.notifier).refresh(),
+            );
+          },
         ),
         const LogoutButton(),
       ],
@@ -98,66 +104,19 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
   }
 
   Widget _buildDataState(List<Tag> tags, Object? refreshIssue) {
-    if (tags.isEmpty) {
-      return _buildEmptyState(refreshIssue);
-    }
-
-    return RefreshIndicator(
+    return ResponsiveItemList<Tag>(
+      items: tags,
+      itemContent: (context, tag) => _TagContent(tag: tag),
       onRefresh: () => ref.read(tagsProvider.notifier).refresh(),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final crossAxisCount = width >= 1100
-              ? 3
-              : width >= 768
-              ? 2
-              : 1;
-          final spacing = AppSpacing.sm;
-          final cardWidth = (width - 2 * 16 - (crossAxisCount - 1) * spacing) / crossAxisCount;
-
-          return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (refreshIssue != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: RefreshWarningCard(
-                    message: _refreshWarning(refreshIssue),
-                  ),
-                ),
-              Wrap(
-                spacing: spacing,
-                runSpacing: spacing,
-                children: tags.map((tag) {
-                  return SizedBox(
-                    width: cardWidth,
-                    child: _TagCard(tag: tag),
-                  );
-                }).toList(),
-              ),
-            ],
-          );
-        },
+      refreshWarning: refreshIssue != null ? _refreshWarning(refreshIssue) : null,
+      emptyState: const EmptyStateView(
+        icon: Icons.label_outline,
+        title: 'Aucune étiquette',
+        subtitle: 'Créez des étiquettes pour organiser vos tentes.',
       ),
-    );
-  }
-
-  Widget _buildEmptyState(Object? refreshIssue) {
-    return RefreshIndicator(
-      onRefresh: () => ref.read(tagsProvider.notifier).refresh(),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          if (refreshIssue != null) RefreshWarningCard(message: _refreshWarning(refreshIssue)),
-          const SizedBox(height: 72),
-          const EmptyStateView(
-            icon: Icons.label_outline,
-            title: 'Aucune \u00e9tiquette',
-            subtitle: 'Cr\u00e9ez des \u00e9tiquettes pour organiser vos tentes.',
-          ),
-        ],
-      ),
+      onEdit: (_) async {},
+      onDelete: (_) async {},
+      menuEnabled: false,
     );
   }
 
@@ -203,125 +162,60 @@ class _CountBadge extends StatelessWidget {
   }
 }
 
-class _TagCard extends StatelessWidget {
+class _TagContent extends StatelessWidget {
   final Tag tag;
 
-  const _TagCard({required this.tag});
+  const _TagContent({required this.tag});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final tagColor = TagPalette.colorFromHex(tag.color);
 
-    return Material(
-      color: colorScheme.surface,
-      borderRadius: BorderRadius.circular(AppRadii.xl),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(AppRadii.xl),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: tagColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: tagColor.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      tag.name,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${tag.tentCount} tente${tag.tentCount > 1 ? 's' : ''}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'monospace',
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 4),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: AppColors.muted, size: 18),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                offset: const Offset(0, 4),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.md),
-                  side: const BorderSide(color: AppColors.border),
-                ),
-                elevation: AppElevation.dropdown,
-                color: colorScheme.surface,
-                itemBuilder: (_) => [
-                  const PopupMenuItem<String>(
-                    value: 'edit',
-                    enabled: false,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 16, color: AppColors.muted),
-                        SizedBox(width: AppSpacing.sm),
-                        Text('Modifier'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'delete',
-                    enabled: false,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline,
-                          size: 16,
-                          color: AppColors.stateUnusable,
-                        ),
-                        SizedBox(width: AppSpacing.sm),
-                        Text(
-                          'Supprimer',
-                          style: TextStyle(color: AppColors.stateUnusable),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: tagColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: tagColor.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
         ),
-      ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                tag.name,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${tag.tentCount} tente${tag.tentCount > 1 ? 's' : ''}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: AppColors.muted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

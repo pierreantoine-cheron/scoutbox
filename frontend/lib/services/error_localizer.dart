@@ -45,5 +45,9 @@ class ErrorLocalizer {
     ErrorCodes.invalidTagColor: 'La couleur sélectionnée est invalide',
     ErrorCodes.tagNotFound:
         'Une étiquette sélectionnée est introuvable. La liste a été actualisée.',
+    ErrorCodes.partKindNameExists: 'Un élément avec ce nom existe déjà',
+    ErrorCodes.partKindNameRequired: 'Le nom de l\'élément est requis',
+    ErrorCodes.partKindNameTooLong: 'Le nom de l\'élément est trop long (60 max)',
+    ErrorCodes.partKindNotFound: 'Élément introuvable',
   };
 }

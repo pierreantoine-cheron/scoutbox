@@ -72,6 +72,10 @@ class ErrorCodes {
   static const String tagNameTooLong = 'TAG_NAME_TOO_LONG';
   static const String invalidTagColor = 'INVALID_TAG_COLOR';
   static const String tagNotFound = 'TAG_NOT_FOUND';
+  static const String partKindNameExists = 'PART_KIND_NAME_EXISTS';
+  static const String partKindNameRequired = 'PART_KIND_NAME_REQUIRED';
+  static const String partKindNameTooLong = 'PART_KIND_NAME_TOO_LONG';
+  static const String partKindNotFound = 'PART_KIND_NOT_FOUND';
 }
 
 // API timeouts
