@@ -226,233 +226,281 @@ void main() {
   testWidgets('buildSummarySpan uses bold for values in tent_updated', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
-      builder: (context) {
-        final item = makeTentUpdatedItem([
-          {
-            'label': 'État',
-            'oldValue': 'Good',
-            'newValue': 'Unusable',
-            'value': null,
-            'valueType': 'state',
-          },
-        ]);
-        final span = item.buildSummarySpan(context);
-        final plain = span.toPlainText();
-        expect(plain, 'État général de la tente changé de Bon état à Inutilisable');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = makeTentUpdatedItem([
+                {
+                  'label': 'État',
+                  'oldValue': 'Good',
+                  'newValue': 'Unusable',
+                  'value': null,
+                  'valueType': 'state',
+                },
+              ]);
+              final span = item.buildSummarySpan(context);
+              final plain = span.toPlainText();
+              expect(plain, 'État général de la tente changé de Bon état à Inutilisable');
 
-        final children = (span as TextSpan).children!;
-        expect(children.length, 4);
+              final children = (span as TextSpan).children!;
+              expect(children.length, 4);
 
-        expect((children[0] as TextSpan).text, 'État général de la tente changé de ');
-        expect((children[1] as TextSpan).text, 'Bon état');
-        expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
-        expect((children[2] as TextSpan).text, ' à ');
-        expect((children[3] as TextSpan).text, 'Inutilisable');
-        expect((children[3] as TextSpan).style!.fontWeight, FontWeight.w600);
+              expect((children[0] as TextSpan).text, 'État général de la tente changé de ');
+              expect((children[1] as TextSpan).text, 'Bon état');
+              expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+              expect((children[2] as TextSpan).text, ' à ');
+              expect((children[3] as TextSpan).text, 'Inutilisable');
+              expect((children[3] as TextSpan).style!.fontWeight, FontWeight.w600);
 
-        return const SizedBox();
-      },
-    ))));
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
   });
 
   testWidgets('buildSummarySpan uses bold for part_state_changed values', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
-      builder: (context) {
-        final item = TentHistoryItem.fromJson({
-          'id': 'evt-part',
-          'action': 'part_state_changed',
-          'category': 'part_state',
-          'occurredAt': '2026-05-19T12:00:00Z',
-          'actorDisplayName': 'Marie',
-          'subjectName': 'Toile',
-          'details': [
-            {
-              'label': 'État',
-              'oldValue': 'Good',
-              'newValue': 'NeedsRepair',
-              'value': null,
-              'valueType': 'state',
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = TentHistoryItem.fromJson({
+                'id': 'evt-part',
+                'action': 'part_state_changed',
+                'category': 'part_state',
+                'occurredAt': '2026-05-19T12:00:00Z',
+                'actorDisplayName': 'Marie',
+                'subjectName': 'Toile',
+                'details': [
+                  {
+                    'label': 'État',
+                    'oldValue': 'Good',
+                    'newValue': 'NeedsRepair',
+                    'value': null,
+                    'valueType': 'state',
+                  },
+                ],
+              });
+              final span = item.buildSummarySpan(context);
+              final plain = span.toPlainText();
+              expect(plain, contains('Toile'));
+              expect(plain, contains('Bon état'));
+              expect(plain, contains('À réparer'));
+
+              final children = (span as TextSpan).children!;
+              expect(children.length, 6);
+              expect((children[1] as TextSpan).text, 'Toile');
+              expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+              expect((children[3] as TextSpan).style!.fontWeight, FontWeight.w600);
+              expect((children[5] as TextSpan).style!.fontWeight, FontWeight.w600);
+
+              return const SizedBox();
             },
-          ],
-        });
-        final span = item.buildSummarySpan(context);
-        final plain = span.toPlainText();
-        expect(plain, contains('Toile'));
-        expect(plain, contains('Bon état'));
-        expect(plain, contains('À réparer'));
-
-        final children = (span as TextSpan).children!;
-        expect(children.length, 6);
-        expect((children[1] as TextSpan).text, 'Toile');
-        expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
-        expect((children[3] as TextSpan).style!.fontWeight, FontWeight.w600);
-        expect((children[5] as TextSpan).style!.fontWeight, FontWeight.w600);
-
-        return const SizedBox();
-      },
-    ))));
+          ),
+        ),
+      ),
+    );
   });
 
   testWidgets('buildSummarySpan falls back to plain text for other actions', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
-      builder: (context) {
-        final item = TentHistoryItem.fromJson({
-          'id': 'evt-1',
-          'action': 'tent_created',
-          'category': 'tent_info',
-          'occurredAt': '2026-05-19T12:00:00Z',
-          'actorDisplayName': 'Jean',
-          'subjectName': null,
-          'details': [],
-        });
-        final span = item.buildSummarySpan(context);
-        expect(span.toPlainText(), 'Tente créée');
-        return const SizedBox();
-      },
-    ))));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = TentHistoryItem.fromJson({
+                'id': 'evt-1',
+                'action': 'tent_created',
+                'category': 'tent_info',
+                'occurredAt': '2026-05-19T12:00:00Z',
+                'actorDisplayName': 'Jean',
+                'subjectName': null,
+                'details': [],
+              });
+              final span = item.buildSummarySpan(context);
+              expect(span.toPlainText(), 'Tente créée');
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
   });
 
   testWidgets('buildSummarySpan bolds tag name for tag_assigned', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
-      builder: (context) {
-        final item = TentHistoryItem.fromJson({
-          'id': 'evt-tag',
-          'action': 'tag_assigned',
-          'category': 'tags',
-          'occurredAt': '2026-05-19T12:00:00Z',
-          'actorDisplayName': 'Jean',
-          'subjectName': 'Bleu',
-          'details': [],
-        });
-        final span = item.buildSummarySpan(context);
-        expect(span.toPlainText(), 'Étiquette ajoutée : Bleu');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = TentHistoryItem.fromJson({
+                'id': 'evt-tag',
+                'action': 'tag_assigned',
+                'category': 'tags',
+                'occurredAt': '2026-05-19T12:00:00Z',
+                'actorDisplayName': 'Jean',
+                'subjectName': 'Bleu',
+                'details': [],
+              });
+              final span = item.buildSummarySpan(context);
+              expect(span.toPlainText(), 'Étiquette ajoutée : Bleu');
 
-        final children = (span as TextSpan).children!;
-        expect(children.length, 2);
-        expect((children[0] as TextSpan).text, 'Étiquette ajoutée : ');
-        expect((children[0] as TextSpan).style!.fontWeight, isNot(FontWeight.w600));
-        expect((children[1] as TextSpan).text, 'Bleu');
-        expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+              final children = (span as TextSpan).children!;
+              expect(children.length, 2);
+              expect((children[0] as TextSpan).text, 'Étiquette ajoutée : ');
+              expect((children[0] as TextSpan).style!.fontWeight, isNot(FontWeight.w600));
+              expect((children[1] as TextSpan).text, 'Bleu');
+              expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
 
-        return const SizedBox();
-      },
-    ))));
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
   });
 
   testWidgets('buildSummarySpan bolds tag name for tag_removed', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
-      builder: (context) {
-        final item = TentHistoryItem.fromJson({
-          'id': 'evt-tag',
-          'action': 'tag_removed',
-          'category': 'tags',
-          'occurredAt': '2026-05-19T12:00:00Z',
-          'actorDisplayName': 'Jean',
-          'subjectName': 'Rouge',
-          'details': [],
-        });
-        final span = item.buildSummarySpan(context);
-        expect(span.toPlainText(), 'Étiquette retirée : Rouge');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = TentHistoryItem.fromJson({
+                'id': 'evt-tag',
+                'action': 'tag_removed',
+                'category': 'tags',
+                'occurredAt': '2026-05-19T12:00:00Z',
+                'actorDisplayName': 'Jean',
+                'subjectName': 'Rouge',
+                'details': [],
+              });
+              final span = item.buildSummarySpan(context);
+              expect(span.toPlainText(), 'Étiquette retirée : Rouge');
 
-        final children = (span as TextSpan).children!;
-        expect(children.length, 2);
-        expect((children[0] as TextSpan).text, 'Étiquette retirée : ');
-        expect((children[1] as TextSpan).text, 'Rouge');
-        expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+              final children = (span as TextSpan).children!;
+              expect(children.length, 2);
+              expect((children[0] as TextSpan).text, 'Étiquette retirée : ');
+              expect((children[1] as TextSpan).text, 'Rouge');
+              expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
 
-        return const SizedBox();
-      },
-    ))));
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
   });
 
   testWidgets('buildSummarySpan bolds part name for part_added', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
-      builder: (context) {
-        final item = TentHistoryItem.fromJson({
-          'id': 'evt-part',
-          'action': 'part_added',
-          'category': 'part_management',
-          'occurredAt': '2026-05-19T12:00:00Z',
-          'actorDisplayName': 'Jean',
-          'subjectName': 'Toile',
-          'details': [],
-        });
-        final span = item.buildSummarySpan(context);
-        expect(span.toPlainText(), 'Pièce ajoutée : Toile');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = TentHistoryItem.fromJson({
+                'id': 'evt-part',
+                'action': 'part_added',
+                'category': 'part_management',
+                'occurredAt': '2026-05-19T12:00:00Z',
+                'actorDisplayName': 'Jean',
+                'subjectName': 'Toile',
+                'details': [],
+              });
+              final span = item.buildSummarySpan(context);
+              expect(span.toPlainText(), 'Pièce ajoutée : Toile');
 
-        final children = (span as TextSpan).children!;
-        expect(children.length, 2);
-        expect((children[1] as TextSpan).text, 'Toile');
-        expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+              final children = (span as TextSpan).children!;
+              expect(children.length, 2);
+              expect((children[1] as TextSpan).text, 'Toile');
+              expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
 
-        return const SizedBox();
-      },
-    ))));
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
   });
 
   testWidgets('buildSummarySpan bolds part name for part_deleted', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
-      builder: (context) {
-        final item = TentHistoryItem.fromJson({
-          'id': 'evt-part',
-          'action': 'part_deleted',
-          'category': 'part_management',
-          'occurredAt': '2026-05-19T12:00:00Z',
-          'actorDisplayName': 'Jean',
-          'subjectName': 'Toile',
-          'details': [],
-        });
-        final span = item.buildSummarySpan(context);
-        expect(span.toPlainText(), 'Pièce supprimée : Toile');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = TentHistoryItem.fromJson({
+                'id': 'evt-part',
+                'action': 'part_deleted',
+                'category': 'part_management',
+                'occurredAt': '2026-05-19T12:00:00Z',
+                'actorDisplayName': 'Jean',
+                'subjectName': 'Toile',
+                'details': [],
+              });
+              final span = item.buildSummarySpan(context);
+              expect(span.toPlainText(), 'Pièce supprimée : Toile');
 
-        final children = (span as TextSpan).children!;
-        expect(children.length, 2);
-        expect((children[1] as TextSpan).text, 'Toile');
-        expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+              final children = (span as TextSpan).children!;
+              expect(children.length, 2);
+              expect((children[1] as TextSpan).text, 'Toile');
+              expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
 
-        return const SizedBox();
-      },
-    ))));
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
   });
 
   testWidgets('buildSummarySpan bolds part name for part_comments_changed', (
     tester,
   ) async {
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
-      builder: (context) {
-        final item = TentHistoryItem.fromJson({
-          'id': 'evt-part',
-          'action': 'part_comments_changed',
-          'category': 'part_state',
-          'occurredAt': '2026-05-19T12:00:00Z',
-          'actorDisplayName': 'Jean',
-          'subjectName': 'Toile',
-          'details': [],
-        });
-        final span = item.buildSummarySpan(context);
-        expect(span.toPlainText(), 'Commentaire de Toile modifié');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = TentHistoryItem.fromJson({
+                'id': 'evt-part',
+                'action': 'part_comments_changed',
+                'category': 'part_state',
+                'occurredAt': '2026-05-19T12:00:00Z',
+                'actorDisplayName': 'Jean',
+                'subjectName': 'Toile',
+                'details': [],
+              });
+              final span = item.buildSummarySpan(context);
+              expect(span.toPlainText(), 'Commentaire de Toile modifié');
 
-        final children = (span as TextSpan).children!;
-        expect(children.length, 3);
-        expect((children[1] as TextSpan).text, 'Toile');
-        expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+              final children = (span as TextSpan).children!;
+              expect(children.length, 3);
+              expect((children[1] as TextSpan).text, 'Toile');
+              expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
 
-        return const SizedBox();
-      },
-    ))));
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
   });
 
   group('TentHistoryDetail', () {

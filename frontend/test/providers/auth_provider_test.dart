@@ -38,7 +38,8 @@ class _FakeAuthService extends AuthService {
 
   @override
   Future<RefreshResult> refreshToken() async {
-    return _refreshResult ?? RefreshResult.failure(
+    return _refreshResult ??
+        RefreshResult.failure(
           error: 'no mock',
           failureType: RefreshFailureType.transientNetwork,
         );
@@ -65,11 +66,11 @@ class _FakeAuthService extends AuthService {
 }
 
 AuthResponse _fakeAuthResponse() => AuthResponse(
-      accessToken: 'access_123',
-      refreshToken: 'refresh_456',
-      accessTokenExpires: DateTime.now().add(const Duration(hours: 1)),
-      refreshTokenExpires: DateTime.now().add(const Duration(days: 30)),
-    );
+  accessToken: 'access_123',
+  refreshToken: 'refresh_456',
+  accessTokenExpires: DateTime.now().add(const Duration(hours: 1)),
+  refreshTokenExpires: DateTime.now().add(const Duration(days: 30)),
+);
 
 void main() {
   group('AuthNotifier', () {
@@ -92,7 +93,9 @@ void main() {
           authResponse: _fakeAuthResponse(),
         );
 
-        await container.read(authProvider.notifier).login(
+        await container
+            .read(authProvider.notifier)
+            .login(
               serverUrl: 'http://localhost',
               username: 'testuser',
               password: 'password123',
@@ -112,7 +115,9 @@ void main() {
           error: 'Identifiants incorrects.',
         );
 
-        await container.read(authProvider.notifier).login(
+        await container
+            .read(authProvider.notifier)
+            .login(
               serverUrl: 'http://localhost',
               username: 'testuser',
               password: 'wrongpassword',
@@ -125,16 +130,14 @@ void main() {
         expect(state.error, equals('Identifiants incorrects.'));
       });
 
-
-
-
-
       test('sets loading state during login', () async {
         fakeAuthService._loginResult = AuthResult.success(
           authResponse: _fakeAuthResponse(),
         );
 
-        final future = container.read(authProvider.notifier).login(
+        final future = container
+            .read(authProvider.notifier)
+            .login(
               serverUrl: 'http://localhost',
               username: 'testuser',
               password: 'password123',
@@ -154,7 +157,9 @@ void main() {
           authResponse: _fakeAuthResponse(),
         );
 
-        await container.read(authProvider.notifier).login(
+        await container
+            .read(authProvider.notifier)
+            .login(
               serverUrl: 'http://localhost',
               username: 'testuser',
               password: 'password123',
@@ -175,7 +180,9 @@ void main() {
           authResponse: _fakeAuthResponse(),
         );
 
-        await container.read(authProvider.notifier).register(
+        await container
+            .read(authProvider.notifier)
+            .register(
               serverUrl: 'http://localhost',
               inviteCode: 'INVITE123',
               username: 'newuser',
@@ -194,7 +201,9 @@ void main() {
           error: "Code d'invitation invalide.",
         );
 
-        await container.read(authProvider.notifier).register(
+        await container
+            .read(authProvider.notifier)
+            .register(
               serverUrl: 'http://localhost',
               inviteCode: 'BADCODE',
               username: 'newuser',
@@ -209,7 +218,9 @@ void main() {
       test('unreachable server sets error', () async {
         fakeAuthService._isReachable = false;
 
-        await container.read(authProvider.notifier).register(
+        await container
+            .read(authProvider.notifier)
+            .register(
               serverUrl: 'http://localhost',
               inviteCode: 'INVITE123',
               username: 'testuser',
@@ -229,7 +240,9 @@ void main() {
           authResponse: _fakeAuthResponse(),
         );
 
-        await container.read(authProvider.notifier).login(
+        await container
+            .read(authProvider.notifier)
+            .login(
               serverUrl: 'http://localhost',
               username: 'testuser',
               password: 'password123',
@@ -245,8 +258,6 @@ void main() {
         expect(state.logoutSuccessMessage, equals('Déconnexion réussie'));
         expect(fakeAuthService.logoutCalled, isTrue);
       });
-
-
     });
 
     group('navigation toggles', () {
@@ -267,7 +278,9 @@ void main() {
           authResponse: _fakeAuthResponse(),
         );
 
-        await container.read(authProvider.notifier).login(
+        await container
+            .read(authProvider.notifier)
+            .login(
               serverUrl: 'http://localhost',
               username: 'testuser',
               password: 'password123',

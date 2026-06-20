@@ -6,6 +6,7 @@ import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/app_theme_context.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/constants.dart';
 import '../../utils/responsive_sheet.dart';
@@ -79,8 +80,7 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
       dispatchAppBarConfig();
     });
 
-    if (editState.lastSaveTime != null &&
-        editState.lastSaveTime != _lastSeenSaveTime) {
+    if (editState.lastSaveTime != null && editState.lastSaveTime != _lastSeenSaveTime) {
       _lastSeenSaveTime = editState.lastSaveTime;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) ref.read(successIndicatorProvider.notifier).fire();
@@ -94,7 +94,6 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
       builder: (tent) => _DetailContent(tentId: widget.tentId, tent: tent),
     );
   }
-
 }
 
 class _ArchiveAppBarButton extends ConsumerStatefulWidget {
@@ -104,8 +103,7 @@ class _ArchiveAppBarButton extends ConsumerStatefulWidget {
   const _ArchiveAppBarButton({required this.tentId, required this.showLabel});
 
   @override
-  ConsumerState<_ArchiveAppBarButton> createState() =>
-      _ArchiveAppBarButtonState();
+  ConsumerState<_ArchiveAppBarButton> createState() => _ArchiveAppBarButtonState();
 }
 
 class _ArchiveAppBarButtonState extends ConsumerState<_ArchiveAppBarButton> {
@@ -113,7 +111,7 @@ class _ArchiveAppBarButtonState extends ConsumerState<_ArchiveAppBarButton> {
 
   @override
   Widget build(BuildContext context) {
-    final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
+    final semanticColors = context.semanticColors;
 
     if (_isArchiving) {
       return const Padding(
@@ -160,11 +158,9 @@ class _ArchiveAppBarButtonState extends ConsumerState<_ArchiveAppBarButton> {
     setState(() => _isArchiving = true);
 
     try {
-      final archivedTent = await ref
-          .read(tentRepositoryProvider)
-          .archiveTent(widget.tentId);
+      await ref.read(tentRepositoryProvider).archiveTent(widget.tentId);
       invalidateTentHistory(ref, widget.tentId);
-      ref.read(tentListProvider.notifier).hideTent(archivedTent.id);
+      ref.invalidate(tentListProvider);
       ref.invalidate(tentDetailProvider(widget.tentId));
       ref.read(successIndicatorProvider.notifier).fire();
     } catch (e) {
@@ -187,8 +183,7 @@ class _UnarchiveAppBarButton extends ConsumerStatefulWidget {
   const _UnarchiveAppBarButton({required this.tentId, required this.showLabel});
 
   @override
-  ConsumerState<_UnarchiveAppBarButton> createState() =>
-      _UnarchiveAppBarButtonState();
+  ConsumerState<_UnarchiveAppBarButton> createState() => _UnarchiveAppBarButtonState();
 }
 
 class _UnarchiveAppBarButtonState extends ConsumerState<_UnarchiveAppBarButton> {
@@ -196,7 +191,7 @@ class _UnarchiveAppBarButtonState extends ConsumerState<_UnarchiveAppBarButton> 
 
   @override
   Widget build(BuildContext context) {
-    final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
+    final semanticColors = context.semanticColors;
 
     if (_isUnarchiving) {
       return const Padding(
@@ -234,8 +229,7 @@ class _UnarchiveAppBarButtonState extends ConsumerState<_UnarchiveAppBarButton> 
     final confirmed = await showConfirmDialog(
       context,
       title: 'Désarchiver la tente',
-      content:
-          'Désarchiver cette tente ? Elle réapparaîtra dans la liste active.',
+      content: 'Désarchiver cette tente ? Elle réapparaîtra dans la liste active.',
     );
 
     if (!confirmed || !mounted) return;
@@ -243,9 +237,7 @@ class _UnarchiveAppBarButtonState extends ConsumerState<_UnarchiveAppBarButton> 
     setState(() => _isUnarchiving = true);
 
     try {
-      final unarchivedTent = await ref
-          .read(tentRepositoryProvider)
-          .unarchiveTent(widget.tentId);
+      final unarchivedTent = await ref.read(tentRepositoryProvider).unarchiveTent(widget.tentId);
       invalidateTentHistory(ref, widget.tentId);
       ref.read(tentListProvider.notifier).showTent(unarchivedTent);
       ref.invalidate(tentDetailProvider(widget.tentId));
@@ -313,11 +305,8 @@ class _DetailContent extends ConsumerWidget {
                   message: editState.fieldError!,
                   onRetry: editState.pendingRetry == null
                       ? null
-                      : () => ref
-                            .read(tentEditProvider(tentId).notifier)
-                            .retryLastUpdate(),
-                  onDismiss: () =>
-                      ref.read(tentEditProvider(tentId).notifier).clearError(),
+                      : () => ref.read(tentEditProvider(tentId).notifier).retryLastUpdate(),
+                  onDismiss: () => ref.read(tentEditProvider(tentId).notifier).clearError(),
                 ),
               ],
             ],
@@ -341,7 +330,7 @@ class _IdentityBlock extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
+    final semanticColors = context.semanticColors;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -486,7 +475,9 @@ class _TentNameHero extends ConsumerWidget {
     if (result == true && context.mounted) {
       final newName = controller.text.trim();
       if (newName.isNotEmpty && newName != tent.name) {
-        ref.read(tentEditProvider(tentId).notifier).updateField(
+        ref
+            .read(tentEditProvider(tentId).notifier)
+            .updateField(
               tentId: tentId,
               name: newName,
               size: tent.size,
@@ -562,17 +553,15 @@ class _InfoChipsRow extends ConsumerWidget {
       builder: (sheetContext) {
         return PickerSheet<TentOverallState>(
           title: 'Modifier l\'état',
-          items: TentOverallState.values
-              .map((s) {
-                final style = tentStateBadgeStyle(sheetContext, s);
-                return PickerItem(
-                  value: s,
-                  label: style.label,
-                  color: style.foreground,
-                  icon: style.icon,
-                );
-              })
-              .toList(),
+          items: TentOverallState.values.map((s) {
+            final style = tentStateBadgeStyle(sheetContext, s);
+            return PickerItem(
+              value: s,
+              label: style.label,
+              color: style.foreground,
+              icon: style.icon,
+            );
+          }).toList(),
           currentValue: tent.overallState,
           onSelected: (value) => Navigator.of(sheetContext).pop(value),
           onCancel: () => Navigator.of(sheetContext).pop(),
@@ -581,7 +570,9 @@ class _InfoChipsRow extends ConsumerWidget {
     );
 
     if (result != null && context.mounted && result != tent.overallState) {
-      ref.read(tentEditProvider(tentId).notifier).updateField(
+      ref
+          .read(tentEditProvider(tentId).notifier)
+          .updateField(
             tentId: tentId,
             name: tent.name,
             size: tent.size,
@@ -633,7 +624,9 @@ class _InfoChipsRow extends ConsumerWidget {
     if (result == true && context.mounted) {
       final newSize = int.tryParse(controller.text.trim());
       if (newSize != null && newSize != tent.size) {
-        ref.read(tentEditProvider(tentId).notifier).updateField(
+        ref
+            .read(tentEditProvider(tentId).notifier)
+            .updateField(
               tentId: tentId,
               name: tent.name,
               size: newSize,
@@ -658,9 +651,7 @@ class _InfoChipsRow extends ConsumerWidget {
       builder: (sheetContext) {
         return PickerSheet<String>(
           title: 'Modifier le modèle',
-          items: models
-              .map((m) => PickerItem(value: m.id, label: m.name))
-              .toList(),
+          items: models.map((m) => PickerItem(value: m.id, label: m.name)).toList(),
           currentValue: tent.tentModelId,
           onSelected: (modelId) => Navigator.of(sheetContext).pop(modelId),
           onCancel: () => Navigator.of(sheetContext).pop(),
@@ -669,7 +660,9 @@ class _InfoChipsRow extends ConsumerWidget {
     );
 
     if (result != null && context.mounted && result != tent.tentModelId) {
-      ref.read(tentEditProvider(tentId).notifier).updateModel(
+      ref
+          .read(tentEditProvider(tentId).notifier)
+          .updateModel(
             tentId: tentId,
             tentModelId: result,
             name: tent.name,
@@ -755,7 +748,9 @@ class _CommentsPreview extends ConsumerWidget {
     if (result == true && context.mounted) {
       final newComments = controller.text.trim();
       if (newComments != (tent.comments?.trim() ?? '')) {
-        ref.read(tentEditProvider(tentId).notifier).updateField(
+        ref
+            .read(tentEditProvider(tentId).notifier)
+            .updateField(
               tentId: tentId,
               name: tent.name,
               size: tent.size,
@@ -791,9 +786,7 @@ class _TagsBlock extends ConsumerWidget {
               ),
               _ModifierButton(
                 label: 'Modifier',
-                onPressed: tent.isArchived
-                    ? null
-                    : () => _showEditTagsSheet(context, ref),
+                onPressed: tent.isArchived ? null : () => _showEditTagsSheet(context, ref),
               ),
             ],
           ),
@@ -925,8 +918,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
               if (!_isSelectionMode)
                 _ModifierButton(
                   label: 'Modifier',
-                  onPressed:
-                      widget.isArchived ? null : _showEditPartsSheet,
+                  onPressed: widget.isArchived ? null : _showEditPartsSheet,
                 ),
               if (_isSelectionMode) ...[
                 if (_selectedPartIds.isNotEmpty)
@@ -980,15 +972,11 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
         .contains(part.id);
 
     return InkWell(
-      onTap: widget.isArchived
-          ? null
-          : () => _showEditPartCommentSheet(part),
+      onTap: widget.isArchived ? null : () => _showEditPartCommentSheet(part),
       onLongPress: widget.isArchived
           ? null
           : () {
-              ref
-                  .read(partManagementProvider(widget.tentId).notifier)
-                  .clearRemoveError();
+              ref.read(partManagementProvider(widget.tentId).notifier).clearRemoveError();
               setState(() {
                 _isSelectionMode = true;
                 _selectedPartIds.add(part.id);
@@ -1033,9 +1021,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.outline,
-                                  fontStyle: _hasNoComment(part.comments)
-                                      ? FontStyle.italic
-                                      : null,
+                                  fontStyle: _hasNoComment(part.comments) ? FontStyle.italic : null,
                                 ),
                               ),
                             ),
@@ -1055,8 +1041,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
                       onTap: widget.isArchived
                           ? null
                           : () => _showEditPartStateSheet(part, displayedState),
-                      semanticLabel:
-                          'État de la pièce : ${displayedState.toFrenchLabel()}',
+                      semanticLabel: 'État de la pièce : ${displayedState.toFrenchLabel()}',
                     ),
                 ],
               ),
@@ -1075,9 +1060,8 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => ref
-                            .read(partUpdateProvider(widget.tentId).notifier)
-                            .retry(part.id),
+                        onPressed: () =>
+                            ref.read(partUpdateProvider(widget.tentId).notifier).retry(part.id),
                         child: const Text('Réessayer'),
                       ),
                     ],
@@ -1161,8 +1145,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
       useSafeArea: true,
       builder: (sheetContext) => AddPartSheet(
         tentId: widget.tentId,
-        existingPartKindIds:
-            widget.parts.map((p) => p.partKindId).toSet(),
+        existingPartKindIds: widget.parts.map((p) => p.partKindId).toSet(),
       ),
     );
   }
@@ -1173,17 +1156,15 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
       builder: (sheetContext) {
         return PickerSheet<PartState>(
           title: 'Modifier l\'état de l\'élément',
-          items: PartState.values
-              .map((s) {
-                final style = partStateBadgeStyle(sheetContext, s);
-                return PickerItem(
-                  value: s,
-                  label: style.label,
-                  color: style.foreground,
-                  icon: style.icon,
-                );
-              })
-              .toList(),
+          items: PartState.values.map((s) {
+            final style = partStateBadgeStyle(sheetContext, s);
+            return PickerItem(
+              value: s,
+              label: style.label,
+              color: style.foreground,
+              icon: style.icon,
+            );
+          }).toList(),
           currentValue: displayedState,
           onSelected: (value) => Navigator.of(sheetContext).pop(value),
           onCancel: () => Navigator.of(sheetContext).pop(),
@@ -1217,8 +1198,8 @@ class _SectionHeader extends StatelessWidget {
     return Text(
       label,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.outline,
-          ),
+        color: Theme.of(context).colorScheme.outline,
+      ),
     );
   }
 }
@@ -1266,7 +1247,7 @@ class _FieldErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
+    final semanticColors = context.semanticColors;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1310,8 +1291,3 @@ class _FieldErrorBanner extends StatelessWidget {
     );
   }
 }
-
-
-
-
-

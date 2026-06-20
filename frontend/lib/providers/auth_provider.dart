@@ -406,4 +406,3 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 }
-

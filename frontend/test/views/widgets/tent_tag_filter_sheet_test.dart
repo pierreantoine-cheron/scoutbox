@@ -1,5 +1,6 @@
 import 'package:client/models/tag.dart';
 import 'package:client/providers/tent_filter_provider.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:client/views/widgets/tent_tag_filter_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,7 +91,7 @@ Widget _testApp({Set<String>? selection, required Widget child}) {
       ),
     ],
     child: MaterialApp(
-      theme: ThemeData(splashFactory: NoSplash.splashFactory),
+      theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
       home: Scaffold(body: child),
     ),
   );

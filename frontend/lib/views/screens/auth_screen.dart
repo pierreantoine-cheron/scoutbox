@@ -40,7 +40,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   late final _confirmPasswordFocusNode = FocusNode();
 
   late AuthMode _mode;
-  bool _rememberMe = true;
+  bool _rememberMe = false;
   final _autovalidate = FormAutovalidate();
 
   bool get _isLogin => _mode == AuthMode.login;
@@ -82,10 +82,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         _serverController.text = serverUrl ?? '';
       });
       if (_isLogin) {
-        final rememberedUsername =
-            await SecureStorageService.getRememberedUsername();
-        final rememberPref =
-            await SecureStorageService.getRememberUsernamePreference();
+        final rememberedUsername = await SecureStorageService.getRememberedUsername();
+        final rememberPref = await SecureStorageService.getRememberUsernamePreference();
         if (!mounted) return;
         setState(() {
           _usernameController.text = rememberedUsername ?? '';
@@ -131,8 +129,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final authState = ref.watch(authProvider);
 
     ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.errorCode == ErrorCodes.invalidCredentials &&
-          next.error != null) {
+      if (next.errorCode == ErrorCodes.invalidCredentials && next.error != null) {
         _passwordController.clear();
       }
       if (next.logoutSuccessMessage != null &&
@@ -164,9 +161,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               final isDesktop = constraints.maxWidth > 480;
 
               return SingleChildScrollView(
-                padding: isDesktop
-                    ? const EdgeInsets.all(20)
-                    : EdgeInsets.zero,
+                padding: isDesktop ? const EdgeInsets.all(20) : EdgeInsets.zero,
                 child: _buildAuthCard(isDesktop, authState),
               );
             },
@@ -184,11 +179,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       ),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: isDesktop
-            ? Border.all(color: AppColors.border, width: 1)
-            : null,
-        borderRadius:
-            isDesktop ? BorderRadius.circular(AppRadii.xl) : null,
+        border: isDesktop ? Border.all(color: AppColors.border, width: 1) : null,
+        borderRadius: isDesktop ? BorderRadius.circular(AppRadii.xl) : null,
       ),
       padding: const EdgeInsets.only(
         top: 32,
@@ -377,12 +369,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           autovalidateMode: _autovalidate.mode,
           hintText: _isLogin ? 'Mot de passe' : '8 caractères minimum',
           autofillHints: _isLogin ? null : const [AutofillHints.newPassword],
-          textInputAction:
-              _isLogin ? TextInputAction.done : TextInputAction.next,
+          textInputAction: _isLogin ? TextInputAction.done : TextInputAction.next,
           onFieldSubmitted: _isLogin ? (_) => _submit() : null,
-          onEditingComplete: _isLogin
-              ? null
-              : () => _confirmPasswordFocusNode.requestFocus(),
+          onEditingComplete: _isLogin ? null : () => _confirmPasswordFocusNode.requestFocus(),
           validator: AuthValidators.validatePassword,
         ),
       ],
@@ -414,14 +403,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 
-
   Widget _buildRememberMe(bool isLoading) {
     return Row(
       children: [
         InkWell(
           borderRadius: BorderRadius.circular(4),
-          onTap:
-              isLoading ? null : () => setState(() => _rememberMe = !_rememberMe),
+          onTap: isLoading ? null : () => setState(() => _rememberMe = !_rememberMe),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             width: 20,
@@ -429,21 +416,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
-                color:
-                    _rememberMe ? AppColors.scoutGreen : AppColors.border,
+                color: _rememberMe ? AppColors.scoutGreen : AppColors.border,
                 width: 2,
               ),
               color: _rememberMe ? AppColors.scoutGreen : Colors.transparent,
             ),
-            child: _rememberMe
-                ? const Icon(Icons.check, color: AppColors.surface, size: 13)
-                : null,
+            child: _rememberMe ? const Icon(Icons.check, color: AppColors.surface, size: 13) : null,
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
         GestureDetector(
-          onTap:
-              isLoading ? null : () => setState(() => _rememberMe = !_rememberMe),
+          onTap: isLoading ? null : () => setState(() => _rememberMe = !_rememberMe),
           child: Text(
             'Se souvenir de moi',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -482,21 +465,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 
-
   Future<void> _submit() async {
     if (_autovalidate.markAttempted()) setState(() {});
 
     if (!_formKey.currentState!.validate()) return;
 
     if (_isLogin) {
-      await ref.read(authProvider.notifier).login(
+      await ref
+          .read(authProvider.notifier)
+          .login(
             serverUrl: _serverController.text.trim(),
             username: _usernameController.text.trim(),
             password: _passwordController.text,
             rememberUsername: _rememberMe,
           );
     } else {
-      await ref.read(authProvider.notifier).register(
+      await ref
+          .read(authProvider.notifier)
+          .register(
             serverUrl: _serverController.text.trim(),
             inviteCode: _inviteController.text.trim(),
             username: _usernameController.text.trim(),

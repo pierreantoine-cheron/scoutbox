@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/views/widgets/scout_segmented_toggle.dart';
+import 'package:client/utils/app_theme.dart';
 
 void main() {
   group('ScoutSegmentedToggle', () {
     testWidgets('renders all labels', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: ScoutSegmentedToggle<int>(
               options: const [
@@ -31,7 +32,7 @@ void main() {
       int? selectedIndex;
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: ScoutSegmentedToggle<int>(
               options: const [
@@ -53,7 +54,7 @@ void main() {
     testWidgets('selected item has surface decoration when no color', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: ScoutSegmentedToggle<int>(
               options: const [
@@ -82,12 +83,22 @@ void main() {
     testWidgets('applies colored background when color is provided', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: ScoutSegmentedToggle<int>(
               options: const [
-                SegmentedToggleOption(value: 0, label: 'A', color: Colors.green, backgroundColor: Color(0xFFDBF3DB)),
-                SegmentedToggleOption(value: 1, label: 'B', color: Colors.amber, backgroundColor: Color(0xFFFFEBC1)),
+                SegmentedToggleOption(
+                  value: 0,
+                  label: 'A',
+                  color: Colors.green,
+                  backgroundColor: Color(0xFFDBF3DB),
+                ),
+                SegmentedToggleOption(
+                  value: 1,
+                  label: 'B',
+                  color: Colors.amber,
+                  backgroundColor: Color(0xFFFFEBC1),
+                ),
               ],
               selected: 0,
               onChanged: (_) {},

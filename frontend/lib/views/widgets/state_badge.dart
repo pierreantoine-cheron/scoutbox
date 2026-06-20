@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/models.dart';
-import '../../utils/app_colors.dart';
+import '../../utils/app_theme_context.dart';
 
 class StateBadgeStyle {
   final String label;
@@ -21,8 +21,7 @@ StateBadgeStyle tentStateBadgeStyle(
   BuildContext context,
   TentOverallState state,
 ) {
-  final semanticColors = Theme.of(context).extension<AppSemanticColors>();
-  final colors = state.toColors(semanticColors);
+  final colors = state.toColors(context.semanticColors);
   final icon = switch (state) {
     TentOverallState.good => Icons.check_circle_outline,
     TentOverallState.needsRepair => Icons.build_circle_outlined,
@@ -38,8 +37,7 @@ StateBadgeStyle tentStateBadgeStyle(
 }
 
 StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
-  final semanticColors = Theme.of(context).extension<AppSemanticColors>();
-  final colors = state.toColors(semanticColors);
+  final colors = state.toColors(context.semanticColors);
   final icon = switch (state) {
     PartState.good => Icons.check_circle_outline,
     PartState.needsRepair => Icons.build_circle_outlined,

@@ -27,9 +27,7 @@ void main() {
       addTearDown(container.dispose);
       await container.read(tagsProvider.future);
 
-      await container
-          .read(tagsProvider.notifier)
-          .createTag(name: 'Alpha', color: '#F44336');
+      await container.read(tagsProvider.notifier).createTag(name: 'Alpha', color: '#F44336');
 
       final tags = container.read(tagsProvider).requireValue;
       expect(tags.map((tag) => tag.name), equals(['Alpha', 'Zoo']));

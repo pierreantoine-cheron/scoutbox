@@ -26,7 +26,6 @@ class AppBarConfigNotifier extends Notifier<AppBarConfig> {
   }
 }
 
-final appBarConfigProvider =
-    NotifierProvider<AppBarConfigNotifier, AppBarConfig>(
-      AppBarConfigNotifier.new,
-    );
+final appBarConfigProvider = NotifierProvider<AppBarConfigNotifier, AppBarConfig>(
+  AppBarConfigNotifier.new,
+);

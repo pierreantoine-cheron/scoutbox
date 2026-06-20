@@ -46,59 +46,59 @@ class TentCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ScoutPill.stateCompact(
-                  style: tentStateBadgeStyle(context, tent.overallState),
-                  onTap: onStateTap != null
-                      ? () => onStateTap!(tent.overallState)
-                      : null,
-                  semanticLabel: 'État : ${tent.overallState.toFrenchLabel()}',
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        tent.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.17,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ScoutPill.stateCompact(
+                    style: tentStateBadgeStyle(context, tent.overallState),
+                    onTap: onStateTap != null ? () => onStateTap!(tent.overallState) : null,
+                    semanticLabel: 'État : ${tent.overallState.toFrenchLabel()}',
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          tent.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.17,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      _MetaRow(
-                        modelName: hasModelName ? modelName : null,
-                        size: tent.size,
-                      ),
-                      if (hasTags) ...[
-                        const SizedBox(height: 9),
-                        TentTagChips(tags: tent.tags, onTagTap: onTagTap),
+                        const SizedBox(height: 4),
+                        _MetaRow(
+                          modelName: hasModelName ? modelName : null,
+                          size: tent.size,
+                        ),
+                        if (hasTags) ...[
+                          const SizedBox(height: 9),
+                          TentTagChips(tags: tent.tags, onTagTap: onTagTap),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Icon(
-                    Icons.chevron_right,
-                    size: 20,
-                    color: theme.colorScheme.onSurfaceVariant,
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(
+                      Icons.chevron_right,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
   }
 }
+
 class _MetaRow extends StatelessWidget {
   final String? modelName;
   final int size;

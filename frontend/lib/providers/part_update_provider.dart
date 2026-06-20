@@ -22,8 +22,7 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
   }) async {
     final normalizedComments = _normalizeComments(newComments);
     final normalizedPreviousComments = _normalizeComments(previousComments);
-    if (previousState == newState &&
-        normalizedPreviousComments == normalizedComments) {
+    if (previousState == newState && normalizedPreviousComments == normalizedComments) {
       return PartUpdateResult.noChange;
     }
 
@@ -32,18 +31,16 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
         state.pendingUpdates[partId]?.sourceState ??
         state.confirmedSourceStates[partId] ??
         previousState;
-    final nextVersions = Map<String, int>.from(state.requestVersions)
-      ..[partId] = requestVersion;
-    final nextPending =
-        Map<String, PendingPartUpdate>.from(state.pendingUpdates)
-          ..[partId] = PendingPartUpdate(
-            previousState: previousState,
-            selectedState: newState,
-            previousComments: normalizedPreviousComments,
-            selectedComments: normalizedComments,
-            requestVersion: requestVersion,
-            sourceState: sourceState,
-          );
+    final nextVersions = Map<String, int>.from(state.requestVersions)..[partId] = requestVersion;
+    final nextPending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)
+      ..[partId] = PendingPartUpdate(
+        previousState: previousState,
+        selectedState: newState,
+        previousComments: normalizedPreviousComments,
+        selectedComments: normalizedComments,
+        requestVersion: requestVersion,
+        sourceState: sourceState,
+      );
     final nextErrors = Map<String, String>.from(state.errors)..remove(partId);
     final nextFailed = Map<String, PendingPartUpdate>.from(
       state.lastFailedRequests,
@@ -74,8 +71,7 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
       }
 
       final completedRequest = state.pendingUpdates[partId];
-      final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)
-        ..remove(partId);
+      final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)..remove(partId);
       final confirmed = Map<String, PartState>.from(state.confirmedStates)
         ..[partId] = updatedPart.state;
       final confirmedSources = Map<String, PartState>.from(
@@ -104,25 +100,22 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
         return PartUpdateResult.stale;
       }
 
-      final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)
-        ..remove(partId);
+      final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)..remove(partId);
       final errors = Map<String, String>.from(state.errors)
         ..[partId] = ErrorLocalizer.localize(e.code, fallback: e.message);
-      final confirmed = Map<String, PartState>.from(state.confirmedStates)
-        ..remove(partId);
+      final confirmed = Map<String, PartState>.from(state.confirmedStates)..remove(partId);
       final confirmedSources = Map<String, PartState>.from(
         state.confirmedSourceStates,
       )..remove(partId);
-      final failed =
-          Map<String, PendingPartUpdate>.from(state.lastFailedRequests)
-            ..[partId] = PendingPartUpdate(
-              previousState: previousState,
-              selectedState: newState,
-              previousComments: normalizedPreviousComments,
-              selectedComments: normalizedComments,
-              requestVersion: requestVersion,
-              sourceState: sourceState,
-            );
+      final failed = Map<String, PendingPartUpdate>.from(state.lastFailedRequests)
+        ..[partId] = PendingPartUpdate(
+          previousState: previousState,
+          selectedState: newState,
+          previousComments: normalizedPreviousComments,
+          selectedComments: normalizedComments,
+          requestVersion: requestVersion,
+          sourceState: sourceState,
+        );
 
       state = state.copyWith(
         pendingUpdates: pending,
@@ -141,25 +134,22 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
         return PartUpdateResult.stale;
       }
 
-      final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)
-        ..remove(partId);
+      final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)..remove(partId);
       final errors = Map<String, String>.from(state.errors)
         ..[partId] = 'Impossible de mettre à jour l\'élément. Réessayez.';
-      final confirmed = Map<String, PartState>.from(state.confirmedStates)
-        ..remove(partId);
+      final confirmed = Map<String, PartState>.from(state.confirmedStates)..remove(partId);
       final confirmedSources = Map<String, PartState>.from(
         state.confirmedSourceStates,
       )..remove(partId);
-      final failed =
-          Map<String, PendingPartUpdate>.from(state.lastFailedRequests)
-            ..[partId] = PendingPartUpdate(
-              previousState: previousState,
-              selectedState: newState,
-              previousComments: normalizedPreviousComments,
-              selectedComments: normalizedComments,
-              requestVersion: requestVersion,
-              sourceState: sourceState,
-            );
+      final failed = Map<String, PendingPartUpdate>.from(state.lastFailedRequests)
+        ..[partId] = PendingPartUpdate(
+          previousState: previousState,
+          selectedState: newState,
+          previousComments: normalizedPreviousComments,
+          selectedComments: normalizedComments,
+          requestVersion: requestVersion,
+          sourceState: sourceState,
+        );
 
       state = state.copyWith(
         pendingUpdates: pending,
@@ -187,8 +177,7 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
     );
   }
 
-  PendingPartUpdate? failedRequestFor(String partId) =>
-      state.lastFailedRequests[partId];
+  PendingPartUpdate? failedRequestFor(String partId) => state.lastFailedRequests[partId];
 }
 
 String? _normalizeComments(String? comments) {
@@ -228,8 +217,7 @@ class PartUpdateState {
       requestVersions: requestVersions ?? this.requestVersions,
       errors: errors ?? this.errors,
       confirmedStates: confirmedStates ?? this.confirmedStates,
-      confirmedSourceStates:
-          confirmedSourceStates ?? this.confirmedSourceStates,
+      confirmedSourceStates: confirmedSourceStates ?? this.confirmedSourceStates,
       lastFailedRequests: lastFailedRequests ?? this.lastFailedRequests,
     );
   }

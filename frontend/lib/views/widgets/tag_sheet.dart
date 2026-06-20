@@ -26,8 +26,7 @@ class _TagSheetState extends State<TagSheet> {
   bool _isSubmitting = false;
 
   bool get _isSaveEnabled =>
-      _nameController.text.trim().length >=
-      ValidationConstants.tagNameMinLength;
+      _nameController.text.trim().length >= ValidationConstants.tagNameMinLength;
 
   bool get _isCustomSelected => _selectedColorKey == 'Personnalisée';
 

@@ -66,17 +66,14 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
               controller: _searchController,
               filled: true,
               fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              onChanged: (value) => ref
-                  .read(tentListFilterProvider.notifier)
-                  .setSearchText(value),
+              onChanged: (value) => ref.read(tentListFilterProvider.notifier).setSearchText(value),
             ),
       actions: [
         if (isDesktop) ...[
           SearchField(
             width: 220,
             controller: _searchController,
-            onChanged: (value) =>
-                ref.read(tentListFilterProvider.notifier).setSearchText(value),
+            onChanged: (value) => ref.read(tentListFilterProvider.notifier).setSearchText(value),
           ),
           const SizedBox(width: 8),
           DesktopCreateButton(
@@ -139,7 +136,6 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     );
   }
 
-
   Widget _buildDataState({
     required List<Tent> rawTents,
     required List<Tent> visibleTents,
@@ -149,8 +145,12 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     required List allTags,
   }) {
     final isDesktop = MediaQuery.sizeOf(context).width >= 768;
-    final availableSizes = _buildSizeOptions(rawTents);
-    final availableModelOptions = _buildModelOptions(rawTents);
+    final optionSourceTents = _archiveScopedTents(
+      rawTents,
+      filterState.archiveFilter,
+    );
+    final availableSizes = _buildSizeOptions(optionSourceTents);
+    final availableModelOptions = _buildModelOptions(optionSourceTents);
 
     if (rawTents.isEmpty && !isFilteredMode) {
       return Column(
@@ -312,8 +312,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
         ref.read(tentListFilterProvider.notifier).setArchiveFilter(filter);
       },
       onClearAll: _clearFiltersHook,
-      onClearTags: () =>
-          ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
+      onClearTags: () => ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
       onManageTags: () => _switchToTags(),
     );
   }
@@ -334,6 +333,17 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     ref.read(tentListFilterProvider.notifier).toggleState(state);
   }
 
+  List<Tent> _archiveScopedTents(
+    List<Tent> rawTents,
+    ArchiveFilter archiveFilter,
+  ) {
+    return switch (archiveFilter) {
+      ArchiveFilter.active => rawTents.where((tent) => !tent.isArchived).toList(growable: false),
+      ArchiveFilter.archived => rawTents.where((tent) => tent.isArchived).toList(growable: false),
+      ArchiveFilter.all => rawTents,
+    };
+  }
+
   List<int> _buildSizeOptions(List<Tent> rawTents) {
     final options = rawTents.map((tent) => tent.size).toSet().toList();
     options.sort();
@@ -348,8 +358,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
           tent.tentModelId: tent.tentModelName!.trim(),
     };
 
-    final modelMetadata =
-        ref.watch(tentModelsProvider).asData?.value ?? const [];
+    final modelMetadata = ref.watch(tentModelsProvider).asData?.value ?? const [];
     final options = <TentTypeFilterOption>[];
     final includedIds = <String>{};
 
@@ -362,8 +371,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       includedIds.add(model.id);
     }
 
-    final missingIds =
-        rawModelIds.where((id) => !includedIds.contains(id)).toList()..sort();
+    final missingIds = rawModelIds.where((id) => !includedIds.contains(id)).toList()..sort();
 
     for (final modelId in missingIds) {
       options.add(
@@ -414,9 +422,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
 
   void _switchToTags() {
     ref.read(navigationSectionProvider.notifier).set(NavigationSection.tags);
-    ref
-        .read(appBarConfigProvider.notifier)
-        .set(const AppBarConfig(screenId: ''));
+    ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(screenId: ''));
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const TagsScreen()),
       (_) => false,
@@ -439,8 +445,7 @@ class _EmptyState extends StatelessWidget {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        if (warningMessage != null)
-          RefreshWarningCard(message: warningMessage!),
+        if (warningMessage != null) RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
         const EmptyStateView(
           icon: Icons.cabin,
@@ -468,8 +473,7 @@ class _FilteredEmptyState extends StatelessWidget {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        if (warningMessage != null)
-          RefreshWarningCard(message: warningMessage!),
+        if (warningMessage != null) RefreshWarningCard(message: warningMessage!),
         const SizedBox(height: 72),
         const EmptyStateView(
           icon: Icons.filter_alt_off,
@@ -478,7 +482,7 @@ class _FilteredEmptyState extends StatelessWidget {
         ),
       ],
     );
-}
+  }
 }
 
 class _TentCardSkeleton extends StatelessWidget {

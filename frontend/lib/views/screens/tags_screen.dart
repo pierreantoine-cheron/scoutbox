@@ -68,9 +68,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
         IconButton(
           icon: const Icon(Icons.refresh),
           tooltip: 'Actualiser les étiquettes',
-          onPressed: isLoading
-              ? null
-              : () => ref.read(tagsProvider.notifier).refresh(),
+          onPressed: isLoading ? null : () => ref.read(tagsProvider.notifier).refresh(),
         ),
         const LogoutButton(),
       ],
@@ -115,9 +113,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
               ? 2
               : 1;
           final spacing = AppSpacing.sm;
-          final cardWidth =
-              (width - 2 * 16 - (crossAxisCount - 1) * spacing) /
-              crossAxisCount;
+          final cardWidth = (width - 2 * 16 - (crossAxisCount - 1) * spacing) / crossAxisCount;
 
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -153,8 +149,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          if (refreshIssue != null)
-            RefreshWarningCard(message: _refreshWarning(refreshIssue)),
+          if (refreshIssue != null) RefreshWarningCard(message: _refreshWarning(refreshIssue)),
           const SizedBox(height: 72),
           const EmptyStateView(
             icon: Icons.label_outline,
@@ -181,9 +176,11 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
     }
   }
 
-
   String _refreshWarning(Object issue) {
-    final detail = toUserFacingError(issue, 'Impossible d\'actualiser les étiquettes pour le moment.');
+    final detail = toUserFacingError(
+      issue,
+      'Impossible d\'actualiser les étiquettes pour le moment.',
+    );
     return 'Les données affichées peuvent être anciennes. $detail';
   }
 }

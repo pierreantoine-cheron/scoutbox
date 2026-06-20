@@ -76,13 +76,13 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       );
     }
 
-    return authState.showLoginScreen
-        ? const LoginScreen()
-        : const RegisterScreen();
+    return authState.showLoginScreen ? const LoginScreen() : const RegisterScreen();
   }
 
   void _navigateToSection(NavigationSection section) {
-    ref.read(appBarConfigProvider.notifier).set(
+    ref
+        .read(appBarConfigProvider.notifier)
+        .set(
           const AppBarConfig(screenId: ''),
         );
     ref.read(navigationSectionProvider.notifier).set(section);
@@ -97,14 +97,14 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       NavigationSection.tents => const TentListScreen(),
       NavigationSection.tags => const TagsScreen(),
       NavigationSection.parts => const _PlaceholderScreen(
-          label: 'Éléments',
-        ),
+        label: 'Éléments',
+      ),
       NavigationSection.models => const _PlaceholderScreen(
-          label: 'Modèles',
-        ),
+        label: 'Modèles',
+      ),
       NavigationSection.settings => const _PlaceholderScreen(
-          label: 'Réglages',
-        ),
+        label: 'Réglages',
+      ),
     };
   }
 
@@ -185,14 +185,16 @@ class _DesktopTitleRow extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: NavigationSection.values.map(
-                (s) => _TopTab(
-                  label: s.label,
-                  isSelected: section == s,
-                  enabled: s.isEnabled,
-                  onTap: () => onSectionTap(s),
-                ),
-              ).toList(),
+              children: NavigationSection.values
+                  .map(
+                    (s) => _TopTab(
+                      label: s.label,
+                      isSelected: section == s,
+                      enabled: s.isEnabled,
+                      onTap: () => onSectionTap(s),
+                    ),
+                  )
+                  .toList(),
             ),
           ),
         ),
@@ -237,9 +239,7 @@ class _TopTab extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected
-                        ? colorScheme.onSurface
-                        : colorScheme.onSurfaceVariant,
+                    color: isSelected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
                   ),
                 ),
                 if (isSelected) ...[

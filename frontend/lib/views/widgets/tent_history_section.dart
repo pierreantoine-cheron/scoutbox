@@ -60,8 +60,8 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
           Text(
             'Historique',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ),
           const SizedBox(height: 10),
           SizedBox(
@@ -134,10 +134,8 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
       );
     }
 
-    final reversed = filtered.toList()
-      ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
-    final displayed =
-        _isExpanded ? reversed : reversed.take(_collapsedCount).toList();
+    final reversed = filtered.toList()..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+    final displayed = _isExpanded ? reversed : reversed.take(_collapsedCount).toList();
     final hasMore = reversed.length > _collapsedCount;
 
     return Column(
@@ -148,9 +146,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
           TextButton.icon(
             onPressed: () => setState(() => _isExpanded = !_isExpanded),
             icon: Icon(
-              _isExpanded
-                  ? Icons.keyboard_arrow_up
-                  : Icons.keyboard_arrow_down,
+              _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               size: 16,
             ),
             label: Text(
@@ -218,4 +214,3 @@ class _CompactHistoryItem extends StatelessWidget {
     );
   }
 }
-

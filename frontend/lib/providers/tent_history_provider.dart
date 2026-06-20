@@ -12,9 +12,7 @@ Future<List<TentHistoryItem>> tentHistory(
   String tentId, {
   String? category,
 }) async {
-  return ref
-      .read(tentRepositoryProvider)
-      .getTentHistory(tentId: tentId, category: category);
+  return ref.read(tentRepositoryProvider).getTentHistory(tentId: tentId, category: category);
 }
 
 void invalidateTentHistory(Object ref, String tentId) {

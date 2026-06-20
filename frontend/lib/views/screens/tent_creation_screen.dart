@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/models.dart';
 import '../../providers/providers.dart';
-import '../../utils/app_colors.dart';
+import '../../utils/app_theme_context.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/form_autovalidate.dart';
@@ -17,8 +17,7 @@ class TentCreationScreen extends ConsumerStatefulWidget {
   const TentCreationScreen({super.key});
 
   @override
-  ConsumerState<TentCreationScreen> createState() =>
-      _TentCreationScreenState();
+  ConsumerState<TentCreationScreen> createState() => _TentCreationScreenState();
 }
 
 class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
@@ -96,12 +95,10 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
               children: [
                 Expanded(
                   child: modelsState.when(
-                    loading: () =>
-                        const Center(child: AppProgressIndicator()),
+                    loading: () => const Center(child: AppProgressIndicator()),
                     error: (_, _) => _buildModelsError(),
-                    data: (models) => models.isEmpty
-                        ? _buildModelsEmpty()
-                        : _buildForm(models, creationState),
+                    data: (models) =>
+                        models.isEmpty ? _buildModelsEmpty() : _buildForm(models, creationState),
                   ),
                 ),
                 _buildBottomBar(creationState),
@@ -182,10 +179,9 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
       padding: const EdgeInsets.only(bottom: 0),
       child: Text(
         label.toUpperCase(),
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -245,8 +241,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
           controller: _nameController,
           textInputAction: TextInputAction.next,
           maxLength: ValidationConstants.tentNameMaxLength,
-          decoration:
-              _textInputDecoration(hintText: 'ex: Tente #42 — Arizona Pro'),
+          decoration: _textInputDecoration(hintText: 'ex: Tente #42 — Arizona Pro'),
           validator: notifier.validateName,
           onChanged: notifier.updateName,
         ),
@@ -298,8 +293,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
             _StepperButton(
               icon: Icons.remove,
               onTap: () {
-                final next =
-                    (tryParse(_sizeController.text) - 1).clamp(1, 100);
+                final next = (tryParse(_sizeController.text) - 1).clamp(1, 100);
                 _sizeController.text = next.toString();
                 notifier.updateSize(next.toString());
               },
@@ -308,8 +302,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
             _StepperButton(
               icon: Icons.add,
               onTap: () {
-                final next =
-                    (tryParse(_sizeController.text) + 1).clamp(1, 100);
+                final next = (tryParse(_sizeController.text) + 1).clamp(1, 100);
                 _sizeController.text = next.toString();
                 notifier.updateSize(next.toString());
               },
@@ -324,8 +317,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     TentCreationState creationState,
     TentCreationNotifier notifier,
   ) {
-    final semanticColors =
-        Theme.of(context).extension<AppSemanticColors>();
+    final semanticColors = context.semanticColors;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -365,8 +357,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
           minLines: 3,
           maxLines: 5,
           maxLength: ValidationConstants.tentCommentsMaxLength,
-          decoration:
-              _textInputDecoration(hintText: 'Notes, historique, remarques…'),
+          decoration: _textInputDecoration(hintText: 'Notes, historique, remarques…'),
           validator: notifier.validateComments,
           onChanged: notifier.updateComments,
         ),
@@ -378,7 +369,6 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
       ],
     );
   }
-
 
   Widget _buildCharCounter(int current, int max) {
     return Align(
@@ -403,8 +393,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
       fillColor: Colors.transparent,
       counterText: '',
       isDense: false,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadii.md),
         borderSide: BorderSide(color: colorScheme.outlineVariant),
@@ -486,9 +475,8 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
       return const EdgeInsets.fromLTRB(AppSpacing.lg, 32, AppSpacing.lg, 0);
     } else {
       return const EdgeInsets.fromLTRB(AppSpacing.md, 20, AppSpacing.md, 0);
+    }
   }
-}
-
 
   double _formMaxWidth(double width) {
     if (width >= 900) return 720;
@@ -587,5 +575,4 @@ class _StepperButton extends StatelessWidget {
       ),
     );
   }
-
 }

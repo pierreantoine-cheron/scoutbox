@@ -44,15 +44,13 @@ class TentTagChips extends StatelessWidget {
               ),
             ),
           ),
-          if (tag != visibleTags.last || hiddenTags.isNotEmpty)
-            const SizedBox(width: 4),
+          if (tag != visibleTags.last || hiddenTags.isNotEmpty) const SizedBox(width: 4),
         ],
         if (hiddenTags.isNotEmpty) _OverflowTagChip(tags: hiddenTags),
       ],
     );
   }
 }
-
 
 class _OverflowTagChip extends StatelessWidget {
   final List<Tag> tags;

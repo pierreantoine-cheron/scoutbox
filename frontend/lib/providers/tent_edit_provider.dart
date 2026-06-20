@@ -197,15 +197,11 @@ class TentEditState {
     bool clearPendingRetry = false,
   }) {
     return TentEditState(
-      editingField: clearEditingField
-          ? null
-          : editingField ?? this.editingField,
+      editingField: clearEditingField ? null : editingField ?? this.editingField,
       savingField: clearSavingField ? null : savingField ?? this.savingField,
       baseTent: clearBaseTent ? null : baseTent ?? this.baseTent,
       fieldError: clearFieldError ? null : fieldError ?? this.fieldError,
-      pendingRetry: clearPendingRetry
-          ? null
-          : pendingRetry ?? this.pendingRetry,
+      pendingRetry: clearPendingRetry ? null : pendingRetry ?? this.pendingRetry,
       lastSaveTime: lastSaveTime ?? this.lastSaveTime,
     );
   }

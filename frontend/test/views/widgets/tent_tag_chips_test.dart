@@ -1,5 +1,6 @@
 import 'package:client/models/tag.dart';
 import 'package:client/views/widgets/tent_tag_chips.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -131,7 +132,7 @@ void main() {
 
 Widget _testApp(Widget child) {
   return MaterialApp(
-    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
     home: Scaffold(body: child),
   );
 }

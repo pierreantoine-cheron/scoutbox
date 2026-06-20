@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/models/models.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:client/views/widgets/state_badge.dart';
 
 void main() {
@@ -44,11 +45,9 @@ void main() {
 
   group('tentStateBadgeStyle', () {
     testWidgets('each tent state has distinct label and icon', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+      await tester.pumpWidget(MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const Scaffold()));
       final ctx = tester.element(find.byType(Scaffold));
-      final styles = TentOverallState.values
-          .map((s) => tentStateBadgeStyle(ctx, s))
-          .toList();
+      final styles = TentOverallState.values.map((s) => tentStateBadgeStyle(ctx, s)).toList();
 
       final labels = styles.map((s) => s.label).toSet();
       final icons = styles.map((s) => s.icon).toSet();
@@ -57,7 +56,7 @@ void main() {
     });
 
     testWidgets('labels match French localization', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+      await tester.pumpWidget(MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const Scaffold()));
       final ctx = tester.element(find.byType(Scaffold));
 
       expect(tentStateBadgeStyle(ctx, TentOverallState.good).label, 'Bon état');
@@ -74,11 +73,9 @@ void main() {
 
   group('partStateBadgeStyle', () {
     testWidgets('each part state has distinct label and icon', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+      await tester.pumpWidget(MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const Scaffold()));
       final ctx = tester.element(find.byType(Scaffold));
-      final styles = PartState.values
-          .map((s) => partStateBadgeStyle(ctx, s))
-          .toList();
+      final styles = PartState.values.map((s) => partStateBadgeStyle(ctx, s)).toList();
 
       final labels = styles.map((s) => s.label).toSet();
       final icons = styles.map((s) => s.icon).toSet();

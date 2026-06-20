@@ -76,8 +76,7 @@ class TagPalette {
     if (normalized.length == 6 || normalized.length == 8) {
       final value = int.tryParse(normalized, radix: 16);
       if (value != null) {
-        final withAlpha =
-            normalized.length == 8 ? value : (0xFF000000 | value);
+        final withAlpha = normalized.length == 8 ? value : (0xFF000000 | value);
         return Color(withAlpha);
       }
     }
@@ -96,6 +95,18 @@ class TagPalette {
 
 @immutable
 class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
+  static const fallback = AppSemanticColors(
+    success: AppColors.success,
+    statePerfect: AppColors.statePerfect,
+    statePerfectBackground: AppColors.statePerfectBackground,
+    stateUsable: AppColors.stateUsable,
+    stateUsableBackground: AppColors.stateUsableBackground,
+    stateUnusable: AppColors.stateUnusable,
+    stateUnusableBackground: AppColors.stateUnusableBackground,
+    stateMissing: AppColors.stateMissing,
+    stateMissingBackground: AppColors.stateMissingBackground,
+  );
+
   final Color success;
   final Color statePerfect;
   final Color statePerfectBackground;
@@ -133,17 +144,13 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     return AppSemanticColors(
       success: success ?? this.success,
       statePerfect: statePerfect ?? this.statePerfect,
-      statePerfectBackground:
-          statePerfectBackground ?? this.statePerfectBackground,
+      statePerfectBackground: statePerfectBackground ?? this.statePerfectBackground,
       stateUsable: stateUsable ?? this.stateUsable,
-      stateUsableBackground:
-          stateUsableBackground ?? this.stateUsableBackground,
+      stateUsableBackground: stateUsableBackground ?? this.stateUsableBackground,
       stateUnusable: stateUnusable ?? this.stateUnusable,
-      stateUnusableBackground:
-          stateUnusableBackground ?? this.stateUnusableBackground,
+      stateUnusableBackground: stateUnusableBackground ?? this.stateUnusableBackground,
       stateMissing: stateMissing ?? this.stateMissing,
-      stateMissingBackground:
-          stateMissingBackground ?? this.stateMissingBackground,
+      stateMissingBackground: stateMissingBackground ?? this.stateMissingBackground,
     );
   }
 

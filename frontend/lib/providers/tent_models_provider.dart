@@ -22,7 +22,6 @@ class TentModelsNotifier extends _$TentModelsNotifier {
   }
 
   List<TentModel> _sortModels(List<TentModel> models) {
-    return [...models]
-      ..sort((left, right) => left.displayOrder.compareTo(right.displayOrder));
+    return [...models]..sort((left, right) => left.displayOrder.compareTo(right.displayOrder));
   }
 }

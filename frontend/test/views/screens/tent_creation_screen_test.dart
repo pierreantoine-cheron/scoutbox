@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/models/tent_model.dart';
 import 'package:client/repositories/tent_repository.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:client/views/screens/tent_creation_screen.dart';
 
 void main() {
@@ -16,7 +17,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -56,7 +57,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_FailingTentRepository()),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -98,7 +99,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -130,7 +131,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -151,7 +152,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -182,7 +183,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: const MaterialApp(home: _TentCreationHostScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentCreationHostScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -216,7 +217,7 @@ void main() {
               _EmptyModelsTentRepository(),
             ),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -235,7 +236,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -263,7 +264,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -323,7 +324,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_FailingTentRepository()),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -354,7 +355,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -377,7 +378,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: const MaterialApp(home: TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();

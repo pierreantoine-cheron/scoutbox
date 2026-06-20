@@ -62,14 +62,16 @@ class _TextFieldSheetState extends State<TextFieldSheet> {
             labelText: widget.label,
             border: const OutlineInputBorder(),
           ),
-          textInputAction:
-              (widget.maxLines ?? 1) > 1 ? TextInputAction.newline : TextInputAction.done,
+          textInputAction: (widget.maxLines ?? 1) > 1
+              ? TextInputAction.newline
+              : TextInputAction.done,
           onFieldSubmitted: (widget.maxLines ?? 1) > 1
               ? null
               : (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
                   Navigator.of(context).pop(true);
                 }),
-          validator: widget.validator ??
+          validator:
+              widget.validator ??
               (value) {
                 if ((value ?? '').trim().isEmpty) {
                   return 'Ce champ est requis';

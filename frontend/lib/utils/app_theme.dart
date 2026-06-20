@@ -53,17 +53,7 @@ class AppTheme {
   @visibleForTesting
   static const AppSemanticColors semanticColorsForTests = _semanticColors;
 
-  static const _semanticColors = AppSemanticColors(
-    success: AppColors.success,
-    statePerfect: AppColors.statePerfect,
-    statePerfectBackground: AppColors.statePerfectBackground,
-    stateUsable: AppColors.stateUsable,
-    stateUsableBackground: AppColors.stateUsableBackground,
-    stateUnusable: AppColors.stateUnusable,
-    stateUnusableBackground: AppColors.stateUnusableBackground,
-    stateMissing: AppColors.stateMissing,
-    stateMissingBackground: AppColors.stateMissingBackground,
-  );
+  static const _semanticColors = AppSemanticColors.fallback;
 
   static ThemeData theme(BuildContext context) {
     return ThemeData(

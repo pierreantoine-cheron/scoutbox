@@ -2,6 +2,7 @@ import 'package:client/models/tag.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/repositories/tag_repository.dart';
 import 'package:client/repositories/tent_repository.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:client/views/widgets/tag_assignment_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,8 +14,8 @@ void main() {
       await tester.pumpWidget(_buildWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('Étiquettes'), findsOneWidget);
-      expect(find.text('Assignées'), findsOneWidget);
+      expect(find.text('Modifier les \u00e9tiquettes'), findsOneWidget);
+      expect(find.text('Rechercher'), findsOneWidget);
       expect(find.text('Groupe A'), findsOneWidget);
       expect(find.text('Stock'), findsOneWidget);
     });
@@ -28,6 +29,8 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Stock'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Enregistrer'));
       await tester.pump();
       await tester.pumpAndSettle();
 
@@ -43,6 +46,8 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Groupe A'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Enregistrer'));
       await tester.pump();
       await tester.pumpAndSettle();
 
@@ -71,7 +76,7 @@ void main() {
             tentRepositoryProvider.overrideWithValue(_TentRepositoryStub()),
           ],
           child: MaterialApp(
-            theme: ThemeData(splashFactory: NoSplash.splashFactory),
+            theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
             home: Builder(
               builder: (context) {
                 return Scaffold(
@@ -94,12 +99,12 @@ void main() {
 
       await tester.tap(find.text('Ouvrir'));
       await tester.pumpAndSettle();
-      expect(find.text('Étiquettes'), findsOneWidget);
+      expect(find.text('Modifier les \u00e9tiquettes'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Fermer'));
+      await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Étiquettes'), findsNothing);
+      expect(find.text('Modifier les \u00e9tiquettes'), findsNothing);
     });
 
     testWidgets('reverts selection and shows inline error on failure', (
@@ -112,9 +117,11 @@ void main() {
 
       await tester.tap(find.text('Stock'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Enregistrer'));
+      await tester.pumpAndSettle();
 
       expect(
-        find.text('Impossible de modifier les étiquettes.'),
+        find.text('Une erreur est survenue. Veuillez r\u00e9essayer.'),
         findsOneWidget,
       );
     });
@@ -134,7 +141,7 @@ Widget _buildWidget({List<Tag>? tags, _TentRepositoryStub? tentRepository}) {
       ),
     ],
     child: MaterialApp(
-      theme: ThemeData(splashFactory: NoSplash.splashFactory),
+      theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
       home: const Scaffold(
         body: TagAssignmentSheet(tentId: 'tent-1', assignedTagIds: {'tag-1'}),
       ),
@@ -161,9 +168,7 @@ Tent _tent(List<String> tagIds) {
     tentModelName: 'Canadienne',
     overallState: TentOverallState.good,
     comments: null,
-    tags: tagIds
-        .map((id) => _tag(id, id == 'tag-1' ? 'Groupe A' : 'Stock'))
-        .toList(),
+    tags: tagIds.map((id) => _tag(id, id == 'tag-1' ? 'Groupe A' : 'Stock')).toList(),
   );
 }
 

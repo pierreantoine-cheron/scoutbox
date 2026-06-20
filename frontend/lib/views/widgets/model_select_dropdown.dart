@@ -53,13 +53,10 @@ class _ModelSelectDropdownState extends State<ModelSelectDropdown> {
             onTap: _toggle,
             child: Container(
               width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: _isOpen
-                      ? colorScheme.primary
-                      : colorScheme.outlineVariant,
+                  color: _isOpen ? colorScheme.primary : colorScheme.outlineVariant,
                 ),
                 borderRadius: BorderRadius.circular(AppRadii.md),
                 color: colorScheme.surface,
@@ -78,9 +75,7 @@ class _ModelSelectDropdownState extends State<ModelSelectDropdown> {
                     ),
                   ),
                   Icon(
-                    _isOpen
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
+                    _isOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                     size: 20,
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -147,11 +142,8 @@ class _ModelSelectDropdownState extends State<ModelSelectDropdown> {
                   m.name,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected
-                        ? AppColors.scoutGreen
-                        : colorScheme.onSurface,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected ? AppColors.scoutGreen : colorScheme.onSurface,
                   ),
                 ),
               ),

@@ -161,42 +161,6 @@ void main() {
       );
       expect(container.read(tentListRefreshIssueProvider), isNull);
     });
-
-    test('hideTent removes tent from current list', () async {
-      final repository = _TentListRepositoryStub(
-        tents: const [
-          Tent(
-            id: 't1',
-            name: 'Tente A',
-            size: 4,
-            tentModelId: 'shape-1',
-            tentModelName: 'Canadienne',
-            overallState: TentOverallState.good,
-            comments: null,
-          ),
-          Tent(
-            id: 't2',
-            name: 'Tente B',
-            size: 6,
-            tentModelId: 'shape-2',
-            tentModelName: 'Tipi',
-            overallState: TentOverallState.needsRepair,
-            comments: null,
-          ),
-        ],
-      );
-      final container = ProviderContainer(
-        overrides: [tentRepositoryProvider.overrideWithValue(repository)],
-      );
-      addTearDown(container.dispose);
-
-      await container.read(tentListProvider.future);
-      container.read(tentListProvider.notifier).hideTent('t1');
-
-      final tents = container.read(tentListProvider).requireValue;
-      expect(tents, hasLength(1));
-      expect(tents.first.id, equals('t2'));
-    });
   });
 }
 

@@ -152,9 +152,7 @@ class PartManagementState {
     return PartManagementState(
       partKinds: partKinds ?? this.partKinds,
       isLoadingPartKinds: isLoadingPartKinds ?? this.isLoadingPartKinds,
-      partKindsError: clearPartKindsError
-          ? null
-          : partKindsError ?? this.partKindsError,
+      partKindsError: clearPartKindsError ? null : partKindsError ?? this.partKindsError,
       isAdding: isAdding ?? this.isAdding,
       addError: clearAddError ? null : addError ?? this.addError,
       removingPartIds: removingPartIds ?? this.removingPartIds,

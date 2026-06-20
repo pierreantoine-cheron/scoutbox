@@ -166,8 +166,7 @@ class AuthService {
         // Critical storage failure - tokens/server URL are required
         debugPrint('Failed to save critical auth data: $e');
         return AuthResult.failure(
-          error:
-              'Erreur lors de la sauvegarde des données. Veuillez réessayer.',
+          error: 'Erreur lors de la sauvegarde des données. Veuillez réessayer.',
         );
       }
 
@@ -217,8 +216,7 @@ class AuthService {
         return AuthResult.failure(error: userMessage, code: errorResponse.code);
       } catch (_) {
         return AuthResult.failure(
-          error:
-              'Erreur serveur (${e.response?.statusCode}). Veuillez réessayer.',
+          error: 'Erreur serveur (${e.response?.statusCode}). Veuillez réessayer.',
         );
       }
     }
@@ -535,10 +533,8 @@ class AuthService {
   /// false if no credentials or token expired.
   Future<AuthInitializationResult> initializeFromStorage() async {
     final serverUrl = await SecureStorageService.getServerUrl();
-    final rememberedUsername =
-        await SecureStorageService.getRememberedUsername();
-    final hasRememberedUsername =
-        rememberedUsername != null && rememberedUsername.isNotEmpty;
+    final rememberedUsername = await SecureStorageService.getRememberedUsername();
+    final hasRememberedUsername = rememberedUsername != null && rememberedUsername.isNotEmpty;
 
     if (serverUrl == null) {
       return const AuthInitializationResult(
@@ -587,10 +583,8 @@ class AuthService {
     if (_cachedAuthResponse != null) return _cachedAuthResponse;
     final accessToken = await SecureStorageService.getAccessToken();
     final refreshToken = await SecureStorageService.getRefreshToken();
-    final accessTokenExpires =
-        await SecureStorageService.getAccessTokenExpires();
-    final refreshTokenExpires =
-        await SecureStorageService.getRefreshTokenExpires();
+    final accessTokenExpires = await SecureStorageService.getAccessTokenExpires();
+    final refreshTokenExpires = await SecureStorageService.getRefreshTokenExpires();
 
     if (accessToken == null ||
         refreshToken == null ||

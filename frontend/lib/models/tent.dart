@@ -34,22 +34,22 @@ enum TentOverallState {
     }
   }
 
-  ({Color foreground, Color background}) toColors(AppSemanticColors? semanticColors) {
+  ({Color foreground, Color background}) toColors(AppSemanticColors semanticColors) {
     switch (this) {
       case TentOverallState.good:
         return (
-          foreground: semanticColors?.statePerfect ?? AppColors.statePerfect,
-          background: semanticColors?.statePerfectBackground ?? AppColors.statePerfectBackground,
+          foreground: semanticColors.statePerfect,
+          background: semanticColors.statePerfectBackground,
         );
       case TentOverallState.needsRepair:
         return (
-          foreground: semanticColors?.stateUsable ?? AppColors.stateUsable,
-          background: semanticColors?.stateUsableBackground ?? AppColors.stateUsableBackground,
+          foreground: semanticColors.stateUsable,
+          background: semanticColors.stateUsableBackground,
         );
       case TentOverallState.unusable:
         return (
-          foreground: semanticColors?.stateUnusable ?? AppColors.stateUnusable,
-          background: semanticColors?.stateUnusableBackground ?? AppColors.stateUnusableBackground,
+          foreground: semanticColors.stateUnusable,
+          background: semanticColors.stateUnusableBackground,
         );
     }
   }
@@ -161,9 +161,7 @@ class Tent {
     }
 
     if (value is List<dynamic>) {
-      return value
-          .map((part) => Part.fromJson(part as Map<String, dynamic>))
-          .toList();
+      return value.map((part) => Part.fromJson(part as Map<String, dynamic>)).toList();
     }
 
     throw const FormatException('Tent parts field is not a list');
@@ -175,9 +173,7 @@ class Tent {
     }
 
     if (value is List<dynamic>) {
-      return value
-          .map((tag) => Tag.fromJson(tag as Map<String, dynamic>))
-          .toList();
+      return value.map((tag) => Tag.fromJson(tag as Map<String, dynamic>)).toList();
     }
 
     throw const FormatException('Tent tags field is not a list');

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/models/tag.dart';
 import 'package:client/models/tent.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:client/views/widgets/tent_card.dart';
 import 'package:client/views/widgets/tent_tag_chips.dart';
 
@@ -43,6 +44,7 @@ void main() {
     testWidgets('renders tent name', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentCard(
               tent: _sampleTent(name: 'Tente Familiale'),
@@ -58,6 +60,7 @@ void main() {
     testWidgets('renders size with singular label for 1', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentCard(tent: _sampleTent(size: 1), onTap: () {}),
           ),
@@ -72,6 +75,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentCard(tent: _sampleTent(size: 4), onTap: () {}),
           ),
@@ -84,6 +88,7 @@ void main() {
     testWidgets('renders shape name when provided', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentCard(tent: _sampleTent(), onTap: () {}),
           ),
@@ -96,6 +101,7 @@ void main() {
     testWidgets('renders state badge for tent state', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentCard(
               tent: _sampleTent(state: TentOverallState.needsRepair),
@@ -111,6 +117,7 @@ void main() {
     testWidgets('renders chevron icon', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentCard(tent: _sampleTent(), onTap: () {}),
           ),
@@ -124,7 +131,7 @@ void main() {
       var tapped = false;
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: TentCard(tent: _sampleTent(), onTap: () => tapped = true),
           ),
@@ -138,7 +145,7 @@ void main() {
     testWidgets('renders assigned tags', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: TentCard(
               tent: _sampleTent(tags: [_tag('tag-1', 'Patrouille')]),
@@ -155,6 +162,7 @@ void main() {
     testWidgets('hides tag area when no tags are assigned', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentCard(tent: _sampleTent(), onTap: () {}),
           ),
@@ -167,7 +175,7 @@ void main() {
     testWidgets('shows overflow for many tags', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: TentCard(
               tent: _sampleTent(
@@ -195,7 +203,7 @@ void main() {
       var tapped = false;
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: TentCard(
               tent: _sampleTent(tags: [_tag('tag-1', 'Patrouille')]),
@@ -212,6 +220,7 @@ void main() {
     testWidgets('has semantics label with tent name', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentCard(tent: _sampleTent(), onTap: () {}),
           ),
@@ -226,6 +235,7 @@ void main() {
     testWidgets('does not render shape name when empty', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
           home: Scaffold(
             body: TentCard(
               tent: _sampleTent(modelName: ''),

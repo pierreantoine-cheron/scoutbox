@@ -4,8 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_bar_config_provider.dart';
 import '../providers/route_observer_provider.dart';
 
-mixin RouteAwareAppBarMixin<T extends ConsumerStatefulWidget>
-    on ConsumerState<T>, RouteAware {
+mixin RouteAwareAppBarMixin<T extends ConsumerStatefulWidget> on ConsumerState<T>, RouteAware {
   RouteObserver<ModalRoute<dynamic>>? _routeObserver;
   ModalRoute<dynamic>? _subscribedRoute;
 

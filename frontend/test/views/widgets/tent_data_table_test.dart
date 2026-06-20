@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/models/tag.dart';
 import 'package:client/models/tent.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:client/views/widgets/tent_data_table.dart';
 
 Tent _tent({
@@ -43,7 +44,7 @@ void main() {
   group('TentDataTable', () {
     Widget buildTable({required List<Tent> tents, ValueChanged<Tent>? onTap}) {
       return MaterialApp(
-        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
         home: Scaffold(
           body: SizedBox(
             width: 1400,

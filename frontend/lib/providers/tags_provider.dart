@@ -64,9 +64,7 @@ class TagsNotifier extends _$TagsNotifier {
   }
 
   Future<Tag> createTag({required String name, String? color}) async {
-    final created = await ref
-        .read(tagRepositoryProvider)
-        .createTag(name: name, color: color);
+    final created = await ref.read(tagRepositoryProvider).createTag(name: name, color: color);
     final current = state.hasValue ? state.requireValue : const <Tag>[];
     final next = [created, ...current.where((tag) => tag.id != created.id)]
       ..sort((left, right) => left.name.compareTo(right.name));

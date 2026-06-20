@@ -27,9 +27,7 @@ Future<T?> showResponsiveSheet<T>({
               clipBehavior: Clip.antiAlias,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxHeight:
-                      MediaQuery.of(context).size.height *
-                      _dialogMaxHeightFactor,
+                  maxHeight: MediaQuery.of(context).size.height * _dialogMaxHeightFactor,
                 ),
                 child: builder(dialogContext),
               ),

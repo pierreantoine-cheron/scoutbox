@@ -64,14 +64,16 @@ void main() {
       expect(icon.color, AppColors.success);
     });
 
-    testWidgets('throws when semantic extension is missing', (tester) async {
+    testWidgets('asserts when semantic extension is missing', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(body: FadingCloudDoneIcon(trigger: 0)),
         ),
       );
 
-      expect(tester.takeException(), isA<TypeError>());
+      expect(tester.takeException(), isAssertionError);
     });
   });
 }

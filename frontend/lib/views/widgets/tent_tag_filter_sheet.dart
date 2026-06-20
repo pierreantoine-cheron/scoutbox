@@ -26,8 +26,7 @@ class _TentTagFilterSheetState extends ConsumerState<TentTagFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedTagIds =
-        ref.watch(tentListFilterProvider.select((s) => s.selectedTagIds));
+    final selectedTagIds = ref.watch(tentListFilterProvider.select((s) => s.selectedTagIds));
     final visibleTags = _visibleTags();
 
     return SafeArea(
@@ -46,9 +45,7 @@ class _TentTagFilterSheetState extends ConsumerState<TentTagFilterSheet> {
                   ),
                 ),
                 TextButton(
-                  onPressed: selectedTagIds.isEmpty
-                      ? null
-                      : widget.onClearTags,
+                  onPressed: selectedTagIds.isEmpty ? null : widget.onClearTags,
                   child: const Text('Effacer tout'),
                 ),
               ],
@@ -88,9 +85,7 @@ class _TentTagFilterSheetState extends ConsumerState<TentTagFilterSheet> {
   }
 
   List<Tag> _visibleTags() {
-    final tags = widget.tags
-        .where((tag) => tag.name.toLowerCase().contains(_searchText))
-        .toList();
+    final tags = widget.tags.where((tag) => tag.name.toLowerCase().contains(_searchText)).toList();
     tags.sort((left, right) {
       final countCompare = right.tentCount.compareTo(left.tentCount);
       if (countCompare != 0) {

@@ -9,10 +9,11 @@ class LogoutButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
     return IconButton(
       icon: const Icon(Icons.logout),
       tooltip: 'Se déconnecter',
-      onPressed: () => _showLogoutConfirmationDialog(context, ref),
+      onPressed: isLoading ? null : () => _showLogoutConfirmationDialog(context, ref),
     );
   }
 

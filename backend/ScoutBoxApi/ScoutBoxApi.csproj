@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RazorLangVersion>Latest</RazorLangVersion>
     <UserSecretsId>7a2fce99-6f23-4719-a669-fa1586dd5b67</UserSecretsId>
   </PropertyGroup>
 

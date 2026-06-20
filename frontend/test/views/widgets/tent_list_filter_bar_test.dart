@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:client/models/tag.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/providers/tent_filter_provider.dart';
+import 'package:client/utils/app_theme.dart';
 import 'package:client/views/widgets/tent_list_filter_bar.dart';
 
 void main() {
@@ -27,7 +28,7 @@ void main() {
 
     Widget buildBar({bool isDesktop = true}) {
       return MaterialApp(
-        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
         home: Scaffold(
           body: TentListFilterBar(
             isDesktop: isDesktop,
@@ -58,9 +59,14 @@ void main() {
       );
     }
 
+    Future<void> expandFilterPanel(WidgetTester tester) async {
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+    }
 
     testWidgets('renders state filter chips on desktop', (tester) async {
       await tester.pumpWidget(buildBar(isDesktop: true));
+      await expandFilterPanel(tester);
 
       expect(find.text('Bon état'), findsOneWidget);
       expect(find.text('À réparer'), findsOneWidget);
@@ -69,6 +75,7 @@ void main() {
 
     testWidgets('renders size filter chips on desktop', (tester) async {
       await tester.pumpWidget(buildBar(isDesktop: true));
+      await expandFilterPanel(tester);
 
       expect(find.text('4 places'), findsOneWidget);
       expect(find.text('6 places'), findsOneWidget);
@@ -77,18 +84,20 @@ void main() {
 
     testWidgets('renders shape filter chips on desktop', (tester) async {
       await tester.pumpWidget(buildBar(isDesktop: true));
+      await expandFilterPanel(tester);
 
       expect(find.text('Canadienne'), findsOneWidget);
       expect(find.text('Cabanon'), findsOneWidget);
     });
 
-    testWidgets('calls onToggleState when state chip is tapped', (
+    testWidgets('calls archive filter callback from segmented toggle', (
       tester,
     ) async {
-      TentOverallState? toggledState;
+      ArchiveFilter? selectedArchiveFilter;
+
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
@@ -101,8 +110,49 @@ void main() {
               availableModelOptions: const [],
               allTags: const [],
               isFilteredMode: false,
-            archiveFilter: ArchiveFilter.active,
-            visibleTentCount: 3,
+              archiveFilter: ArchiveFilter.active,
+              visibleTentCount: 3,
+              onSearchChanged: (_) {},
+              onToggleState: (_) {},
+              onToggleSize: (_) {},
+              onToggleModel: (_) {},
+              onToggleTag: (_) {},
+              onArchiveFilterChanged: (filter) {
+                selectedArchiveFilter = filter;
+              },
+              onClearAll: () {},
+            ),
+          ),
+        ),
+      );
+
+      await expandFilterPanel(tester);
+      await tester.tap(find.text('Archivées'));
+
+      expect(selectedArchiveFilter, ArchiveFilter.archived);
+    });
+
+    testWidgets('calls onToggleState when state chip is tapped', (
+      tester,
+    ) async {
+      TentOverallState? toggledState;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
+          home: Scaffold(
+            body: TentListFilterBar(
+              isDesktop: true,
+              searchController: searchController,
+              selectedStates: selectedStates,
+              selectedSizes: selectedSizes,
+              selectedModelIds: selectedModelIds,
+              selectedTagIds: selectedTagIds,
+              availableSizes: const [],
+              availableModelOptions: const [],
+              allTags: const [],
+              isFilteredMode: false,
+              archiveFilter: ArchiveFilter.active,
+              visibleTentCount: 3,
               onSearchChanged: (_) {},
               onToggleState: (s) => toggledState = s,
               onToggleSize: (_) {},
@@ -115,16 +165,17 @@ void main() {
         ),
       );
 
+      await expandFilterPanel(tester);
       await tester.tap(find.text('Bon état'));
       expect(toggledState, TentOverallState.good);
     });
 
-    testWidgets('calls onClearAll when Effacer tout is tapped', (tester) async {
+    testWidgets('calls onClearAll when Effacer les filtres is tapped', (tester) async {
       var cleared = false;
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
@@ -137,8 +188,8 @@ void main() {
               availableModelOptions: const [],
               allTags: const [],
               isFilteredMode: true,
-            archiveFilter: ArchiveFilter.active,
-            visibleTentCount: 3,
+              archiveFilter: ArchiveFilter.active,
+              visibleTentCount: 3,
               onSearchChanged: (_) {},
               onToggleState: (_) {},
               onToggleSize: (_) {},
@@ -151,16 +202,17 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Effacer tout'));
+      await expandFilterPanel(tester);
+      await tester.tap(find.text('Effacer les filtres'));
       expect(cleared, isTrue);
     });
 
-    testWidgets('does not show Effacer tout when not in filtered mode', (
+    testWidgets('does not show Effacer les filtres when not in filtered mode', (
       tester,
     ) async {
       await tester.pumpWidget(buildBar(isDesktop: true));
 
-      expect(find.text('Effacer tout'), findsNothing);
+      expect(find.text('Effacer les filtres'), findsNothing);
     });
 
     testWidgets('shows Filtres button on mobile with secondary filters', (
@@ -168,17 +220,17 @@ void main() {
     ) async {
       await tester.pumpWidget(buildBar(isDesktop: false));
 
-      expect(find.text('Filtres'), findsOneWidget);
+      expect(find.text('Aucun filtre actif'), findsOneWidget);
+      expect(find.byIcon(Icons.expand_more), findsOneWidget);
     });
-
-
 
     testWidgets('renders tag chips with counts on desktop', (tester) async {
       await tester.pumpWidget(buildBar(isDesktop: true));
+      await expandFilterPanel(tester);
 
-      expect(find.text('Étiquettes'), findsOneWidget);
-      expect(find.text('Groupe A (5)'), findsOneWidget);
-      expect(find.text('À réparer (2)'), findsOneWidget);
+      expect(find.text('ÉTIQUETTES'), findsOneWidget);
+      expect(find.text('Groupe A'), findsOneWidget);
+      expect(find.text('À réparer'), findsAtLeast(1));
     });
 
     testWidgets('calls onToggleTag when desktop tag chip is tapped', (
@@ -188,7 +240,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
@@ -201,8 +253,8 @@ void main() {
               availableModelOptions: const [],
               allTags: [_tagA],
               isFilteredMode: false,
-            archiveFilter: ArchiveFilter.active,
-            visibleTentCount: 3,
+              archiveFilter: ArchiveFilter.active,
+              visibleTentCount: 3,
               onSearchChanged: (_) {},
               onToggleState: (_) {},
               onToggleSize: (_) {},
@@ -216,19 +268,18 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Groupe A (5)'));
+      await expandFilterPanel(tester);
+      await tester.tap(find.text('Groupe A'));
 
       expect(toggledTagId, 'tag-a');
     });
 
-    testWidgets('shows no tag message and manage action when no tags exist', (
+    testWidgets('omits tag row when no tags exist', (
       tester,
     ) async {
-      var manageTags = false;
-
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
@@ -241,8 +292,8 @@ void main() {
               availableModelOptions: const [],
               allTags: const [],
               isFilteredMode: false,
-            archiveFilter: ArchiveFilter.active,
-            visibleTentCount: 3,
+              archiveFilter: ArchiveFilter.active,
+              visibleTentCount: 3,
               onSearchChanged: (_) {},
               onToggleState: (_) {},
               onToggleSize: (_) {},
@@ -250,16 +301,15 @@ void main() {
               onToggleTag: (_) {},
               onArchiveFilterChanged: (_) {},
               onClearAll: () {},
-              onManageTags: () => manageTags = true,
+              onManageTags: () {},
             ),
           ),
         ),
       );
 
-      expect(find.text('Aucune étiquette disponible'), findsOneWidget);
-      await tester.tap(find.text('Créer des étiquettes'));
+      await expandFilterPanel(tester);
 
-      expect(manageTags, isTrue);
+      expect(find.text('Étiquettes'), findsNothing);
     });
   });
 }
@@ -274,7 +324,7 @@ final _tagA = Tag(
 
 final _tagB = Tag(
   id: 'tag-b',
-  name: 'À réparer',
+  name: 'Patrouille B',
   color: '#FFC107',
   createdAt: DateTime.utc(2026, 6, 1),
   tentCount: 2,

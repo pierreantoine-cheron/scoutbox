@@ -4,6 +4,7 @@ import '../../models/tag.dart';
 import '../../models/tent.dart';
 import '../../providers/tent_filter_provider.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/app_theme_context.dart';
 import 'scout_pill.dart';
 import 'scout_segmented_toggle.dart';
 
@@ -106,43 +107,50 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
     final pills = <_ActivePill>[];
     for (final state in widget.selectedStates) {
       final colors = _filterChipColors(state, context);
-      pills.add(_ActivePill(
-        value: state.name,
-        label: state.toFrenchLabel(),
-        backgroundColor: colors.background,
-        color: colors.foreground,
-        type: _ActivePillType.state,
-        onTap: () => widget.onToggleState(state),
-      ));
+      pills.add(
+        _ActivePill(
+          value: state.name,
+          label: state.toFrenchLabel(),
+          backgroundColor: colors.background,
+          color: colors.foreground,
+          type: _ActivePillType.state,
+          onTap: () => widget.onToggleState(state),
+        ),
+      );
     }
     for (final size in widget.selectedSizes) {
-      pills.add(_ActivePill(
-        value: size.toString(),
-        label: size == 1 ? '1 place' : '$size places',
-        type: _ActivePillType.neutral,
-        onTap: () => widget.onToggleSize(size),
-      ));
+      pills.add(
+        _ActivePill(
+          value: size.toString(),
+          label: size == 1 ? '1 place' : '$size places',
+          type: _ActivePillType.neutral,
+          onTap: () => widget.onToggleSize(size),
+        ),
+      );
     }
     for (final modelId in widget.selectedModelIds) {
-      final model =
-          widget.availableModelOptions.where((m) => m.id == modelId).firstOrNull;
-      pills.add(_ActivePill(
-        value: modelId,
-        label: model?.label ?? modelId,
-        type: _ActivePillType.neutral,
-        onTap: () => widget.onToggleModel(modelId),
-      ));
+      final model = widget.availableModelOptions.where((m) => m.id == modelId).firstOrNull;
+      pills.add(
+        _ActivePill(
+          value: modelId,
+          label: model?.label ?? modelId,
+          type: _ActivePillType.neutral,
+          onTap: () => widget.onToggleModel(modelId),
+        ),
+      );
     }
     for (final tagId in widget.selectedTagIds) {
       final tag = widget.allTags.where((t) => t.id == tagId).firstOrNull;
       if (tag != null) {
-        pills.add(_ActivePill(
-          value: tagId,
-          label: tag.name,
-          tagColor: TagPalette.colorFromHex(tag.color),
-          type: _ActivePillType.tag,
-          onTap: () => widget.onToggleTag(tagId),
-        ));
+        pills.add(
+          _ActivePill(
+            value: tagId,
+            label: tag.name,
+            tagColor: TagPalette.colorFromHex(tag.color),
+            type: _ActivePillType.tag,
+            onTap: () => widget.onToggleTag(tagId),
+          ),
+        );
       }
     }
     if (widget.archiveFilter != ArchiveFilter.active) {
@@ -219,9 +227,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
   TentOverallState state,
   BuildContext context,
 ) {
-  final semanticColors =
-      Theme.of(context).extension<AppSemanticColors>();
-  return state.toColors(semanticColors);
+  return state.toColors(context.semanticColors);
 }
 
 class _FilterBarBase extends StatelessWidget {
@@ -295,9 +301,7 @@ class _ExpandToggle extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isExpanded
-              ? colorScheme.primary.withValues(alpha: 0.12)
-              : colorScheme.surface,
+          color: isExpanded ? colorScheme.primary.withValues(alpha: 0.12) : colorScheme.surface,
           border: Border.all(
             color: isExpanded
                 ? colorScheme.primary.withValues(alpha: 0.12)

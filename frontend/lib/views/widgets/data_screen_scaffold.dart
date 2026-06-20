@@ -26,9 +26,7 @@ class DataScreenScaffold<T> extends StatelessWidget {
     return Material(
       child: SafeArea(
         child: state.when(
-          loading: () =>
-              loadingPlaceholder ??
-              const Center(child: AppProgressIndicator()),
+          loading: () => loadingPlaceholder ?? const Center(child: AppProgressIndicator()),
           error: (error, _) => AsyncErrorView(
             message: toUserFacingError(error, errorFallbackMessage),
             onRetry: onRetry,

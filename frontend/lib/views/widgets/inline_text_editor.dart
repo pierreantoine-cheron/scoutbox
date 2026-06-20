@@ -16,8 +16,7 @@ class InlineTextEditor extends StatefulWidget {
   final void Function(String value) onConfirm;
   final VoidCallback onStartEditing;
   final VoidCallback onCancel;
-  final Widget Function(BuildContext context, VoidCallback startEditing)
-  readOnlyBuilder;
+  final Widget Function(BuildContext context, VoidCallback startEditing) readOnlyBuilder;
 
   const InlineTextEditor({
     super.key,
@@ -124,9 +123,7 @@ class _InlineTextEditorState extends State<InlineTextEditor> {
         : SizedBox(width: widget.editorWidth, child: textField);
 
     return Row(
-      mainAxisSize: widget.editorWidth == null
-          ? MainAxisSize.max
-          : MainAxisSize.min,
+      mainAxisSize: widget.editorWidth == null ? MainAxisSize.max : MainAxisSize.min,
       children: [
         field,
         SizedBox(width: widget.dense ? 0 : 8),

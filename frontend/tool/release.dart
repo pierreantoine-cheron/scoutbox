@@ -71,8 +71,7 @@ Future<void> _runCommand(
 
 String get _flutterCommand => Platform.isWindows ? 'flutter.bat' : 'flutter';
 
-bool _isSupportedMode(String mode) =>
-    mode == 'patch' || mode == 'minor' || mode == 'major';
+bool _isSupportedMode(String mode) => mode == 'patch' || mode == 'minor' || mode == 'major';
 
 Never _printUsageAndExit({int exitCode = 64}) {
   stderr.writeln('Usage: dart run tool/release.dart <patch|minor|major>');

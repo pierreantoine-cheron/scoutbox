@@ -40,7 +40,6 @@ class NavigationSectionNotifier extends Notifier<NavigationSection> {
   }
 }
 
-final navigationSectionProvider =
-    NotifierProvider<NavigationSectionNotifier, NavigationSection>(
-      NavigationSectionNotifier.new,
-    );
+final navigationSectionProvider = NotifierProvider<NavigationSectionNotifier, NavigationSection>(
+  NavigationSectionNotifier.new,
+);

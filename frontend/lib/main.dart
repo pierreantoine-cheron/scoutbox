@@ -19,8 +19,7 @@ class ScoutBoxApp extends ConsumerStatefulWidget {
   ConsumerState<ScoutBoxApp> createState() => _ScoutBoxAppState();
 }
 
-class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp>
-    with WidgetsBindingObserver {
+class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> with WidgetsBindingObserver {
   bool _isInitializing = true;
 
   @override

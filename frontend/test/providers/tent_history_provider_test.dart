@@ -36,8 +36,7 @@ void main() {
                   }) async {
                     throw const TentRepositoryException(
                       code: 'INTERNAL_ERROR',
-                      message:
-                          'Impossible de charger l\'historique de la tente.',
+                      message: 'Impossible de charger l\'historique de la tente.',
                     );
                   },
           ),

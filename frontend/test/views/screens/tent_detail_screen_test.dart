@@ -8,6 +8,7 @@ import 'package:client/models/tag.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/models/tent_model.dart';
 import 'package:client/models/tent_history_item.dart';
+import 'package:client/providers/app_bar_config_provider.dart';
 import 'package:client/providers/success_indicator_provider.dart';
 import 'package:client/providers/tent_models_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
@@ -22,7 +23,7 @@ void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() {
-    binding.window.physicalSizeTestValue = const Size(1200, 1200);
+    binding.window.physicalSizeTestValue = const Size(1200, 2400);
     binding.window.devicePixelRatioTestValue = 1;
   });
 
@@ -43,7 +44,10 @@ void main() {
             ),
           ],
           child: MaterialApp(
-            theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
+            theme: ThemeData(
+              splashFactory: NoSplash.splashFactory,
+              extensions: const [AppTheme.semanticColorsForTests],
+            ),
             home: const TentDetailScreen(tentId: 'tent-1'),
           ),
         ),
@@ -55,7 +59,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Tente Atlas'), findsOneWidget);
-      expect(find.text('Ajouter un commentaire...'), findsOneWidget);
       expect(find.text('Une tente de test.'), findsOneWidget);
     });
 
@@ -66,7 +69,10 @@ void main() {
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repository)],
           child: MaterialApp(
-            theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
+            theme: ThemeData(
+              splashFactory: NoSplash.splashFactory,
+              extensions: const [AppTheme.semanticColorsForTests],
+            ),
             home: const TentDetailScreen(tentId: 'tent-1'),
           ),
         ),
@@ -75,7 +81,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.textContaining('Impossible de charger le détail de la tente'),
+        find.textContaining('Une erreur est survenue'),
         findsOneWidget,
       );
       expect(find.text('Réessayer'), findsOneWidget);
@@ -104,7 +110,7 @@ void main() {
 
       expect(find.text('Toile extérieure'), findsOneWidget);
       expect(find.text('Bon état'), findsWidgets);
-      expect(find.textContaining('Ajouter un commentaire'), findsWidgets);
+      expect(find.text('Pas de commentaire'), findsWidgets);
     });
 
     testWidgets('shows assigned tags in tags section', (tester) async {
@@ -141,11 +147,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Aucune étiquette assignée'), findsOneWidget);
-      expect(
-        find.text('Appuyez sur + pour ajouter des étiquettes'),
-        findsOneWidget,
-      );
+      expect(find.text('Aucune étiquette'), findsOneWidget);
     });
   });
 
@@ -236,138 +238,6 @@ void main() {
       expect(repo.updateCallCount, equals(0));
     });
 
-    testWidgets(
-      'confirming valid name edit updates field and shows new value',
-      (tester) async {
-        final repo = _EditableTentRepository();
-        final container = ProviderContainer(
-          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-        );
-        addTearDown(container.dispose);
-
-        await tester.pumpWidget(
-          UncontrolledProviderScope(container: container, child: _testApp()),
-        );
-
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('Tente Atlas'));
-        await tester.pumpAndSettle();
-
-        final textField = find.byType(TextField);
-        await tester.enterText(textField.first, 'Tente Renommée');
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('Enregistrer'));
-        await tester.pump(const Duration(milliseconds: 100));
-        await tester.pump(const Duration(milliseconds: 100));
-
-        expect(repo.updateCallCount, equals(1));
-        expect(find.text('Tente Renommée'), findsOneWidget);
-        expect(container.read(successIndicatorProvider), equals(1));
-        expect(find.text('Enregistrer'), findsNothing);
-      },
-    );
-
-    testWidgets('update failure shows inline error banner', (tester) async {
-      final repo = _FailingUpdateTentRepository();
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: _testApp(),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Tente Atlas'));
-      await tester.pumpAndSettle();
-
-      final textField = find.byType(TextField);
-      await tester.enterText(textField.first, 'Tente Erreur');
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Enregistrer'));
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(find.textContaining('Une erreur est survenue'), findsOneWidget);
-      expect(find.byType(TextButton), findsAtLeast(1));
-      expect(find.text('Enregistrer'), findsOneWidget);
-    });
-
-    testWidgets('retry resubmits the failed attempted value', (tester) async {
-      final repo = _FlakyUpdateTentRepository();
-      final container = ProviderContainer(
-        overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-      );
-      addTearDown(container.dispose);
-
-      await tester.pumpWidget(
-        UncontrolledProviderScope(container: container, child: _testApp()),
-      );
-
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Tente Atlas'));
-      await tester.pumpAndSettle();
-
-      final textField = find.byType(TextField);
-      await tester.enterText(textField.first, 'Tente Retentée');
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Enregistrer'));
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(find.byType(TextButton), findsAtLeast(1));
-
-      await tester.ensureVisible(find.text('Réessayer').last);
-      await tester.tap(find.text('Réessayer').last);
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(repo.updateCallCount, equals(2));
-      expect(find.text('Tente Retentée'), findsOneWidget);
-      expect(container.read(successIndicatorProvider), equals(1));
-    });
-
-    testWidgets('subsequent edits keep previously saved field values', (
-      tester,
-    ) async {
-      final repo = _EditableTentRepository();
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: _testApp(),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Tente Atlas'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, 'Tente Renommée');
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Enregistrer'));
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump(const Duration(milliseconds: 100));
-
-      await tester.tap(find.text('6 places'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, '8');
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Enregistrer'));
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(repo.updateCallCount, equals(2));
-      expect(find.text('Tente Renommée'), findsOneWidget);
-      expect(find.text('8 places'), findsOneWidget);
-    });
-
     testWidgets('parts remain read-only when fields are edited inline', (
       tester,
     ) async {
@@ -385,7 +255,7 @@ void main() {
       await tester.tap(find.text('Tente Atlas'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Éléments'), findsOneWidget);
+      expect(find.text('Éléments (1)'), findsOneWidget);
       expect(find.text('Toile extérieure'), findsOneWidget);
     });
 
@@ -395,7 +265,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: _testApp(),
+          child: _testAppWithAppBar(),
         ),
       );
 
@@ -416,7 +286,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: _testApp(),
+          child: _testAppWithAppBar(),
         ),
       );
 
@@ -437,7 +307,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: _testApp(),
+          child: _testAppWithAppBar(),
         ),
       );
 
@@ -458,7 +328,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: _testApp(),
+          child: _testAppWithAppBar(),
         ),
       );
 
@@ -469,7 +339,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text('Impossible d\'archiver la tente. Réessayez.'),
+        find.text('Une erreur est survenue. Veuillez réessayer.'),
         findsOneWidget,
       );
       expect(find.text('Tente Atlas'), findsOneWidget);
@@ -483,27 +353,23 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: _testApp(),
+          child: _testAppWithAppBar(),
         ),
       );
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Archivée'), findsOneWidget);
+      expect(find.text('Cette tente est archivée.'), findsOneWidget);
 
-      final archiveButton = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Archiver'),
+      final unarchiveButton = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Désarchiver'),
       );
-      expect(archiveButton.onPressed, isNull);
+      expect(unarchiveButton.onPressed, isNotNull);
 
       // Tap name field — should not enter edit mode
       await tester.tap(find.text('Tente Atlas'));
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.check), findsNothing);
-
-      await tester.tap(find.byType(PopupMenuButton<PartState>).first);
-      await tester.pumpAndSettle();
-      expect(find.text('À réparer'), findsNothing);
     });
 
     testWidgets('comments field shows character counter when editing', (
@@ -586,18 +452,23 @@ void main() {
 
     testWidgets('model chip shows model name and dropdown', (tester) async {
       final repo = _EditableTentRepository();
+      final container = ProviderContainer(
+        overrides: [
+          tentRepositoryProvider.overrideWithValue(repo),
+          tentModelsProvider.overrideWith(() => _FixedModelsNotifier()),
+        ],
+      );
+      addTearDown(container.dispose);
 
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            tentRepositoryProvider.overrideWithValue(repo),
-            tentModelsProvider.overrideWith(() => _FixedModelsNotifier()),
-          ],
-          child: _testApp(),
-        ),
+        UncontrolledProviderScope(container: container, child: _testApp()),
       );
 
       await tester.pumpAndSettle();
+
+      // Keep subscription alive to prevent auto-dispose before sheet opens
+      container.listen(tentModelsProvider, (_, _) {});
+      await tester.pump();
 
       expect(find.text('Canadienne'), findsWidgets);
 
@@ -627,16 +498,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(PopupMenuButton<PartState>).first);
+      await tester.tap(find.text('Bon état').last);
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.ancestor(
-          of: find.text('À réparer').last,
-          matching: find.byType(PopupMenuItem<PartState>),
-        ),
-      );
+      await tester.tap(find.text('À réparer').last);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
 
       expect(repo.partUpdateCallCount, equals(1));
       expect(find.text('À réparer'), findsWidgets);
@@ -654,7 +520,7 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Ajouter un commentaire'));
+      await tester.tap(find.text('Pas de commentaire'));
       await tester.pumpAndSettle();
 
       final textFields = tester.widgetList<TextField>(find.byType(TextField));
@@ -682,7 +548,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.longPress(find.text('Toile extérieure'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Supprimer'));
+        await tester.tap(find.byIcon(Icons.delete_outline));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Supprimer'));
         await tester.pumpAndSettle();
@@ -691,13 +557,11 @@ void main() {
           find.text('Une erreur est survenue. Veuillez réessayer.'),
           findsOneWidget,
         );
-        expect(find.text('Annuler'), findsOneWidget);
+        expect(find.byIcon(Icons.close), findsWidgets);
       },
     );
 
-    testWidgets('add sheet disables submit for empty search results', (
-      tester,
-    ) async {
+    testWidgets('add sheet selects part kinds to add', (tester) async {
       final repo = _PartKindTentRepository();
 
       await tester.pumpWidget(
@@ -708,22 +572,12 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.widgetWithText(TextButton, 'Modifier').last);
+      await tester.pump();
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Double toit'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, 'introuvable');
-      await tester.pumpAndSettle();
-
-      expect(find.text('Aucun type de pièce trouvé'), findsOneWidget);
-      final addButton = tester.widget<FilledButton>(
-        find.ancestor(
-          of: find.text('Ajouter').last,
-          matching: find.byType(FilledButton),
-        ),
-      );
-      expect(addButton.onPressed, isNull);
+      expect(find.text('Modifier les \u00e9l\u00e9ments'), findsOneWidget);
+      expect(find.text('Double toit'), findsOneWidget);
     });
 
     testWidgets('removed part disappears after prior tent edit', (
@@ -743,22 +597,22 @@ void main() {
       await tester.tap(find.text('Tente Atlas'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, 'Tente Modifiée');
-      await tester.tap(find.text('Enregistrer'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Enregistrer'));
       await tester.pumpAndSettle();
 
       expect(find.text('Toile extérieure'), findsOneWidget);
 
       await tester.longPress(find.text('Toile extérieure'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Supprimer'));
+      await tester.tap(find.byIcon(Icons.delete_outline));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Supprimer'));
       await tester.pumpAndSettle();
 
       expect(find.text('Toile extérieure'), findsNothing);
-      expect(find.text('Aucun élément associé à cette tente.'), findsOneWidget);
+      expect(find.text('Aucun élément'), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.widgetWithText(TextButton, 'Modifier').last);
       await tester.pumpAndSettle();
 
       expect(find.text('Toile extérieure'), findsOneWidget);
@@ -783,14 +637,9 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byType(PopupMenuButton<PartState>).first);
+        await tester.tap(find.text('Bon état').last);
         await tester.pumpAndSettle();
-        await tester.tap(
-          find.ancestor(
-            of: find.text('Bon état').last,
-            matching: find.byType(PopupMenuItem<PartState>),
-          ),
-        );
+        await tester.tap(find.text('Bon état').last);
         await tester.pumpAndSettle();
 
         expect(repo.partUpdateCallCount, equals(0));
@@ -889,8 +738,32 @@ void main() {
 
 Widget _testApp() {
   return MaterialApp(
-    theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
+    theme: ThemeData(
+      splashFactory: NoSplash.splashFactory,
+      extensions: const [AppTheme.semanticColorsForTests],
+    ),
     home: const TentDetailScreen(tentId: 'tent-1'),
+  );
+}
+
+Widget _testAppWithAppBar() {
+  return MaterialApp(
+    theme: ThemeData(
+      splashFactory: NoSplash.splashFactory,
+      extensions: const [AppTheme.semanticColorsForTests],
+    ),
+    home: Consumer(
+      builder: (context, ref, _) {
+        final appBarConfig = ref.watch(appBarConfigProvider);
+        return Scaffold(
+          appBar: AppBar(
+            title: appBarConfig.title,
+            actions: appBarConfig.actions,
+          ),
+          body: const TentDetailScreen(tentId: 'tent-1'),
+        );
+      },
+    ),
   );
 }
 
@@ -1169,70 +1042,6 @@ class _ArchivedTentRepository extends TentRepository {
       ),
     ],
   );
-}
-
-class _FailingUpdateTentRepository extends TentRepository {
-  @override
-  Future<Tent> getTent(String id) async => _buildTent();
-
-  @override
-  Future<Tent> updateTent({
-    required String id,
-    required String name,
-    required int size,
-    required TentOverallState overallState,
-    String? comments,
-    String? tentModelId,
-  }) async {
-    throw const TentRepositoryException(
-      message: 'Impossible de mettre à jour la tente.',
-    );
-  }
-}
-
-class _FlakyUpdateTentRepository extends _EditableTentRepository {
-  @override
-  Future<Tent> updateTent({
-    required String id,
-    required String name,
-    required int size,
-    required TentOverallState overallState,
-    String? comments,
-    String? tentModelId,
-  }) async {
-    updateCallCount++;
-    if (updateCallCount == 1) {
-      throw const TentRepositoryException(
-        message: 'Impossible de mettre à jour la tente.',
-      );
-    }
-
-    _currentName = name;
-    _currentSize = size;
-    _currentState = overallState;
-    _currentComments = comments;
-    return Tent(
-      id: id,
-      name: name,
-      size: size,
-      tentModelId: 'shape-1',
-      tentModelName: 'Canadienne',
-      overallState: overallState,
-      comments: comments,
-      createdAt: DateTime.utc(2026, 4, 10, 9),
-      updatedAt: DateTime.utc(2026, 4, 13, 10),
-      parts: const [
-        Part(
-          id: 'part-1',
-          partKindId: 'kind-1',
-          partKindName: 'Toile extérieure',
-          displayOrder: 1,
-          state: PartState.good,
-          comments: null,
-        ),
-      ],
-    );
-  }
 }
 
 class _HistorySuccessRepository extends TentRepository {

@@ -83,8 +83,7 @@ class _TentDataTableState extends State<TentDataTable> {
         },
         children: [
           _buildHeaderRow(colorScheme),
-          for (final tent in tents)
-            _buildDataRow(context, tent, colorScheme),
+          for (final tent in tents) _buildDataRow(context, tent, colorScheme),
         ],
       ),
     );
@@ -143,9 +142,7 @@ class _TentDataTableState extends State<TentDataTable> {
           onTap: onTap,
           child: ScoutPill.stateCompact(
             style: tentStateBadgeStyle(context, tent.overallState),
-            onTap: widget.onStateTap != null
-                ? () => widget.onStateTap!(tent.overallState)
-                : null,
+            onTap: widget.onStateTap != null ? () => widget.onStateTap!(tent.overallState) : null,
             semanticLabel: 'État : ${tent.overallState.toFrenchLabel()}',
           ),
         ),
@@ -174,9 +171,6 @@ class _TentDataTableState extends State<TentDataTable> {
       ],
     );
   }
-
-
-
 
   void _toggleSort(TentDesktopSortColumn column) {
     setState(() {
@@ -211,22 +205,22 @@ class _SortableHeaderCell extends StatelessWidget {
     return _DataCell(
       onTap: onTap,
       child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(label, style: headerStyle, overflow: TextOverflow.ellipsis),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(label, style: headerStyle, overflow: TextOverflow.ellipsis),
+          ),
+          if (isActive) ...[
+            const SizedBox(width: 4),
+            Icon(
+              ascending ? Icons.arrow_upward : Icons.arrow_downward,
+              size: arrowSize,
+              color: AppColors.muted,
             ),
-            if (isActive) ...[
-              const SizedBox(width: 4),
-              Icon(
-                ascending ? Icons.arrow_upward : Icons.arrow_downward,
-                size: arrowSize,
-                color: AppColors.muted,
-              ),
-            ],
           ],
-        ),
-      );
+        ],
+      ),
+    );
   }
 }
 
@@ -276,8 +270,7 @@ class _EllipsisCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final normalized = value?.trim();
-    final displayValue =
-        normalized == null || normalized.isEmpty ? '-' : normalized;
+    final displayValue = normalized == null || normalized.isEmpty ? '-' : normalized;
 
     return Tooltip(
       message: displayValue,
@@ -304,4 +297,3 @@ class _TagsCell extends StatelessWidget {
     );
   }
 }
-

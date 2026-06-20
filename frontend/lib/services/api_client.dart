@@ -137,8 +137,7 @@ class ApiClient {
           if (shouldRefresh) {
             try {
               final result = await _runRefreshSingleFlight(performRefresh);
-              if (!result.success &&
-                  result.failureType == RefreshFailureType.invalidToken) {
+              if (!result.success && result.failureType == RefreshFailureType.invalidToken) {
                 // Only trigger auth failure for invalid token, not transient errors
                 onAuthFailure(result.failureType);
               }

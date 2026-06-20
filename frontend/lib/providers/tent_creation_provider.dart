@@ -42,8 +42,7 @@ class TentCreationNotifier extends _$TentCreationNotifier {
 
   String? validateSize(String? value) => TentValidators.validateSize(value);
 
-  String? validateComments(String? value) =>
-      TentValidators.validateComments(value);
+  String? validateComments(String? value) => TentValidators.validateComments(value);
 
   Future<Tent?> submit() async {
     if (state.selectedModel == null) {
@@ -131,9 +130,7 @@ class TentCreationState {
     bool clearSelectedModel = false,
   }) {
     return TentCreationState(
-      selectedModel: clearSelectedModel
-          ? null
-          : (selectedModel ?? this.selectedModel),
+      selectedModel: clearSelectedModel ? null : (selectedModel ?? this.selectedModel),
       name: name ?? this.name,
       sizeInput: sizeInput ?? this.sizeInput,
       overallState: overallState ?? this.overallState,

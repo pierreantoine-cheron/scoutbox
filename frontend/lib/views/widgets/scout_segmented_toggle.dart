@@ -85,24 +85,28 @@ class _SegmentedButton<T> extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final colored = color != null;
 
-    final child = GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: _decoration(colorScheme, colored),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: _textColor(colorScheme, colored),
+    final child = Semantics(
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: _decoration(colorScheme, colored),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: _textColor(colorScheme, colored),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -114,7 +118,7 @@ class _SegmentedButton<T> extends StatelessWidget {
   BoxDecoration _decoration(ColorScheme colorScheme, bool colored) {
     if (!colored) {
       return BoxDecoration(
-        color: isSelected ? colorScheme.surface : Colors.transparent,
+        color: isSelected ? colorScheme.surface : colorScheme.surface.withAlpha(0),
         borderRadius: BorderRadius.circular(AppRadii.sm),
         boxShadow: isSelected
             ? [
@@ -130,7 +134,7 @@ class _SegmentedButton<T> extends StatelessWidget {
 
     final bg = backgroundColor ?? color!.withAlpha(38);
     return BoxDecoration(
-      color: isSelected ? bg : Colors.transparent,
+      color: isSelected ? bg : colorScheme.surface.withAlpha(0),
       borderRadius: BorderRadius.circular(AppRadii.sm),
     );
   }

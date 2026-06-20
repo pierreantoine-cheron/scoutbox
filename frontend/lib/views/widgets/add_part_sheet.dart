@@ -94,9 +94,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
                   height: 18,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : Colors.transparent,
+                    color: isSelected ? theme.colorScheme.primary : Colors.transparent,
                     border: Border.all(
                       color: theme.colorScheme.primary,
                       width: 2,
@@ -138,9 +136,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
     });
 
     try {
-      final toAdd = _selectedIds
-          .where((id) => !widget.existingPartKindIds.contains(id))
-          .toList();
+      final toAdd = _selectedIds.where((id) => !widget.existingPartKindIds.contains(id)).toList();
       final toRemove = widget.existingPartKindIds
           .where((id) => !_selectedIds.contains(id))
           .toList();
@@ -163,9 +159,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
         final partsAsync = ref.read(tentDetailProvider(widget.tentId));
         final parts = partsAsync.asData?.value.parts ?? [];
         for (final partKindId in toRemove) {
-          final part = parts
-              .where((p) => p.partKindId == partKindId)
-              .firstOrNull;
+          final part = parts.where((p) => p.partKindId == partKindId).firstOrNull;
           if (part != null) {
             await repository.removePart(partId: part.id);
           }

@@ -39,8 +39,7 @@ class TentHistoryItem {
         fieldName: 'occurredAt',
       ),
       actorUserId: json['actorUserId'] as String?,
-      actorDisplayName:
-          json['actorDisplayName'] as String? ?? 'Utilisateur supprimé',
+      actorDisplayName: json['actorDisplayName'] as String? ?? 'Utilisateur supprimé',
       subjectName: json['subjectName'] as String?,
       details:
           (json['details'] as List<dynamic>?)
@@ -116,8 +115,7 @@ class TentHistoryItem {
       case 'tent_unarchived':
         return 'Tente désarchivée';
       case 'part_state_changed':
-        final stateDetail =
-            details.where((d) => d.valueType == 'state').firstOrNull;
+        final stateDetail = details.where((d) => d.valueType == 'state').firstOrNull;
         final oldState = _historyStateLabel(stateDetail?.oldValue);
         final newState = _historyStateLabel(stateDetail?.newValue);
         return 'État de $subject changé de $oldState à $newState';
@@ -146,44 +144,61 @@ class TentHistoryItem {
       case 'tent_updated':
         return _buildUpdateSpan(normalStyle, boldStyle);
       case 'part_state_changed':
-        final stateDetail =
-            details.where((d) => d.valueType == 'state').firstOrNull;
+        final stateDetail = details.where((d) => d.valueType == 'state').firstOrNull;
         final oldState = _historyStateLabel(stateDetail?.oldValue);
         final newState = _historyStateLabel(stateDetail?.newValue);
-        return TextSpan(children: [
-          TextSpan(text: 'État de ', style: normalStyle),
-          TextSpan(text: subject, style: boldStyle),
-          TextSpan(text: ' changé de ', style: normalStyle),
-          TextSpan(text: oldState, style: boldStyle),
-          TextSpan(text: ' à ', style: normalStyle),
-          TextSpan(text: newState, style: boldStyle),
-        ], style: normalStyle);
+        return TextSpan(
+          children: [
+            TextSpan(text: 'État de ', style: normalStyle),
+            TextSpan(text: subject, style: boldStyle),
+            TextSpan(text: ' changé de ', style: normalStyle),
+            TextSpan(text: oldState, style: boldStyle),
+            TextSpan(text: ' à ', style: normalStyle),
+            TextSpan(text: newState, style: boldStyle),
+          ],
+          style: normalStyle,
+        );
       case 'part_comments_changed':
-        return TextSpan(children: [
-          TextSpan(text: 'Commentaire de ', style: normalStyle),
-          TextSpan(text: subject, style: boldStyle),
-          TextSpan(text: ' modifié', style: normalStyle),
-        ], style: normalStyle);
+        return TextSpan(
+          children: [
+            TextSpan(text: 'Commentaire de ', style: normalStyle),
+            TextSpan(text: subject, style: boldStyle),
+            TextSpan(text: ' modifié', style: normalStyle),
+          ],
+          style: normalStyle,
+        );
       case 'part_added':
-        return TextSpan(children: [
-          TextSpan(text: 'Pièce ajoutée : ', style: normalStyle),
-          TextSpan(text: subject, style: boldStyle),
-        ], style: normalStyle);
+        return TextSpan(
+          children: [
+            TextSpan(text: 'Pièce ajoutée : ', style: normalStyle),
+            TextSpan(text: subject, style: boldStyle),
+          ],
+          style: normalStyle,
+        );
       case 'part_deleted':
-        return TextSpan(children: [
-          TextSpan(text: 'Pièce supprimée : ', style: normalStyle),
-          TextSpan(text: subject, style: boldStyle),
-        ], style: normalStyle);
+        return TextSpan(
+          children: [
+            TextSpan(text: 'Pièce supprimée : ', style: normalStyle),
+            TextSpan(text: subject, style: boldStyle),
+          ],
+          style: normalStyle,
+        );
       case 'tag_assigned':
-        return TextSpan(children: [
-          TextSpan(text: 'Étiquette ajoutée : ', style: normalStyle),
-          TextSpan(text: subject, style: boldStyle),
-        ], style: normalStyle);
+        return TextSpan(
+          children: [
+            TextSpan(text: 'Étiquette ajoutée : ', style: normalStyle),
+            TextSpan(text: subject, style: boldStyle),
+          ],
+          style: normalStyle,
+        );
       case 'tag_removed':
-        return TextSpan(children: [
-          TextSpan(text: 'Étiquette retirée : ', style: normalStyle),
-          TextSpan(text: subject, style: boldStyle),
-        ], style: normalStyle);
+        return TextSpan(
+          children: [
+            TextSpan(text: 'Étiquette retirée : ', style: normalStyle),
+            TextSpan(text: subject, style: boldStyle),
+          ],
+          style: normalStyle,
+        );
       default:
         return TextSpan(text: buildSummary(), style: normalStyle);
     }

@@ -51,10 +51,7 @@ class PickerSheet<T> extends StatelessWidget {
               margin: const EdgeInsets.symmetric(vertical: 2),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: selected
-                    ? theme.colorScheme.primaryContainer
-                        .withValues(alpha: 0.3)
-                    : null,
+                color: selected ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3) : null,
                 borderRadius: BorderRadius.circular(AppRadii.md),
               ),
               child: Row(

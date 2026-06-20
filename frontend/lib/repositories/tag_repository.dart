@@ -15,15 +15,12 @@ class TagRepository {
   Future<List<Tag>> getTags() async {
     return _request(
       fallbackMessage: 'Impossible de charger les étiquettes. Réessayez.',
-      invalidResponseMessage:
-          'Réponse du serveur invalide lors du chargement des étiquettes.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors du chargement des étiquettes.',
       action: () async {
         final response = await ApiClient.instance.get(ApiRoutes.tags);
         final rawTags = _readEnvelopeList(response.data);
 
-        return rawTags
-            .map((tag) => Tag.fromJson(tag as Map<String, dynamic>))
-            .toList();
+        return rawTags.map((tag) => Tag.fromJson(tag as Map<String, dynamic>)).toList();
       },
     );
   }
@@ -31,8 +28,7 @@ class TagRepository {
   Future<Tag> createTag({required String name, String? color}) async {
     return _request(
       fallbackMessage: 'Impossible de créer l\'étiquette. Réessayez.',
-      invalidResponseMessage:
-          'Réponse du serveur invalide lors de la création de l\'étiquette.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la création de l\'étiquette.',
       action: () async {
         final response = await ApiClient.instance.post(
           ApiRoutes.tags,

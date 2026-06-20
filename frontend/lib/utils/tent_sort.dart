@@ -17,13 +17,18 @@ List<Tent> sortTents(
 
   final copy = [...tents];
   copy.sort((left, right) {
+    if (column == TentDesktopSortColumn.model) {
+      final leftMissing = left.tentModelName == null || left.tentModelName!.trim().isEmpty;
+      final rightMissing = right.tentModelName == null || right.tentModelName!.trim().isEmpty;
+      if (leftMissing && !rightMissing) return 1;
+      if (!leftMissing && rightMissing) return -1;
+    }
+
     final cmp = switch (column) {
-      TentDesktopSortColumn.name =>
-          left.name.toLowerCase().compareTo(right.name.toLowerCase()),
+      TentDesktopSortColumn.name => left.name.toLowerCase().compareTo(right.name.toLowerCase()),
       TentDesktopSortColumn.state => _compareState(left, right),
       TentDesktopSortColumn.size => left.size.compareTo(right.size),
-      TentDesktopSortColumn.model =>
-          _compareNullableText(left.tentModelName, right.tentModelName),
+      TentDesktopSortColumn.model => _compareNullableText(left.tentModelName, right.tentModelName),
     };
     return ascending ? cmp : -cmp;
   });

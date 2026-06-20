@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../utils/app_colors.dart';
+import '../../utils/app_theme_context.dart';
 import '../../utils/design_constants.dart';
 
 class FadingCloudDoneIcon extends StatefulWidget {
@@ -58,7 +58,7 @@ class _FadingCloudDoneIconState extends State<FadingCloudDoneIcon> {
         padding: const EdgeInsets.only(right: 8),
         child: Icon(
           Icons.cloud_done,
-          color: Theme.of(context).extension<AppSemanticColors>()!.success,
+          color: context.semanticColors.success,
         ),
       ),
     );

@@ -215,12 +215,8 @@ void main() {
         final json = {
           'accessToken': 'test_access_token',
           'refreshToken': 'test_refresh_token',
-          'accessTokenExpires': now
-              .add(const Duration(minutes: 15))
-              .toIso8601String(),
-          'refreshTokenExpires': now
-              .add(const Duration(days: 180))
-              .toIso8601String(),
+          'accessTokenExpires': now.add(const Duration(minutes: 15)).toIso8601String(),
+          'refreshTokenExpires': now.add(const Duration(days: 180)).toIso8601String(),
         };
 
         final response = AuthResponse.fromJson(json);
@@ -256,9 +252,7 @@ void main() {
           'accessToken': 'test_access_token',
           'refreshToken': 'test_refresh_token',
           'accessTokenExpires': 'not-a-date',
-          'refreshTokenExpires': DateTime.now()
-              .add(const Duration(days: 180))
-              .toIso8601String(),
+          'refreshTokenExpires': DateTime.now().add(const Duration(days: 180)).toIso8601String(),
         };
 
         expect(() => AuthResponse.fromJson(json), throwsFormatException);

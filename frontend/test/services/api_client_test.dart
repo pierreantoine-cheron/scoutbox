@@ -1,8 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:client/services/api_client.dart';
-import 'package:client/services/auth_service.dart'
-    show RefreshResult, RefreshFailureType;
+import 'package:client/services/auth_service.dart' show RefreshResult, RefreshFailureType;
 import 'package:client/utils/constants.dart';
 
 void main() {
@@ -132,8 +131,7 @@ void main() {
               return path[excluded.length] == '/';
             }),
             isFalse,
-            reason:
-                '$path should NOT be excluded (not starting with excluded path)',
+            reason: '$path should NOT be excluded (not starting with excluded path)',
           );
         }
       });

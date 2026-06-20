@@ -18,7 +18,7 @@ void main() {
       find.text('Créez des étiquettes pour organiser vos tentes.'),
       findsOneWidget,
     );
-    expect(find.text('Nouvelle étiquette'), findsOneWidget);
+    expect(find.byTooltip('Créer une étiquette'), findsOneWidget);
   });
 
   testWidgets('renders tag cards with color dots and counts', (tester) async {
@@ -101,7 +101,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Une étiquette avec ce nom existe déjà'), findsOneWidget);
-    expect(find.text('Nouvelle étiquette'), findsAtLeastNWidgets(2));
+    expect(find.text('Nouvelle étiquette'), findsOneWidget);
   });
 }
 

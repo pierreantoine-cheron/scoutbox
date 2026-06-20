@@ -38,17 +38,13 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.sm),
-              children: _topSections
-                  .map((s) => _buildItem(s, tentCount, tagCount))
-                  .toList(),
+              children: _topSections.map((s) => _buildItem(s, tentCount, tagCount)).toList(),
             ),
           ),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.sm),
-            child: _bottomSections
-                .map((s) => _buildItem(s, tentCount, tagCount))
-                .first,
+            child: _bottomSections.map((s) => _buildItem(s, tentCount, tagCount)).first,
           ),
         ],
       ),
@@ -79,7 +75,7 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
 
   int _totalTentCount(WidgetRef ref) {
     final tents = ref.watch(tentListProvider).asData?.value;
-    return tents?.length ?? 0;
+    return tents?.where((t) => !t.isArchived).length ?? 0;
   }
 
   int _totalTagCount(WidgetRef ref) {
@@ -151,16 +147,12 @@ class _DrawerItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final effectiveOpacity = enabled ? 1.0 : 0.38;
 
-    final fgColor = isSelected && enabled
-        ? AppColors.scoutGreen
-        : colorScheme.onSurface;
+    final fgColor = isSelected && enabled ? AppColors.scoutGreen : colorScheme.onSurface;
 
     return Opacity(
       opacity: effectiveOpacity,
       child: Material(
-        color: isSelected && enabled
-            ? AppColors.accentSoft
-            : Colors.transparent,
+        color: isSelected && enabled ? AppColors.accentSoft : Colors.transparent,
         borderRadius: BorderRadius.circular(AppRadii.sm),
         child: InkWell(
           onTap: enabled ? onTap : null,
@@ -180,9 +172,7 @@ class _DrawerItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       color: fgColor,
-                      fontWeight: isSelected && enabled
-                          ? FontWeight.w600
-                          : FontWeight.w400,
+                      fontWeight: isSelected && enabled ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),
                 ),

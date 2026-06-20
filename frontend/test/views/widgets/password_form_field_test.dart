@@ -87,9 +87,7 @@ void main() {
     testWidgets('has OutlineInputBorder', (tester) async {
       await tester.pumpWidget(buildField());
 
-      final decoration = tester
-          .widget<InputDecorator>(find.byType(InputDecorator))
-          .decoration;
+      final decoration = tester.widget<InputDecorator>(find.byType(InputDecorator)).decoration;
       expect(decoration.border, isA<OutlineInputBorder>());
     });
 

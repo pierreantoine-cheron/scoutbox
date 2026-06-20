@@ -24,8 +24,7 @@ class TagAssignmentSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TagAssignmentSheet> createState() =>
-      _TagAssignmentSheetState();
+  ConsumerState<TagAssignmentSheet> createState() => _TagAssignmentSheetState();
 }
 
 class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
@@ -80,8 +79,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
           ),
           const SizedBox(height: 16),
           tagsAsync.when(
-            loading: () =>
-                const Center(child: AppProgressIndicator()),
+            loading: () => const Center(child: AppProgressIndicator()),
             error: (error, _) => AsyncErrorView(
               message: 'Impossible de charger les \u00e9tiquettes.',
               onRetry: () => ref.read(tagsProvider.notifier).retry(),
@@ -119,8 +117,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
     final filteredTags = tags.where((tag) {
       if (query.isEmpty) return true;
       return tag.name.toLowerCase().contains(query);
-    }).toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    }).toList()..sort((a, b) => a.name.compareTo(b.name));
 
     if (filteredTags.isEmpty) {
       return const Center(child: Text('Aucune \u00e9tiquette trouv\u00e9e'));
@@ -129,18 +126,16 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
     return Wrap(
       spacing: 10,
       runSpacing: 10,
-      children: filteredTags
-          .map((tag) {
-                final tagColor = TagPalette.colorFromHex(tag.color);
-                final isSelected = _selectedTagIds.contains(tag.id);
-                return ScoutPill.tagFilter(
-                  label: tag.name,
-                  color: tagColor,
-                  selected: isSelected,
-                  onTap: _isSaving ? null : () => _toggleLocal(tag.id),
-                );
-              })
-          .toList(),
+      children: filteredTags.map((tag) {
+        final tagColor = TagPalette.colorFromHex(tag.color);
+        final isSelected = _selectedTagIds.contains(tag.id);
+        return ScoutPill.tagFilter(
+          label: tag.name,
+          color: tagColor,
+          selected: isSelected,
+          onTap: _isSaving ? null : () => _toggleLocal(tag.id),
+        );
+      }).toList(),
     );
   }
 
@@ -186,8 +181,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
         _errorMessage = message;
       });
 
-      if (error is TentRepositoryException &&
-          error.code == ErrorCodes.tagNotFound) {
+      if (error is TentRepositoryException && error.code == ErrorCodes.tagNotFound) {
         await ref.read(tagsProvider.notifier).refresh();
       }
     } finally {

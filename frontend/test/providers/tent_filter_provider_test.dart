@@ -59,12 +59,8 @@ void main() {
 
         await container.read(tentListProvider.future);
 
-        container
-            .read(tentListFilterProvider.notifier)
-            .toggleState(TentOverallState.good);
-        container
-            .read(tentListFilterProvider.notifier)
-            .toggleState(TentOverallState.needsRepair);
+        container.read(tentListFilterProvider.notifier).toggleState(TentOverallState.good);
+        container.read(tentListFilterProvider.notifier).toggleState(TentOverallState.needsRepair);
 
         final filtered = container.read(filteredTentListProvider);
 
@@ -170,9 +166,7 @@ void main() {
 
         expect(container.read(filteredTentListProvider), hasLength(3));
 
-        container
-            .read(tentListFilterProvider.notifier)
-            .toggleState(TentOverallState.unusable);
+        container.read(tentListFilterProvider.notifier).toggleState(TentOverallState.unusable);
         expect(container.read(tentListFilteredModeProvider), isTrue);
 
         container.read(tentListFilterProvider.notifier).clearAll();
@@ -204,9 +198,7 @@ void main() {
 
       await container.read(tentListProvider.future);
 
-      container
-          .read(tentListFilterProvider.notifier)
-          .toggleState(TentOverallState.needsRepair);
+      container.read(tentListFilterProvider.notifier).toggleState(TentOverallState.needsRepair);
       container.read(tentListFilterProvider.notifier).setSearchText('at');
 
       await Future<void>.delayed(const Duration(milliseconds: 320));
@@ -360,9 +352,7 @@ void main() {
 
       await container.read(tentListProvider.future);
 
-      container
-          .read(tentListFilterProvider.notifier)
-          .toggleState(TentOverallState.good);
+      container.read(tentListFilterProvider.notifier).toggleState(TentOverallState.good);
       container.read(tentListFilterProvider.notifier).toggleSize(4);
       container.read(tentListFilterProvider.notifier).toggleModel('shape-1');
       container.read(tentListFilterProvider.notifier).setSearchText('at');
@@ -540,9 +530,7 @@ void main() {
 
       await container.read(tentListProvider.future);
 
-      container
-          .read(tentListFilterProvider.notifier)
-          .toggleState(TentOverallState.unusable);
+      container.read(tentListFilterProvider.notifier).toggleState(TentOverallState.unusable);
       container.read(tentListFilterProvider.notifier).toggleSize(6);
       container.read(tentListFilterProvider.notifier).toggleModel('shape-3');
       container.read(tentListFilterProvider.notifier).setSearchText('ce');

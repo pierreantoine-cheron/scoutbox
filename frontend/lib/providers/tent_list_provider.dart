@@ -41,12 +41,10 @@ List<Tent> filteredTentList(Ref ref) {
             filterState.selectedStates.contains(tent.overallState);
 
         final search = filterState.effectiveSearchText;
-        final matchesSearch =
-            search.isEmpty || tent.name.toLowerCase().contains(search);
+        final matchesSearch = search.isEmpty || tent.name.toLowerCase().contains(search);
 
         final matchesSize =
-            filterState.selectedSizes.isEmpty ||
-            filterState.selectedSizes.contains(tent.size);
+            filterState.selectedSizes.isEmpty || filterState.selectedSizes.contains(tent.size);
 
         final matchesModel =
             filterState.selectedModelIds.isEmpty ||
@@ -125,17 +123,6 @@ class TentListNotifier extends _$TentListNotifier {
       tent,
       ...tents.where((existingTent) => existingTent.id != tent.id),
     ];
-    state = AsyncValue.data(nextTents);
-  }
-
-  void hideTent(String tentId) {
-    if (!state.hasValue) {
-      return;
-    }
-
-    final nextTents = state.requireValue
-        .where((tent) => tent.id != tentId)
-        .toList(growable: false);
     state = AsyncValue.data(nextTents);
   }
 }
