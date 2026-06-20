@@ -372,6 +372,152 @@ void main() {
       expect(filtered.map((tent) => tent.name), equals(['Atlas']));
     });
 
+    test('archive filter defaults to active showing only non-archived', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTentsWithArchive),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      final filtered = container.read(filteredTentListProvider);
+      expect(container.read(tentListFilteredModeProvider), isFalse);
+      expect(filtered.map((tent) => tent.name), equals(['Atlas', 'Boreal', 'Cerise']));
+    });
+
+    test('archive filter all shows all tents', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTentsWithArchive),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      container.read(tentListFilterProvider.notifier).setArchiveFilter(ArchiveFilter.all);
+
+      final filtered = container.read(filteredTentListProvider);
+      expect(container.read(tentListFilteredModeProvider), isTrue);
+      expect(filtered.map((tent) => tent.name), equals(['Atlas', 'Boreal', 'Cerise', 'Delta']));
+    });
+
+    test('archive filter archived shows only archived tents', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTentsWithArchive),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      container.read(tentListFilterProvider.notifier).setArchiveFilter(ArchiveFilter.archived);
+
+      final filtered = container.read(filteredTentListProvider);
+      expect(container.read(tentListFilteredModeProvider), isTrue);
+      expect(filtered.map((tent) => tent.name), equals(['Delta']));
+    });
+
+    test('archive filter works with other filters in AND logic', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTentsWithArchive),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      container.read(tentListFilterProvider.notifier).setArchiveFilter(ArchiveFilter.all);
+      container.read(tentListFilterProvider.notifier).toggleState(TentOverallState.needsRepair);
+
+      final filtered = container.read(filteredTentListProvider);
+      expect(filtered.map((tent) => tent.name), equals(['Boreal']));
+    });
+
+    test('clear-all resets archive filter to active', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentListProvider.overrideWith(
+            () => _TentListTestNotifier(_sampleTentsWithArchive),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final tentListSubscription = container.listen(
+        tentListProvider,
+        (_, _) {},
+      );
+      addTearDown(tentListSubscription.close);
+      final filterSubscription = container.listen(
+        tentListFilterProvider,
+        (_, _) {},
+      );
+      addTearDown(filterSubscription.close);
+
+      await container.read(tentListProvider.future);
+
+      container.read(tentListFilterProvider.notifier).setArchiveFilter(ArchiveFilter.archived);
+      expect(container.read(tentListFilteredModeProvider), isTrue);
+
+      container.read(tentListFilterProvider.notifier).clearAll();
+
+      final state = container.read(tentListFilterProvider);
+      expect(state.archiveFilter, equals(ArchiveFilter.active));
+      expect(container.read(tentListFilteredModeProvider), isFalse);
+    });
+
     test('clear-all resets state size shape and search criteria', () async {
       final container = ProviderContainer(
         overrides: [
@@ -458,6 +604,20 @@ final _sampleTents = [
     overallState: TentOverallState.unusable,
     comments: null,
     tags: [_tagStorage],
+  ),
+];
+
+final _sampleTentsWithArchive = [
+  ..._sampleTents,
+  const Tent(
+    id: 't4',
+    name: 'Delta',
+    size: 4,
+    tentModelId: 'shape-1',
+    tentModelName: 'Canadienne',
+    overallState: TentOverallState.good,
+    comments: null,
+    isArchived: true,
   ),
 ];
 

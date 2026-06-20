@@ -127,6 +127,20 @@ class TentRepository {
     );
   }
 
+  Future<Tent> unarchiveTent(String id) async {
+    return _request(
+      fallbackMessage: 'Impossible de désarchiver la tente. Réessayez.',
+      invalidResponseMessage:
+          'Réponse du serveur invalide lors du désarchivage de la tente.',
+      action: () async {
+        final response = await ApiClient.instance.put(
+          '${ApiRoutes.tents}/$id/unarchive',
+        );
+        return Tent.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
+  }
+
   Future<Tent> archiveTent(String id) async {
     return _request(
       fallbackMessage: 'Impossible d\'archiver la tente. Réessayez.',

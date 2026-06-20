@@ -133,6 +133,7 @@ class _TentDataTableState extends State<TentDataTable> {
 
     return TableRow(
       decoration: BoxDecoration(
+        color: tent.isArchived ? colorScheme.surfaceContainerHighest : null,
         border: Border(
           bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(80)),
         ),

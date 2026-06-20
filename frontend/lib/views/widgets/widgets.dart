@@ -16,6 +16,7 @@ export 'password_form_field.dart';
 export 'primary_submit_button.dart';
 export 'refresh_warning_card.dart';
 export 'scout_pill.dart';
+export 'scout_segmented_toggle.dart';
 export 'search_field.dart';
 export 'sheet_footer.dart';
 export 'sheet_handle.dart';

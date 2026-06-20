@@ -21,6 +21,7 @@ public static class AuditActions
     public const string TentCreated = "tent_created";
     public const string TentUpdated = "tent_updated";
     public const string TentArchived = "tent_archived";
+    public const string TentUnarchived = "tent_unarchived";
 
     // Part management actions (for future stories)
     public const string PartStateChanged = "part_state_changed";

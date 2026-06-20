@@ -7,6 +7,23 @@ import '../utils/design_constants.dart';
 
 part 'tent_filter_provider.g.dart';
 
+enum ArchiveFilter {
+  active,
+  all,
+  archived;
+
+  String toFrenchLabel() {
+    switch (this) {
+      case ArchiveFilter.active:
+        return 'Actives';
+      case ArchiveFilter.all:
+        return 'Toutes';
+      case ArchiveFilter.archived:
+        return 'Archivées';
+    }
+  }
+}
+
 class TentListFilterState {
   final String searchText;
   final String effectiveSearchText;
@@ -14,6 +31,7 @@ class TentListFilterState {
   final Set<int> selectedSizes;
   final Set<String> selectedModelIds;
   final Set<String> selectedTagIds;
+  final ArchiveFilter archiveFilter;
 
   const TentListFilterState({
     this.searchText = '',
@@ -22,6 +40,7 @@ class TentListFilterState {
     this.selectedSizes = const {},
     this.selectedModelIds = const {},
     this.selectedTagIds = const {},
+    this.archiveFilter = ArchiveFilter.active,
   });
 
   bool get isFilteredMode =>
@@ -29,6 +48,7 @@ class TentListFilterState {
       selectedSizes.isNotEmpty ||
       selectedModelIds.isNotEmpty ||
       selectedTagIds.isNotEmpty ||
+      archiveFilter != ArchiveFilter.active ||
       effectiveSearchText.isNotEmpty;
 
   TentListFilterState copyWith({
@@ -38,6 +58,7 @@ class TentListFilterState {
     Set<int>? selectedSizes,
     Set<String>? selectedModelIds,
     Set<String>? selectedTagIds,
+    ArchiveFilter? archiveFilter,
   }) {
     return TentListFilterState(
       searchText: searchText ?? this.searchText,
@@ -46,6 +67,7 @@ class TentListFilterState {
       selectedSizes: selectedSizes ?? this.selectedSizes,
       selectedModelIds: selectedModelIds ?? this.selectedModelIds,
       selectedTagIds: selectedTagIds ?? this.selectedTagIds,
+      archiveFilter: archiveFilter ?? this.archiveFilter,
     );
   }
 }
@@ -124,6 +146,10 @@ class TentListFilterNotifier extends _$TentListFilterNotifier {
 
   void setSelectedTags(Set<String> tagIds) {
     state = state.copyWith(selectedTagIds: Set<String>.from(tagIds));
+  }
+
+  void setArchiveFilter(ArchiveFilter filter) {
+    state = state.copyWith(archiveFilter: filter);
   }
 
   void clearAll() {

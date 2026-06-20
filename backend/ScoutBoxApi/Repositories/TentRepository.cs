@@ -32,7 +32,6 @@ public class TentRepository : ITentRepository
             .Include(t => t.TentModel)
             .Include(t => t.TentTags)
                 .ThenInclude(tt => tt.Tag)
-            .Where(tent => !tent.IsArchived)
             .OrderByDescending(tent => tent.UpdatedAt)
             .ThenByDescending(tent => tent.CreatedAt)
             .ThenByDescending(tent => tent.Id)

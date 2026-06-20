@@ -72,6 +72,21 @@ public class TentsController : ControllerBase
         return Ok(new { data = response });
     }
 
+    [HttpPut("{id:guid}/unarchive")]
+    [ValidateUser]
+    public async Task<IActionResult> UnarchiveTent([FromRoute] Guid id)
+    {
+        var userId = _currentUserAccessor.GetValidatedUserId();
+        var (response, notFound) = await _tentService.UnarchiveTentAsync(id, userId);
+
+        if (notFound)
+        {
+            return NotFound(new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
+        }
+
+        return Ok(new { data = response });
+    }
+
     [HttpPut("{id:guid}/archive")]
     [ValidateUser]
     public async Task<IActionResult> ArchiveTent([FromRoute] Guid id)

@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import '../utils/app_colors.dart';
 import '../utils/date_time_parser.dart';
 
 enum PartState {
@@ -16,6 +19,31 @@ enum PartState {
         return 'Manquant';
       case PartState.unusable:
         return 'Inutilisable';
+    }
+  }
+
+  ({Color foreground, Color background}) toColors(AppSemanticColors? semanticColors) {
+    switch (this) {
+      case PartState.good:
+        return (
+          foreground: semanticColors?.statePerfect ?? AppColors.statePerfect,
+          background: semanticColors?.statePerfectBackground ?? AppColors.statePerfectBackground,
+        );
+      case PartState.needsRepair:
+        return (
+          foreground: semanticColors?.stateUsable ?? AppColors.stateUsable,
+          background: semanticColors?.stateUsableBackground ?? AppColors.stateUsableBackground,
+        );
+      case PartState.missing:
+        return (
+          foreground: semanticColors?.stateMissing ?? AppColors.stateMissing,
+          background: semanticColors?.stateMissingBackground ?? AppColors.stateMissingBackground,
+        );
+      case PartState.unusable:
+        return (
+          foreground: semanticColors?.stateUnusable ?? AppColors.stateUnusable,
+          background: semanticColors?.stateUnusableBackground ?? AppColors.stateUnusableBackground,
+        );
     }
   }
 

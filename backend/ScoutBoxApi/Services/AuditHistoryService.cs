@@ -435,6 +435,7 @@ public class AuditHistoryService : IAuditHistoryService
             AuditActions.TentCreated => BuildTentCreatedItem(ae, actorName),
             AuditActions.TentUpdated => BuildTentUpdatedItem(ae, actorName),
             AuditActions.TentArchived => BuildTentArchivedItem(ae, actorName),
+            AuditActions.TentUnarchived => BuildTentUnarchivedItem(ae, actorName),
             AuditActions.PartStateChanged => BuildPartStateChangedItem(ae, actorName, partKindNames),
             AuditActions.PartCommentsChanged => BuildPartCommentsChangedItem(ae, actorName, partKindNames),
             AuditActions.PartAdded => BuildPartAddedItem(ae, actorName, partKindNames),
@@ -492,6 +493,16 @@ public class AuditHistoryService : IAuditHistoryService
     }
 
     private static TentHistoryItemDto BuildTentArchivedItem(AuditEvent ae, string actorName)
+    {
+        return new TentHistoryItemDto(
+            ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.Archive),
+            ae.OccurredAt, ae.ActorUserId, actorName,
+            null, new List<TentHistoryDetailDto>(),
+            ae.TargetEntityType, ae.TargetEntityId
+        );
+    }
+
+    private static TentHistoryItemDto BuildTentUnarchivedItem(AuditEvent ae, string actorName)
     {
         return new TentHistoryItemDto(
             ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.Archive),

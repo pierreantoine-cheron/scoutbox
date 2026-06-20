@@ -56,7 +56,12 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
       title: const Text('Détail tente'),
       showBackButton: true,
       actions: [
-        if (tent != null && !tent.isArchived)
+        if (tent != null && tent.isArchived)
+          _UnarchiveAppBarButton(
+            tentId: widget.tentId,
+            showLabel: isDesktop,
+          )
+        else if (tent != null && !tent.isArchived)
           _ArchiveAppBarButton(
             tentId: widget.tentId,
             showLabel: isDesktop,
@@ -160,9 +165,8 @@ class _ArchiveAppBarButtonState extends ConsumerState<_ArchiveAppBarButton> {
           .archiveTent(widget.tentId);
       invalidateTentHistory(ref, widget.tentId);
       ref.read(tentListProvider.notifier).hideTent(archivedTent.id);
+      ref.invalidate(tentDetailProvider(widget.tentId));
       ref.read(successIndicatorProvider.notifier).fire();
-
-      if (mounted) Navigator.of(context).maybePop();
     } catch (e) {
       if (mounted) {
         final message = e is TentRepositoryException
@@ -172,6 +176,89 @@ class _ArchiveAppBarButtonState extends ConsumerState<_ArchiveAppBarButton> {
       }
     } finally {
       if (mounted) setState(() => _isArchiving = false);
+    }
+  }
+}
+
+class _UnarchiveAppBarButton extends ConsumerStatefulWidget {
+  final String tentId;
+  final bool showLabel;
+
+  const _UnarchiveAppBarButton({required this.tentId, required this.showLabel});
+
+  @override
+  ConsumerState<_UnarchiveAppBarButton> createState() =>
+      _UnarchiveAppBarButtonState();
+}
+
+class _UnarchiveAppBarButtonState extends ConsumerState<_UnarchiveAppBarButton> {
+  bool _isUnarchiving = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
+
+    if (_isUnarchiving) {
+      return const Padding(
+        padding: EdgeInsets.all(12),
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: AppProgressIndicator(),
+        ),
+      );
+    }
+
+    if (widget.showLabel) {
+      return TextButton.icon(
+        onPressed: _onUnarchivePressed,
+        icon: const Icon(Icons.unarchive_outlined, size: 18),
+        label: const Text('Désarchiver'),
+        style: TextButton.styleFrom(
+          foregroundColor: semanticColors.stateUsable,
+        ),
+      );
+    }
+
+    return IconButton(
+      icon: const Icon(Icons.unarchive_outlined),
+      tooltip: 'Désarchiver la tente',
+      onPressed: _onUnarchivePressed,
+      style: IconButton.styleFrom(
+        foregroundColor: semanticColors.stateUsable,
+      ),
+    );
+  }
+
+  Future<void> _onUnarchivePressed() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Désarchiver la tente',
+      content:
+          'Désarchiver cette tente ? Elle réapparaîtra dans la liste active.',
+    );
+
+    if (!confirmed || !mounted) return;
+
+    setState(() => _isUnarchiving = true);
+
+    try {
+      final unarchivedTent = await ref
+          .read(tentRepositoryProvider)
+          .unarchiveTent(widget.tentId);
+      invalidateTentHistory(ref, widget.tentId);
+      ref.read(tentListProvider.notifier).showTent(unarchivedTent);
+      ref.invalidate(tentDetailProvider(widget.tentId));
+      ref.read(successIndicatorProvider.notifier).fire();
+    } catch (e) {
+      if (mounted) {
+        final message = e is TentRepositoryException
+            ? ErrorLocalizer.localize(e.code, fallback: e.message)
+            : 'Impossible de désarchiver la tente. Réessayez.';
+        await showErrorDialog(context, message);
+      }
+    } finally {
+      if (mounted) setState(() => _isUnarchiving = false);
     }
   }
 }
@@ -623,7 +710,7 @@ class _CommentsPreview extends ConsumerWidget {
     final normalized = tent.comments?.trim();
     if (normalized == null || normalized.isEmpty) {
       return Text(
-        'Ajouter un commentaire...',
+        'Pas de commentaire',
         style: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.outline,
           fontStyle: FontStyle.italic,
@@ -702,11 +789,12 @@ class _TagsBlock extends ConsumerWidget {
                   label: 'Étiquettes',
                 ),
               ),
-              if (!tent.isArchived)
-                _ModifierButton(
-                  label: 'Modifier',
-                  onPressed: () => _showEditTagsSheet(context, ref),
-                ),
+              _ModifierButton(
+                label: 'Modifier',
+                onPressed: tent.isArchived
+                    ? null
+                    : () => _showEditTagsSheet(context, ref),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -834,10 +922,11 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
                   label: 'Éléments (${widget.parts.length})',
                 ),
               ),
-              if (!widget.isArchived && !_isSelectionMode)
+              if (!_isSelectionMode)
                 _ModifierButton(
                   label: 'Modifier',
-                  onPressed: _showEditPartsSheet,
+                  onPressed:
+                      widget.isArchived ? null : _showEditPartsSheet,
                 ),
               if (_isSelectionMode) ...[
                 if (_selectedPartIds.isNotEmpty)
@@ -1136,7 +1225,7 @@ class _SectionHeader extends StatelessWidget {
 
 class _ModifierButton extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const _ModifierButton({required this.label, required this.onPressed});
 

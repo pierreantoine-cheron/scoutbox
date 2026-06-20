@@ -324,7 +324,6 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     TentCreationState creationState,
     TentCreationNotifier notifier,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
     final semanticColors =
         Theme.of(context).extension<AppSemanticColors>();
 
@@ -333,44 +332,19 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
       children: [
         const FieldLabel('État global'),
         const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: colorScheme.outlineVariant),
-            borderRadius: BorderRadius.circular(AppRadii.md),
-            color: colorScheme.onSurface.withAlpha(13),
-          ),
-          padding: const EdgeInsets.all(2),
-          child: Row(
-            children: [
-              _StateSegBtn(
-                label: 'Bon état',
-                dotColor: semanticColors?.statePerfect ??
-                    AppColors.statePerfect,
-                isSelected:
-                    creationState.overallState == TentOverallState.good,
-                onTap: () =>
-                    notifier.updateOverallState(TentOverallState.good),
+        ScoutSegmentedToggle<TentOverallState>(
+          options: [
+            for (final state in TentOverallState.values)
+              SegmentedToggleOption(
+                value: state,
+                label: state.toFrenchLabel(),
+                color: state.toColors(semanticColors).foreground,
+                backgroundColor: state.toColors(semanticColors).background,
               ),
-              _StateSegBtn(
-                label: 'À réparer',
-                dotColor: semanticColors?.stateUsable ??
-                    AppColors.stateUsable,
-                isSelected: creationState.overallState ==
-                    TentOverallState.needsRepair,
-                onTap: () => notifier
-                    .updateOverallState(TentOverallState.needsRepair),
-              ),
-              _StateSegBtn(
-                label: 'Inutilisable',
-                dotColor: semanticColors?.stateUnusable ??
-                    AppColors.stateUnusable,
-                isSelected: creationState.overallState ==
-                    TentOverallState.unusable,
-                onTap: () => notifier
-                    .updateOverallState(TentOverallState.unusable),
-              ),
-            ],
-          ),
+          ],
+          selected: creationState.overallState,
+          onChanged: notifier.updateOverallState,
+          expanded: true,
         ),
       ],
     );
@@ -575,71 +549,6 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
       content: 'Votre brouillon sera conservé pour plus tard.',
       confirmLabel: 'Quitter',
       cancelLabel: 'Rester',
-    );
-  }
-}
-
-class _StateSegBtn extends StatelessWidget {
-  final String label;
-  final Color dotColor;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _StateSegBtn({
-    required this.label,
-    required this.dotColor,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? colorScheme.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadii.sm),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: colorScheme.shadow.withAlpha(13),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: dotColor,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected
-                      ? colorScheme.onSurface
-                      : colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

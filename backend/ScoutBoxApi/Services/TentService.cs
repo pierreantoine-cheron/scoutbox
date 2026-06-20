@@ -316,6 +316,35 @@ public class TentService
         }
     }
 
+    public async Task<(TentDto? Response, bool NotFound)> UnarchiveTentAsync(Guid id, Guid userId)
+    {
+        var tent = await _repo.GetTentByIdForUpdateAsync(id);
+        if (tent == null) return (null, true);
+
+        if (tent.IsArchived)
+        {
+            tent.IsArchived = false;
+            tent.UpdatedAt = DateTime.UtcNow;
+            tent.UpdatedByUserId = userId;
+
+            _auditService.RecordEvent(
+                AuditActions.TentUnarchived,
+                userId,
+                targetEntityType: "Tent",
+                targetEntityId: id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["archived"] = false,
+                    ["previousIsArchived"] = true,
+                    ["tentName"] = tent.Name
+                });
+
+            await _repo.SaveChangesAsync();
+        }
+
+        return (ToTentDto(tent, ToPartDtos(tent.Parts)), false);
+    }
+
     public async Task<(TentDto? Response, bool NotFound)> ArchiveTentAsync(Guid id, Guid userId)
     {
         var tent = await _repo.GetTentByIdForUpdateAsync(id);

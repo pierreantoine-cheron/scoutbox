@@ -63,6 +63,8 @@ class TentHistoryItem {
       case 'tent_archived':
       case 'part_deleted':
         return colorScheme.error;
+      case 'tent_unarchived':
+        return colorScheme.primary;
       case 'part_state_changed':
       case 'part_added':
         return colorScheme.tertiary;
@@ -82,6 +84,8 @@ class TentHistoryItem {
         return Icons.edit_outlined;
       case 'tent_archived':
         return Icons.archive_outlined;
+      case 'tent_unarchived':
+        return Icons.unarchive_outlined;
       case 'part_state_changed':
         return Icons.swap_horiz;
       case 'part_comments_changed':
@@ -109,6 +113,8 @@ class TentHistoryItem {
         return _buildUpdateText();
       case 'tent_archived':
         return 'Tente archivée';
+      case 'tent_unarchived':
+        return 'Tente désarchivée';
       case 'part_state_changed':
         final stateDetail =
             details.where((d) => d.valueType == 'state').firstOrNull;

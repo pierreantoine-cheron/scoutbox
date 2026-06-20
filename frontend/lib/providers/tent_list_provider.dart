@@ -58,11 +58,18 @@ List<Tent> filteredTentList(Ref ref) {
               (tagId) => tent.tags.any((tag) => tag.id == tagId),
             );
 
+        final matchesArchive = switch (filterState.archiveFilter) {
+          ArchiveFilter.active => !tent.isArchived,
+          ArchiveFilter.archived => tent.isArchived,
+          ArchiveFilter.all => true,
+        };
+
         return matchesState &&
             matchesSearch &&
             matchesSize &&
             matchesModel &&
-            matchesTags;
+            matchesTags &&
+            matchesArchive;
       })
       .toList(growable: false);
 }

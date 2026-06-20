@@ -32,7 +32,9 @@ class TentCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
         child: Material(
-          color: theme.colorScheme.surface,
+          color: tent.isArchived
+              ? theme.colorScheme.surfaceContainerHighest
+              : theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(18),
           child: InkWell(
             onTap: onTap,

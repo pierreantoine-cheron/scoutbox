@@ -289,6 +289,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       selectedSizes: filterState.selectedSizes,
       selectedModelIds: filterState.selectedModelIds,
       selectedTagIds: filterState.selectedTagIds,
+      archiveFilter: filterState.archiveFilter,
       availableSizes: availableSizes,
       availableModelOptions: availableModelOptions,
       allTags: allTags.cast(),
@@ -307,6 +308,9 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
         ref.read(tentListFilterProvider.notifier).toggleModel(modelId);
       },
       onToggleTag: _toggleTagFilter,
+      onArchiveFilterChanged: (filter) {
+        ref.read(tentListFilterProvider.notifier).setArchiveFilter(filter);
+      },
       onClearAll: _clearFiltersHook,
       onClearTags: () =>
           ref.read(tentListFilterProvider.notifier).setSelectedTags({}),

@@ -21,65 +21,37 @@ StateBadgeStyle tentStateBadgeStyle(
   BuildContext context,
   TentOverallState state,
 ) {
-  final colorScheme = Theme.of(context).colorScheme;
   final semanticColors = Theme.of(context).extension<AppSemanticColors>();
-  final (icon, background, foreground) = switch (state) {
-    TentOverallState.good => (
-      Icons.check_circle_outline,
-      semanticColors?.statePerfectBackground ?? colorScheme.primaryContainer,
-      semanticColors?.statePerfect ?? colorScheme.onPrimaryContainer,
-    ),
-    TentOverallState.needsRepair => (
-      Icons.build_circle_outlined,
-      semanticColors?.stateUsableBackground ?? colorScheme.tertiaryContainer,
-      semanticColors?.stateUsable ?? colorScheme.onTertiaryContainer,
-    ),
-    TentOverallState.unusable => (
-      Icons.cancel_outlined,
-      semanticColors?.stateUnusableBackground ?? colorScheme.errorContainer,
-      semanticColors?.stateUnusable ?? colorScheme.onErrorContainer,
-    ),
+  final colors = state.toColors(semanticColors);
+  final icon = switch (state) {
+    TentOverallState.good => Icons.check_circle_outline,
+    TentOverallState.needsRepair => Icons.build_circle_outlined,
+    TentOverallState.unusable => Icons.cancel_outlined,
   };
 
   return StateBadgeStyle(
     label: state.toFrenchLabel(),
     icon: icon,
-    background: background,
-    foreground: foreground,
+    background: colors.background,
+    foreground: colors.foreground,
   );
 }
 
 StateBadgeStyle partStateBadgeStyle(BuildContext context, PartState state) {
-  final colorScheme = Theme.of(context).colorScheme;
   final semanticColors = Theme.of(context).extension<AppSemanticColors>();
-  final (icon, background, foreground) = switch (state) {
-    PartState.good => (
-      Icons.check_circle_outline,
-      semanticColors?.statePerfectBackground ?? colorScheme.primaryContainer,
-      semanticColors?.statePerfect ?? colorScheme.onPrimaryContainer,
-    ),
-    PartState.needsRepair => (
-      Icons.build_circle_outlined,
-      semanticColors?.stateUsableBackground ?? colorScheme.tertiaryContainer,
-      semanticColors?.stateUsable ?? colorScheme.onTertiaryContainer,
-    ),
-    PartState.missing => (
-      Icons.remove_circle_outline,
-      semanticColors?.stateMissingBackground ?? colorScheme.secondaryContainer,
-      semanticColors?.stateMissing ?? colorScheme.onSecondaryContainer,
-    ),
-    PartState.unusable => (
-      Icons.cancel_outlined,
-      semanticColors?.stateUnusableBackground ?? colorScheme.errorContainer,
-      semanticColors?.stateUnusable ?? colorScheme.onErrorContainer,
-    ),
+  final colors = state.toColors(semanticColors);
+  final icon = switch (state) {
+    PartState.good => Icons.check_circle_outline,
+    PartState.needsRepair => Icons.build_circle_outlined,
+    PartState.missing => Icons.remove_circle_outline,
+    PartState.unusable => Icons.cancel_outlined,
   };
 
   return StateBadgeStyle(
     label: state.toFrenchLabel(),
     icon: icon,
-    background: background,
-    foreground: foreground,
+    background: colors.background,
+    foreground: colors.foreground,
   );
 }
 

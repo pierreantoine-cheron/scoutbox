@@ -1,5 +1,8 @@
+import 'dart:ui';
+
 import 'package:intl/intl.dart';
 
+import '../utils/app_colors.dart';
 import '../utils/date_time_parser.dart';
 import 'part.dart';
 import 'tag.dart';
@@ -28,6 +31,26 @@ enum TentOverallState {
         return 'À réparer';
       case TentOverallState.unusable:
         return 'Inutilisable';
+    }
+  }
+
+  ({Color foreground, Color background}) toColors(AppSemanticColors? semanticColors) {
+    switch (this) {
+      case TentOverallState.good:
+        return (
+          foreground: semanticColors?.statePerfect ?? AppColors.statePerfect,
+          background: semanticColors?.statePerfectBackground ?? AppColors.statePerfectBackground,
+        );
+      case TentOverallState.needsRepair:
+        return (
+          foreground: semanticColors?.stateUsable ?? AppColors.stateUsable,
+          background: semanticColors?.stateUsableBackground ?? AppColors.stateUsableBackground,
+        );
+      case TentOverallState.unusable:
+        return (
+          foreground: semanticColors?.stateUnusable ?? AppColors.stateUnusable,
+          background: semanticColors?.stateUnusableBackground ?? AppColors.stateUnusableBackground,
+        );
     }
   }
 

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../models/tag.dart';
 import '../../models/tent.dart';
+import '../../providers/tent_filter_provider.dart';
 import '../../utils/app_colors.dart';
 import 'scout_pill.dart';
+import 'scout_segmented_toggle.dart';
 
 class TentTypeFilterOption {
   final String id;
@@ -52,6 +54,7 @@ class TentListFilterBar extends StatefulWidget {
   final Set<int> selectedSizes;
   final Set<String> selectedModelIds;
   final Set<String> selectedTagIds;
+  final ArchiveFilter archiveFilter;
   final List<int> availableSizes;
   final List<TentTypeFilterOption> availableModelOptions;
   final List<Tag> allTags;
@@ -62,6 +65,7 @@ class TentListFilterBar extends StatefulWidget {
   final ValueChanged<int> onToggleSize;
   final ValueChanged<String> onToggleModel;
   final ValueChanged<String> onToggleTag;
+  final ValueChanged<ArchiveFilter> onArchiveFilterChanged;
   final VoidCallback onClearAll;
   final VoidCallback? onClearTags;
   final VoidCallback? onManageTags;
@@ -74,6 +78,7 @@ class TentListFilterBar extends StatefulWidget {
     required this.selectedSizes,
     required this.selectedModelIds,
     required this.selectedTagIds,
+    required this.archiveFilter,
     required this.availableSizes,
     required this.availableModelOptions,
     required this.allTags,
@@ -84,6 +89,7 @@ class TentListFilterBar extends StatefulWidget {
     required this.onToggleSize,
     required this.onToggleModel,
     required this.onToggleTag,
+    required this.onArchiveFilterChanged,
     required this.onClearAll,
     this.onClearTags,
     this.onManageTags,
@@ -139,6 +145,17 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
         ));
       }
     }
+    if (widget.archiveFilter != ArchiveFilter.active) {
+      pills.insert(
+        0,
+        _ActivePill(
+          value: widget.archiveFilter.name,
+          label: widget.archiveFilter.toFrenchLabel(),
+          type: _ActivePillType.neutral,
+          onTap: () => widget.onArchiveFilterChanged(ArchiveFilter.active),
+        ),
+      );
+    }
     return pills;
   }
 
@@ -173,6 +190,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
                           selectedSizes: widget.selectedSizes,
                           selectedModelIds: widget.selectedModelIds,
                           selectedTagIds: widget.selectedTagIds,
+                          archiveFilter: widget.archiveFilter,
                           availableSizes: widget.availableSizes,
                           availableModelOptions: widget.availableModelOptions,
                           allTags: widget.allTags,
@@ -182,6 +200,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
                           onToggleSize: widget.onToggleSize,
                           onToggleModel: widget.onToggleModel,
                           onToggleTag: widget.onToggleTag,
+                          onArchiveFilterChanged: widget.onArchiveFilterChanged,
                           onClearAll: widget.onClearAll,
                           onManageTags: widget.onManageTags,
                         )
@@ -202,26 +221,7 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
 ) {
   final semanticColors =
       Theme.of(context).extension<AppSemanticColors>();
-  return switch (state) {
-    TentOverallState.good => (
-        background: semanticColors?.statePerfectBackground ??
-            AppColors.statePerfectBackground,
-        foreground:
-            semanticColors?.statePerfect ?? AppColors.statePerfect,
-      ),
-    TentOverallState.needsRepair => (
-        background: semanticColors?.stateUsableBackground ??
-            AppColors.stateUsableBackground,
-        foreground:
-            semanticColors?.stateUsable ?? AppColors.stateUsable,
-      ),
-    TentOverallState.unusable => (
-        background: semanticColors?.stateUnusableBackground ??
-            AppColors.stateUnusableBackground,
-        foreground: semanticColors?.stateUnusable ??
-            AppColors.stateUnusable,
-      ),
-  };
+  return state.toColors(semanticColors);
 }
 
 class _FilterBarBase extends StatelessWidget {
@@ -425,6 +425,7 @@ class _FilterPanel extends StatelessWidget {
   final Set<int> selectedSizes;
   final Set<String> selectedModelIds;
   final Set<String> selectedTagIds;
+  final ArchiveFilter archiveFilter;
   final List<int> availableSizes;
   final List<TentTypeFilterOption> availableModelOptions;
   final List<Tag> allTags;
@@ -434,6 +435,7 @@ class _FilterPanel extends StatelessWidget {
   final ValueChanged<int> onToggleSize;
   final ValueChanged<String> onToggleModel;
   final ValueChanged<String> onToggleTag;
+  final ValueChanged<ArchiveFilter> onArchiveFilterChanged;
   final VoidCallback onClearAll;
   final VoidCallback? onManageTags;
 
@@ -442,6 +444,7 @@ class _FilterPanel extends StatelessWidget {
     required this.selectedSizes,
     required this.selectedModelIds,
     required this.selectedTagIds,
+    required this.archiveFilter,
     required this.availableSizes,
     required this.availableModelOptions,
     required this.allTags,
@@ -451,6 +454,7 @@ class _FilterPanel extends StatelessWidget {
     required this.onToggleSize,
     required this.onToggleModel,
     required this.onToggleTag,
+    required this.onArchiveFilterChanged,
     required this.onClearAll,
     this.onManageTags,
   });
@@ -470,6 +474,22 @@ class _FilterPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _FilterRow(
+            label: 'Archive',
+            children: [
+              ScoutSegmentedToggle<ArchiveFilter>(
+                options: [
+                  for (final filter in ArchiveFilter.values)
+                    SegmentedToggleOption(
+                      value: filter,
+                      label: filter.toFrenchLabel(),
+                    ),
+                ],
+                selected: archiveFilter,
+                onChanged: onArchiveFilterChanged,
+              ),
+            ],
+          ),
           _FilterRow(
             label: 'État',
             children: [
