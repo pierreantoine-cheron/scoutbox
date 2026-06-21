@@ -63,6 +63,22 @@ class TagsNotifier extends _$TagsNotifier {
     });
   }
 
+  Future<Tag> updateTag(String id, {required String name, String? color}) async {
+    final updated = await ref.read(tagRepositoryProvider).updateTag(id, name: name, color: color);
+    if (!state.hasValue) return updated;
+    final next = state.requireValue.map((tag) => tag.id == id ? updated : tag).toList()
+      ..sort((left, right) => left.name.compareTo(right.name));
+    state = AsyncValue.data(next);
+    return updated;
+  }
+
+  Future<void> deleteTag(String id) async {
+    await ref.read(tagRepositoryProvider).deleteTag(id);
+    if (!state.hasValue) return;
+    final next = state.requireValue.where((tag) => tag.id != id).toList();
+    state = AsyncValue.data(next);
+  }
+
   Future<Tag> createTag({required String name, String? color}) async {
     final created = await ref.read(tagRepositoryProvider).createTag(name: name, color: color);
     final current = state.hasValue ? state.requireValue : const <Tag>[];

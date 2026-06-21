@@ -9,9 +9,16 @@ import '../../utils/design_constants.dart';
 import 'sheet_scaffold.dart';
 
 class TagSheet extends StatefulWidget {
-  final Future<void> Function(String name, String color) onCreate;
+  final String? initialName;
+  final String? initialColor;
+  final Future<void> Function(String name, String color) onSave;
 
-  const TagSheet({super.key, required this.onCreate});
+  const TagSheet({
+    super.key,
+    this.initialName,
+    this.initialColor,
+    required this.onSave,
+  });
 
   @override
   State<TagSheet> createState() => _TagSheetState();
@@ -25,16 +32,44 @@ class _TagSheetState extends State<TagSheet> {
   String? _submitError;
   bool _isSubmitting = false;
 
-  bool get _isSaveEnabled =>
-      _nameController.text.trim().length >= ValidationConstants.tagNameMinLength;
+  bool get _isCreate => widget.initialName == null;
+  String get _saveLabel => _isCreate ? 'Créer' : 'Enregistrer';
+  String get _title => _isCreate ? 'Nouvelle étiquette' : "Modifier l'étiquette";
+
+  bool get _isSaveEnabled {
+    final name = _nameController.text.trim();
+    if (_isCreate) {
+      return name.length >= ValidationConstants.tagNameMinLength;
+    }
+    return name.isNotEmpty &&
+        (name != widget.initialName || _effectiveColor != widget.initialColor);
+  }
 
   bool get _isCustomSelected => _selectedColorKey == 'Personnalisée';
 
   @override
   void initState() {
     super.initState();
-    _selectedColorKey = TagPalette.options.first.label;
-    _customHex = TagPalette.options.first.hex;
+    if (widget.initialName != null) {
+      _nameController.text = widget.initialName!;
+    }
+    if (widget.initialColor != null) {
+      _initColorFromHex(widget.initialColor!);
+    } else {
+      _selectedColorKey = TagPalette.options.first.label;
+      _customHex = TagPalette.options.first.hex;
+    }
+  }
+
+  void _initColorFromHex(String hex) {
+    for (final option in TagPalette.options) {
+      if (option.hex.toUpperCase() == hex.toUpperCase()) {
+        _selectedColorKey = option.label;
+        return;
+      }
+    }
+    _selectedColorKey = 'Personnalisée';
+    _customHex = hex;
   }
 
   @override
@@ -57,11 +92,11 @@ class _TagSheetState extends State<TagSheet> {
     final theme = Theme.of(context);
 
     return SheetScaffold(
-      title: 'Nouvelle étiquette',
+      title: _title,
       errorMessage: _submitError,
       isLoading: _isSubmitting,
       saveEnabled: _isSaveEnabled,
-      saveLabel: 'Créer',
+      saveLabel: _saveLabel,
       onCancel: () => Navigator.of(context).pop(),
       onSave: _submit,
       child: Form(
@@ -282,7 +317,7 @@ class _TagSheetState extends State<TagSheet> {
     });
 
     try {
-      await widget.onCreate(_nameController.text.trim(), _effectiveColor);
+      await widget.onSave(_nameController.text.trim(), _effectiveColor);
       if (mounted) Navigator.of(context).pop(true);
     } on TagRepositoryException catch (error) {
       if (mounted) {
@@ -297,7 +332,9 @@ class _TagSheetState extends State<TagSheet> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _submitError = 'Impossible de créer l\'étiquette. Réessayez.';
+          _submitError = _isCreate
+              ? 'Impossible de créer l\'étiquette. Réessayez.'
+              : 'Impossible de modifier l\'étiquette. Réessayez.';
           _isSubmitting = false;
         });
       }

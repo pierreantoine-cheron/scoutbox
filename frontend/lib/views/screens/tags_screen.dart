@@ -114,10 +114,60 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
         title: 'Aucune étiquette',
         subtitle: 'Créez des étiquettes pour organiser vos tentes.',
       ),
-      onEdit: (_) async {},
-      onDelete: (_) async {},
-      menuEnabled: false,
+      onEdit: (tag) => _showEditSheet(tag),
+      onDelete: (tag) => _showDeleteDialog(tag),
     );
+  }
+
+  Future<void> _showEditSheet(Tag tag) async {
+    final renamed = await showResponsiveSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (_) => TagSheet(
+        initialName: tag.name,
+        initialColor: tag.color,
+        onSave: (name, color) =>
+            ref.read(tagsProvider.notifier).updateTag(tag.id, name: name, color: color),
+      ),
+    );
+
+    if (renamed == true && mounted) {
+      ref.read(successIndicatorProvider.notifier).fire();
+    }
+  }
+
+  Future<void> _showDeleteDialog(Tag tag) async {
+    final count = tag.tentCount;
+    final content = count > 0
+        ? 'L\'étiquette "${tag.name}" sera supprimée. $count tente(s) l\'utilisent.'
+        : 'L\'étiquette "${tag.name}" sera supprimée.';
+
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Supprimer l\'étiquette ?',
+      content: content,
+      confirmLabel: 'Supprimer',
+      isDestructive: true,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await ref.read(tagsProvider.notifier).deleteTag(tag.id);
+      if (mounted) {
+        ref.read(successIndicatorProvider.notifier).fire();
+      }
+    } catch (error) {
+      if (mounted) {
+        showErrorDialog(
+          context,
+          toUserFacingError(
+            error,
+            'Impossible de supprimer l\'étiquette. Réessayez.',
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _showCreateSheet() async {
@@ -125,7 +175,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
       context: context,
       useRootNavigator: true,
       builder: (_) => TagSheet(
-        onCreate: (name, color) =>
+        onSave: (name, color) =>
             ref.read(tagsProvider.notifier).createTag(name: name, color: color),
       ),
     );

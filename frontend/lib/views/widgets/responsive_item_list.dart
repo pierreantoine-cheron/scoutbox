@@ -12,8 +12,6 @@ class ResponsiveItemList<T> extends StatelessWidget {
   final Widget emptyState;
   final Future<void> Function(T item) onEdit;
   final Future<void> Function(T item) onDelete;
-  final bool menuEnabled;
-
   const ResponsiveItemList({
     super.key,
     required this.items,
@@ -23,7 +21,6 @@ class ResponsiveItemList<T> extends StatelessWidget {
     required this.emptyState,
     required this.onEdit,
     required this.onDelete,
-    this.menuEnabled = true,
   });
 
   @override
@@ -111,25 +108,24 @@ class ResponsiveItemList<T> extends StatelessWidget {
                 elevation: AppElevation.dropdown,
                 color: colorScheme.surface,
                 itemBuilder: (_) {
-                  final effectiveEditColor = menuEnabled ? null : AppColors.muted;
-                  return [
+                  return const [
                     PopupMenuItem<String>(
-                      enabled: menuEnabled,
+                      enabled: true,
                       value: 'edit',
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(
                         children: [
-                          Icon(Icons.edit, size: 16, color: effectiveEditColor),
-                          const SizedBox(width: AppSpacing.sm),
-                          const Text('Modifier'),
+                          Icon(Icons.edit, size: 16),
+                          SizedBox(width: AppSpacing.sm),
+                          Text('Modifier'),
                         ],
                       ),
                     ),
                     PopupMenuItem<String>(
-                      enabled: menuEnabled,
+                      enabled: true,
                       value: 'delete',
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: const Row(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
                         children: [
                           Icon(Icons.delete_outline, size: 16, color: AppColors.stateUnusable),
                           SizedBox(width: AppSpacing.sm),

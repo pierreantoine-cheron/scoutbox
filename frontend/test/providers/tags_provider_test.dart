@@ -33,6 +33,39 @@ void main() {
       expect(tags.map((tag) => tag.name), equals(['Alpha', 'Zoo']));
     });
 
+    test('updateTag updates local state and re-sorts', () async {
+      final repository = _TagRepositoryStub(
+        tags: [_tag('2', 'Zoo'), _tag('1', 'Alpha')],
+      );
+      final container = ProviderContainer(
+        overrides: [tagRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+      await container.read(tagsProvider.future);
+
+      await container.read(tagsProvider.notifier).updateTag('2', name: 'Beta', color: '#4CAF50');
+
+      final tags = container.read(tagsProvider).requireValue;
+      expect(tags.map((tag) => tag.name), equals(['Alpha', 'Beta']));
+      expect(tags.firstWhere((t) => t.id == '2').color, '#4CAF50');
+    });
+
+    test('deleteTag removes from local state', () async {
+      final repository = _TagRepositoryStub(
+        tags: [_tag('1', 'Alpha'), _tag('2', 'Beta')],
+      );
+      final container = ProviderContainer(
+        overrides: [tagRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+      await container.read(tagsProvider.future);
+
+      await container.read(tagsProvider.notifier).deleteTag('1');
+
+      final tags = container.read(tagsProvider).requireValue;
+      expect(tags.map((tag) => tag.id), equals(['2']));
+    });
+
     test('keeps existing data and exposes refresh failure', () async {
       final repository = _RefreshFailureTagRepository();
       final container = ProviderContainer(
@@ -55,13 +88,13 @@ void main() {
   });
 }
 
-Tag _tag(String id, String name, {String color = '#2196F3'}) {
+Tag _tag(String id, String name, {String color = '#2196F3', int tentCount = 0}) {
   return Tag(
     id: id,
     name: name,
     color: color,
     createdAt: DateTime.utc(2026, 6, 1),
-    tentCount: 0,
+    tentCount: tentCount,
   );
 }
 
@@ -73,6 +106,20 @@ class _TagRepositoryStub extends TagRepository {
 
   @override
   Future<List<Tag>> getTags() async => tags;
+
+  @override
+  Future<Tag> updateTag(String id, {required String name, String? color}) async {
+    final tag = tags.firstWhere((t) => t.id == id);
+    final renamed = _tag(id, name, color: color ?? tag.color, tentCount: tag.tentCount);
+    final index = tags.indexWhere((t) => t.id == id);
+    tags[index] = renamed;
+    return renamed;
+  }
+
+  @override
+  Future<void> deleteTag(String id) async {
+    tags.removeWhere((t) => t.id == id);
+  }
 
   @override
   Future<Tag> createTag({required String name, String? color}) async {

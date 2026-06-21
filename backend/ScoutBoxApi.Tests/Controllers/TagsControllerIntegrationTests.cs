@@ -112,7 +112,7 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     }
 
     [Fact]
-    public async Task CreateTag_TrimsNameAndDefaultsBlankColor()
+    public async Task CreateTag_TrimsNameAndRejectsBlankColor()
     {
         await EnsureTestUserExistsAsync();
         var name = $"Hangar {Guid.NewGuid():N}"[..24];
@@ -120,11 +120,10 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         using var client = CreateAuthenticatedClient();
         var response = await client.PostAsJsonAsync("/api/tags", new { name = $"  {name}  ", color = " " });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TagApiDto>>();
-        Assert.NotNull(payload?.Data);
-        Assert.Equal(name, payload.Data.Name);
-        Assert.Equal("#2196F3", payload.Data.Color);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("INVALID_TAG_COLOR", payload.Code);
     }
 
     [Theory]
@@ -165,6 +164,235 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
         Assert.NotNull(payload);
         Assert.Equal("TAG_NAME_EXISTS", payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdateTag_WithValidPayload_ReturnsUpdatedTagAndAuditEvent()
+    {
+        await EnsureTestUserExistsAsync();
+        var originalName = $"Original {Guid.NewGuid():N}"[..24];
+        var newName = $"Renamed {Guid.NewGuid():N}"[..24];
+
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            db.Tags.Add(CreateTag(originalName, "#2196F3"));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var getResponse = await client.GetAsync("/api/tags");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
+        var tag = getPayload!.Data.First(t => t.Name == originalName);
+
+        var response = await client.PutAsJsonAsync($"/api/tags/{tag.Id}", new { name = newName, color = "#4CAF50" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TagApiDto>>();
+        Assert.NotNull(payload?.Data);
+        Assert.Equal(newName, payload.Data.Name);
+        Assert.Equal("#4CAF50", payload.Data.Color);
+        Assert.Equal(0, payload.Data.TentCount);
+
+        using (var verifyScope = _factory.Services.CreateScope())
+        {
+            var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var audit = await db.AuditEvents.FirstOrDefaultAsync(a =>
+                a.TargetEntityId == tag.Id && a.Action == "tag_renamed");
+            Assert.NotNull(audit);
+            Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTag_SameNameSameColor_ReturnsSuccessWithAudit()
+    {
+        await EnsureTestUserExistsAsync();
+        var name = $"Unchanged {Guid.NewGuid():N}"[..24];
+
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            db.Tags.Add(CreateTag(name, "#2196F3"));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var getResponse = await client.GetAsync("/api/tags");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
+        var tag = getPayload!.Data.First(t => t.Name == name);
+
+        var response = await client.PutAsJsonAsync($"/api/tags/{tag.Id}", new { name, color = "#2196F3" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TagApiDto>>();
+        Assert.NotNull(payload?.Data);
+        Assert.Equal(name, payload.Data.Name);
+
+        using (var verifyScope = _factory.Services.CreateScope())
+        {
+            var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var audit = await db.AuditEvents.FirstOrDefaultAsync(a =>
+                a.TargetEntityId == tag.Id && a.Action == "tag_renamed");
+            Assert.NotNull(audit);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTag_InvalidColor_ReturnsBadRequest()
+    {
+        await EnsureTestUserExistsAsync();
+        var name = $"Valid {Guid.NewGuid():N}"[..24];
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            db.Tags.Add(CreateTag(name, "#2196F3"));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var getResponse = await client.GetAsync("/api/tags");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
+        var tag = getPayload!.Data.First(t => t.Name == name);
+
+        var response = await client.PutAsJsonAsync($"/api/tags/{tag.Id}", new { name, color = "blue" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("INVALID_TAG_COLOR", payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdateTag_DuplicateName_ReturnsConflict()
+    {
+        await EnsureTestUserExistsAsync();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            db.Tags.Add(CreateTag($"Existing {suffix}", "#2196F3"));
+            db.Tags.Add(CreateTag($"Target {suffix}", "#4CAF50"));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var getResponse = await client.GetAsync("/api/tags");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
+        var target = getPayload!.Data.First(t => t.Name == $"Target {suffix}");
+
+        var response = await client.PutAsJsonAsync($"/api/tags/{target.Id}", new { name = $"Existing {suffix}", color = "#2196F3" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TAG_NAME_EXISTS", payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdateTag_NonExistentId_ReturnsNotFound()
+    {
+        await EnsureTestUserExistsAsync();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tags/{Guid.NewGuid()}", new { name = "New Name", color = "#2196F3" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TAG_NOT_FOUND", payload.Code);
+    }
+
+    [Fact]
+    public async Task DeleteTag_WithNoTentAssociations_ReturnsNoContent()
+    {
+        await EnsureTestUserExistsAsync();
+        var name = $"DeleteMe {Guid.NewGuid():N}"[..24];
+
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            db.Tags.Add(CreateTag(name, "#2196F3"));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var getResponse = await client.GetAsync("/api/tags");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
+        var tag = getPayload!.Data.First(t => t.Name == name);
+
+        var response = await client.DeleteAsync($"/api/tags/{tag.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var getAfter = await client.GetAsync("/api/tags");
+        var getAfterPayload = await getAfter.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
+        Assert.DoesNotContain(getAfterPayload!.Data, t => t.Name == name);
+
+        using (var verifyScope = _factory.Services.CreateScope())
+        {
+            var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var audit = await db.AuditEvents.FirstOrDefaultAsync(a =>
+                a.TargetEntityId == tag.Id && a.Action == "tag_deleted");
+            Assert.NotNull(audit);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteTag_WithTentAssociations_ReturnsNoContentAndCascades()
+    {
+        await EnsureTestUserExistsAsync();
+        var prefix = Guid.NewGuid().ToString("N")[..8];
+
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var tent = await CreateTentAsync(db, $"Tag Cascade Tent {prefix}");
+            var createdTag = CreateTag($"Cascade {prefix}", "#F44336");
+            db.Tags.Add(createdTag);
+            db.TentTags.Add(new TentTag
+            {
+                TentId = tent.Id,
+                TagId = createdTag.Id,
+                CreatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var getResponse = await client.GetAsync("/api/tags");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
+        var tag = getPayload!.Data.First(t => t.Name == $"Cascade {prefix}");
+
+        var response = await client.DeleteAsync($"/api/tags/{tag.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using (var verifyScope = _factory.Services.CreateScope())
+        {
+            var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var tagEntity = await db.Tags.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == tag.Id);
+            Assert.Null(tagEntity);
+            var tentTag = await db.TentTags.FirstOrDefaultAsync(tt => tt.TagId == tag.Id);
+            Assert.Null(tentTag);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteTag_NonExistentId_ReturnsNotFound()
+    {
+        await EnsureTestUserExistsAsync();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.DeleteAsync($"/api/tags/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("TAG_NOT_FOUND", payload.Code);
     }
 
     [Fact]

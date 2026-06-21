@@ -75,6 +75,120 @@ void main() {
     expect(find.text('À réparer'), findsWidgets);
   });
 
+  testWidgets('popup menu shows Modifier and Supprimer options', (tester) async {
+    await tester.pumpWidget(
+      _buildApp(
+        _TagRepositoryStub(tags: [_tag('1', 'Groupe A', tentCount: 2)]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Modifier'), findsOneWidget);
+    expect(find.text('Supprimer'), findsOneWidget);
+  });
+
+  testWidgets('rename sheet opens with pre-filled name and color', (tester) async {
+    await tester.pumpWidget(
+      _buildApp(
+        _TagRepositoryStub(tags: [_tag('1', 'Groupe A', color: '#F44336')]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Modifier'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Modifier l'étiquette"), findsOneWidget);
+    expect(find.text('Enregistrer'), findsOneWidget);
+    final textFields = find.byType(TextFormField);
+    expect(tester.widget<TextFormField>(textFields.first).controller?.text, 'Groupe A');
+  });
+
+  testWidgets('rename sheet save disabled when name and color unchanged', (tester) async {
+    await tester.pumpWidget(
+      _buildApp(
+        _TagRepositoryStub(tags: [_tag('1', 'Groupe A', color: '#F44336')]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Modifier'));
+    await tester.pumpAndSettle();
+
+    final saveButton = find.widgetWithText(FilledButton, 'Enregistrer');
+    expect(tester.widget<FilledButton>(saveButton).onPressed, isNull);
+  });
+
+  testWidgets('delete confirmation shows tent count', (tester) async {
+    await tester.pumpWidget(
+      _buildApp(
+        _TagRepositoryStub(tags: [_tag('1', 'Groupe A', tentCount: 3)]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Supprimer'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Supprimer l\'étiquette ?'), findsOneWidget);
+    expect(
+      find.text('L\'étiquette "Groupe A" sera supprimée. 3 tente(s) l\'utilisent.'),
+      findsOneWidget,
+    );
+    expect(find.text('Annuler'), findsOneWidget);
+    expect(find.text('Supprimer'), findsOneWidget);
+  });
+
+  testWidgets('delete confirmation omits tent count when zero', (tester) async {
+    await tester.pumpWidget(
+      _buildApp(
+        _TagRepositoryStub(tags: [_tag('1', 'Groupe A', tentCount: 0)]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Supprimer'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('L\'étiquette "Groupe A" sera supprimée.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('delete removes tag from list and fires success indicator', (tester) async {
+    final repository = _TagRepositoryStub(
+      tags: [_tag('1', 'Groupe A'), _tag('2', 'Groupe B')],
+    );
+    await tester.pumpWidget(_buildApp(repository));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Groupe A'), findsWidgets);
+
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Supprimer'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Supprimer'));
+    await tester.pump();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(repository.tags.map((t) => t.id), ['2']);
+    expect(find.text('Groupe A'), findsNothing);
+  });
+
   testWidgets('duplicate creation error shows in sheet', (tester) async {
     await tester.pumpWidget(
       _buildApp(
@@ -152,6 +266,17 @@ class _TagRepositoryStub extends TagRepository {
 
   @override
   Future<List<Tag>> getTags() async => tags;
+
+  @override
+  Future<Tag> updateTag(String id, {required String name, String? color}) async {
+    final tag = tags.firstWhere((t) => t.id == id);
+    return _tag(id, name, color: color ?? tag.color, tentCount: tag.tentCount);
+  }
+
+  @override
+  Future<void> deleteTag(String id) async {
+    tags.removeWhere((t) => t.id == id);
+  }
 
   @override
   Future<Tag> createTag({required String name, String? color}) async {

@@ -25,6 +25,31 @@ class TagRepository {
     );
   }
 
+  Future<Tag> updateTag(String id, {required String name, String? color}) async {
+    return _request(
+      fallbackMessage: 'Impossible de modifier l\'étiquette. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la modification de l\'étiquette.',
+      action: () async {
+        final response = await ApiClient.instance.put(
+          '${ApiRoutes.tags}/$id',
+          data: {'name': name, 'color': color},
+        );
+
+        return Tag.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
+  }
+
+  Future<void> deleteTag(String id) async {
+    return _request<void>(
+      fallbackMessage: 'Impossible de supprimer l\'étiquette. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la suppression de l\'étiquette.',
+      action: () async {
+        await ApiClient.instance.delete('${ApiRoutes.tags}/$id');
+      },
+    );
+  }
+
   Future<Tag> createTag({required String name, String? color}) async {
     return _request(
       fallbackMessage: 'Impossible de créer l\'étiquette. Réessayez.',

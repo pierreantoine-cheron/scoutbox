@@ -10,7 +10,6 @@ public class TagService
 {
     private const int MinTagNameLength = 2;
     private const int MaxTagNameLength = 30;
-    private const string DefaultBlue = "#2196F3";
     private static readonly Regex ColorRegex = new("^#[0-9A-Fa-f]{6}$", RegexOptions.Compiled);
 
     private readonly ITagRepository _repo;
@@ -31,7 +30,7 @@ public class TagService
 
     public async Task<(TagDto? Response, ErrorResponse? Error)> CreateTagAsync(Guid userId, CreateTagRequest request)
     {
-        var validationError = ValidateRequest(request, out var name, out var color);
+        var validationError = ValidateRequest(request?.Name, request?.Color, out var name, out var color);
         if (validationError != null) return (null, validationError);
 
         if (await _repo.HasDuplicateNameAsync(name))
@@ -71,10 +70,77 @@ public class TagService
         return (TagDto.FromTag(tag), null);
     }
 
-    private static ErrorResponse? ValidateRequest(CreateTagRequest request, out string name, out string color)
+    public async Task<(TagDto? Response, ErrorResponse? Error, bool NotFound)> UpdateTagAsync(
+        Guid userId, Guid id, UpdateTagRequest? request)
     {
-        name = request.Name?.Trim() ?? string.Empty;
-        color = string.IsNullOrWhiteSpace(request.Color) ? DefaultBlue : request.Color.Trim();
+        var tag = await _repo.GetTagByIdAsync(id);
+        if (tag == null) return (null, null, true);
+
+        var validationError = ValidateRequest(request?.Name, request?.Color, out var name, out var color);
+        if (validationError != null) return (null, validationError, false);
+
+        if (await _repo.HasDuplicateNameAsync(name, id))
+        {
+            return (null, new ErrorResponse("Tag name already exists", "TAG_NAME_EXISTS"), false);
+        }
+
+        tag.Name = name;
+        tag.Color = color;
+        tag.UpdatedAt = DateTime.UtcNow;
+        tag.UpdatedByUserId = userId;
+
+        _auditService.RecordEvent(
+            AuditActions.TagRenamed,
+            userId,
+            targetEntityType: "Tag",
+            targetEntityId: tag.Id,
+            metadata: new Dictionary<string, object?>
+            {
+                ["name"] = name,
+                ["color"] = color
+            });
+
+        try
+        {
+            await _repo.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (DbExceptionHelper.IsConstraintViolation(ex, "Tags", "Name"))
+        {
+            _logger.LogWarning(ex, "Duplicate tag name blocked by DB constraint on rename: {TagName}", name);
+            return (null, new ErrorResponse("Tag name already exists", "TAG_NAME_EXISTS"), false);
+        }
+
+        return (TagDto.FromTag(tag), null, false);
+    }
+
+    public async Task<(bool Success, ErrorResponse? Error, bool NotFound)> DeleteTagAsync(Guid userId, Guid id)
+    {
+        var tag = await _repo.GetTagByIdAsync(id);
+        if (tag == null) return (false, null, true);
+
+        var tentCount = tag.TentTags.Count;
+
+        _auditService.RecordEvent(
+            AuditActions.TagDeleted,
+            userId,
+            targetEntityType: "Tag",
+            targetEntityId: tag.Id,
+            metadata: new Dictionary<string, object?>
+            {
+                ["name"] = tag.Name,
+                ["tentCount"] = tentCount
+            });
+
+        _repo.RemoveTag(tag);
+        await _repo.SaveChangesAsync();
+
+        return (true, null, false);
+    }
+
+    private static ErrorResponse? ValidateRequest(string? requestName, string? requestColor, out string name, out string color)
+    {
+        name = requestName?.Trim() ?? string.Empty;
+        color = requestColor?.Trim() ?? string.Empty;
 
         if (name.Length == 0)
         {

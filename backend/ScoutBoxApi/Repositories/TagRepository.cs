@@ -30,12 +30,34 @@ public class TagRepository : ITagRepository
 
     public async Task<bool> HasDuplicateNameAsync(string name)
     {
-        return await _db.Tags.AnyAsync(tag => tag.Name == name);
+        return await HasDuplicateNameAsync(name, null);
+    }
+
+    public async Task<bool> HasDuplicateNameAsync(string name, Guid? excludingId)
+    {
+        return await _db.Tags.AnyAsync(tag =>
+            tag.Name == name &&
+            (excludingId == null || tag.Id != excludingId));
+    }
+
+    public async Task<Tag?> GetTagByIdAsync(Guid id)
+    {
+        return await _db.Tags.FindAsync(id);
     }
 
     public void AddTag(Tag tag)
     {
         _db.Tags.Add(tag);
+    }
+
+    public void UpdateTag(Tag tag)
+    {
+        _db.Tags.Update(tag);
+    }
+
+    public void RemoveTag(Tag tag)
+    {
+        _db.Tags.Remove(tag);
     }
 
     public async Task SaveChangesAsync()
