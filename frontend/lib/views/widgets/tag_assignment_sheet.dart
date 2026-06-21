@@ -168,6 +168,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
 
       ref.invalidate(tentDetailProvider(widget.tentId));
       ref.invalidate(tentListProvider);
+      ref.invalidate(tagsProvider);
       invalidateTentHistory(ref, widget.tentId);
 
       Navigator.of(context).pop(updatedTent);
