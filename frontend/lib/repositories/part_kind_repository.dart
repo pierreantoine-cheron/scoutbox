@@ -20,9 +20,7 @@ class PartKindRepository {
         final response = await ApiClient.instance.get(ApiRoutes.partKinds);
         final rawPartKinds = _readEnvelopeList(response.data);
 
-        return rawPartKinds
-            .map((pk) => PartKind.fromJson(pk as Map<String, dynamic>))
-            .toList();
+        return rawPartKinds.map((pk) => PartKind.fromJson(pk as Map<String, dynamic>)).toList();
       },
     );
   }
@@ -117,8 +115,10 @@ class PartKindRepository {
   }) {
     final responseData = exception.response?.data;
     if (responseData is Map<String, dynamic>) {
-      final code = responseData['code'] as String?;
-      final error = responseData['error'] as String?;
+      final rawCode = responseData['code'];
+      final rawError = responseData['error'];
+      final code = rawCode is String ? rawCode : null;
+      final error = rawError is String ? rawError : null;
       return PartKindRepositoryException(
         code: code,
         message: ErrorLocalizer.localize(code, fallback: error),

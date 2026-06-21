@@ -24,7 +24,7 @@ class PartKind {
     if (displayOrder is! int) {
       throw const FormatException('PartKind displayOrder must be an integer');
     }
-    final tentCount = json['tentCount'];
+    final tentCount = json['tentCount'] ?? 0;
     if (tentCount is! int) {
       throw const FormatException('PartKind tentCount must be an integer');
     }

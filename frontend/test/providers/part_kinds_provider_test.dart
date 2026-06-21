@@ -7,9 +7,11 @@ import 'package:client/repositories/part_kind_repository.dart';
 void main() {
   group('PartKindsNotifier', () {
     test('loads part kinds on initialization', () async {
-      final repository = _PartKindRepositoryStub(partKinds: [
-        _partKind('1', 'Arceaux'),
-      ]);
+      final repository = _PartKindRepositoryStub(
+        partKinds: [
+          _partKind('1', 'Arceaux'),
+        ],
+      );
       final container = ProviderContainer(
         overrides: [partKindRepositoryProvider.overrideWithValue(repository)],
       );
@@ -22,46 +24,48 @@ void main() {
     });
 
     test('createPartKind inserts created part kind', () async {
-      final repository = _PartKindRepositoryStub(partKinds: [
-        _partKind('2', 'Sardines'),
-      ]);
+      final repository = _PartKindRepositoryStub(
+        partKinds: [
+          _partKind('2', 'Sardines'),
+        ],
+      );
       final container = ProviderContainer(
         overrides: [partKindRepositoryProvider.overrideWithValue(repository)],
       );
       addTearDown(container.dispose);
       await container.read(partKindsProvider.future);
 
-      await container
-          .read(partKindsProvider.notifier)
-          .createPartKind(name: 'Arceaux');
+      await container.read(partKindsProvider.notifier).createPartKind(name: 'Arceaux');
 
       final partKinds = container.read(partKindsProvider).requireValue;
       expect(partKinds.map((pk) => pk.name), equals(['Sardines', 'Arceaux']));
     });
 
     test('renamePartKind updates name in list', () async {
-      final repository = _PartKindRepositoryStub(partKinds: [
-        _partKind('1', 'Old Name'),
-      ]);
+      final repository = _PartKindRepositoryStub(
+        partKinds: [
+          _partKind('1', 'Old Name'),
+        ],
+      );
       final container = ProviderContainer(
         overrides: [partKindRepositoryProvider.overrideWithValue(repository)],
       );
       addTearDown(container.dispose);
       await container.read(partKindsProvider.future);
 
-      await container
-          .read(partKindsProvider.notifier)
-          .renamePartKind('1', name: 'New Name');
+      await container.read(partKindsProvider.notifier).renamePartKind('1', name: 'New Name');
 
       final partKinds = container.read(partKindsProvider).requireValue;
       expect(partKinds.first.name, equals('New Name'));
     });
 
     test('deletePartKind removes from list', () async {
-      final repository = _PartKindRepositoryStub(partKinds: [
-        _partKind('1', 'Arceaux'),
-        _partKind('2', 'Sardines'),
-      ]);
+      final repository = _PartKindRepositoryStub(
+        partKinds: [
+          _partKind('1', 'Arceaux'),
+          _partKind('2', 'Sardines'),
+        ],
+      );
       final container = ProviderContainer(
         overrides: [partKindRepositoryProvider.overrideWithValue(repository)],
       );
@@ -93,6 +97,18 @@ void main() {
         container.read(partKindsRefreshIssueProvider),
         isA<PartKindRepositoryException>(),
       );
+    });
+  });
+
+  group('PartKind', () {
+    test('fromJson defaults missing tentCount to zero', () {
+      final partKind = PartKind.fromJson(const {
+        'id': 'kind-1',
+        'name': 'Arceaux',
+        'displayOrder': 1,
+      });
+
+      expect(partKind.tentCount, equals(0));
     });
   });
 }

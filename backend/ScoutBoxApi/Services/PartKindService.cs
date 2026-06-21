@@ -27,14 +27,14 @@ public class PartKindService
             .ToListAsync();
     }
 
-    public async Task<(PartKindDto? Response, ErrorResponse? Error)> CreateAsync(CreatePartKindRequest request)
+    public async Task<(PartKindDto? Response, ErrorResponse? Error)> CreateAsync(CreatePartKindRequest? request)
     {
-        var name = request.Name?.Trim() ?? string.Empty;
+        var name = request?.Name?.Trim() ?? string.Empty;
 
         var validationError = ValidateName(name);
         if (validationError != null) return (null, validationError);
 
-        if (await _db.PartKinds.AnyAsync(pk => pk.Name == name))
+        if (await PartKindNameExistsAsync(name))
         {
             return (null, new ErrorResponse("Part kind name already exists", "PART_KIND_NAME_EXISTS"));
         }
@@ -66,17 +66,17 @@ public class PartKindService
     }
 
     public async Task<(PartKindDto? Response, ErrorResponse? Error, bool NotFound)> RenameAsync(
-        Guid id, UpdatePartKindRequest request)
+        Guid id, UpdatePartKindRequest? request)
     {
         var partKind = await _db.PartKinds.FindAsync(id);
         if (partKind == null) return (null, null, true);
 
-        var name = request.Name?.Trim() ?? string.Empty;
+        var name = request?.Name?.Trim() ?? string.Empty;
 
         var validationError = ValidateName(name);
         if (validationError != null) return (null, validationError, false);
 
-        if (await _db.PartKinds.AnyAsync(pk => pk.Name == name && pk.Id != id))
+        if (await PartKindNameExistsAsync(name, id))
         {
             return (null, new ErrorResponse("Part kind name already exists", "PART_KIND_NAME_EXISTS"), false);
         }
@@ -100,18 +100,17 @@ public class PartKindService
 
     public async Task<(bool Success, ErrorResponse? Error, bool NotFound)> DeleteAsync(Guid id)
     {
-        var partKind = await _db.PartKinds
-            .Include(pk => pk.Parts)
-            .Include(pk => pk.TentModelComponents)
-            .FirstOrDefaultAsync(pk => pk.Id == id);
+        if (!await _db.PartKinds.AnyAsync(pk => pk.Id == id)) return (false, null, true);
 
-        if (partKind == null) return (false, null, true);
+        await using var transaction = await _db.Database.BeginTransactionAsync();
 
-        _db.Parts.RemoveRange(partKind.Parts);
-        _db.TentModelComponents.RemoveRange(partKind.TentModelComponents);
-        _db.PartKinds.Remove(partKind);
+        await _db.Parts.Where(p => p.PartKindId == id).ExecuteDeleteAsync();
+        await _db.TentModelComponents.Where(c => c.PartKindId == id).ExecuteDeleteAsync();
 
-        await _db.SaveChangesAsync();
+        var deleted = await _db.PartKinds.Where(pk => pk.Id == id).ExecuteDeleteAsync();
+        if (deleted == 0) return (false, null, true);
+
+        await transaction.CommitAsync();
 
         return (true, null, false);
     }
@@ -129,5 +128,13 @@ public class PartKindService
         }
 
         return null;
+    }
+
+    private Task<bool> PartKindNameExistsAsync(string name, Guid? excludingId = null)
+    {
+        var normalizedName = name.ToUpper();
+        return _db.PartKinds.AnyAsync(pk =>
+            pk.Name.ToUpper() == normalizedName &&
+            (excludingId == null || pk.Id != excludingId));
     }
 }

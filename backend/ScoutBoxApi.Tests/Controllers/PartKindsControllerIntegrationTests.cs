@@ -172,6 +172,50 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         Assert.Equal("PART_KIND_NAME_EXISTS", payload.Code);
     }
 
+    [Fact]
+    public async Task CreatePartKind_DuplicateNameDifferentCase_ReturnsBadRequest()
+    {
+        await EnsureTestUserExistsAsync();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var existingName = $"Arceaux {suffix}";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            db.PartKinds.Add(new PartKind
+            {
+                Id = Guid.NewGuid(),
+                Name = existingName,
+                DisplayOrder = 1,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync("/api/part-kinds", new { name = existingName.ToLowerInvariant() });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("PART_KIND_NAME_EXISTS", payload.Code);
+    }
+
+    [Fact]
+    public async Task CreatePartKind_NullBody_ReturnsNameRequired()
+    {
+        await EnsureTestUserExistsAsync();
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync<object?>("/api/part-kinds", null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("PART_KIND_NAME_REQUIRED", payload.Code);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -245,6 +289,57 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
         Assert.NotNull(payload);
         Assert.Equal("PART_KIND_NAME_EXISTS", payload.Code);
+    }
+
+    [Fact]
+    public async Task RenamePartKind_DuplicateNameDifferentCase_ReturnsBadRequest()
+    {
+        await EnsureTestUserExistsAsync();
+        var prefix = Guid.NewGuid().ToString("N")[..8];
+
+        Guid renameId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            db.PartKinds.Add(new PartKind { Id = Guid.NewGuid(), Name = $"Existing {prefix}", DisplayOrder = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            var pk = new PartKind { Id = Guid.NewGuid(), Name = $"To Rename {prefix}", DisplayOrder = 2, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            db.PartKinds.Add(pk);
+            await db.SaveChangesAsync();
+            renameId = pk.Id;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/part-kinds/{renameId}", new { name = $"existing {prefix}" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("PART_KIND_NAME_EXISTS", payload.Code);
+    }
+
+    [Fact]
+    public async Task RenamePartKind_NullBody_ReturnsNameRequired()
+    {
+        await EnsureTestUserExistsAsync();
+        var prefix = Guid.NewGuid().ToString("N")[..8];
+
+        Guid pkId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var pk = new PartKind { Id = Guid.NewGuid(), Name = $"Null Rename {prefix}", DisplayOrder = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            db.PartKinds.Add(pk);
+            await db.SaveChangesAsync();
+            pkId = pk.Id;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync<object?>($"/api/part-kinds/{pkId}", null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("PART_KIND_NAME_REQUIRED", payload.Code);
     }
 
     [Fact]

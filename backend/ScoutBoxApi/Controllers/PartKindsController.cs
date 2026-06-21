@@ -27,7 +27,7 @@ public class PartKindsController : ControllerBase
 
     [HttpPost]
     [ValidateUser]
-    public async Task<IActionResult> Create([FromBody] CreatePartKindRequest request)
+    public async Task<IActionResult> Create([FromBody] CreatePartKindRequest? request)
     {
         var (response, error) = await _partKindService.CreateAsync(request);
         if (error != null) return BadRequest(error);
@@ -36,7 +36,7 @@ public class PartKindsController : ControllerBase
 
     [HttpPut("{id:guid}")]
     [ValidateUser]
-    public async Task<IActionResult> Rename(Guid id, [FromBody] UpdatePartKindRequest request)
+    public async Task<IActionResult> Rename(Guid id, [FromBody] UpdatePartKindRequest? request)
     {
         var (response, error, notFound) = await _partKindService.RenameAsync(id, request);
         if (notFound) return NotFound(new ErrorResponse("Part kind not found", "PART_KIND_NOT_FOUND"));

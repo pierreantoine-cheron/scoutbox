@@ -62,7 +62,7 @@ class _PartKindSheetState extends State<PartKindSheet> {
         child: TextFormField(
           controller: _nameController,
           autofocus: true,
-          maxLength: ValidationConstants.tentNameMaxLength,
+          maxLength: ValidationConstants.partKindNameMaxLength,
           decoration: const InputDecoration(
             hintText: 'Nom de l\'élément',
           ),
@@ -76,7 +76,9 @@ class _PartKindSheetState extends State<PartKindSheet> {
   String? _validateName(String? value) {
     final name = value?.trim() ?? '';
     if (name.isEmpty) return 'Le nom de l\'élément est requis';
-    if (name.length > 60) return 'Le nom de l\'élément est trop long (60 max)';
+    if (name.length > ValidationConstants.partKindNameMaxLength) {
+      return 'Le nom de l\'élément est trop long (60 max)';
+    }
     return null;
   }
 
@@ -104,7 +106,9 @@ class _PartKindSheetState extends State<PartKindSheet> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _submitError = 'Impossible de créer l\'élément. Réessayez.';
+          _submitError = _isCreate
+              ? 'Impossible de créer l\'élément. Réessayez.'
+              : 'Impossible de renommer l\'élément. Réessayez.';
           _isSubmitting = false;
         });
       }

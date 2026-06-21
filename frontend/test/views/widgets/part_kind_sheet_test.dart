@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/repositories/part_kind_repository.dart';
+import 'package:client/utils/constants.dart';
 import 'package:client/views/widgets/part_kind_sheet.dart';
 
 void main() {
@@ -52,13 +53,15 @@ void main() {
   });
 
   testWidgets('duplicate error shows in sheet', (tester) async {
-    await tester.pumpWidget(_buildSheet(
-      initialName: null,
-      onSave: (_) => throw const PartKindRepositoryException(
-        code: 'PART_KIND_NAME_EXISTS',
-        message: 'Un élément avec ce nom existe déjà',
+    await tester.pumpWidget(
+      _buildSheet(
+        initialName: null,
+        onSave: (_) => throw const PartKindRepositoryException(
+          code: 'PART_KIND_NAME_EXISTS',
+          message: 'Un élément avec ce nom existe déjà',
+        ),
       ),
-    ));
+    );
 
     final textField = find.byType(TextFormField);
     await tester.enterText(textField, 'Duplicate');
@@ -68,6 +71,32 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Un élément avec ce nom existe déjà'), findsOneWidget);
+  });
+
+  testWidgets('name field is limited to 60 characters', (tester) async {
+    await tester.pumpWidget(_buildSheet(initialName: null));
+
+    final textField = tester.widget<TextField>(find.byType(TextField));
+
+    expect(textField.maxLength, equals(ValidationConstants.partKindNameMaxLength));
+  });
+
+  testWidgets('rename mode generic failure shows rename error', (tester) async {
+    await tester.pumpWidget(
+      _buildSheet(
+        initialName: 'Arceaux',
+        onSave: (_) => throw Exception('boom'),
+      ),
+    );
+
+    final textField = find.byType(TextFormField);
+    await tester.enterText(textField, 'Arceaux modifié');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Enregistrer'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Impossible de renommer l\'élément. Réessayez.'), findsOneWidget);
   });
 }
 

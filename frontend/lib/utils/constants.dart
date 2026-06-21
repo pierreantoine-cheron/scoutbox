@@ -39,6 +39,7 @@ class ValidationConstants {
   static const int tentCommentsMaxLength = 500;
   static const int tentMinSize = 1;
   static const int tentMaxSize = 100;
+  static const int partKindNameMaxLength = 60;
   static const int tagNameMinLength = 2;
   static const int tagNameMaxLength = 30;
 }
