@@ -149,6 +149,28 @@ class MyNotifier extends _$MyNotifier {
 }
 ```
 
+**List Builders:**
+- When building a heterogeneous list of widgets where items need different data, model each item as a typed data object carrying its own values or callbacks, then `.map()` over the list. Don't pass all possible data to a single builder method that switches on item identity.
+
+```dart
+// WRONG: everything passed, dispatched by identity
+children: sections.map((s) => _buildItem(s, tentCount, tagCount, partKindCount)).toList(),
+...
+Widget _buildItem(Section s, int a, int b, int c) {
+  final badge = switch (s) { ... };
+  ...
+}
+
+// RIGHT: each item carries its own data; builder is switch-free
+final items = [
+  _Item(section: ..., count: () => ...),
+  _Item(section: ...), // no count
+];
+children: items.map((i) => _buildItem(i)).toList(),
+...
+Widget _buildItem(_Item i) { ... }
+```
+
 ### .NET/C# Backend
 
 **Error Handling:**

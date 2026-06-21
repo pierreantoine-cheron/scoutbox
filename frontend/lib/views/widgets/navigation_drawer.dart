@@ -9,15 +9,6 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
   final NavigationSection selectedSection;
   final ValueChanged<NavigationSection> onSelectSection;
 
-  static const _topSections = [
-    NavigationSection.tents,
-    NavigationSection.tags,
-    NavigationSection.parts,
-    NavigationSection.models,
-  ];
-
-  static const _bottomSections = [NavigationSection.settings];
-
   const ScoutBoxNavigationDrawer({
     super.key,
     required this.selectedSection,
@@ -26,9 +17,22 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tentCount = _totalTentCount(ref);
-    final tagCount = _totalTagCount(ref);
-    final partKindCount = _totalPartKindCount(ref);
+    final List<_NavigationDrawerItem> sections = [
+      _NavigationDrawerItem(
+        section: NavigationSection.tents,
+        count: () =>
+            ref.watch(tentListProvider).asData?.value.where((t) => !t.isArchived).length ?? 0,
+      ),
+      _NavigationDrawerItem(
+        section: NavigationSection.tags,
+        count: () => ref.watch(tagsProvider).asData?.value.length ?? 0,
+      ),
+      _NavigationDrawerItem(
+        section: NavigationSection.parts,
+        count: () => ref.watch(partKindsProvider).asData?.value.length ?? 0,
+      ),
+      const _NavigationDrawerItem(section: NavigationSection.models),
+    ];
 
     return Drawer(
       width: 300,
@@ -39,57 +43,47 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.sm),
-              children: _topSections.map((s) => _buildItem(s, tentCount, tagCount, partKindCount)).toList(),
+              children: sections
+                  .map(
+                    (item) => _DrawerItem(
+                      section: item.section,
+                      icon: item.section.icon,
+                      label: item.section.label,
+                      badge: item.count == null ? null : item.count!(),
+                      isSelected: selectedSection == item.section,
+                      enabled: item.section.isEnabled,
+                      onTap: item.section.isEnabled ? () => onSelectSection(item.section) : null,
+                    ),
+                  )
+                  .toList(),
             ),
           ),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.sm),
-            child: _bottomSections.map((s) => _buildItem(s, tentCount, tagCount, partKindCount)).first,
+            child: _DrawerItem(
+              section: NavigationSection.settings,
+              icon: NavigationSection.settings.icon,
+              label: NavigationSection.settings.label,
+              isSelected: selectedSection == NavigationSection.settings,
+              enabled: NavigationSection.settings.isEnabled,
+              onTap: null,
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildItem(
-    NavigationSection section,
-    int tentCount,
-    int tagCount,
-    int partKindCount,
-  ) {
-    final badge = switch (section) {
-      NavigationSection.tents => tentCount,
-      NavigationSection.tags => tagCount,
-      NavigationSection.parts => partKindCount,
-      _ => null,
-    };
+class _NavigationDrawerItem {
+  final NavigationSection section;
+  final int Function()? count;
 
-    return _DrawerItem(
-      section: section,
-      icon: section.icon,
-      label: section.label,
-      badge: badge,
-      isSelected: selectedSection == section,
-      enabled: section.isEnabled,
-      onTap: section.isEnabled ? () => onSelectSection(section) : null,
-    );
-  }
-
-  int _totalTentCount(WidgetRef ref) {
-    final tents = ref.watch(tentListProvider).asData?.value;
-    return tents?.where((t) => !t.isArchived).length ?? 0;
-  }
-
-  int _totalTagCount(WidgetRef ref) {
-    final tags = ref.watch(tagsProvider).asData?.value;
-    return tags?.length ?? 0;
-  }
-
-  int _totalPartKindCount(WidgetRef ref) {
-    final partKinds = ref.watch(partKindsProvider).asData?.value;
-    return partKinds?.length ?? 0;
-  }
+  const _NavigationDrawerItem({
+    required this.section,
+    this.count,
+  });
 }
 
 class _DrawerHeader extends StatelessWidget {
