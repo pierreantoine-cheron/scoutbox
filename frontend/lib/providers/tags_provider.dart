@@ -64,7 +64,9 @@ class TagsNotifier extends _$TagsNotifier {
   }
 
   Future<Tag> updateTag(String id, {required String name, String? color}) async {
+    _invalidatePendingRefreshes();
     final updated = await ref.read(tagRepositoryProvider).updateTag(id, name: name, color: color);
+    _invalidatePendingRefreshes();
     if (!state.hasValue) return updated;
     final next = state.requireValue.map((tag) => tag.id == id ? updated : tag).toList()
       ..sort((left, right) => left.name.compareTo(right.name));
@@ -73,18 +75,26 @@ class TagsNotifier extends _$TagsNotifier {
   }
 
   Future<void> deleteTag(String id) async {
+    _invalidatePendingRefreshes();
     await ref.read(tagRepositoryProvider).deleteTag(id);
+    _invalidatePendingRefreshes();
     if (!state.hasValue) return;
     final next = state.requireValue.where((tag) => tag.id != id).toList();
     state = AsyncValue.data(next);
   }
 
   Future<Tag> createTag({required String name, String? color}) async {
+    _invalidatePendingRefreshes();
     final created = await ref.read(tagRepositoryProvider).createTag(name: name, color: color);
+    _invalidatePendingRefreshes();
     final current = state.hasValue ? state.requireValue : const <Tag>[];
     final next = [created, ...current.where((tag) => tag.id != created.id)]
       ..sort((left, right) => left.name.compareTo(right.name));
     state = AsyncValue.data(next);
     return created;
+  }
+
+  void _invalidatePendingRefreshes() {
+    _latestRefreshRequestId++;
   }
 }

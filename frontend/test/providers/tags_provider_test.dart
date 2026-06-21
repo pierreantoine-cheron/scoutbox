@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/models/tag.dart';
@@ -61,6 +63,23 @@ void main() {
       await container.read(tagsProvider.future);
 
       await container.read(tagsProvider.notifier).deleteTag('1');
+
+      final tags = container.read(tagsProvider).requireValue;
+      expect(tags.map((tag) => tag.id), equals(['2']));
+    });
+
+    test('deleteTag ignores stale refresh response started before mutation', () async {
+      final repository = _StaleRefreshTagRepository();
+      final container = ProviderContainer(
+        overrides: [tagRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+      await container.read(tagsProvider.future);
+
+      final refreshFuture = container.read(tagsProvider.notifier).refresh();
+      await container.read(tagsProvider.notifier).deleteTag('1');
+      repository.completeRefreshWith([_tag('1', 'Alpha'), _tag('2', 'Beta')]);
+      await refreshFuture;
 
       final tags = container.read(tagsProvider).requireValue;
       expect(tags.map((tag) => tag.id), equals(['2']));
@@ -136,5 +155,27 @@ class _RefreshFailureTagRepository extends TagRepository {
     callCount++;
     if (callCount == 1) return [_tag('1', 'Initial')];
     throw const TagRepositoryException(message: 'Échec refresh');
+  }
+}
+
+class _StaleRefreshTagRepository extends TagRepository {
+  var callCount = 0;
+  final _refreshCompleter = Completer<List<Tag>>();
+  final List<Tag> tags = [_tag('1', 'Alpha'), _tag('2', 'Beta')];
+
+  @override
+  Future<List<Tag>> getTags() async {
+    callCount++;
+    if (callCount == 1) return List<Tag>.of(tags);
+    return _refreshCompleter.future;
+  }
+
+  @override
+  Future<void> deleteTag(String id) async {
+    tags.removeWhere((tag) => tag.id == id);
+  }
+
+  void completeRefreshWith(List<Tag> staleTags) {
+    _refreshCompleter.complete(staleTags);
   }
 }

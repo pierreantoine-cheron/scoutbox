@@ -41,7 +41,7 @@ class _TagSheetState extends State<TagSheet> {
     if (_isCreate) {
       return name.length >= ValidationConstants.tagNameMinLength;
     }
-    return name.isNotEmpty &&
+    return name.length >= ValidationConstants.tagNameMinLength &&
         (name != widget.initialName || _effectiveColor != widget.initialColor);
   }
 

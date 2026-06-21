@@ -2004,6 +2004,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
             var tent = await db.Tents.FindAsync(tentId);
+            Assert.NotNull(tent);
             Assert.False(tent.IsArchived);
             Assert.Single(await db.AuditEvents.Where(a => a.Action == "tent_unarchived" && a.TargetEntityId == tentId).ToListAsync());
         }
@@ -2051,6 +2052,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
             var tent = await db.Tents.FindAsync(tentId);
+            Assert.NotNull(tent);
             Assert.Equal(originalUpdatedAt, tent.UpdatedAt);
             Assert.Empty(await db.AuditEvents.Where(a => a.Action == "tent_unarchived" && a.TargetEntityId == tentId).ToListAsync());
         }

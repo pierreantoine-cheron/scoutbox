@@ -126,6 +126,27 @@ void main() {
     expect(tester.widget<FilledButton>(saveButton).onPressed, isNull);
   });
 
+  testWidgets('rename sheet save disabled when changed name is too short', (tester) async {
+    await tester.pumpWidget(
+      _buildApp(
+        _TagRepositoryStub(tags: [_tag('1', 'Groupe A', color: '#F44336')]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Modifier'));
+    await tester.pumpAndSettle();
+
+    final textFields = find.byType(TextFormField);
+    await tester.enterText(textFields.first, 'A');
+    await tester.pump();
+
+    final saveButton = find.widgetWithText(FilledButton, 'Enregistrer');
+    expect(tester.widget<FilledButton>(saveButton).onPressed, isNull);
+  });
+
   testWidgets('delete confirmation shows tent count', (tester) async {
     await tester.pumpWidget(
       _buildApp(

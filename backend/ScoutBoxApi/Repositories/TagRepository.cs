@@ -42,7 +42,9 @@ public class TagRepository : ITagRepository
 
     public async Task<Tag?> GetTagByIdAsync(Guid id)
     {
-        return await _db.Tags.FindAsync(id);
+        return await _db.Tags
+            .Include(tag => tag.TentTags)
+            .FirstOrDefaultAsync(tag => tag.Id == id);
     }
 
     public void AddTag(Tag tag)
