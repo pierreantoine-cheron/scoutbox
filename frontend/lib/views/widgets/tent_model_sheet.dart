@@ -40,7 +40,8 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
     if (name.isEmpty) return false;
     if (!_isCreate) {
       final nameUnchanged = name == widget.initialName;
-      final partsUnchanged = _selectedPartKindIds.length == (widget.initialComponentIds?.length ?? 0) &&
+      final partsUnchanged =
+          _selectedPartKindIds.length == (widget.initialComponentIds?.length ?? 0) &&
           (widget.initialComponentIds?.every((id) => _selectedPartKindIds.contains(id)) ?? false);
       if (nameUnchanged && partsUnchanged) return false;
     }
@@ -106,13 +107,18 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
           controller: _nameController,
           autofocus: true,
           maxLength: 60,
+          buildCounter: (context, {required currentLength, required isFocused, maxLength}) {
+            return Text(
+              '$currentLength / $maxLength',
+              style: const TextStyle(
+                fontSize: 12,
+                fontFamily: 'monospace',
+                color: AppColors.muted,
+              ),
+            );
+          },
           decoration: const InputDecoration(
             hintText: 'Nom du modèle',
-            counterStyle: TextStyle(
-              fontSize: 12,
-              fontFamily: 'monospace',
-              color: AppColors.muted,
-            ),
           ),
           onChanged: (_) => setState(() => _submitError = null),
         ),
@@ -204,6 +210,8 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
   }
 
   Future<void> _submit() async {
+    if (!_isSaveEnabled) return;
+
     setState(() {
       _submitError = null;
       _isSubmitting = true;

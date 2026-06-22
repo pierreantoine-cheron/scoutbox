@@ -79,8 +79,8 @@ class TentRepository {
         final response = await ApiClient.instance.put(
           '${ApiRoutes.tentModels}/$id',
           data: {
-            if (name != null) 'name': name,
-            if (componentIds != null) 'componentIds': componentIds,
+            'name': ?name,
+            'componentIds': ?componentIds,
           },
         );
         return TentModel.fromJson(_readEnvelopeMap(response.data));

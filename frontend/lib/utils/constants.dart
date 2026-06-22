@@ -80,6 +80,8 @@ class ErrorCodes {
   static const String tentModelNotFound = 'TENT_MODEL_NOT_FOUND';
   static const String modelInUse = 'MODEL_IN_USE';
   static const String modelNameExists = 'MODEL_NAME_EXISTS';
+  static const String modelNameRequired = 'MODEL_NAME_REQUIRED';
+  static const String modelNameTooLong = 'MODEL_NAME_TOO_LONG';
 }
 
 // API timeouts

@@ -503,29 +503,30 @@ public class TentService
             }
         }
 
-        if (nameChanged)
-        {
-            _auditService.RecordEvent(
-                AuditActions.TentModelRenamed,
-                userId,
-                targetEntityType: "TentModel",
-                targetEntityId: id,
-                metadata: new Dictionary<string, object?>
-                {
-                    ["name"] = model.Name,
-                    ["componentCount"] = request.ComponentIds?.Count ?? model.TentModelComponents.Count
-                });
-        }
+        _auditService.RecordEvent(
+            AuditActions.TentModelRenamed,
+            userId,
+            targetEntityType: "TentModel",
+            targetEntityId: id,
+            metadata: new Dictionary<string, object?>
+            {
+                ["name"] = model.Name,
+                ["componentCount"] = request.ComponentIds?.Count ?? model.TentModelComponents.Count
+            });
 
         await _repo.SaveChangesAsync();
 
-        var updated = await _repo.GetTentModelByIdWithComponentsAsync(id);
-        return (TentModelDto.FromTentModel(updated!), null, false);
+        var updated = await _db.TentModels
+            .AsNoTracking()
+            .Include(m => m.TentModelComponents)
+            .Include(m => m.Tents)
+            .FirstAsync(m => m.Id == id);
+        return (TentModelDto.FromTentModel(updated), null, false);
     }
 
     public async Task<(bool Success, ErrorResponse? Error, bool NotFound)> DeleteModelAsync(Guid userId, Guid id)
     {
-        var model = await _repo.GetTentModelByIdAsync(id);
+        var model = await _repo.GetTentModelByIdWithComponentsAsync(id);
         if (model == null)
             return (false, null, true);
 

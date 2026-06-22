@@ -307,6 +307,15 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
         Assert.Equal(name, payload.Data.Name);
         Assert.Equal(2, payload.Data.ComponentCount);
         Assert.True(newComponentIds.All(id => payload.Data.ComponentIds.Contains(id)));
+
+        using (var verifyScope = _factory.Services.CreateScope())
+        {
+            var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var audit = await db.AuditEvents.FirstOrDefaultAsync(a =>
+                a.TargetEntityId == modelId && a.Action == "model_renamed");
+            Assert.NotNull(audit);
+            Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
+        }
     }
 
     [Fact]

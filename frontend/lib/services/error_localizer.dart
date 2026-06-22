@@ -52,5 +52,7 @@ class ErrorLocalizer {
     ErrorCodes.tentModelNotFound: 'Ce modèle est introuvable.',
     ErrorCodes.modelInUse: 'Impossible de supprimer ce modèle car des tentes l\'utilisent encore.',
     ErrorCodes.modelNameExists: 'Un modèle avec ce nom existe déjà.',
+    ErrorCodes.modelNameRequired: 'Le nom du modèle doit contenir au moins 2 caractères.',
+    ErrorCodes.modelNameTooLong: 'Le nom du modèle doit contenir 60 caractères maximum.',
   };
 }
