@@ -681,21 +681,14 @@ svg { display: block; flex-shrink: 0; }
   .model-card { margin-bottom: 0; }
 }
 .model-card:hover { border-color: var(--accent-soft); }
-.model-card.expanded {
-  border-color: var(--accent);
-  box-shadow: 0 2px 16px color-mix(in oklch, var(--accent) 10%, transparent);
-}
 .model-card-header {
   padding: 14px 18px; display: flex; align-items: center; gap: 14px;
-  cursor: pointer; user-select: none;
 }
 .model-icon {
   width: 44px; height: 44px; border-radius: var(--radius);
   background: var(--accent-soft); color: var(--accent);
   display: grid; place-items: center; flex-shrink: 0;
-  transition: background 0.14s, color 0.14s;
 }
-.model-card.expanded .model-icon { background: var(--accent); color: var(--surface); }
 .model-icon svg { width: 22px; height: 22px; }
 .model-info { flex: 1; min-width: 0; }
 .model-info .model-name {
@@ -705,48 +698,6 @@ svg { display: block; flex-shrink: 0; }
 .model-info .model-meta {
   font-family: var(--font-mono); font-size: 12px; color: var(--muted);
 }
-.expand-indicator {
-  display: grid; place-items: center; width: 28px; height: 28px;
-  border-radius: var(--radius-sm); color: var(--muted); flex-shrink: 0;
-  transition: transform 0.22s, color 0.14s;
-}
-.expand-indicator:hover { background: var(--fg-soft); }
-.model-card.expanded .expand-indicator { transform: rotate(180deg); color: var(--accent); }
-.expand-indicator svg { width: 18px; height: 18px; }
-
-.model-detail {
-  max-height: 0; overflow: hidden;
-  transition: max-height 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-  border-top: 1px solid transparent;
-}
-.model-card.expanded .model-detail { max-height: 700px; border-top-color: var(--border); }
-.model-detail-inner { padding: 0 18px 16px; }
-.detail-label {
-  font-size: 11px; color: var(--muted);
-  font-family: var(--font-mono);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  margin: 6px 0 8px;
-}
-.all-parts-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
-
-.toggle-part-row {
-  display: flex; align-items: center; gap: 12px;
-  width: 100%; padding: 10px 12px; border-radius: var(--radius);
-  text-align: left; font-size: 14px; font-weight: 500;
-  background: var(--bg); border: none; cursor: pointer;
-  transition: background 0.12s, color 0.12s, transform 0.15s;
-}
-.toggle-part-row:hover { background: var(--fg-soft); }
-.toggle-part-row:active { transform: scale(0.985); }
-.toggle-part-row .part-check {
-  display: grid; place-items: center; width: 22px; height: 22px; flex-shrink: 0;
-  color: var(--border); transition: color 0.15s;
-}
-.toggle-part-row .part-check svg { width: 20px; height: 20px; }
-.toggle-part-row.assigned { background: var(--accent-soft); color: var(--accent); }
-.toggle-part-row.assigned .part-check { color: var(--accent); }
-.toggle-part-row .part-name-text { flex: 1; }
-
 .form-scroll { padding: 20px 16px 140px; max-width: 560px; margin: 0 auto; }
 @media (min-width: 600px) {
   .form-scroll { padding: 32px 24px 160px; max-width: 640px; }
@@ -1041,6 +992,30 @@ svg { display: block; flex-shrink: 0; }
 .sheet-model-list {
   display: flex; flex-direction: column; gap: 6px;
 }
+
+.sheet-parts-list {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 300px; overflow-y: auto;
+  margin-top: 4px;
+}
+.sheet-part-row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 10px 12px; border-radius: var(--radius);
+  text-align: left; font-size: 14px; font-weight: 500;
+  background: var(--bg); border: none; cursor: pointer;
+  transition: background 0.12s;
+}
+.sheet-part-row:hover { background: var(--fg-soft); }
+.sheet-part-row .part-check {
+  display: grid; place-items: center; width: 22px; height: 22px; flex-shrink: 0;
+  color: var(--border); transition: color 0.15s;
+}
+.sheet-part-row .part-check svg { width: 20px; height: 20px; }
+.sheet-part-row.selected {
+  background: var(--accent-soft); color: var(--accent);
+}
+.sheet-part-row.selected .part-check { color: var(--accent); }
+.sheet-part-row .part-name-text { flex: 1; }
 
 .sheet-poll-item {
   display: flex; align-items: center; gap: 8px;
@@ -1438,6 +1413,8 @@ svg { display: block; flex-shrink: 0; }
       <label>Nom</label>
       <input type="text" id="model-name-input" maxlength="60" placeholder="Nom du modèle">
       <div class="char-count" id="model-char-count">0 / 60</div>
+      <label style="margin-top:16px">Éléments par défaut</label>
+      <div class="sheet-parts-list" id="sheet-parts-list"></div>
     </div>
     <div class="sheet-footer">
       <button class="btn btn-outline" id="model-sheet-cancel">Annuler</button>
@@ -2409,41 +2386,15 @@ function renderModels() {
       var partCount = m.partKindIds.length;
       var card = document.createElement('div');
       card.className = 'model-card';
-      card.innerHTML = '<div class="model-card-header" data-model-id="' + m.id + '">' +
+      card.innerHTML = '<div class="model-card-header">' +
         '<div class="model-icon">' + svgTent() + '</div>' +
         '<div class="model-info">' +
           '<div class="model-name">' + m.name + '</div>' +
           '<div class="model-meta">' + tentCount + ' tente' + (tentCount !== 1 ? 's' : '') + ' &middot; ' + partCount + ' élément' + (partCount !== 1 ? 's' : '') + '</div>' +
         '</div>' +
         '<button class="more-btn" data-model-id="' + m.id + '">' + svgMore() + '</button>' +
-        '<div class="expand-indicator">' + svgChevronDown() + '</div>' +
-      '</div>' +
-      '<div class="model-detail"><div class="model-detail-inner">' +
-        '<div class="detail-label">Éléments</div>' +
-        '<div class="all-parts-list" id="model-parts-' + m.id + '"></div>' +
-      '</div></div>';
+      '</div>';
       container.appendChild(card);
-
-      var partsList = card.querySelector('#model-parts-' + m.id);
-      partKinds.forEach(function(pk) {
-        var assigned = m.partKindIds.indexOf(pk.id) !== -1;
-        var row = document.createElement('button');
-        row.className = 'toggle-part-row' + (assigned ? ' assigned' : '');
-        row.innerHTML = '<div class="part-check">' + (assigned ? svgCheck() : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><circle cx="12" cy="12" r="9"/></svg>') + '</div><span class="part-name-text">' + pk.name + '</span>';
-        row.addEventListener('click', function() {
-          var idx = m.partKindIds.indexOf(pk.id);
-          var circleIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><circle cx="12" cy="12" r="9"/></svg>';
-          if (idx === -1) { m.partKindIds.push(pk.id); row.classList.add('assigned'); row.querySelector('.part-check').innerHTML = svgCheck(); }
-          else { m.partKindIds.splice(idx, 1); row.classList.remove('assigned'); row.querySelector('.part-check').innerHTML = circleIcon; }
-          renderModels();
-        });
-        partsList.appendChild(row);
-      });
-
-      card.querySelector('.model-card-header').addEventListener('click', function(e) {
-        if (e.target.closest('.more-btn')) return;
-        card.classList.toggle('expanded');
-      });
 
       card.querySelector('.more-btn').addEventListener('click', function(e) {
         e.stopPropagation();
@@ -2459,8 +2410,39 @@ function renderModels() {
     });
   }
   updateScreenCount();
-
 }
+
+// --- Model sheet part selection ---
+var editingPartIds = [];
+
+function renderSheetParts() {
+  var list = document.getElementById('sheet-parts-list');
+  list.innerHTML = '';
+  partKinds.forEach(function(pk) {
+    var selected = editingPartIds.indexOf(pk.id) !== -1;
+    var row = document.createElement('button');
+    row.className = 'sheet-part-row' + (selected ? ' selected' : '');
+    row.dataset.partId = pk.id;
+    row.innerHTML = '<span class="part-check">' + (selected ? svgCheck() : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><circle cx="12" cy="12" r="9"/></svg>') + '</span><span class="part-name-text">' + pk.name + '</span>';
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('sheet-parts-list').addEventListener('click', function(e) {
+  var btn = e.target.closest('.sheet-part-row');
+  if (!btn) return;
+  var partId = parseInt(btn.dataset.partId);
+  var idx = editingPartIds.indexOf(partId);
+  if (idx === -1) {
+    editingPartIds.push(partId);
+    btn.classList.add('selected');
+    btn.querySelector('.part-check').innerHTML = svgCheck();
+  } else {
+    editingPartIds.splice(idx, 1);
+    btn.classList.remove('selected');
+    btn.querySelector('.part-check').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><circle cx="12" cy="12" r="9"/></svg>';
+  }
+});
 
 function openModelSheet(model) {
   var sheet = document.getElementById('model-sheet-scrim');
@@ -2468,6 +2450,8 @@ function openModelSheet(model) {
   var nameInput = document.getElementById('model-name-input');
   var charCount = document.getElementById('model-char-count');
   var confirmBtn = document.getElementById('model-sheet-confirm');
+
+  editingPartIds = model ? model.partKindIds.slice() : [];
 
   if (model) {
     title.textContent = 'Modifier le modèle';
@@ -2481,6 +2465,8 @@ function openModelSheet(model) {
     confirmBtn.textContent = 'Créer';
   }
 
+  renderSheetParts();
+
   nameInput.oninput = function() {
     charCount.textContent = nameInput.value.length + ' / 60';
   };
@@ -2488,13 +2474,15 @@ function openModelSheet(model) {
   confirmBtn.onclick = function() {
     var name = nameInput.value.trim();
     if (!name) return;
+    var partIds = editingPartIds.slice();
     if (model) {
       model.name = name;
+      model.partKindIds = partIds;
       tents.forEach(function(tent) {
         if (tent.modelId === model.id) tent.modelName = name;
       });
     } else {
-      models.push({ id: nextModelId++, name: name, partKindIds: [] });
+      models.push({ id: nextModelId++, name: name, partKindIds: partIds });
     }
     closeSheet('model-sheet-scrim');
     renderModels();
