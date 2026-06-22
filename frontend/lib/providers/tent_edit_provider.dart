@@ -6,6 +6,7 @@ import '../services/error_localizer.dart';
 import 'tent_detail_provider.dart';
 import 'tent_history_provider.dart';
 import 'tent_list_provider.dart';
+import 'tent_models_provider.dart';
 
 part 'tent_edit_provider.g.dart';
 
@@ -60,6 +61,9 @@ class TentEditNotifier extends _$TentEditNotifier {
           );
 
       ref.invalidate(tentDetailProvider(tentId));
+      if (tentModelId != null) {
+        ref.invalidate(tentModelsProvider);
+      }
       invalidateTentHistory(ref, tentId);
       ref.read(tentListProvider.notifier).showTent(updatedTent);
 
