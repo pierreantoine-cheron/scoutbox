@@ -4,6 +4,7 @@ import '../models/models.dart';
 import '../repositories/tent_repository.dart';
 import '../services/error_localizer.dart';
 import '../utils/tent_validators.dart';
+import 'tent_models_provider.dart';
 
 part 'tent_creation_provider.g.dart';
 
@@ -81,6 +82,8 @@ class TentCreationNotifier extends _$TentCreationNotifier {
         overallState: state.overallState,
         comments: state.comments.trim().isEmpty ? null : state.comments.trim(),
       );
+
+      ref.invalidate(tentModelsProvider);
 
       state = state.copyWith(isSubmitting: false);
       return createdTent;

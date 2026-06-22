@@ -10,6 +10,7 @@ Future<bool> showConfirmDialog(
   String cancelLabel = 'Annuler',
   bool isDestructive = false,
   bool barrierDismissible = true,
+  bool enabled = true,
 }) async {
   final result = await showDialog<bool>(
     context: context,
@@ -35,7 +36,7 @@ Future<bool> showConfirmDialog(
                     ),
                   )
                 : SheetFooter.filledStyle(theme),
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: enabled ? () => Navigator.of(ctx).pop(true) : null,
             child: Text(confirmLabel),
           ),
         ],

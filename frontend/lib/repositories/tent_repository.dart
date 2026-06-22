@@ -50,6 +50,54 @@ class TentRepository {
     );
   }
 
+  Future<TentModel> createTentModel({
+    required String name,
+    required List<String> componentIds,
+  }) async {
+    return _request(
+      fallbackMessage: 'Impossible de créer le modèle. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la création du modèle.',
+      action: () async {
+        final response = await ApiClient.instance.post(
+          ApiRoutes.tentModels,
+          data: {'name': name, 'componentIds': componentIds},
+        );
+        return TentModel.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
+  }
+
+  Future<TentModel> updateTentModel(
+    String id, {
+    String? name,
+    List<String>? componentIds,
+  }) async {
+    return _request(
+      fallbackMessage: 'Impossible de modifier le modèle. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la modification du modèle.',
+      action: () async {
+        final response = await ApiClient.instance.put(
+          '${ApiRoutes.tentModels}/$id',
+          data: {
+            if (name != null) 'name': name,
+            if (componentIds != null) 'componentIds': componentIds,
+          },
+        );
+        return TentModel.fromJson(_readEnvelopeMap(response.data));
+      },
+    );
+  }
+
+  Future<void> deleteTentModel(String id) async {
+    return _request<void>(
+      fallbackMessage: 'Impossible de supprimer le modèle. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la suppression du modèle.',
+      action: () async {
+        await ApiClient.instance.delete('${ApiRoutes.tentModels}/$id');
+      },
+    );
+  }
+
   Future<Tent> getTent(String id) async {
     return _request(
       fallbackMessage: 'Impossible de charger le détail de la tente.',

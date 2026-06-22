@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ScoutBoxApi.Data;
 using ScoutBoxApi.Models.DTOs;
 using ScoutBoxApi.Models.Entities;
 using ScoutBoxApi.Repositories;
@@ -14,12 +15,14 @@ public class TentService
     private readonly ITentRepository _repo;
     private readonly IAuditService _auditService;
     private readonly ILogger<TentService> _logger;
+    private readonly ScoutBoxDbContext _db;
 
-    public TentService(ITentRepository repo, IAuditService auditService, ILogger<TentService> logger)
+    public TentService(ITentRepository repo, IAuditService auditService, ILogger<TentService> logger, ScoutBoxDbContext db)
     {
         _repo = repo;
         _auditService = auditService;
         _logger = logger;
+        _db = db;
     }
 
     public async Task<IReadOnlyList<TentModelDto>> GetActiveModelsAsync()
@@ -372,6 +375,181 @@ public class TentService
         }
 
         return (ToTentDto(tent, ToPartDtos(tent.Parts)), false);
+    }
+
+    public async Task<(TentModelDto? Response, ErrorResponse? Error, bool NotFound)> CreateModelAsync(
+        Guid userId, CreateTentModelRequest request)
+    {
+        var name = request.Name?.Trim() ?? string.Empty;
+        if (name.Length < 2)
+            return (null, new ErrorResponse("Model name is required (min 2 characters)", "MODEL_NAME_REQUIRED"), false);
+        if (name.Length > 100)
+            return (null, new ErrorResponse("Model name is too long (max 100 characters)", "MODEL_NAME_TOO_LONG"), false);
+
+        if (await _repo.HasDuplicateModelNameAsync(name))
+            return (null, new ErrorResponse("Model name already exists", "MODEL_NAME_EXISTS"), false);
+
+        var componentIds = request.ComponentIds ?? [];
+
+        if (componentIds.Count > 0)
+        {
+            var existingPartKindIds = await _db.PartKinds
+                .Where(pk => componentIds.Contains(pk.Id))
+                .Select(pk => pk.Id)
+                .ToListAsync();
+            if (existingPartKindIds.Count != componentIds.Count)
+                return (null, new ErrorResponse("One or more component IDs are invalid", "INVALID_COMPONENT_IDS"), false);
+        }
+
+        var displayOrder = await _repo.GetNextDisplayOrderAsync();
+
+        var model = new TentModel
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            DisplayOrder = displayOrder,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        foreach (var pkId in componentIds)
+        {
+            model.TentModelComponents.Add(new TentModelComponent
+            {
+                Id = Guid.NewGuid(),
+                TentModelId = model.Id,
+                PartKindId = pkId,
+                IsStandard = true
+            });
+        }
+
+        _auditService.RecordEvent(
+            AuditActions.TentModelCreated,
+            userId,
+            targetEntityType: "TentModel",
+            targetEntityId: model.Id,
+            metadata: new Dictionary<string, object?>
+            {
+                ["name"] = name,
+                ["componentCount"] = componentIds.Count
+            });
+
+        _repo.AddTentModel(model);
+        await _repo.SaveChangesAsync();
+
+        var created = await _repo.GetTentModelByIdWithComponentsAsync(model.Id);
+        return (TentModelDto.FromTentModel(created!), null, false);
+    }
+
+    public async Task<(TentModelDto? Response, ErrorResponse? Error, bool NotFound)> UpdateModelAsync(
+        Guid userId, Guid id, UpdateTentModelRequest request)
+    {
+        var model = await _repo.GetTentModelByIdWithComponentsAsync(id);
+        if (model == null)
+            return (null, null, true);
+
+        var nameChanged = request.Name != null;
+        var componentsChanged = request.ComponentIds != null;
+
+        if (!nameChanged && !componentsChanged)
+            return (null, new ErrorResponse("At least one of Name or ComponentIds must be provided", "MODEL_UPDATE_NO_CHANGES"), false);
+
+        if (nameChanged)
+        {
+            var name = request.Name!.Trim();
+            if (name.Length < 2)
+                return (null, new ErrorResponse("Model name is required (min 2 characters)", "MODEL_NAME_REQUIRED"), false);
+            if (name.Length > 100)
+                return (null, new ErrorResponse("Model name is too long (max 100 characters)", "MODEL_NAME_TOO_LONG"), false);
+
+            if (await _repo.HasDuplicateModelNameAsync(name, id))
+                return (null, new ErrorResponse("Model name already exists", "MODEL_NAME_EXISTS"), false);
+
+            model.Name = name;
+        }
+
+        if (componentsChanged)
+        {
+            var componentIds = request.ComponentIds!;
+
+            if (componentIds.Count > 0)
+            {
+                var existingPartKindIds = await _db.PartKinds
+                    .Where(pk => componentIds.Contains(pk.Id))
+                    .Select(pk => pk.Id)
+                    .ToListAsync();
+                if (existingPartKindIds.Count != componentIds.Count)
+                    return (null, new ErrorResponse("One or more component IDs are invalid", "INVALID_COMPONENT_IDS"), false);
+            }
+
+            _db.TentModelComponents.RemoveRange(
+                _db.TentModelComponents.Where(mc => mc.TentModelId == id));
+        }
+
+        model.UpdatedAt = DateTime.UtcNow;
+
+        if (componentsChanged)
+        {
+            foreach (var pkId in request.ComponentIds!)
+            {
+                _db.TentModelComponents.Add(new TentModelComponent
+                {
+                    Id = Guid.NewGuid(),
+                    TentModelId = id,
+                    PartKindId = pkId,
+                    IsStandard = true
+                });
+            }
+        }
+
+        if (nameChanged)
+        {
+            _auditService.RecordEvent(
+                AuditActions.TentModelRenamed,
+                userId,
+                targetEntityType: "TentModel",
+                targetEntityId: id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["name"] = model.Name,
+                    ["componentCount"] = request.ComponentIds?.Count ?? model.TentModelComponents.Count
+                });
+        }
+
+        await _repo.SaveChangesAsync();
+
+        var updated = await _repo.GetTentModelByIdWithComponentsAsync(id);
+        return (TentModelDto.FromTentModel(updated!), null, false);
+    }
+
+    public async Task<(bool Success, ErrorResponse? Error, bool NotFound)> DeleteModelAsync(Guid userId, Guid id)
+    {
+        var model = await _repo.GetTentModelByIdAsync(id);
+        if (model == null)
+            return (false, null, true);
+
+        if (await _repo.HasTentsForModelAsync(id))
+            return (false, new ErrorResponse("Cannot delete model that is in use by tents", "MODEL_IN_USE"), false);
+
+        var name = model.Name;
+        var componentCount = model.TentModelComponents.Count;
+
+        _auditService.RecordEvent(
+            AuditActions.TentModelDeleted,
+            userId,
+            targetEntityType: "TentModel",
+            targetEntityId: id,
+            metadata: new Dictionary<string, object?>
+            {
+                ["name"] = name,
+                ["componentCount"] = componentCount
+            });
+
+        _repo.RemoveTentModel(model);
+        await _repo.SaveChangesAsync();
+
+        return (true, null, false);
     }
 
     private static ErrorResponse? ValidateTentRequest(

@@ -77,6 +77,9 @@ class ErrorCodes {
   static const String partKindNameRequired = 'PART_KIND_NAME_REQUIRED';
   static const String partKindNameTooLong = 'PART_KIND_NAME_TOO_LONG';
   static const String partKindNotFound = 'PART_KIND_NOT_FOUND';
+  static const String tentModelNotFound = 'TENT_MODEL_NOT_FOUND';
+  static const String modelInUse = 'MODEL_IN_USE';
+  static const String modelNameExists = 'MODEL_NAME_EXISTS';
 }
 
 // API timeouts

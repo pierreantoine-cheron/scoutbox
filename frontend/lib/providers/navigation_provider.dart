@@ -28,7 +28,7 @@ enum NavigationSection {
     };
   }
 
-  bool get isEnabled => this == tents || this == tags || this == parts;
+  bool get isEnabled => this == tents || this == tags || this == parts || this == models;
 }
 
 class NavigationSectionNotifier extends Notifier<NavigationSection> {

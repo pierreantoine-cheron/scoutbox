@@ -21,8 +21,59 @@ public class TentRepository : ITentRepository
             .AsNoTracking()
             .Where(model => model.IsActive)
             .OrderBy(model => model.DisplayOrder)
-            .Select(model => new TentModelDto(model.Id, model.Name, model.DisplayOrder, model.IsActive))
+            .Include(m => m.Tents)
+            .Include(m => m.TentModelComponents)
+            .Select(model => new TentModelDto(
+                model.Id,
+                model.Name,
+                model.DisplayOrder,
+                model.IsActive,
+                model.Tents.Count,
+                model.TentModelComponents.Count,
+                model.TentModelComponents.Select(mc => mc.PartKindId).ToList()
+            ))
             .ToListAsync();
+    }
+
+    public async Task<TentModel?> GetTentModelByIdAsync(Guid id)
+    {
+        return await _db.TentModels.FindAsync(id);
+    }
+
+    public async Task<TentModel?> GetTentModelByIdWithComponentsAsync(Guid id)
+    {
+        return await _db.TentModels
+            .Include(m => m.TentModelComponents)
+            .Include(m => m.Tents)
+            .FirstOrDefaultAsync(m => m.Id == id);
+    }
+
+    public void AddTentModel(TentModel model)
+    {
+        _db.TentModels.Add(model);
+    }
+
+    public void RemoveTentModel(TentModel model)
+    {
+        _db.TentModels.Remove(model);
+    }
+
+    public async Task<bool> HasTentsForModelAsync(Guid modelId)
+    {
+        return await _db.Tents.AnyAsync(t => t.TentModelId == modelId);
+    }
+
+    public async Task<bool> HasDuplicateModelNameAsync(string name, Guid? excludingId = null)
+    {
+        return await _db.TentModels.AnyAsync(m =>
+            m.Name == name && m.IsActive &&
+            (excludingId == null || m.Id != excludingId));
+    }
+
+    public async Task<int> GetNextDisplayOrderAsync()
+    {
+        var max = await _db.TentModels.MaxAsync(m => (int?)m.DisplayOrder);
+        return (max ?? 0) + 1;
     }
 
     public async Task<IReadOnlyList<TentDto>> GetTentsAsync()

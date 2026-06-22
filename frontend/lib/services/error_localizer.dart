@@ -49,5 +49,8 @@ class ErrorLocalizer {
     ErrorCodes.partKindNameRequired: 'Le nom de l\'élément est requis',
     ErrorCodes.partKindNameTooLong: 'Le nom de l\'élément est trop long (60 max)',
     ErrorCodes.partKindNotFound: 'Élément introuvable',
+    ErrorCodes.tentModelNotFound: 'Ce modèle est introuvable.',
+    ErrorCodes.modelInUse: 'Impossible de supprimer ce modèle car des tentes l\'utilisent encore.',
+    ErrorCodes.modelNameExists: 'Un modèle avec ce nom existe déjà.',
   };
 }

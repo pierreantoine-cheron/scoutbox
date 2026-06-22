@@ -27,6 +27,7 @@ export 'state_selector.dart';
 export 'tag_assignment_sheet.dart';
 export 'part_kind_sheet.dart';
 export 'tag_sheet.dart';
+export 'tent_model_sheet.dart';
 export 'tent_card.dart';
 export 'tent_data_table.dart';
 export 'tent_history_section.dart';

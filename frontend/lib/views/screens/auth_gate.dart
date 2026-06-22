@@ -6,6 +6,7 @@ import '../../utils/design_constants.dart';
 import '../widgets/widgets.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import 'models_screen.dart';
 import 'part_kinds_screen.dart';
 import 'tags_screen.dart';
 import 'tent_list_screen.dart';
@@ -98,9 +99,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       NavigationSection.tents => const TentListScreen(),
       NavigationSection.tags => const TagsScreen(),
       NavigationSection.parts => const PartKindsScreen(),
-      NavigationSection.models => const _PlaceholderScreen(
-        label: 'Modèles',
-      ),
+      NavigationSection.models => const ModelsScreen(),
       NavigationSection.settings => const _PlaceholderScreen(
         label: 'Réglages',
       ),

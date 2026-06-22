@@ -34,6 +34,11 @@ public static class AuditActions
     public const string PhotoUploaded = "photo_uploaded";
     public const string PhotoDeleted = "photo_deleted";
 
+    // TentModel management actions
+    public const string TentModelCreated = "model_created";
+    public const string TentModelRenamed = "model_renamed";
+    public const string TentModelDeleted = "model_deleted";
+
     // Tag management actions (for future stories)
     public const string TagCreated = "tag_created";
     public const string TagRenamed = "tag_renamed";

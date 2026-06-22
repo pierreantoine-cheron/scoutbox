@@ -31,7 +31,10 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
         section: NavigationSection.parts,
         count: () => ref.watch(partKindsProvider).asData?.value.length ?? 0,
       ),
-      const _NavigationDrawerItem(section: NavigationSection.models),
+      _NavigationDrawerItem(
+        section: NavigationSection.models,
+        count: () => ref.watch(tentModelsProvider).asData?.value.length ?? 0,
+      ),
     ];
 
     return Drawer(
