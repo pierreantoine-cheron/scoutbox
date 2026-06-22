@@ -174,12 +174,41 @@
     .icon-btn:hover { background: var(--fg-soft); color: var(--fg); }
     .icon-btn svg { width: 20px; height: 20px; }
 
+    .desktop-create-btn {
+      display: none; align-items: center; gap: 7px;
+      padding: 9px 18px; border-radius: var(--radius);
+      background: var(--accent); color: var(--surface);
+      font-size: 13px; font-weight: 600;
+      transition: background 0.12s;
+    }
+    .desktop-create-btn:hover { background: var(--accent-hover); }
+    .desktop-create-btn svg { flex-shrink: 0; }
+    @media (min-width: 768px) {
+      .desktop-create-btn { display: inline-flex; }
+    }
+
     /* ═══════════════════════════════════════════════════════════════════
        CONTENT
        ═══════════════════════════════════════════════════════════════════ */
     .content { padding: 14px 16px 100px; }
     @media (min-width: 768px) {
       .content { padding: 20px 24px 100px; }
+    }
+
+    /* ─── FAB ─── */
+    .fab {
+      position: fixed; bottom: 24px; right: 24px; z-index: 20;
+      display: grid; place-items: center;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--accent); color: var(--surface);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      transition: background 0.12s, transform 0.15s;
+    }
+    .fab:hover { background: var(--accent-hover); }
+    .fab:active { transform: scale(0.94); }
+    .fab svg { width: 22px; height: 22px; }
+    @media (min-width: 768px) {
+      .fab { display: none; }
     }
 
     /* ─── empty state ─── */
@@ -227,22 +256,15 @@
       .model-card { margin-bottom: 0; }
     }
     .model-card:hover { border-color: var(--accent-soft); }
-    .model-card.expanded {
-      border-color: var(--accent);
-      box-shadow: 0 2px 16px color-mix(in oklch, var(--accent) 10%, transparent);
-    }
 
     .model-card-header {
       display: flex; align-items: center; gap: 14px; padding: 14px 18px;
-      cursor: pointer; user-select: none;
     }
     .model-icon {
       display: grid; place-items: center;
       width: 44px; height: 44px; border-radius: var(--radius);
       background: var(--accent-soft); color: var(--accent); flex-shrink: 0;
-      transition: background 0.14s, color 0.14s;
     }
-    .model-card.expanded .model-icon { background: var(--accent); color: var(--surface); }
     .model-icon svg { width: 22px; height: 22px; }
     .model-info { flex: 1; min-width: 0; }
     .model-info .model-name {
@@ -252,15 +274,6 @@
     .model-info .model-meta {
       font-family: var(--font-mono); font-size: 12px; color: var(--muted);
     }
-    .expand-indicator {
-      display: grid; place-items: center; width: 28px; height: 28px;
-      border-radius: var(--radius-sm); color: var(--muted); flex-shrink: 0;
-      transition: transform 0.22s, color 0.14s;
-    }
-    .model-card.expanded .expand-indicator {
-      transform: rotate(180deg); color: var(--accent);
-    }
-    .expand-indicator svg { width: 18px; height: 18px; }
 
     .more-btn {
       display: grid; place-items: center; width: 32px; height: 32px;
@@ -270,171 +283,116 @@
     .more-btn:hover { background: var(--fg-soft); }
     .more-btn svg { width: 18px; height: 18px; }
 
-    /* ─── expanded detail ─── */
-    .model-detail {
-      max-height: 0; overflow: hidden;
-      transition: max-height 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-      border-top: 1px solid transparent;
-    }
-    .model-card.expanded .model-detail {
-      max-height: 700px;
-      border-top-color: var(--border);
-    }
-    .model-detail-inner { padding: 0 18px 16px; }
-
-.detail-label {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-family: var(--font-mono);
-  margin-top: 6px;
-}
-
-
     /* ═══════════════════════════════════════════════════════════════════
-       FAB
-       ═══════════════════════════════════════════════════════════════════ */
-    .fab {
-      position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
-      background: var(--accent); color: var(--surface); border-radius: 16px;
-      display: grid; place-items: center;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.13);
-      transition: background 0.12s, transform 0.1s, box-shadow 0.12s;
-      z-index: 30;
-    }
-    .fab:hover { background: var(--accent-hover); box-shadow: 0 6px 22px rgba(0,0,0,0.18); }
-    .fab:active { transform: scale(0.96); }
-    .fab svg { width: 24px; height: 24px; }
-    @media (min-width: 768px) {
-      .fab { display: none !important; }
-    }
-    .desktop-create-btn {
-      display: none; align-items: center; gap: 6px;
-      padding: 8px 18px; border-radius: var(--radius);
-      background: var(--accent); color: var(--surface);
-      font-size: 14px; font-weight: 600;
-      transition: background 0.12s;
-    }
-    .desktop-create-btn:hover { background: var(--accent-hover); }
-    @media (min-width: 768px) {
-      .desktop-create-btn { display: inline-flex; }
-    }
-
-    /* ═══════════════════════════════════════════════════════════════════
-        BOTTOM SHEET — create / edit model
+        SHEET PANEL
         ═══════════════════════════════════════════════════════════════════ */
     .sheet-panel {
-      width: 100%; max-height: 85vh; overflow-y: auto;
+      display: flex; flex-direction: column;
+      width: 100%; max-height: 85vh;
       background: var(--surface);
       border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-      transform: translateY(100%);
-      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    .sheet-scrim.on .sheet-panel {
-      transform: translateY(0);
+      overflow: hidden;
     }
     @media (min-width: 768px) {
-      .sheet-scrim { align-items: center; }
       .sheet-panel {
-        max-width: 480px; border-radius: var(--radius-xl);
-        transform: translateY(16px) scale(0.94);
-        opacity: 0;
-        transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.18s;
+        width: 480px; max-height: 80vh;
+        border-radius: var(--radius-xl);
+        margin: auto;
       }
-      .sheet-scrim.on .sheet-panel {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-      }
+      .sheet-scrim { align-items: center; }
     }
 
     .sheet-handle {
-      display: flex; justify-content: center; padding: 10px 0 6px;
+      width: 36px; height: 4px; border-radius: 999px;
+      background: var(--border); margin: 12px auto 0; flex-shrink: 0;
     }
-    @media (min-width: 768px) {
-      .sheet-handle { display: none; }
-    }
-    .sheet-handle::before {
-      content: ''; width: 36px; height: 4px; border-radius: 999px;
-      background: var(--border);
-    }
+
     .sheet-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px 12px;
+      padding: 16px 20px 8px; flex-shrink: 0;
     }
     .sheet-header h2 {
-      font-family: var(--font-display); font-size: 20px; font-weight: 620;
+      font-family: var(--font-display); font-size: 18px; font-weight: 620;
       letter-spacing: -0.01em; margin: 0;
     }
     .sheet-close {
-      display: grid; place-items: center; width: 36px; height: 36px;
-      border-radius: var(--radius-sm); color: var(--muted);
-      transition: background 0.12s;
+      display: grid; place-items: center;
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
+      color: var(--muted); transition: background 0.12s, color 0.12s;
     }
-    .sheet-close:hover { background: var(--fg-soft); }
-    .sheet-close svg { width: 20px; height: 20px; }
+    .sheet-close:hover { background: var(--fg-soft); color: var(--fg); }
+    .sheet-close svg { width: 18px; height: 18px; }
 
-    .sheet-body { padding: 0 20px 16px; }
-    .sheet-body label {
-      display: block; font-family: var(--font-mono); font-size: 11px;
-      letter-spacing: 0.05em; text-transform: uppercase;
-      color: var(--muted); margin-bottom: 8px;
-    }
-    .sheet-body input[type="text"] {
-      width: 100%; padding: 12px 14px; border: 1px solid var(--border);
-      border-radius: var(--radius); font-size: 15px;
-      background: var(--surface); color: var(--fg);
-      outline: none; transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .sheet-body input[type="text"]:focus {
-      border-color: var(--accent); box-shadow: 0 0 0 2.5px var(--accent-soft);
-    }
-    .sheet-body .char-count {
-      text-align: right; font-size: 11px; color: var(--muted); margin-top: 4px;
+    .sheet-body {
+      flex: 1; overflow-y: auto; padding: 8px 20px 16px;
     }
 
     .sheet-footer {
       display: flex; gap: var(--gap-sm); justify-content: flex-end;
-      padding: 4px 20px 20px;
+      padding: 14px 20px; border-top: 1px solid var(--border); flex-shrink: 0;
     }
+
+    .field {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .field label {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .field input {
+      padding: 11px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 15px; font-weight: 500;
+      color: var(--fg); background: var(--bg);
+      transition: border-color 0.14s; outline: none;
+    }
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); font-weight: 400; }
+    .char-count {
+      font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+      align-self: flex-end;
+    }
+
     .btn-outline {
-      padding: 12px 24px; border: 1px solid var(--border);
-      border-radius: var(--radius); font-size: 14px; font-weight: 500;
-      color: var(--fg); transition: background 0.12s;
+      padding: 10px 20px; border-radius: var(--radius);
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      border: 1px solid var(--border); background: var(--surface);
+      transition: background 0.12s, color 0.12s;
     }
-    .btn-outline:hover { background: var(--fg-soft); }
+    .btn-outline:hover { background: var(--fg-soft); color: var(--fg); }
+
     .btn-filled {
-      padding: 12px 28px; border-radius: var(--radius);
+      padding: 10px 20px; border-radius: var(--radius);
+      font-size: 14px; font-weight: 600;
       background: var(--accent); color: var(--surface);
-      font-size: 14px; font-weight: 600; transition: background 0.12s;
+      transition: background 0.12s;
     }
     .btn-filled:hover { background: var(--accent-hover); }
-    .btn-filled:disabled { opacity: 0.4; cursor: default; }
 
     /* ═══════════════════════════════════════════════════════════════════
-        ALL PARTS TOGGLE LIST (inline in expanded card)
+        S SHEET — part selection list
         ═══════════════════════════════════════════════════════════════════ */
-    .all-parts-list {
-      display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px;
+    .sheet-parts-list {
+      display: flex; flex-direction: column; gap: 2px;
+      max-height: 300px; overflow-y: auto;
+      margin-top: 4px;
     }
-    .toggle-part-row {
+    .sheet-part-row {
       display: flex; align-items: center; gap: 12px;
       width: 100%; padding: 10px 12px; border-radius: var(--radius);
       text-align: left; font-size: 14px; font-weight: 500;
-      background: var(--bg); transition: background 0.12s, color 0.12s, transform 0.15s;
+      background: var(--bg); transition: background 0.12s;
     }
-    .toggle-part-row:hover { background: var(--fg-soft); }
-    .toggle-part-row:active { transform: scale(0.985); }
-    .toggle-part-row .part-check {
+    .sheet-part-row:hover { background: var(--fg-soft); }
+    .sheet-part-row .part-check {
       display: grid; place-items: center; width: 22px; height: 22px; flex-shrink: 0;
       color: var(--border); transition: color 0.15s;
     }
-    .toggle-part-row .part-check svg { width: 20px; height: 20px; }
-    .toggle-part-row.assigned {
+    .sheet-part-row .part-check svg { width: 20px; height: 20px; }
+    .sheet-part-row.selected {
       background: var(--accent-soft); color: var(--accent);
     }
-    .toggle-part-row.assigned .part-check { color: var(--accent); }
-    .toggle-part-row .part-name { flex: 1; }
+    .sheet-part-row.selected .part-check { color: var(--accent); }
+    .sheet-part-row .part-name { flex: 1; }
 
     /* ═══════════════════════════════════════════════════════════════════
         DIALOG — delete confirmation
@@ -605,6 +563,8 @@
           <input type="text" id="model-name" maxlength="80" placeholder="Ex: Dôme, Tunnel, Canadienne…" />
           <div class="char-count" id="model-char-count">0 / 80</div>
         </div>
+        <label style="display:block; font-family:var(--font-mono); font-size:11px; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); margin: 20px 0 8px;">Éléments par défaut</label>
+        <div class="sheet-parts-list" id="sheet-parts-list"></div>
       </div>
       <div class="sheet-footer">
         <button class="btn-outline" id="model-sheet-cancel">Annuler</button>
@@ -669,8 +629,6 @@
       { id:'m8', name:'Abri de camp',    partKindIds:['k1','k4','k6','k7','k9','k10'] },
     ];
 
-    let expandedModelId = null;
-
     function getPartName(id) {
       const p = partKinds.find(pk => pk.id === id);
       return p ? p.name : id;
@@ -704,11 +662,10 @@
       fab.style.display = 'grid';
 
       container.innerHTML = models.map(model => {
-        const isExpanded = model.id === expandedModelId;
         const count = modelPartCount(model);
         return `
-          <div class="model-card${isExpanded ? ' expanded' : ''}" id="card-${model.id}">
-            <div class="model-card-header" data-model-id="${model.id}">
+          <div class="model-card" id="card-${model.id}">
+            <div class="model-card-header">
               <div class="model-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
               </div>
@@ -719,28 +676,6 @@
               <button class="more-btn" data-model-id="${model.id}" title="Plus d'options">
                 <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
               </button>
-              <div class="expand-indicator">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </div>
-            </div>
-            <div class="model-detail">
-              <div class="model-detail-inner">
-                <div class="detail-label">Éléments</div>
-                <div class="all-parts-list">
-                  ${partKinds.map(pk => {
-                    const isAssigned = model.partKindIds.includes(pk.id);
-                    return `
-                      <button class="toggle-part-row${isAssigned ? ' assigned' : ''}" data-model-id="${model.id}" data-part-id="${pk.id}">
-                        <span class="part-check">${isAssigned
-                          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
-                          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg>'
-                        }</span>
-                        <span class="part-name">${pk.name}</span>
-                      </button>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
             </div>
           </div>
         `;
@@ -786,34 +721,48 @@
     });
 
     /* ═══════════════════════════════════════════════════════════════
-       MODEL CARD EXPAND / COLLAPSE
-       ═══════════════════════════════════════════════════════════════ */
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('.more-btn')) return;
-      const header = e.target.closest('.model-card-header');
-      if (!header) return;
+        SHEET PART SELECTION
+        ═══════════════════════════════════════════════════════════════ */
+    let editingPartIds = [];
 
-      const card = header.closest('.model-card');
-      if (!card) return;
+    function renderSheetParts(model = null) {
+      const list = document.getElementById('sheet-parts-list');
+      const checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+      const circleIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg>';
 
-      const mid = header.dataset.modelId;
-      const wasExpanded = card.classList.contains('expanded');
+      editingPartIds = model ? [...model.partKindIds] : [];
 
-      // Collapse any currently expanded card
-      const prevExpanded = document.querySelector('.model-card.expanded');
-      if (prevExpanded) prevExpanded.classList.remove('expanded');
+      list.innerHTML = partKinds.map(pk => {
+        const selected = editingPartIds.includes(pk.id);
+        return `
+          <button class="sheet-part-row${selected ? ' selected' : ''}" data-part-id="${pk.id}">
+            <span class="part-check">${selected ? checkIcon : circleIcon}</span>
+            <span class="part-name">${pk.name}</span>
+          </button>
+        `;
+      }).join('');
+    }
 
-      if (!wasExpanded) {
-        card.classList.add('expanded');
-        expandedModelId = mid;
+    document.getElementById('sheet-parts-list').addEventListener('click', (e) => {
+      const btn = e.target.closest('.sheet-part-row');
+      if (!btn) return;
+
+      const partId = btn.dataset.partId;
+      const idx = editingPartIds.indexOf(partId);
+      const checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+      const circleIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg>';
+
+      if (idx === -1) {
+        editingPartIds.push(partId);
+        btn.classList.add('selected');
+        btn.querySelector('.part-check').innerHTML = checkIcon;
       } else {
-        expandedModelId = null;
+        editingPartIds.splice(idx, 1);
+        btn.classList.remove('selected');
+        btn.querySelector('.part-check').innerHTML = circleIcon;
       }
     });
 
-    /* ═══════════════════════════════════════════════════════════════
-       TOGGLE PART — assign / unassign in expanded card
-       ═══════════════════════════════════════════════════════════════ */
     function updateCardMeta(modelId) {
       const model = models.find(m => m.id === modelId);
       if (!model) return;
@@ -825,35 +774,8 @@
       }
     }
 
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.toggle-part-row');
-      if (!btn) return;
-      e.stopPropagation();
-
-      const modelId = btn.dataset.modelId;
-      const partId = btn.dataset.partId;
-      const model = models.find(m => m.id === modelId);
-      if (!model) return;
-
-      const idx = model.partKindIds.indexOf(partId);
-      const checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-      const circleIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg>';
-
-      if (idx === -1) {
-        model.partKindIds.push(partId);
-        btn.classList.add('assigned');
-        btn.querySelector('.part-check').innerHTML = checkIcon;
-      } else {
-        model.partKindIds.splice(idx, 1);
-        btn.classList.remove('assigned');
-        btn.querySelector('.part-check').innerHTML = circleIcon;
-      }
-
-      updateCardMeta(modelId);
-    });
-
     /* ═══════════════════════════════════════════════════════════════
-       MODEL SHEET — create / edit model
+        MODEL SHEET — create / edit model
        ═══════════════════════════════════════════════════════════════ */
     const modelSheetScrim = document.getElementById('model-sheet-scrim');
     const modelNameInput = document.getElementById('model-name');
@@ -870,6 +792,7 @@
       modelConfirmBtn.textContent = model ? 'Enregistrer' : 'Créer';
       modelNameInput.value = model ? model.name : '';
       updateModelCharCount();
+      renderSheetParts(model);
       modelSheetScrim.classList.add('on');
       modelSheetOpen = true;
       modelNameInput.focus();
@@ -881,7 +804,9 @@
       editingModelId = null;
     }
 
-    modelSheetScrim.addEventListener('click', closeModelSheet);
+    modelSheetScrim.addEventListener('click', (e) => {
+      if (e.target === modelSheetScrim) closeModelSheet();
+    });
     document.getElementById('model-sheet-close').addEventListener('click', closeModelSheet);
     document.getElementById('model-sheet-cancel').addEventListener('click', closeModelSheet);
 
@@ -897,14 +822,19 @@
         return;
       }
 
+      const partIds = [...editingPartIds];
+
       if (editingModelId) {
         const idx = models.findIndex(m => m.id === editingModelId);
-        if (idx !== -1) models[idx].name = name;
+        if (idx !== -1) {
+          models[idx].name = name;
+          models[idx].partKindIds = partIds;
+        }
       } else {
         models.push({
           id: 'm' + Date.now(),
           name: name,
-          partKindIds: [],
+          partKindIds: partIds,
         });
       }
 
@@ -949,7 +879,6 @@
       if (!pendingDeleteId) return;
       const idx = models.findIndex(m => m.id === pendingDeleteId);
       if (idx !== -1) models.splice(idx, 1);
-      if (expandedModelId === pendingDeleteId) expandedModelId = null;
       renderModels();
       closeDialog();
     });
