@@ -1101,6 +1101,131 @@ svg { display: block; flex-shrink: 0; }
     max-width: 500px; margin: auto;
   }
 }
+
+.settings-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--gap-md) var(--gap-lg);
+  margin-bottom: var(--gap-lg);
+}
+.settings-section { padding: 0; }
+.settings-section + .settings-section {
+  border-top: 1px solid var(--border);
+  margin-top: var(--gap-md);
+  padding-top: var(--gap-md);
+}
+.settings-section.danger { border-color: var(--state-unusable-bg); }
+.settings-section-header {
+  display: flex; align-items: center; gap: var(--gap-sm);
+  margin-bottom: 4px;
+}
+.settings-section-header svg {
+  width: 18px; height: 18px; color: var(--muted);
+}
+.settings-section-header span {
+  font-family: var(--font-mono);
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted);
+}
+.settings-section-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: var(--fs-h2); font-weight: 620;
+  color: var(--fg);
+}
+.settings-section-label svg {
+  width: 20px; height: 20px; color: var(--muted);
+  flex-shrink: 0;
+}
+.settings-section-body {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: var(--fs-meta);
+  line-height: 1.55;
+}
+.settings-card-header {
+  display: flex; align-items: center; gap: var(--gap-sm);
+  margin-bottom: 4px;
+}
+.settings-card-header svg {
+  width: 18px; height: 18px; color: var(--muted);
+}
+.settings-card-header span {
+  font-family: var(--font-mono);
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted);
+}
+.settings-value {
+  font-size: var(--fs-h1); font-weight: 620;
+  color: var(--fg);
+}
+
+@media (min-width: 768px) {
+  .settings-container {
+    max-width: 520px;
+    margin: 0 auto;
+  }
+}
+
+.invite-code-display {
+  display: flex; align-items: center; gap: var(--gap-sm);
+  margin-top: var(--gap-sm);
+}
+.invite-code-text {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 16px; letter-spacing: 0.05em;
+  color: var(--fg); user-select: all;
+}
+.invite-code-copy {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 14px;
+  background: var(--accent-soft); color: var(--accent);
+  border: none; border-radius: var(--radius);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background 0.12s;
+  white-space: nowrap;
+}
+.invite-code-copy:hover { background: color-mix(in oklch, var(--accent) 22%, transparent); }
+.invite-code-copy svg { width: 14px; height: 14px; }
+.invite-code-copy.copied { background: var(--state-perfect-bg); color: var(--state-perfect); }
+.invite-code-hint {
+  font-size: 12px; color: var(--muted);
+  margin-top: 6px;
+}
+
+.btn-generate {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent); color: var(--surface);
+  border: none; border-radius: var(--radius);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background 0.12s, transform 0.1s;
+}
+.btn-generate:hover { background: var(--accent-hover); }
+.btn-generate:active { transform: scale(0.98); }
+.btn-generate svg { width: 16px; height: 16px; }
+
+.btn-logout {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 20px;
+  background: transparent; color: var(--state-unusable);
+  border: 1px solid var(--state-unusable);
+  border-radius: var(--radius);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background 0.12s;
+}
+.btn-logout:hover { background: var(--state-unusable-bg); }
+.btn-logout svg { width: 16px; height: 16px; }
+
+.settings-divider {
+  border: 0; border-top: 1px solid var(--border);
+  margin: var(--gap-md) 0;
+}
 </style>
 </head>
 <body>
@@ -1393,9 +1518,53 @@ svg { display: block; flex-shrink: 0; }
     </div>
 
     <div class="screen" id="screen-settings">
-      <div style="max-width:500px">
-        <h2 style="font-size:var(--fs-h1);margin-bottom:var(--gap-md)">Réglages</h2>
-        <p style="color:var(--muted)">Configuration à venir.</p>
+      <div class="settings-container">
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Nom d'utilisateur</span>
+          </div>
+          <div class="settings-value" id="settings-username">—</div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Code d'invitation</span>
+          </div>
+          <p style="color:var(--muted);font-size:var(--fs-meta);margin-top:4px">Générez un code pour inviter un nouvel utilisateur à rejoindre ScoutBox.</p>
+          <div id="invite-code-area" style="display:none">
+            <div class="invite-code-display">
+              <span class="invite-code-text" id="invite-code-text"></span>
+              <button class="invite-code-copy" id="invite-copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copier
+              </button>
+            </div>
+            <p class="invite-code-hint">Le code expire après 30 jours et ne peut être utilisé qu'une seule fois.</p>
+          </div>
+          <div style="margin-top:var(--gap-sm)">
+            <button class="btn-generate" id="invite-generate-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Générer un code
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Déconnexion</span>
+          </div>
+          <p style="color:var(--muted);font-size:var(--fs-meta);margin-top:4px">Vous serez redirigé vers l'écran d'authentification.</p>
+          <div style="margin-top:var(--gap-sm)">
+            <button class="btn-logout" id="logout-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Se déconnecter
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -1628,6 +1797,8 @@ var tents = [
   { id: 8, name: 'Tatonka Family Camp', size: 8, modelId: 2, modelName: 'Tunnel', state: 'good', isArchived: false, comments: '', parts: [], tags: [], history: [] }
 ];
 var nextTentId = 9;
+
+var currentUser = { username: 'jean.dupont', displayName: 'Jean Dupont' };
 
 var tags = [
   { id: 1, name: 'Randonnée', color: 'green' },
@@ -2971,6 +3142,53 @@ refreshBtn.addEventListener('click', function() {
   if (currentScreen === 'tags') renderTags();
   else if (currentScreen === 'parts') renderParts();
   else if (currentScreen === 'models') renderModels();
+});
+
+// --- Settings ---
+
+var inviteCode = null;
+
+function generateInviteCode() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var code = '';
+  for (var i = 0; i < 3; i++) {
+    for (var j = 0; j < 4; j++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    if (i < 2) code += '-';
+  }
+  return code;
+}
+
+document.getElementById('invite-generate-btn').addEventListener('click', function() {
+  inviteCode = generateInviteCode();
+  document.getElementById('invite-code-text').textContent = inviteCode;
+  document.getElementById('invite-code-area').style.display = 'block';
+  var copyBtn = document.getElementById('invite-copy-btn');
+  copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copier';
+  copyBtn.classList.remove('copied');
+});
+
+document.getElementById('invite-copy-btn').addEventListener('click', function() {
+  if (!inviteCode) return;
+  navigator.clipboard.writeText(inviteCode).then(function() {
+    var btn = document.getElementById('invite-copy-btn');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copié';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copier';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+});
+
+document.getElementById('settings-username').textContent = currentUser.displayName || currentUser.username;
+
+document.getElementById('logout-btn').addEventListener('click', function() {
+  openDialog('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter ?', function() {
+    switchScreen('list');
+    closeDialog();
+  });
 });
 
 // --- Init ---
