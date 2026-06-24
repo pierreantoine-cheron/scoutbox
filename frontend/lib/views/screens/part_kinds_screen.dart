@@ -220,20 +220,6 @@ class _PartKindContent extends StatelessWidget {
 
     return Row(
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.accentSoft,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-          ),
-          child: const Icon(
-            Icons.build_outlined,
-            size: 20,
-            color: AppColors.scoutGreen,
-          ),
-        ),
-        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

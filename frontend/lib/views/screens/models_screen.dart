@@ -215,20 +215,6 @@ class _ModelContent extends StatelessWidget {
 
     return Row(
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.accentSoft,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-          ),
-          child: Icon(
-            NavigationSection.models.icon,
-            color: AppColors.scoutGreen,
-            size: 22,
-          ),
-        ),
-        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
