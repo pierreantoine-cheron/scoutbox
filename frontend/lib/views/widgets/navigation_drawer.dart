@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../providers/providers.dart';
 import '../../utils/app_colors.dart';
@@ -100,18 +101,10 @@ class _DrawerHeader extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
-          Container(
+          SvgPicture.asset(
+            'assets/brand/logo.svg',
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(AppRadii.md),
-            ),
-            child: Icon(
-              Icons.cabin,
-              color: colorScheme.onPrimary,
-              size: 20,
-            ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(

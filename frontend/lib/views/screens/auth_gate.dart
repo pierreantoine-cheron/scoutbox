@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../providers/providers.dart';
 import '../../utils/design_constants.dart';
@@ -169,6 +170,12 @@ class _DesktopTitleRow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        SvgPicture.asset(
+          'assets/brand/logo.svg',
+          width: 24,
+          height: 24,
+        ),
+        const SizedBox(width: 8),
         Text(
           'ScoutBox',
           style: TextStyle(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../providers/providers.dart';
 import '../../models/auth_state.dart';
@@ -237,14 +238,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget _buildLogoAndTitle() {
     return Column(
       children: [
-        Container(
+        SvgPicture.asset(
+          'assets/brand/logo.svg',
           width: 48,
           height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.scoutGreen,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-          ),
-          child: const Icon(Icons.grid_view, color: AppColors.surface, size: 26),
         ),
         const SizedBox(height: 12),
         Text(
