@@ -22,7 +22,7 @@ class AuthRepository {
       },
     );
 
-    return AuthResponse.fromJson(response.data as Map<String, dynamic>);
+    return AuthResponse.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
   Future<AuthResponse> login({
@@ -37,7 +37,7 @@ class AuthRepository {
       data: {'username': username, 'password': password},
     );
 
-    return AuthResponse.fromJson(response.data as Map<String, dynamic>);
+    return AuthResponse.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
   Future<AuthResponse> refreshToken(String refreshToken) async {
@@ -46,7 +46,7 @@ class AuthRepository {
       data: {'refreshToken': refreshToken},
     );
 
-    return AuthResponse.fromJson(response.data as Map<String, dynamic>);
+    return AuthResponse.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
   Future<void> logout(String refreshToken) async {

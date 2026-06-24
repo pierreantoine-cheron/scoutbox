@@ -88,126 +88,139 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    final isDesktop = MediaQuery.sizeOf(context).width >= 768;
+
     return Material(
       child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionHeader(
-                  icon: Icons.person_outline,
-                  label: "Nom d'utilisateur",
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  _username ?? '—',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _SectionHeader(
-                  icon: Icons.lock_outline,
-                  label: 'Code d\'invitation',
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Générez un code pour inviter un nouvel utilisateur à rejoindre ScoutBox.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                if (_isGenerating)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                if (_generatedCode != null) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: AppSpacing.sm,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(AppRadii.sm),
-                          ),
-                          child: Text(
-                            _generatedCode!,
-                            style: const TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 16,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      _CopyButton(
-                        isCopied: _isCopied,
-                        onTap: _copyToClipboard,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Le code expire après 30 jours et ne peut être utilisé qu\'une seule fois.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontFamily: 'monospace',
-                      color: AppColors.muted,
+          child: isDesktop
+              ? Center(
+                  child: SizedBox(
+                    width: 520,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: _buildContent(colorScheme),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                ],
-                FilledButton.icon(
-                  onPressed: _isGenerating ? null : _generateCode,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: Text(
-                    _generatedCode == null ? 'Générer un code' : 'Générer un nouveau code',
-                  ),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _buildContent(colorScheme),
                 ),
-                const SizedBox(height: AppSpacing.xl),
-                const Divider(),
-                const SizedBox(height: AppSpacing.lg),
-                _SectionHeader(
-                  icon: Icons.logout,
-                  label: 'Déconnexion',
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Vous serez redirigé vers l\'écran d\'authentification.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                OutlinedButton.icon(
-                  onPressed: _showLogoutConfirmation,
-                  icon: const Icon(Icons.logout, size: 18),
-                  label: const Text('Se déconnecter'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.error,
-                    side: BorderSide(color: colorScheme.error),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildContent(ColorScheme colorScheme) {
+    return [
+      _SectionHeader(
+        icon: Icons.person_outline,
+        label: "Nom d'utilisateur",
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      Text(
+        _username ?? '—',
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
+        ),
+      ),
+      const SizedBox(height: AppSpacing.lg),
+      _SectionHeader(
+        icon: Icons.lock_outline,
+        label: 'Code d\'invitation',
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      Text(
+        'Générez un code pour inviter un nouvel utilisateur à rejoindre ScoutBox.',
+        style: TextStyle(
+          fontSize: 14,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      if (_isGenerating)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      if (_generatedCode != null) ...[
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
+                ),
+                child: Text(
+                  _generatedCode!,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 16,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            _CopyButton(
+              isCopied: _isCopied,
+              onTap: _copyToClipboard,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Le code expire après 30 jours et ne peut être utilisé qu\'une seule fois.',
+          style: const TextStyle(
+            fontSize: 12,
+            fontFamily: 'monospace',
+            color: AppColors.muted,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+      ],
+      FilledButton.icon(
+        onPressed: _isGenerating ? null : _generateCode,
+        icon: const Icon(Icons.add, size: 18),
+        label: Text(
+          _generatedCode == null ? 'Générer un code' : 'Générer un nouveau code',
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xl),
+      const Divider(),
+      const SizedBox(height: AppSpacing.lg),
+      _SectionHeader(
+        icon: Icons.logout,
+        label: 'Déconnexion',
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      Text(
+        'Vous serez redirigé vers l\'écran d\'authentification.',
+        style: TextStyle(
+          fontSize: 14,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      OutlinedButton.icon(
+        onPressed: _showLogoutConfirmation,
+        icon: const Icon(Icons.logout, size: 18),
+        label: const Text('Se déconnecter'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: colorScheme.error,
+          side: BorderSide(color: colorScheme.error),
+        ),
+      ),
+    ];
   }
 }
 
