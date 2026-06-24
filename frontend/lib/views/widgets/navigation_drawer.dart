@@ -98,7 +98,12 @@ class _DrawerHeader extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: EdgeInsets.only(
+        top: AppSpacing.md + MediaQuery.of(context).padding.top,
+        left: AppSpacing.md,
+        right: AppSpacing.md,
+        bottom: AppSpacing.md,
+      ),
       child: Row(
         children: [
           SvgPicture.asset(
