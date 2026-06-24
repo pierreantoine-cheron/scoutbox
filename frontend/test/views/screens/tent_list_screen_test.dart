@@ -17,7 +17,7 @@ import 'package:client/views/widgets/async_error_view.dart';
 
 void main() {
   group('TentListScreen', () {
-    testWidgets('opens logout dialog and cancels', (WidgetTester tester) async {
+    testWidgets('no logout button in AppBar', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -40,45 +40,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.logout));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Se déconnecter ?'), findsOneWidget);
-      expect(find.text('Votre session sera fermée.'), findsOneWidget);
-
-      await tester.tap(find.text('Annuler'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Se déconnecter ?'), findsNothing);
-    });
-
-    testWidgets('disables logout button while loading', (
-      WidgetTester tester,
-    ) async {
-      const loadingState = AuthState(isLoading: true);
-
-      await _setViewportSize(tester, const Size(600, 900));
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authProvider.overrideWithValue(loadingState),
-            tentListProvider.overrideWith(
-              () => _TentListTestNotifier(const []),
-            ),
-          ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      final iconButton = tester.widget<IconButton>(
-        find.ancestor(
-          of: find.byIcon(Icons.logout),
-          matching: find.byType(IconButton),
-        ),
-      );
-      expect(iconButton.onPressed, isNull);
+      expect(find.byIcon(Icons.logout), findsNothing);
     });
 
     testWidgets('opens tent creation screen from empty-state action', (

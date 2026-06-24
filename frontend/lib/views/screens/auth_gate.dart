@@ -11,6 +11,7 @@ import 'models_screen.dart';
 import 'part_kinds_screen.dart';
 import 'tags_screen.dart';
 import 'tent_list_screen.dart';
+import 'settings_screen.dart';
 
 class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
@@ -101,9 +102,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       NavigationSection.tags => const TagsScreen(),
       NavigationSection.parts => const PartKindsScreen(),
       NavigationSection.models => const ModelsScreen(),
-      NavigationSection.settings => const _PlaceholderScreen(
-        label: 'Réglages',
-      ),
+      NavigationSection.settings => const SettingsScreen(),
     };
   }
 
@@ -133,9 +132,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     } else if (isRootScreen && isDesktop) {
       title = _DesktopTitleRow(
         section: section,
-        onSectionTap: (s) {
-          if (s.isEnabled) _navigateToSection(s);
-        },
+        onSectionTap: (s) => _navigateToSection(s),
       );
     }
 
@@ -195,7 +192,6 @@ class _DesktopTitleRow extends StatelessWidget {
                     (s) => _TopTab(
                       label: s.label,
                       isSelected: section == s,
-                      enabled: s.isEnabled,
                       onTap: () => onSectionTap(s),
                     ),
                   )
@@ -211,99 +207,48 @@ class _DesktopTitleRow extends StatelessWidget {
 class _TopTab extends StatelessWidget {
   final String label;
   final bool isSelected;
-  final bool enabled;
   final VoidCallback onTap;
 
   const _TopTab({
     required this.label,
     required this.isSelected,
-    required this.enabled,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final effectiveOpacity = enabled ? 1.0 : 0.38;
-
-    return Opacity(
-      opacity: effectiveOpacity,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(AppRadii.sm),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                if (isSelected) ...[
-                  const SizedBox(height: 2),
-                  Container(
-                    width: 18,
-                    height: 2.5,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PlaceholderScreen extends StatelessWidget {
-  final String label;
-
-  const _PlaceholderScreen({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Material(
-      child: SafeArea(
-        child: Center(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadii.sm),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadii.sm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.construction,
-                size: 64,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(height: 16),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Bientôt disponible',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: colorScheme.onSurfaceVariant,
+              if (isSelected) ...[
+                const SizedBox(height: 2),
+                Container(
+                  width: 18,
+                  height: 2.5,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

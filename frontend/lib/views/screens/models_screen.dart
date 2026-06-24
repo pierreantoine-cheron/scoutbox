@@ -77,7 +77,6 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
             );
           },
         ),
-        const LogoutButton(),
       ],
       fab: FloatingActionButton(
         onPressed: () => _showCreateSheet(),

@@ -54,6 +54,12 @@ class _FakeAuthService extends AuthService {
   Future<String?> getAccessToken() async => 'fake_token';
 
   @override
+  Future<void> saveCurrentUsername(String username) async {}
+
+  @override
+  Future<String?> getCurrentUsername() async => null;
+
+  @override
   Future<bool> needsProactiveRefresh({
     Duration refreshWindow = const Duration(minutes: 5),
     Duration clockSkewTolerance = const Duration(seconds: 30),

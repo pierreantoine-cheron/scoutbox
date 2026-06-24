@@ -76,7 +76,6 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
             );
           },
         ),
-        const LogoutButton(),
       ],
       fab: FloatingActionButton(
         onPressed: () => _showCreateSheet(),

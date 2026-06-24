@@ -76,7 +76,6 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
             );
           },
         ),
-        const LogoutButton(),
       ],
       fab: FloatingActionButton(
         onPressed: () => _showCreateSheet(),

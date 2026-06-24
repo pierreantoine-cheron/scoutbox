@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/auth_response.dart';
+import '../models/invite_response.dart';
 import '../utils/app_config.dart';
 import '../utils/constants.dart';
 import '../utils/design_constants.dart';
@@ -518,6 +519,32 @@ class AuthService {
 
   Future<String?> getRememberedUsername() async {
     return await SecureStorageService.getRememberedUsername();
+  }
+
+  Future<void> saveCurrentUsername(String username) async {
+    await SecureStorageService.saveCurrentUsername(username);
+  }
+
+  Future<String?> getCurrentUsername() async {
+    return await SecureStorageService.getCurrentUsername();
+  }
+
+  Future<InviteResponse> createInvite() async {
+    try {
+      final response = await ApiClient.instance.post(
+        ApiRoutes.invites,
+        data: {'expiresInDays': 30},
+      );
+      final data = response.data['data'] as Map<String, dynamic>;
+      return InviteResponse(
+        id: data['id'] as String,
+        code: data['code'] as String,
+        expiresAt: DateTime.parse(data['expiresAt'] as String),
+        isUsed: data['isUsed'] as bool,
+      );
+    } catch (_) {
+      throw Exception("Impossible de générer le code d'invitation. Réessayez.");
+    }
   }
 
   Future<bool> getRememberUsernamePreference() async {

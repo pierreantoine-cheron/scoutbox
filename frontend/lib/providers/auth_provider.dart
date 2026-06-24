@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../services/services.dart';
 import '../models/auth_state.dart';
+import '../models/invite_response.dart';
 
 part 'auth_provider.g.dart';
 
@@ -109,6 +110,7 @@ class AuthNotifier extends _$AuthNotifier {
       if (result.success) {
         // Tokens are already saved by AuthService.register()
         _setAuthenticatedState(serverUrl, result.authResponse!.accessToken);
+        await _authService.saveCurrentUsername(username);
       } else {
         state = state.copyWith(isLoading: false, error: result.error);
       }
@@ -149,6 +151,7 @@ class AuthNotifier extends _$AuthNotifier {
 
       if (result.success) {
         _setAuthenticatedState(serverUrl, result.authResponse!.accessToken);
+        await _authService.saveCurrentUsername(username);
         state = state.copyWith(logoutSuccessMessage: null);
       } else {
         state = state.copyWith(
@@ -189,6 +192,10 @@ class AuthNotifier extends _$AuthNotifier {
   /// Consume the logout success message (clears it from state)
   void consumeLogoutSuccessMessage() {
     state = state.copyWith(logoutSuccessMessage: null);
+  }
+
+  Future<InviteResponse> createInvite() async {
+    return await _authService.createInvite();
   }
 
   void showLoginScreen() {

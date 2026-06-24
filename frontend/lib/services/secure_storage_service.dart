@@ -246,6 +246,16 @@ class SecureStorageService {
     await _deleteValue(StorageKeys.rememberedUsername);
   }
 
+  /// Save current username (persists across sessions, not cleared on logout)
+  static Future<void> saveCurrentUsername(String username) async {
+    await _writeValue(StorageKeys.currentUsername, username);
+  }
+
+  /// Get current username
+  static Future<String?> getCurrentUsername() async {
+    return await _readValue(StorageKeys.currentUsername);
+  }
+
   /// Clear all stored data (logout)
   static Future<void> clearAll() async {
     await Future.wait([

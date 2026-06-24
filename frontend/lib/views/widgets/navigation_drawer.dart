@@ -55,8 +55,7 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
                       label: item.section.label,
                       badge: item.count == null ? null : item.count!(),
                       isSelected: selectedSection == item.section,
-                      enabled: item.section.isEnabled,
-                      onTap: item.section.isEnabled ? () => onSelectSection(item.section) : null,
+                      onTap: () => onSelectSection(item.section),
                     ),
                   )
                   .toList(),
@@ -70,8 +69,7 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
               icon: NavigationSection.settings.icon,
               label: NavigationSection.settings.label,
               isSelected: selectedSection == NavigationSection.settings,
-              enabled: NavigationSection.settings.isEnabled,
-              onTap: null,
+              onTap: () => onSelectSection(NavigationSection.settings),
             ),
           ),
         ],
@@ -132,8 +130,7 @@ class _DrawerItem extends StatelessWidget {
   final String label;
   final int? badge;
   final bool isSelected;
-  final bool enabled;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   const _DrawerItem({
     required this.section,
@@ -141,65 +138,59 @@ class _DrawerItem extends StatelessWidget {
     required this.label,
     this.badge,
     required this.isSelected,
-    required this.enabled,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final effectiveOpacity = enabled ? 1.0 : 0.38;
+    final fgColor = isSelected ? AppColors.scoutGreen : colorScheme.onSurface;
 
-    final fgColor = isSelected && enabled ? AppColors.scoutGreen : colorScheme.onSurface;
-
-    return Opacity(
-      opacity: effectiveOpacity,
-      child: Material(
-        color: isSelected && enabled ? AppColors.accentSoft : Colors.transparent,
+    return Material(
+      color: isSelected ? AppColors.accentSoft : Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadii.sm),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadii.sm),
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(AppRadii.sm),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            child: Row(
-              children: [
-                Icon(icon, size: 18, color: fgColor),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: fgColor),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: fgColor,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ),
+              if (badge != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentSoft,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
                   child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: fgColor,
-                      fontWeight: isSelected && enabled ? FontWeight.w600 : FontWeight.w400,
+                    badge.toString(),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.scoutGreen,
                     ),
                   ),
                 ),
-                if (badge != null && enabled)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentSoft,
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                    ),
-                    child: Text(
-                      badge.toString(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.scoutGreen,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         ),
       ),

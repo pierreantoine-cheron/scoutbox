@@ -27,8 +27,6 @@ enum NavigationSection {
       settings => Icons.settings_outlined,
     };
   }
-
-  bool get isEnabled => this == tents || this == tags || this == parts || this == models;
 }
 
 class NavigationSectionNotifier extends Notifier<NavigationSection> {
