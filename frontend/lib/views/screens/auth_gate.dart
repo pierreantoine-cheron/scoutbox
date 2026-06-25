@@ -56,6 +56,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
             ? null
             : Drawer(
                 width: 300,
+                shape: const RoundedRectangleBorder(),
                 surfaceTintColor: Colors.transparent,
                 child: ScoutBoxNavigationDrawer(
                   selectedSection: section,
