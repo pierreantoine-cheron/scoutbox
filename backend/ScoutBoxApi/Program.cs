@@ -171,7 +171,7 @@ using (var scope = app.Services.CreateScope())
     // Enable WAL mode for SQLite
     dbContext.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
 
-    // Note: Data seeding is handled by UseSeeding/UseAsyncSeeding in ScoutBoxDbContext.OnConfiguring()
+    DataSeeder.Seed(dbContext);
 }
 
 // Configure the HTTP request pipeline.

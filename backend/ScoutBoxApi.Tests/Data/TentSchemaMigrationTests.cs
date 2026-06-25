@@ -26,6 +26,7 @@ public class TentSchemaMigrationTests : IDisposable
 
         _db = new ScoutBoxDbContext(options);
         _db.Database.Migrate();
+        DataSeeder.Seed(_db);
     }
 
     [Fact]
@@ -66,14 +67,16 @@ public class TentSchemaMigrationTests : IDisposable
 
         Assert.Equal(new[]
         {
-            "toit",
-            "double toit",
-            "fetiere",
-            "piquets",
-            "tapis de sol",
-            "sac",
-            "sardines",
-            "Chambre"
+            "Toit",
+            "Double toit",
+            "Fêtière",
+            "Piquets",
+            "Tapis de sol",
+            "Sac",
+            "Sardines",
+            "Chambre",
+            "Arceaux",
+            "Armature"
         }, partKinds);
 
         Assert.Equal(new[]
@@ -81,11 +84,13 @@ public class TentSchemaMigrationTests : IDisposable
             "Canadienne",
             "Cabanon",
             "Tipi",
-            "Marabout"
+            "Marabout",
+            "Autre",
+            "2 secondes"
         }, tentModels);
 
         var modelComponentCount = await _db.TentModelComponents.CountAsync();
-        Assert.Equal(24, modelComponentCount);
+        Assert.Equal(27, modelComponentCount);
     }
 
     [Fact]

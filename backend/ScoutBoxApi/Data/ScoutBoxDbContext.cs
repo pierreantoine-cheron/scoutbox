@@ -21,70 +21,14 @@ public class ScoutBoxDbContext : DbContext
     public DbSet<Part> Parts { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<TentTag> TentTags { get; set; }
+    public DbSet<SeedInfo> SeedInfos { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
 
-        // User entity has a soft-delete query filter (e => !e.IsDeleted) and
-        // is the required end of relationships with Part, RefreshToken, Tent.
-        // These audit navigations (CreatedByUser, UpdatedByUser) are never
-        // eagerly loaded; RefreshToken.User already handles null in AuthService.
-        // Users are rarely deleted in this volunteer-run app, so this is safe.
         optionsBuilder.ConfigureWarnings(warnings =>
             warnings.Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning));
-
-        optionsBuilder.UseSeeding((context, _) =>
-        {
-            SeedAdminInvite(context);
-        });
-
-        optionsBuilder.UseAsyncSeeding(async (context, _, cancellationToken) =>
-        {
-            await SeedAdminInviteAsync(context, cancellationToken);
-        });
-    }
-
-    private static void SeedAdminInvite(DbContext context)
-    {
-        if (!context.Set<Invite>().Any())
-        {
-            var adminInvite = new Invite
-            {
-                Id = Guid.NewGuid(),
-                Code = "ADMIN-SETUP",
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(30),
-                IsUsed = false,
-                CreatedByUserId = null
-            };
-            context.Set<Invite>().Add(adminInvite);
-            context.SaveChanges();
-
-            Console.WriteLine($"[SETUP] Admin invite created: {adminInvite.Code}");
-            Console.WriteLine($"[SETUP] Use this code to register the first user.");
-        }
-    }
-
-    private static async Task SeedAdminInviteAsync(DbContext context, CancellationToken cancellationToken)
-    {
-        if (!context.Set<Invite>().Any())
-        {
-            var adminInvite = new Invite
-            {
-                Id = Guid.NewGuid(),
-                Code = "ADMIN-SETUP",
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(30),
-                IsUsed = false,
-                CreatedByUserId = null
-            };
-            context.Set<Invite>().Add(adminInvite);
-            await context.SaveChangesAsync(cancellationToken);
-
-            Console.WriteLine($"[SETUP] Admin invite created: {adminInvite.Code}");
-            Console.WriteLine($"[SETUP] Use this code to register the first user.");
-        }
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
@@ -366,6 +310,11 @@ public class ScoutBoxDbContext : DbContext
             entity.HasIndex(e => e.CreatedByUserId);
         });
 
-        modelBuilder.SeedTentReferenceData();
+        modelBuilder.Entity<SeedInfo>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.IsSeeded).IsRequired();
+            entity.Property(e => e.SeededAt).IsRequired();
+        });
     }
 }
