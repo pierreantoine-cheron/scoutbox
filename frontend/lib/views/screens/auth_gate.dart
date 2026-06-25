@@ -175,11 +175,10 @@ class _DesktopTitleRow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           'ScoutBox',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
-          ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
         ),
         const SizedBox(width: 12),
         Flexible(

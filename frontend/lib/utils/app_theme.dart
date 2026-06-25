@@ -82,7 +82,7 @@ class AppTheme {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           textStyle: const TextStyle(
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
         ),

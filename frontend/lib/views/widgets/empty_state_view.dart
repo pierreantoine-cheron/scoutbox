@@ -25,9 +25,7 @@ class EmptyStateView extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: colorScheme.onSurface,
             ),
           ),

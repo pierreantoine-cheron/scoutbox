@@ -112,8 +112,7 @@ class _DrawerHeader extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Text(
             'ScoutBox',
-            style: TextStyle(
-              fontSize: 18,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
             ),

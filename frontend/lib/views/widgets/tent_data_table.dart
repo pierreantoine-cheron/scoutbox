@@ -34,7 +34,7 @@ class _TentDataTableState extends State<TentDataTable> {
   static const _headerStyle = TextStyle(
     fontSize: 11,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.55,
+    letterSpacing: 0.66,
     color: AppColors.muted,
   );
 

@@ -166,7 +166,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _generatedCode!,
                   style: const TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 16,
+                    fontSize: 17,
                     letterSpacing: 2,
                   ),
                 ),
@@ -243,11 +243,9 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Text(
           label.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 11,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
             fontFamily: 'monospace',
             color: AppColors.muted,
-            letterSpacing: 0.5,
           ),
         ),
       ],

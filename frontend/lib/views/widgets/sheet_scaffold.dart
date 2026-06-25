@@ -45,10 +45,7 @@ class SheetScaffold extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
             child: Text(
               title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
+              style: theme.textTheme.titleLarge,
             ),
           ),
           if (errorMessage != null)
