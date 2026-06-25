@@ -25,7 +25,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody, Required] RegisterRequest request)
     {
-        return this.OkDataOrBadRequest(await _authService.RegisterAsync(request));
+        return this.OkOrBadRequest(await _authService.RegisterAsync(request));
     }
 
     [HttpPost("login")]
@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
             return Unauthorized(error);
         }
 
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpPost("invites")]
@@ -48,7 +48,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> CreateInvite([FromBody, Required] CreateInviteRequest request)
     {
         var userId = _currentUserAccessor.GetValidatedUserId();
-        return this.OkDataOrBadRequest(await _authService.CreateInviteAsync(userId, request));
+        return this.OkOrBadRequest(await _authService.CreateInviteAsync(userId, request));
     }
 
     [HttpPost("refresh")]
@@ -59,7 +59,7 @@ public class AuthController : ControllerBase
             return BadRequest(new ErrorResponse("Refresh token is required", "INVALID_REFRESH_TOKEN"));
         }
 
-        return this.OkDataOrBadRequest(await _authService.RefreshTokenAsync(request.RefreshToken));
+        return this.OkOrBadRequest(await _authService.RefreshTokenAsync(request.RefreshToken));
     }
 
     [HttpPost("logout")]
@@ -73,6 +73,6 @@ public class AuthController : ControllerBase
         }
 
         var userId = _currentUserAccessor.GetValidatedUserId();
-        return this.OkDataOrBadRequest(await _authService.LogoutAsync(userId, request.RefreshToken));
+        return this.OkOrBadRequest(await _authService.LogoutAsync(userId, request.RefreshToken));
     }
 }

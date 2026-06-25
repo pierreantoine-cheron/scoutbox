@@ -24,7 +24,7 @@ public class TagsController : ControllerBase
     public async Task<IActionResult> GetTags()
     {
         var tags = await _tagService.GetTagsAsync();
-        return Ok(new { data = tags });
+        return Ok(tags);
     }
 
     [HttpPost]
@@ -32,7 +32,7 @@ public class TagsController : ControllerBase
     public async Task<IActionResult> CreateTag([FromBody] CreateTagRequest request)
     {
         var userId = _currentUserAccessor.GetValidatedUserId();
-        return this.OkDataOrBadRequest(await _tagService.CreateTagAsync(userId, request));
+        return this.OkOrBadRequest(await _tagService.CreateTagAsync(userId, request));
     }
 
     [HttpPut("{id:guid}")]
@@ -43,7 +43,7 @@ public class TagsController : ControllerBase
         var (response, error, notFound) = await _tagService.UpdateTagAsync(userId, id, request);
         if (notFound) return NotFound(new ErrorResponse("Tag not found", "TAG_NOT_FOUND"));
         if (error != null) return BadRequest(error);
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpDelete("{id:guid}")]

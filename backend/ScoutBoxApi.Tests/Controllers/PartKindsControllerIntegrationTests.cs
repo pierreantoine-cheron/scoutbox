@@ -39,10 +39,10 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         var response = await client.GetAsync("/api/part-kinds");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<PartKindApiDto>>>();
-        Assert.NotNull(payload?.Data);
+        var payload = await response.Content.ReadFromJsonAsync<List<PartKindApiDto>>();
+        Assert.NotNull(payload);
 
-        var filtered = payload.Data.Where(pk => pk.Name.EndsWith(prefix, StringComparison.Ordinal)).ToList();
+        var filtered = payload.Where(pk => pk.Name.EndsWith(prefix, StringComparison.Ordinal)).ToList();
         Assert.Equal(2, filtered.Count);
         Assert.Equal($"Sardines {prefix}", filtered[0].Name);
         Assert.Equal($"Arceaux {prefix}", filtered[1].Name);
@@ -95,10 +95,10 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         var response = await client.GetAsync("/api/part-kinds");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<PartKindApiDto>>>();
-        Assert.NotNull(payload?.Data);
+        var payload = await response.Content.ReadFromJsonAsync<List<PartKindApiDto>>();
+        Assert.NotNull(payload);
 
-        var result = payload.Data.FirstOrDefault(pk => pk.Id == createdPartKindId);
+        var result = payload.FirstOrDefault(pk => pk.Id == createdPartKindId);
         Assert.NotNull(result);
         Assert.Equal(1, result.TentCount);
     }
@@ -112,8 +112,8 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         var response = await client.GetAsync("/api/part-kinds");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<PartKindApiDto>>>();
-        Assert.NotNull(payload?.Data);
+        var payload = await response.Content.ReadFromJsonAsync<List<PartKindApiDto>>();
+        Assert.NotNull(payload);
     }
 
     [Fact]
@@ -136,10 +136,10 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         var response = await client.PostAsJsonAsync("/api/part-kinds", new { name });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<PartKindApiDto>>();
-        Assert.NotNull(payload?.Data);
-        Assert.Equal(name, payload.Data.Name);
-        Assert.Equal(0, payload.Data.TentCount);
+        var payload = await response.Content.ReadFromJsonAsync<PartKindApiDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(name, payload.Name);
+        Assert.Equal(0, payload.TentCount);
     }
 
     [Fact]
@@ -260,9 +260,9 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         var response = await client.PutAsJsonAsync($"/api/part-kinds/{pkId}", new { name = newName });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<PartKindApiDto>>();
-        Assert.NotNull(payload?.Data);
-        Assert.Equal(newName, payload.Data.Name);
+        var payload = await response.Content.ReadFromJsonAsync<PartKindApiDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(newName, payload.Name);
     }
 
     [Fact]
@@ -524,10 +524,6 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         }
     }
 
-    private sealed class DataEnvelope<T>
-    {
-        public T Data { get; set; } = default!;
-    }
 
     private sealed class PartKindApiDto
     {

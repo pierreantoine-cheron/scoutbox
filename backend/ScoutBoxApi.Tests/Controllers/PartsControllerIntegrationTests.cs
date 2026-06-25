@@ -33,12 +33,12 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var response = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "NeedsRepair" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<PartApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<PartApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.Equal(partId, payload.Data.Id);
-        Assert.Equal("NeedsRepair", payload.Data.State);
-        Assert.Equal("ok", payload.Data.Comments);
+        Assert.NotNull(payload);
+        Assert.Equal(partId, payload.Id);
+        Assert.Equal("NeedsRepair", payload.State);
+        Assert.Equal("ok", payload.Comments);
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
@@ -92,11 +92,11 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var response = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "Good", comments = "  nouveau commentaire  " });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<PartApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<PartApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.Equal("Good", payload.Data.State);
-        Assert.Equal("nouveau commentaire", payload.Data.Comments);
+        Assert.NotNull(payload);
+        Assert.Equal("Good", payload.State);
+        Assert.Equal("nouveau commentaire", payload.Comments);
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
@@ -245,12 +245,12 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = newPartKindIds });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<PartApiDto>>>();
+        var payload = await response.Content.ReadFromJsonAsync<List<PartApiDto>>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.Equal(2, payload.Data.Count);
+        Assert.NotNull(payload);
+        Assert.Equal(2, payload.Count);
 
-        foreach (var dto in payload.Data)
+        foreach (var dto in payload)
         {
             Assert.NotEqual(Guid.Empty, dto.Id);
             Assert.Equal("Good", dto.State);
@@ -537,19 +537,19 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         using var client = CreateAuthenticatedClient();
         var firstResponse = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { firstKind.Id } });
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
-        var firstPayload = await firstResponse.Content.ReadFromJsonAsync<DataEnvelope<List<PartApiDto>>>();
+        var firstPayload = await firstResponse.Content.ReadFromJsonAsync<List<PartApiDto>>();
         Assert.NotNull(firstPayload);
-        Assert.NotNull(firstPayload.Data);
-        Assert.Single(firstPayload.Data);
-        Assert.Equal(firstKind.DisplayOrder, firstPayload.Data[0].DisplayOrder);
+        Assert.NotNull(firstPayload);
+        Assert.Single(firstPayload);
+        Assert.Equal(firstKind.DisplayOrder, firstPayload[0].DisplayOrder);
 
         var secondResponse = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { lastKind.Id } });
         Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
-        var secondPayload = await secondResponse.Content.ReadFromJsonAsync<DataEnvelope<List<PartApiDto>>>();
+        var secondPayload = await secondResponse.Content.ReadFromJsonAsync<List<PartApiDto>>();
         Assert.NotNull(secondPayload);
-        Assert.NotNull(secondPayload.Data);
-        Assert.Single(secondPayload.Data);
-        Assert.Equal(lastKind.DisplayOrder, secondPayload.Data[0].DisplayOrder);
+        Assert.NotNull(secondPayload);
+        Assert.Single(secondPayload);
+        Assert.Equal(lastKind.DisplayOrder, secondPayload[0].DisplayOrder);
     }
 
     [Fact]
@@ -691,10 +691,6 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         return (partId, tentId, partKind.Id, now);
     }
 
-    private sealed class DataEnvelope<T>
-    {
-        public T Data { get; set; } = default!;
-    }
 
     private sealed class PartApiDto
     {

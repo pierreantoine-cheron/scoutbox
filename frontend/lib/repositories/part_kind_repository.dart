@@ -18,7 +18,7 @@ class PartKindRepository {
       invalidResponseMessage: 'Réponse du serveur invalide lors du chargement des éléments.',
       action: () async {
         final response = await ApiClient.instance.get(ApiRoutes.partKinds);
-        final rawPartKinds = _readEnvelopeList(response.data);
+        final rawPartKinds = response.data! as List<dynamic>;
 
         return rawPartKinds.map((pk) => PartKind.fromJson(pk as Map<String, dynamic>)).toList();
       },
@@ -35,7 +35,7 @@ class PartKindRepository {
           data: {'name': name},
         );
 
-        return PartKind.fromJson(_readEnvelopeMap(response.data));
+        return PartKind.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -50,7 +50,7 @@ class PartKindRepository {
           data: {'name': name},
         );
 
-        return PartKind.fromJson(_readEnvelopeMap(response.data));
+        return PartKind.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -79,34 +79,6 @@ class PartKindRepository {
     } on TypeError catch (_) {
       throw PartKindRepositoryException(message: invalidResponseMessage);
     }
-  }
-
-  List<dynamic> _readEnvelopeList(Object? responseData) {
-    final envelope = _asMap(responseData);
-    final data = envelope['data'];
-    if (data is List<dynamic>) {
-      return data;
-    }
-
-    throw const FormatException('Response envelope data is not a list');
-  }
-
-  Map<String, dynamic> _readEnvelopeMap(Object? responseData) {
-    final envelope = _asMap(responseData);
-    final data = envelope['data'];
-    if (data is Map<String, dynamic>) {
-      return data;
-    }
-
-    throw const FormatException('Response envelope data is not an object');
-  }
-
-  Map<String, dynamic> _asMap(Object? value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
-
-    throw const FormatException('Response is not a JSON object');
   }
 
   PartKindRepositoryException _toRepositoryException(

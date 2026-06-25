@@ -24,12 +24,6 @@ public class AuthControllerTests : IDisposable
     private readonly TokenService _tokenService;
     private readonly Mock<ICurrentUserAccessor> _currentUserAccessorMock;
 
-    private static T ExtractData<T>(object? value)
-    {
-        var prop = value!.GetType().GetProperty("data")!;
-        return (T)prop.GetValue(value)!;
-    }
-
     public AuthControllerTests()
     {
         var options = new DbContextOptionsBuilder<ScoutBoxDbContext>()
@@ -108,7 +102,7 @@ public class AuthControllerTests : IDisposable
         var result = await _controller.Register(request);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = ExtractData<AuthResponse>(okResult.Value);
+        var response = Assert.IsType<AuthResponse>(okResult.Value);
         Assert.NotNull(response.AccessToken);
         Assert.NotNull(response.RefreshToken);
 
@@ -257,7 +251,7 @@ public class AuthControllerTests : IDisposable
         var result = await _controller.Register(request);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = ExtractData<AuthResponse>(okResult.Value);
+        var response = Assert.IsType<AuthResponse>(okResult.Value);
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == "usertest");
         Assert.NotNull(user);
@@ -288,7 +282,7 @@ public class AuthControllerTests : IDisposable
         var result = await _controller.Login(request);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = ExtractData<AuthResponse>(okResult.Value);
+        var response = Assert.IsType<AuthResponse>(okResult.Value);
         Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(response.RefreshToken));
     }
@@ -345,7 +339,7 @@ public class AuthControllerTests : IDisposable
         var result = await _controller.Login(new LoginRequest("loginuser3", "password123"));
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = ExtractData<AuthResponse>(okResult.Value);
+        var response = Assert.IsType<AuthResponse>(okResult.Value);
 
         var refreshToken = await _db.RefreshTokens
             .Where(rt => rt.UserId == user.Id && !rt.IsRevoked)
@@ -445,7 +439,7 @@ public class AuthControllerTests : IDisposable
         var result = await _controller.RefreshToken(request);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = ExtractData<AuthResponse>(okResult.Value);
+        var response = Assert.IsType<AuthResponse>(okResult.Value);
         Assert.NotNull(response.AccessToken);
         Assert.NotNull(response.RefreshToken);
         Assert.NotEqual("valid-refresh-token", response.RefreshToken);
@@ -528,7 +522,7 @@ public class AuthControllerTests : IDisposable
         var result = await _controller.CreateInvite(request);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = ExtractData<InviteResponse>(okResult.Value);
+        var response = Assert.IsType<InviteResponse>(okResult.Value);
         Assert.NotNull(response.Code);
         Assert.True(response.ExpiresAt >= DateTime.UtcNow.AddDays(6.9) && response.ExpiresAt <= DateTime.UtcNow.AddDays(7.1));
     }
@@ -553,7 +547,7 @@ public class AuthControllerTests : IDisposable
         var result = await _controller.CreateInvite(request);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = ExtractData<InviteResponse>(okResult.Value);
+        var response = Assert.IsType<InviteResponse>(okResult.Value);
         Assert.Equal("CUSTOM-123", response.Code);
     }
 
@@ -660,7 +654,7 @@ public class AuthControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var logoutResponse = ExtractData<LogoutResponse>(okResult.Value);
+        var logoutResponse = Assert.IsType<LogoutResponse>(okResult.Value);
         Assert.True(logoutResponse.Success);
 
         // Verify token is revoked
@@ -712,7 +706,7 @@ public class AuthControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var logoutResponse = ExtractData<LogoutResponse>(okResult.Value);
+        var logoutResponse = Assert.IsType<LogoutResponse>(okResult.Value);
         Assert.True(logoutResponse.Success);
 
         var auditEvents = await _db.AuditEvents.ToListAsync();
@@ -783,7 +777,7 @@ public class AuthControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var logoutResponse = ExtractData<LogoutResponse>(okResult.Value);
+        var logoutResponse = Assert.IsType<LogoutResponse>(okResult.Value);
         Assert.True(logoutResponse.Success);
 
         var auditEvents = await _db.AuditEvents.ToListAsync();

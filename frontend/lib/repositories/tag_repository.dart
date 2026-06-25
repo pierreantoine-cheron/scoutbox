@@ -18,7 +18,7 @@ class TagRepository {
       invalidResponseMessage: 'Réponse du serveur invalide lors du chargement des étiquettes.',
       action: () async {
         final response = await ApiClient.instance.get(ApiRoutes.tags);
-        final rawTags = _readEnvelopeList(response.data);
+        final rawTags = response.data! as List<dynamic>;
 
         return rawTags.map((tag) => Tag.fromJson(tag as Map<String, dynamic>)).toList();
       },
@@ -35,7 +35,7 @@ class TagRepository {
           data: {'name': name, 'color': color},
         );
 
-        return Tag.fromJson(_readEnvelopeMap(response.data));
+        return Tag.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -60,7 +60,7 @@ class TagRepository {
           data: {'name': name, 'color': color},
         );
 
-        return Tag.fromJson(_readEnvelopeMap(response.data));
+        return Tag.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -79,34 +79,6 @@ class TagRepository {
     } on TypeError catch (_) {
       throw TagRepositoryException(message: invalidResponseMessage);
     }
-  }
-
-  List<dynamic> _readEnvelopeList(Object? responseData) {
-    final envelope = _asMap(responseData);
-    final data = envelope['data'];
-    if (data is List<dynamic>) {
-      return data;
-    }
-
-    throw const FormatException('Response envelope data is not a list');
-  }
-
-  Map<String, dynamic> _readEnvelopeMap(Object? responseData) {
-    final envelope = _asMap(responseData);
-    final data = envelope['data'];
-    if (data is Map<String, dynamic>) {
-      return data;
-    }
-
-    throw const FormatException('Response envelope data is not an object');
-  }
-
-  Map<String, dynamic> _asMap(Object? value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
-
-    throw const FormatException('Response is not a JSON object');
   }
 
   TagRepositoryException _toRepositoryException(

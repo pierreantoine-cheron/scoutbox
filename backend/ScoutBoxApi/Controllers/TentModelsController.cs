@@ -24,7 +24,7 @@ public class TentModelsController : ControllerBase
     public async Task<IActionResult> GetActiveModels()
     {
         var models = await _tentService.GetActiveModelsAsync();
-        return Ok(new { data = models });
+        return Ok(models);
     }
 
     [HttpPost]
@@ -34,7 +34,7 @@ public class TentModelsController : ControllerBase
         var userId = _currentUserAccessor.GetValidatedUserId();
         var (response, error, notFound) = await _tentService.CreateModelAsync(userId, request);
         if (error != null) return BadRequest(error);
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpPut("{id:guid}")]
@@ -45,7 +45,7 @@ public class TentModelsController : ControllerBase
         var (response, error, notFound) = await _tentService.UpdateModelAsync(userId, id, request);
         if (notFound) return NotFound(new ErrorResponse("Tent model not found", "TENT_MODEL_NOT_FOUND"));
         if (error != null) return BadRequest(error);
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpDelete("{id:guid}")]
@@ -53,7 +53,7 @@ public class TentModelsController : ControllerBase
     public async Task<IActionResult> DeleteModel(Guid id)
     {
         var userId = _currentUserAccessor.GetValidatedUserId();
-        var (success, error, notFound) = await _tentService.DeleteModelAsync(userId, id);
+        var (_, error, notFound) = await _tentService.DeleteModelAsync(userId, id);
         if (notFound) return NotFound(new ErrorResponse("Tent model not found", "TENT_MODEL_NOT_FOUND"));
         if (error != null) return BadRequest(error);
         return NoContent();

@@ -38,7 +38,7 @@ public class PartsController : ControllerBase
             return BadRequest(error);
         }
 
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpDelete("{id:guid}")]
@@ -98,6 +98,6 @@ public class TentPartsController : ControllerBase
             return BadRequest(error);
         }
 
-        return Ok(new { data = response });
+        return Ok(response);
     }
 }

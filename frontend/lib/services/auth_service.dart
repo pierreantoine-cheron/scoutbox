@@ -535,12 +535,11 @@ class AuthService {
         ApiRoutes.invites,
         data: {'expiresInDays': 30},
       );
-      final data = response.data['data'] as Map<String, dynamic>;
       return InviteResponse(
-        id: data['id'] as String,
-        code: data['code'] as String,
-        expiresAt: DateTime.parse(data['expiresAt'] as String),
-        isUsed: data['isUsed'] as bool,
+        id: response.data['id'] as String,
+        code: response.data['code'] as String,
+        expiresAt: DateTime.parse(response.data['expiresAt'] as String),
+        isUsed: response.data['isUsed'] as bool,
       );
     } catch (_) {
       throw Exception("Impossible de générer le code d'invitation. Réessayez.");

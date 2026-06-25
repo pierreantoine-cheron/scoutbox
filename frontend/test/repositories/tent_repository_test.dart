@@ -21,9 +21,7 @@ void main() {
             'tagIds': ['tag-1'],
           }),
         );
-        return _jsonResponse(200, {
-          'data': _tentJson(tags: [_tagJson('tag-1', 'Groupe A')]),
-        });
+        return _jsonResponse(200, _tentJson(tags: [_tagJson('tag-1', 'Groupe A')]));
       });
 
       final tent = await TentRepository().setTentTags(

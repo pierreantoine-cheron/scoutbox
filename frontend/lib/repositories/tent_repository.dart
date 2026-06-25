@@ -18,7 +18,7 @@ class TentRepository {
       invalidResponseMessage: 'Réponse du serveur invalide lors du chargement des tentes.',
       action: () async {
         final response = await ApiClient.instance.get(ApiRoutes.tents);
-        final rawTents = _readEnvelopeList(response.data);
+        final rawTents = response.data! as List<dynamic>;
 
         return rawTents.map((tent) => Tent.fromJson(tent as Map<String, dynamic>)).toList();
       },
@@ -32,7 +32,7 @@ class TentRepository {
           'Réponse du serveur invalide lors du chargement des modèles de tentes.',
       action: () async {
         final response = await ApiClient.instance.get(ApiRoutes.tentModels);
-        final rawModels = _readEnvelopeList(response.data);
+        final rawModels = response.data! as List<dynamic>;
 
         final models =
             rawModels
@@ -62,7 +62,7 @@ class TentRepository {
           ApiRoutes.tentModels,
           data: {'name': name, 'componentIds': componentIds},
         );
-        return TentModel.fromJson(_readEnvelopeMap(response.data));
+        return TentModel.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -83,7 +83,7 @@ class TentRepository {
             'componentIds': ?componentIds,
           },
         );
-        return TentModel.fromJson(_readEnvelopeMap(response.data));
+        return TentModel.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -104,7 +104,7 @@ class TentRepository {
       invalidResponseMessage: 'Réponse du serveur invalide lors du chargement du détail.',
       action: () async {
         final response = await ApiClient.instance.get('${ApiRoutes.tents}/$id');
-        return Tent.fromJson(_readEnvelopeMap(response.data));
+        return Tent.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -135,7 +135,7 @@ class TentRepository {
           data: body,
         );
 
-        return Tent.fromJson(_readEnvelopeMap(response.data));
+        return Tent.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -162,7 +162,7 @@ class TentRepository {
           },
         );
 
-        return Tent.fromJson(_readEnvelopeMap(response.data));
+        return Tent.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -175,7 +175,7 @@ class TentRepository {
         final response = await ApiClient.instance.put(
           '${ApiRoutes.tents}/$id/unarchive',
         );
-        return Tent.fromJson(_readEnvelopeMap(response.data));
+        return Tent.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -188,7 +188,7 @@ class TentRepository {
         final response = await ApiClient.instance.put(
           '${ApiRoutes.tents}/$id/archive',
         );
-        return Tent.fromJson(_readEnvelopeMap(response.data));
+        return Tent.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -206,7 +206,7 @@ class TentRepository {
           data: {'tagIds': tagIds},
         );
 
-        return Tent.fromJson(_readEnvelopeMap(response.data));
+        return Tent.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -223,7 +223,7 @@ class TentRepository {
           '${ApiRoutes.tentParts}/$tentId/parts',
           data: {'partKindIds': partKindIds},
         );
-        final rawParts = _readEnvelopeList(response.data);
+        final rawParts = response.data! as List<dynamic>;
         return rawParts.map((part) => Part.fromJson(part as Map<String, dynamic>)).toList();
       },
     );
@@ -245,7 +245,7 @@ class TentRepository {
       invalidResponseMessage: 'Réponse du serveur invalide lors du chargement des types de pièces.',
       action: () async {
         final response = await ApiClient.instance.get(ApiRoutes.partKinds);
-        final rawKinds = _readEnvelopeList(response.data);
+        final rawKinds = response.data! as List<dynamic>;
         return rawKinds.map((kind) => PartKind.fromJson(kind as Map<String, dynamic>)).toList();
       },
     );
@@ -268,7 +268,7 @@ class TentRepository {
           '${ApiRoutes.tents}/$tentId/history',
           queryParameters: queryParams,
         );
-        final rawItems = _readEnvelopeList(response.data);
+        final rawItems = response.data! as List<dynamic>;
         return rawItems
             .map(
               (item) => TentHistoryItem.fromJson(item as Map<String, dynamic>),
@@ -291,7 +291,7 @@ class TentRepository {
           '${ApiRoutes.parts}/$id',
           data: {'state': state.toApiValue(), 'comments': comments},
         );
-        return Part.fromJson(_readEnvelopeMap(response.data));
+        return Part.fromJson(response.data! as Map<String, dynamic>);
       },
     );
   }
@@ -310,34 +310,6 @@ class TentRepository {
     } on TypeError catch (_) {
       throw TentRepositoryException(message: invalidResponseMessage);
     }
-  }
-
-  List<dynamic> _readEnvelopeList(Object? responseData) {
-    final envelope = _asMap(responseData);
-    final data = envelope['data'];
-    if (data is List<dynamic>) {
-      return data;
-    }
-
-    throw const FormatException('Response envelope data is not a list');
-  }
-
-  Map<String, dynamic> _readEnvelopeMap(Object? responseData) {
-    final envelope = _asMap(responseData);
-    final data = envelope['data'];
-    if (data is Map<String, dynamic>) {
-      return data;
-    }
-
-    throw const FormatException('Response envelope data is not an object');
-  }
-
-  Map<String, dynamic> _asMap(Object? value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
-
-    throw const FormatException('Response is not a JSON object');
   }
 
   TentRepositoryException _toRepositoryException(

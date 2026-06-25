@@ -51,10 +51,10 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var response = await client.GetAsync("/api/tags");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
-        Assert.NotNull(payload?.Data);
+        var payload = await response.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        Assert.NotNull(payload);
 
-        var tags = payload.Data.Where(tag => tag.Name.EndsWith(prefix, StringComparison.Ordinal)).ToList();
+        var tags = payload.Where(tag => tag.Name.EndsWith(prefix, StringComparison.Ordinal)).ToList();
         Assert.Equal(new[] { $"Alpha {prefix}", $"Beta {prefix}" }, tags.Select(tag => tag.Name));
         Assert.Equal(1, tags[0].TentCount);
         Assert.Equal(0, tags[1].TentCount);
@@ -69,8 +69,8 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var response = await client.GetAsync("/api/tags");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
-        Assert.NotNull(payload?.Data);
+        var payload = await response.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        Assert.NotNull(payload);
     }
 
     [Fact]
@@ -92,16 +92,16 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var response = await client.PostAsJsonAsync("/api/tags", new { name, color = "#F44336" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TagApiDto>>();
-        Assert.NotNull(payload?.Data);
-        Assert.Equal(name, payload.Data.Name);
-        Assert.Equal("#F44336", payload.Data.Color);
-        Assert.Equal(0, payload.Data.TentCount);
+        var payload = await response.Content.ReadFromJsonAsync<TagApiDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(name, payload.Name);
+        Assert.Equal("#F44336", payload.Color);
+        Assert.Equal(0, payload.TentCount);
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
         var audit = await db.AuditEvents.FirstOrDefaultAsync(a =>
-            a.TargetEntityId == payload.Data.Id && a.Action == "tag_created");
+            a.TargetEntityId == payload.Id && a.Action == "tag_created");
         Assert.NotNull(audit);
         Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
         Assert.Equal("Tag", audit.TargetEntityType);
@@ -182,17 +182,17 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
 
         using var client = CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/api/tags");
-        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
-        var tag = getPayload!.Data.First(t => t.Name == originalName);
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        var tag = getPayload!.First(t => t.Name == originalName);
 
         var response = await client.PutAsJsonAsync($"/api/tags/{tag.Id}", new { name = newName, color = "#4CAF50" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TagApiDto>>();
-        Assert.NotNull(payload?.Data);
-        Assert.Equal(newName, payload.Data.Name);
-        Assert.Equal("#4CAF50", payload.Data.Color);
-        Assert.Equal(0, payload.Data.TentCount);
+        var payload = await response.Content.ReadFromJsonAsync<TagApiDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(newName, payload.Name);
+        Assert.Equal("#4CAF50", payload.Color);
+        Assert.Equal(0, payload.TentCount);
 
         using (var verifyScope = _factory.Services.CreateScope())
         {
@@ -219,15 +219,15 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
 
         using var client = CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/api/tags");
-        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
-        var tag = getPayload!.Data.First(t => t.Name == name);
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        var tag = getPayload!.First(t => t.Name == name);
 
         var response = await client.PutAsJsonAsync($"/api/tags/{tag.Id}", new { name, color = "#2196F3" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TagApiDto>>();
-        Assert.NotNull(payload?.Data);
-        Assert.Equal(name, payload.Data.Name);
+        var payload = await response.Content.ReadFromJsonAsync<TagApiDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(name, payload.Name);
 
         using (var verifyScope = _factory.Services.CreateScope())
         {
@@ -253,8 +253,8 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
 
         using var client = CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/api/tags");
-        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
-        var tag = getPayload!.Data.First(t => t.Name == name);
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        var tag = getPayload!.First(t => t.Name == name);
 
         var response = await client.PutAsJsonAsync($"/api/tags/{tag.Id}", new { name, color = "blue" });
 
@@ -280,8 +280,8 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
 
         using var client = CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/api/tags");
-        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
-        var target = getPayload!.Data.First(t => t.Name == $"Target {suffix}");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        var target = getPayload!.First(t => t.Name == $"Target {suffix}");
 
         var response = await client.PutAsJsonAsync($"/api/tags/{target.Id}", new { name = $"Existing {suffix}", color = "#2196F3" });
 
@@ -320,16 +320,16 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
 
         using var client = CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/api/tags");
-        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
-        var tag = getPayload!.Data.First(t => t.Name == name);
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        var tag = getPayload!.First(t => t.Name == name);
 
         var response = await client.DeleteAsync($"/api/tags/{tag.Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         var getAfter = await client.GetAsync("/api/tags");
-        var getAfterPayload = await getAfter.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
-        Assert.DoesNotContain(getAfterPayload!.Data, t => t.Name == name);
+        var getAfterPayload = await getAfter.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        Assert.DoesNotContain(getAfterPayload!, t => t.Name == name);
 
         using (var verifyScope = _factory.Services.CreateScope())
         {
@@ -364,8 +364,8 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
 
         using var client = CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/api/tags");
-        var getPayload = await getResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TagApiDto>>>();
-        var tag = getPayload!.Data.First(t => t.Name == $"Cascade {prefix}");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        var tag = getPayload!.First(t => t.Name == $"Cascade {prefix}");
 
         var response = await client.DeleteAsync($"/api/tags/{tag.Id}");
 
@@ -477,10 +477,6 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         return tent;
     }
 
-    private sealed class DataEnvelope<T>
-    {
-        public T Data { get; set; } = default!;
-    }
 
     private sealed class TagApiDto
     {

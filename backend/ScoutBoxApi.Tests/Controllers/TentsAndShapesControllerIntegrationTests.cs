@@ -45,13 +45,13 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentModelApiDto>>>();
+        var payload = await response.Content.ReadFromJsonAsync<List<TentModelApiDto>>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.NotEmpty(payload.Data);
-        Assert.True(payload.Data.All(s => s.IsActive));
+        Assert.NotNull(payload);
+        Assert.NotEmpty(payload);
+        Assert.True(payload.All(s => s.IsActive));
 
-        var orders = payload.Data.Select(s => s.DisplayOrder).ToList();
+        var orders = payload.Select(s => s.DisplayOrder).ToList();
         var ordered = orders.OrderBy(x => x).ToList();
         Assert.Equal(ordered, orders);
     }
@@ -86,19 +86,19 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.Equal("Tente A", payload.Data.Name);
-        Assert.Equal(6, payload.Data.Size);
-        Assert.Equal(shapeId, payload.Data.TentModelId);
-        Assert.Equal("Good", payload.Data.OverallState);
-        Assert.Equal("Commentaire", payload.Data.Comments);
+        Assert.NotNull(payload);
+        Assert.Equal("Tente A", payload.Name);
+        Assert.Equal(6, payload.Size);
+        Assert.Equal(shapeId, payload.TentModelId);
+        Assert.Equal("Good", payload.OverallState);
+        Assert.Equal("Commentaire", payload.Comments);
 
         using var auditScope = _factory.Services.CreateScope();
         var auditDb = auditScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
         var audit = await auditDb.AuditEvents
-            .FirstOrDefaultAsync(a => a.TargetEntityId == payload.Data.Id && a.Action == "tent_created");
+            .FirstOrDefaultAsync(a => a.TargetEntityId == payload.Id && a.Action == "tent_created");
         Assert.NotNull(audit);
         Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
         Assert.Equal("Tent", audit.TargetEntityType);
@@ -144,11 +144,11 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentApiDto>>>();
+        var payload = await response.Content.ReadFromJsonAsync<List<TentApiDto>>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
+        Assert.NotNull(payload);
 
-        var createdTent = payload.Data.FirstOrDefault(t => t.Name == tentName);
+        var createdTent = payload.FirstOrDefault(t => t.Name == tentName);
         Assert.NotNull(createdTent);
         Assert.NotEqual(Guid.Empty, createdTent.Id);
         Assert.Equal(5, createdTent.Size);
@@ -227,16 +227,16 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.Equal(tentId, payload.Data.Id);
-        Assert.Equal(2, payload.Data.Parts.Count);
+        Assert.NotNull(payload);
+        Assert.Equal(tentId, payload.Id);
+        Assert.Equal(2, payload.Parts.Count);
 
-        for (int i = 1; i < payload.Data.Parts.Count; i++)
+        for (int i = 1; i < payload.Parts.Count; i++)
         {
-            var previous = payload.Data.Parts[i - 1];
-            var current = payload.Data.Parts[i];
+            var previous = payload.Parts[i - 1];
+            var current = payload.Parts[i];
             var isOrdered = previous.DisplayOrder < current.DisplayOrder
                 || (previous.DisplayOrder == current.DisplayOrder
                     && previous.PartKindId.CompareTo(current.PartKindId) <= 0);
@@ -364,11 +364,11 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentApiDto>>>();
+        var payload = await response.Content.ReadFromJsonAsync<List<TentApiDto>>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
+        Assert.NotNull(payload);
 
-        var orderedNames = payload.Data
+        var orderedNames = payload
             .Where(t => t.Name == firstName || t.Name == secondName || t.Name == thirdName || t.Name == fourthName)
             .Select(t => t.Name)
             .ToList();
@@ -637,13 +637,13 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.NotNull(payload.Data.Parts);
-        Assert.Equal(expectedPartCount, payload.Data.Parts.Count);
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Parts);
+        Assert.Equal(expectedPartCount, payload.Parts.Count);
 
-        foreach (var part in payload.Data.Parts)
+        foreach (var part in payload.Parts)
         {
             Assert.NotEqual(Guid.Empty, part.Id);
             Assert.Equal("Good", part.State);
@@ -680,11 +680,11 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.NotNull(payload.Data.Parts);
-        Assert.Equal(expectedPartCount, payload.Data.Parts.Count);
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Parts);
+        Assert.Equal(expectedPartCount, payload.Parts.Count);
     }
 
     [Fact]
@@ -726,11 +726,11 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.NotNull(payload.Data.Parts);
-        Assert.Empty(payload.Data.Parts);
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Parts);
+        Assert.Empty(payload.Parts);
     }
 
     [Fact]
@@ -759,13 +759,13 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.NotNull(payload.Data.Parts);
-        Assert.NotEmpty(payload.Data.Parts);
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Parts);
+        Assert.NotEmpty(payload.Parts);
 
-        foreach (var part in payload.Data.Parts)
+        foreach (var part in payload.Parts)
         {
             Assert.Equal("Good", part.State);
             Assert.Null(part.Comments);
@@ -780,10 +780,10 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
             var dbParts = await db.Parts
-                .Where(p => p.TentId == payload.Data.Id)
+                .Where(p => p.TentId == payload.Id)
                 .ToListAsync();
 
-            Assert.Equal(payload.Data.Parts.Count, dbParts.Count);
+            Assert.Equal(payload.Parts.Count, dbParts.Count);
 
             foreach (var dbPart in dbParts)
             {
@@ -823,12 +823,12 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.NotNull(payload.Data.Parts);
+        Assert.NotNull(payload);
+        Assert.NotNull(payload.Parts);
 
-        var displayOrders = payload.Data.Parts.Select(p => p.DisplayOrder).ToList();
+        var displayOrders = payload.Parts.Select(p => p.DisplayOrder).ToList();
         for (int i = 1; i < displayOrders.Count; i++)
         {
             Assert.True(displayOrders[i] >= displayOrders[i - 1],
@@ -839,17 +839,17 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         {
             var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
             var dbParts = await db.Parts
-                .Where(p => p.TentId == payload.Data.Id)
+                .Where(p => p.TentId == payload.Id)
                 .Include(p => p.PartKind)
                 .OrderBy(p => p.PartKind.DisplayOrder)
                 .ThenBy(p => p.PartKindId)
                 .ToListAsync();
 
-            Assert.Equal(payload.Data.Parts.Count, dbParts.Count);
+            Assert.Equal(payload.Parts.Count, dbParts.Count);
 
             for (int i = 0; i < dbParts.Count; i++)
             {
-                Assert.Equal(dbParts[i].PartKindId, payload.Data.Parts[i].PartKindId);
+                Assert.Equal(dbParts[i].PartKindId, payload.Parts[i].PartKindId);
             }
         }
     }
@@ -944,16 +944,16 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.NotEqual(Guid.Empty, payload.Data.Id);
-        Assert.Equal(8, payload.Data.Size);
-        Assert.Equal(shapeId, payload.Data.TentModelId);
-        Assert.Equal("Good", payload.Data.OverallState);
-        Assert.Equal("Test compatibility", payload.Data.Comments);
-        Assert.NotNull(payload.Data.Parts);
-        Assert.NotEmpty(payload.Data.Parts);
+        Assert.NotNull(payload);
+        Assert.NotEqual(Guid.Empty, payload.Id);
+        Assert.Equal(8, payload.Size);
+        Assert.Equal(shapeId, payload.TentModelId);
+        Assert.Equal("Good", payload.OverallState);
+        Assert.Equal("Test compatibility", payload.Comments);
+        Assert.NotNull(payload.Parts);
+        Assert.NotEmpty(payload.Parts);
     }
 
     private static async Task<Guid> GetFirstActiveModelWithComponentsAsync(ScoutBoxDbContext db)
@@ -1003,10 +1003,6 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         }
     }
 
-    private sealed class DataEnvelope<T>
-    {
-        public T Data { get; set; } = default!;
-    }
 
     private sealed class TentModelApiDto
     {
@@ -1102,17 +1098,17 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.Equal(tentId, payload.Data.Id);
-        Assert.Equal("Tente A Modifiée", payload.Data.Name);
-        Assert.Equal(8, payload.Data.Size);
-        Assert.Equal("NeedsRepair", payload.Data.OverallState);
-        Assert.Equal("Commentaire après", payload.Data.Comments);
-        Assert.Equal(shapeId, payload.Data.TentModelId);
-        Assert.NotNull(payload.Data.TentModelName);
-        Assert.True(payload.Data.UpdatedAt > createdAt);
+        Assert.NotNull(payload);
+        Assert.Equal(tentId, payload.Id);
+        Assert.Equal("Tente A Modifiée", payload.Name);
+        Assert.Equal(8, payload.Size);
+        Assert.Equal("NeedsRepair", payload.OverallState);
+        Assert.Equal("Commentaire après", payload.Comments);
+        Assert.Equal(shapeId, payload.TentModelId);
+        Assert.NotNull(payload.TentModelName);
+        Assert.True(payload.UpdatedAt > createdAt);
     }
 
     [Fact]
@@ -1158,9 +1154,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.Null(payload.Data.Comments);
+        Assert.Null(payload.Comments);
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -1340,10 +1336,10 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.Equal(maxLengthName, payload.Data.Name);
-        Assert.Equal(maxLengthComments, payload.Data.Comments);
+        Assert.Equal(maxLengthName, payload.Name);
+        Assert.Equal(maxLengthComments, payload.Comments);
     }
 
     [Fact]
@@ -1421,14 +1417,14 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.Equal(2, payload.Data.Parts.Count);
+        Assert.Equal(2, payload.Parts.Count);
 
-        for (int i = 1; i < payload.Data.Parts.Count; i++)
+        for (int i = 1; i < payload.Parts.Count; i++)
         {
-            var previous = payload.Data.Parts[i - 1];
-            var current = payload.Data.Parts[i];
+            var previous = payload.Parts[i - 1];
+            var current = payload.Parts[i];
             var isOrdered = previous.DisplayOrder < current.DisplayOrder
                 || (previous.DisplayOrder == current.DisplayOrder
                     && previous.PartKindId.CompareTo(current.PartKindId) <= 0);
@@ -1588,10 +1584,10 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.Equal(tentName, payload.Data.Name);
-        Assert.Equal(8, payload.Data.Size);
+        Assert.Equal(tentName, payload.Name);
+        Assert.Equal(8, payload.Size);
     }
 
     [Theory]
@@ -1827,9 +1823,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         var response = await client.PutAsync($"/api/tents/{tentId}/archive", null);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.True(payload.Data.IsArchived);
+        Assert.True(payload.IsArchived);
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -1929,10 +1925,10 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         var response = await client.GetAsync("/api/tents");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentApiDto>>>();
+        var payload = await response.Content.ReadFromJsonAsync<List<TentApiDto>>();
         Assert.NotNull(payload);
-        Assert.Contains(payload.Data, t => t.Name == archivedName);
-        Assert.Contains(payload.Data, t => t.Name == activeName);
+        Assert.Contains(payload, t => t.Name == archivedName);
+        Assert.Contains(payload, t => t.Name == activeName);
     }
 
     [Fact]
@@ -1996,9 +1992,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.False(payload.Data.IsArchived);
+        Assert.False(payload.IsArchived);
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -2044,9 +2040,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.False(payload.Data.IsArchived);
+        Assert.False(payload.IsArchived);
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -2119,13 +2115,13 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.Equal(tentId, payload.Data.Id);
-        Assert.Equal(tentName, payload.Data.Name);
-        Assert.True(payload.Data.IsArchived);
-        Assert.Equal("Comments on archived", payload.Data.Comments);
+        Assert.NotNull(payload);
+        Assert.Equal(tentId, payload.Id);
+        Assert.Equal(tentName, payload.Name);
+        Assert.True(payload.IsArchived);
+        Assert.Equal("Comments on archived", payload.Comments);
     }
 
     // --- Story 3.3: Tent History tests ---
@@ -2214,8 +2210,8 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 overallState = "Good"
             });
             createResponse.EnsureSuccessStatusCode();
-            var created = await createResponse.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
-            tentId = created!.Data.Id;
+            var created = await createResponse.Content.ReadFromJsonAsync<TentApiDto>();
+            tentId = created!.Id;
 
             await Task.Delay(50);
 
@@ -2234,12 +2230,12 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
+        var payload = await response.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
-        Assert.NotEmpty(payload.Data);
+        Assert.NotNull(payload);
+        Assert.NotEmpty(payload);
 
-        var tentEvents = payload.Data.Where(e => e.Category == "tent_info").ToList();
+        var tentEvents = payload.Where(e => e.Category == "tent_info").ToList();
         Assert.NotEmpty(tentEvents);
         Assert.Contains(tentEvents, e => e.Action == "tent_created");
         Assert.Contains(tentEvents, e => e.Action == "tent_updated");
@@ -2274,9 +2270,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 overallState = "Good"
             });
             createResponse.EnsureSuccessStatusCode();
-            var created = await createResponse.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
-            tentId = created!.Data.Id;
-            partId = created.Data.Parts[0].Id;
+            var created = await createResponse.Content.ReadFromJsonAsync<TentApiDto>();
+            tentId = created!.Id;
+            partId = created.Parts[0].Id;
 
             await Task.Delay(50);
 
@@ -2293,12 +2289,12 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
+        var payload = await response.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
+        Assert.NotNull(payload);
 
-        Assert.Contains(payload.Data, e => e.Action == AuditActions.TentCreated);
-        Assert.Contains(payload.Data, e => e.Action == AuditActions.PartStateChanged);
+        Assert.Contains(payload, e => e.Action == AuditActions.TentCreated);
+        Assert.Contains(payload, e => e.Action == AuditActions.PartStateChanged);
     }
 
     [Fact]
@@ -2315,7 +2311,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
             shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
         }
 
-        DataEnvelope<TentApiDto>? tent1Dto = null;
+        TentApiDto? tent1Dto = null;
         using (var client = CreateAuthenticatedClient())
         {
             var create1 = await client.PostAsJsonAsync("/api/tents", new
@@ -2326,8 +2322,8 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 overallState = "Good"
             });
             create1.EnsureSuccessStatusCode();
-            tent1Dto = await create1.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
-            tentId1 = tent1Dto!.Data.Id;
+            tent1Dto = await create1.Content.ReadFromJsonAsync<TentApiDto>();
+            tentId1 = tent1Dto!.Id;
 
             var create2 = await client.PostAsJsonAsync("/api/tents", new
             {
@@ -2337,9 +2333,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 overallState = "Good"
             });
             create2.EnsureSuccessStatusCode();
-            tentId2 = (await create2.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>())!.Data.Id;
+            tentId2 = (await create2.Content.ReadFromJsonAsync<TentApiDto>())!.Id;
 
-            var partId = tent1Dto.Data.Parts[0].Id;
+            var partId = tent1Dto.Parts[0].Id;
 
             var updatePartResponse = await client.PutAsJsonAsync($"/api/parts/{partId}", new
             {
@@ -2352,14 +2348,14 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using var historyClient = CreateAuthenticatedClient();
 
         var response1 = await historyClient.GetAsync($"/api/tents/{tentId1}/history");
-        var payload1 = await response1.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
-        Assert.NotNull(payload1!.Data);
-        Assert.Contains(payload1.Data, e => e.Action == AuditActions.PartStateChanged);
+        var payload1 = await response1.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
+        Assert.NotNull(payload1!);
+        Assert.Contains(payload1, e => e.Action == AuditActions.PartStateChanged);
 
         var response2 = await historyClient.GetAsync($"/api/tents/{tentId2}/history");
-        var payload2 = await response2.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
-        Assert.NotNull(payload2!.Data);
-        Assert.DoesNotContain(payload2.Data, e => e.Action == AuditActions.PartStateChanged);
+        var payload2 = await response2.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
+        Assert.NotNull(payload2!);
+        Assert.DoesNotContain(payload2, e => e.Action == AuditActions.PartStateChanged);
     }
 
     [Fact]
@@ -2385,7 +2381,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 overallState = "Good"
             });
             createResponse.EnsureSuccessStatusCode();
-            tentId = (await createResponse.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>())!.Data.Id;
+            tentId = (await createResponse.Content.ReadFromJsonAsync<TentApiDto>())!.Id;
 
             var archiveResponse = await client.PutAsync($"/api/tents/{tentId}/archive", null);
             archiveResponse.EnsureSuccessStatusCode();
@@ -2396,12 +2392,12 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
+        var payload = await response.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
         Assert.NotNull(payload);
-        Assert.NotNull(payload.Data);
+        Assert.NotNull(payload);
 
-        Assert.Contains(payload.Data, e => e.Action == AuditActions.TentCreated);
-        Assert.Contains(payload.Data, e => e.Action == AuditActions.TentArchived);
+        Assert.Contains(payload, e => e.Action == AuditActions.TentCreated);
+        Assert.Contains(payload, e => e.Action == AuditActions.TentArchived);
     }
 
     [Fact]
@@ -2428,9 +2424,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 overallState = "Good"
             });
             createResponse.EnsureSuccessStatusCode();
-            var created = await createResponse.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
-            tentId = created!.Data.Id;
-            partId = created.Data.Parts[0].Id;
+            var created = await createResponse.Content.ReadFromJsonAsync<TentApiDto>();
+            tentId = created!.Id;
+            partId = created.Parts[0].Id;
 
             var updatePartResponse = await client.PutAsJsonAsync($"/api/parts/{partId}", new
             {
@@ -2443,23 +2439,23 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         using var historyClient = CreateAuthenticatedClient();
 
         var allResponse = await historyClient.GetAsync($"/api/tents/{tentId}/history");
-        var allPayload = await allResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
-        Assert.NotNull(allPayload!.Data);
-        Assert.True(allPayload.Data.Count >= 2);
+        var allPayload = await allResponse.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
+        Assert.NotNull(allPayload!);
+        Assert.True(allPayload.Count >= 2);
 
         var partStateResponse = await historyClient.GetAsync($"/api/tents/{tentId}/history?category=part_state");
-        var partStatePayload = await partStateResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
-        Assert.NotNull(partStatePayload!.Data);
+        var partStatePayload = await partStateResponse.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
+        Assert.NotNull(partStatePayload!);
 
-        Assert.Contains(partStatePayload.Data, e => e.Action == AuditActions.PartStateChanged);
-        Assert.DoesNotContain(partStatePayload.Data, e => e.Action == AuditActions.TentCreated);
+        Assert.Contains(partStatePayload, e => e.Action == AuditActions.PartStateChanged);
+        Assert.DoesNotContain(partStatePayload, e => e.Action == AuditActions.TentCreated);
 
         var tentResponse = await historyClient.GetAsync($"/api/tents/{tentId}/history?category=tent_info");
-        var tentPayload = await tentResponse.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
-        Assert.NotNull(tentPayload!.Data);
+        var tentPayload = await tentResponse.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
+        Assert.NotNull(tentPayload!);
 
-        Assert.Contains(tentPayload.Data, e => e.Action == AuditActions.TentCreated);
-        Assert.DoesNotContain(tentPayload.Data, e => e.Action == AuditActions.PartStateChanged);
+        Assert.Contains(tentPayload, e => e.Action == AuditActions.TentCreated);
+        Assert.DoesNotContain(tentPayload, e => e.Action == AuditActions.PartStateChanged);
     }
 
     [Fact]
@@ -2492,16 +2488,16 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
                 overallState = "Good"
             });
             createResponse.EnsureSuccessStatusCode();
-            var created = await createResponse.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
-            tentId = created!.Data.Id;
+            var created = await createResponse.Content.ReadFromJsonAsync<TentApiDto>();
+            tentId = created!.Id;
 
             await Task.Delay(50);
 
             var updateResponse = await client.PutAsJsonAsync($"/api/tents/{tentId}", new
             {
-                name = created.Data.Name,
-                size = created.Data.Size,
-                overallState = created.Data.OverallState,
+                name = created.Name,
+                size = created.Size,
+                overallState = created.OverallState,
                 tentModelId = secondModelId
             });
             updateResponse.EnsureSuccessStatusCode();
@@ -2512,10 +2508,10 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<List<TentHistoryApiItem>>>();
-        Assert.NotNull(payload!.Data);
+        var payload = await response.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
+        Assert.NotNull(payload!);
 
-        var tentEvents = payload.Data
+        var tentEvents = payload
             .Where(e => e.Action == AuditActions.TentUpdated)
             .ToList();
         Assert.Single(tentEvents);
@@ -2554,10 +2550,10 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
-        Assert.NotNull(payload?.Data);
-        Assert.Equal(new[] { firstTag.Name, secondTag.Name }, payload.Data.Tags.Select(tag => tag.Name));
-        Assert.Contains(payload.Data.Tags, tag => tag.Id == firstTag.Id && tag.Color == firstTag.Color);
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(new[] { firstTag.Name, secondTag.Name }, payload.Tags.Select(tag => tag.Name));
+        Assert.Contains(payload.Tags, tag => tag.Id == firstTag.Id && tag.Color == firstTag.Color);
 
         using var verifyScope = _factory.Services.CreateScope();
         var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
@@ -2639,9 +2635,9 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<DataEnvelope<TentApiDto>>();
-        Assert.NotNull(payload?.Data);
-        Assert.Empty(payload.Data.Tags);
+        var payload = await response.Content.ReadFromJsonAsync<TentApiDto>();
+        Assert.NotNull(payload);
+        Assert.Empty(payload.Tags);
 
         using var verifyScope = _factory.Services.CreateScope();
         var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();

@@ -29,7 +29,7 @@ public class TentsController : ControllerBase
     public async Task<IActionResult> GetTents()
     {
         var tents = await _tentService.GetTentsAsync();
-        return Ok(new { data = tents });
+        return Ok(tents);
     }
 
     [HttpGet("{id:guid}")]
@@ -41,7 +41,7 @@ public class TentsController : ControllerBase
             return NotFound(new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
         }
 
-        return Ok(new { data = tent });
+        return Ok(tent);
     }
 
     [HttpPost]
@@ -49,7 +49,7 @@ public class TentsController : ControllerBase
     public async Task<IActionResult> CreateTent([FromBody] CreateTentRequest request)
     {
         var userId = _currentUserAccessor.GetValidatedUserId();
-        return this.OkDataOrBadRequest(await _tentService.CreateTentAsync(userId, request));
+        return this.OkOrBadRequest(await _tentService.CreateTentAsync(userId, request));
     }
 
     [HttpPut("{id:guid}")]
@@ -69,7 +69,7 @@ public class TentsController : ControllerBase
             return BadRequest(error);
         }
 
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpPut("{id:guid}/unarchive")]
@@ -84,7 +84,7 @@ public class TentsController : ControllerBase
             return NotFound(new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
         }
 
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpPut("{id:guid}/archive")]
@@ -99,7 +99,7 @@ public class TentsController : ControllerBase
             return NotFound(new ErrorResponse("Tent not found", "TENT_NOT_FOUND"));
         }
 
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpPut("{id:guid}/tags")]
@@ -119,7 +119,7 @@ public class TentsController : ControllerBase
             return BadRequest(error);
         }
 
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpGet("{id:guid}/history")]
@@ -147,6 +147,6 @@ public class TentsController : ControllerBase
 
         var history = await _auditHistoryService.GetTentHistoryAsync(id, parsedCategory, limit, cancellationToken);
 
-        return Ok(new { data = history });
+        return Ok(history);
     }
 }

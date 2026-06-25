@@ -22,7 +22,7 @@ public class PartKindsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var partKinds = await _partKindService.GetAllAsync();
-        return Ok(new { data = partKinds });
+        return Ok(partKinds);
     }
 
     [HttpPost]
@@ -31,7 +31,7 @@ public class PartKindsController : ControllerBase
     {
         var (response, error) = await _partKindService.CreateAsync(request);
         if (error != null) return BadRequest(error);
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpPut("{id:guid}")]
@@ -41,14 +41,14 @@ public class PartKindsController : ControllerBase
         var (response, error, notFound) = await _partKindService.RenameAsync(id, request);
         if (notFound) return NotFound(new ErrorResponse("Part kind not found", "PART_KIND_NOT_FOUND"));
         if (error != null) return BadRequest(error);
-        return Ok(new { data = response });
+        return Ok(response);
     }
 
     [HttpDelete("{id:guid}")]
     [ValidateUser]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var (success, error, notFound) = await _partKindService.DeleteAsync(id);
+        var (_, error, notFound) = await _partKindService.DeleteAsync(id);
         if (notFound) return NotFound(new ErrorResponse("Part kind not found", "PART_KIND_NOT_FOUND"));
         if (error != null) return BadRequest(error);
         return NoContent();

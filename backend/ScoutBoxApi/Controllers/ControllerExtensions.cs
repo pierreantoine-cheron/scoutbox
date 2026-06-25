@@ -5,13 +5,13 @@ namespace ScoutBoxApi.Controllers;
 
 public static class ControllerExtensions
 {
-    public static IActionResult OkDataOrBadRequest<T>(this ControllerBase controller, (T? Response, ErrorResponse? Error) result)
+    public static IActionResult OkOrBadRequest<T>(this ControllerBase controller, (T? Response, ErrorResponse? Error) result)
     {
         if (result.Error != null)
         {
             return controller.BadRequest(result.Error);
         }
 
-        return controller.Ok(new { data = result.Response });
+        return controller.Ok(result.Response);
     }
 }
