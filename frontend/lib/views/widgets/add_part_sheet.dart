@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
-import '../../utils/design_constants.dart';
 import 'app_progress_indicator.dart';
+import 'part_kind_row.dart';
 import 'sheet_scaffold.dart';
 
 class AddPartSheet extends ConsumerStatefulWidget {
@@ -81,38 +81,10 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
         final pk = partKinds[index];
         final isSelected = _selectedIds.contains(pk.id);
 
-        return InkWell(
+        return PartKindRow(
+          partKind: pk,
+          isSelected: isSelected,
           onTap: _isSaving ? null : () => _togglePartKind(pk.id),
-          borderRadius: BorderRadius.circular(AppRadii.md),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected ? theme.colorScheme.primary : Colors.transparent,
-                    border: Border.all(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    pk.name,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         );
       },
     );

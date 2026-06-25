@@ -6,7 +6,7 @@ import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
-import '../../utils/design_constants.dart';
+import 'part_kind_row.dart';
 import 'sheet_scaffold.dart';
 
 class TentModelSheet extends ConsumerStatefulWidget {
@@ -169,43 +169,19 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
 
   Widget _buildPartRow(PartKind pk) {
     final selected = _selectedPartKindIds.contains(pk.id);
-    final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            if (selected) {
-              _selectedPartKindIds.remove(pk.id);
-            } else {
-              _selectedPartKindIds.add(pk.id);
-            }
-          });
-        },
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.accentSoft : theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                selected ? Icons.check_circle : Icons.circle_outlined,
-                size: 20,
-                color: selected ? AppColors.scoutGreen : AppColors.border,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                pk.name,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return PartKindRow(
+      partKind: pk,
+      isSelected: selected,
+      onTap: () {
+        setState(() {
+          if (selected) {
+            _selectedPartKindIds.remove(pk.id);
+          } else {
+            _selectedPartKindIds.add(pk.id);
+          }
+        });
+      },
     );
   }
 
