@@ -4,8 +4,6 @@ namespace ScoutBoxApi.Data;
 
 public static class DataSeeder
 {
-    private static readonly DateTime SeedTimestampUtc = new(2026, 4, 4, 0, 0, 0, DateTimeKind.Utc);
-
     private static Guid Pk(string suffix) => Guid.Parse("00000000-0000-0000-0000-00000000" + suffix);
 
     public static void Seed(ScoutBoxDbContext context)
@@ -39,18 +37,19 @@ public static class DataSeeder
         if (context.PartKinds.Any())
             return false;
 
+        var now = DateTime.UtcNow;
         var partKinds = new[]
         {
-            new PartKind { Id = Pk("0101"), Name = "Toit",          DisplayOrder = 1,  CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new PartKind { Id = Pk("0102"), Name = "Double toit",   DisplayOrder = 2,  CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new PartKind { Id = Pk("0103"), Name = "Fêtière",       DisplayOrder = 3,  CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new PartKind { Id = Pk("0104"), Name = "Piquets",       DisplayOrder = 4,  CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new PartKind { Id = Pk("0105"), Name = "Tapis de sol",  DisplayOrder = 5,  CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new PartKind { Id = Pk("0106"), Name = "Sac",           DisplayOrder = 6,  CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new PartKind { Id = Pk("0107"), Name = "Sardines",      DisplayOrder = 7,  CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new PartKind { Id = Pk("0108"), Name = "Chambre",       DisplayOrder = 8,  CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new PartKind { Id = Pk("0109"), Name = "Arceaux",       DisplayOrder = 9,  CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new PartKind { Id = Pk("010A"), Name = "Armature",      DisplayOrder = 10, CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc }
+            new PartKind { Id = Pk("0101"), Name = "Toit",          DisplayOrder = 1,  CreatedAt = now, UpdatedAt = now },
+            new PartKind { Id = Pk("0102"), Name = "Double toit",   DisplayOrder = 2,  CreatedAt = now, UpdatedAt = now },
+            new PartKind { Id = Pk("0103"), Name = "Fêtière",       DisplayOrder = 3,  CreatedAt = now, UpdatedAt = now },
+            new PartKind { Id = Pk("0104"), Name = "Piquets",       DisplayOrder = 4,  CreatedAt = now, UpdatedAt = now },
+            new PartKind { Id = Pk("0105"), Name = "Tapis de sol",  DisplayOrder = 5,  CreatedAt = now, UpdatedAt = now },
+            new PartKind { Id = Pk("0106"), Name = "Sac",           DisplayOrder = 6,  CreatedAt = now, UpdatedAt = now },
+            new PartKind { Id = Pk("0107"), Name = "Sardines",      DisplayOrder = 7,  CreatedAt = now, UpdatedAt = now },
+            new PartKind { Id = Pk("0108"), Name = "Chambre",       DisplayOrder = 8,  CreatedAt = now, UpdatedAt = now },
+            new PartKind { Id = Pk("0109"), Name = "Arceaux",       DisplayOrder = 9,  CreatedAt = now, UpdatedAt = now },
+            new PartKind { Id = Pk("010A"), Name = "Armature",      DisplayOrder = 10, CreatedAt = now, UpdatedAt = now }
         };
 
         context.PartKinds.AddRange(partKinds);
@@ -62,14 +61,15 @@ public static class DataSeeder
         if (context.TentModels.Any())
             return false;
 
+        var now = DateTime.UtcNow;
         var tentModels = new[]
         {
-            new TentModel { Id = Pk("0201"), Name = "Canadienne", Description = "Tente légère à double pente.",      IsActive = true, DisplayOrder = 1, CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new TentModel { Id = Pk("0202"), Name = "Cabanon",    Description = "Tente spacieuse avec murs droits.",  IsActive = true, DisplayOrder = 2, CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new TentModel { Id = Pk("0203"), Name = "Tipi",       Description = "Structure conique monomât.",          IsActive = true, DisplayOrder = 3, CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new TentModel { Id = Pk("0204"), Name = "Marabout",   Description = "Grande tente collective.",            IsActive = true, DisplayOrder = 4, CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new TentModel { Id = Pk("0205"), Name = "Autre",      Description = null,                                  IsActive = true, DisplayOrder = 5, CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc },
-            new TentModel { Id = Pk("0206"), Name = "2 secondes", Description = null,                                  IsActive = true, DisplayOrder = 6, CreatedAt = SeedTimestampUtc, UpdatedAt = SeedTimestampUtc }
+            new TentModel { Id = Pk("0201"), Name = "Canadienne", Description = "Tente légère à double pente.",      IsActive = true, DisplayOrder = 1, CreatedAt = now, UpdatedAt = now },
+            new TentModel { Id = Pk("0202"), Name = "Cabanon",    Description = "Tente spacieuse avec murs droits.",  IsActive = true, DisplayOrder = 2, CreatedAt = now, UpdatedAt = now },
+            new TentModel { Id = Pk("0203"), Name = "Tipi",       Description = "Structure conique monomât.",          IsActive = true, DisplayOrder = 3, CreatedAt = now, UpdatedAt = now },
+            new TentModel { Id = Pk("0204"), Name = "Marabout",   Description = "Grande tente collective.",            IsActive = true, DisplayOrder = 4, CreatedAt = now, UpdatedAt = now },
+            new TentModel { Id = Pk("0205"), Name = "Autre",      Description = null,                                  IsActive = true, DisplayOrder = 5, CreatedAt = now, UpdatedAt = now },
+            new TentModel { Id = Pk("0206"), Name = "2 secondes", Description = null,                                  IsActive = true, DisplayOrder = 6, CreatedAt = now, UpdatedAt = now }
         };
 
         context.TentModels.AddRange(tentModels);
