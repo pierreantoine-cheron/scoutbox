@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
-import '../../utils/app_colors.dart';
+import '../../utils/app_theme.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/error_messages.dart';
 import '../widgets/widgets.dart';
@@ -117,7 +117,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   List<Widget> _buildContent(ColorScheme colorScheme) {
     return [
-      const _SectionHeader(
+      const SectionLabel(
         icon: Icons.person_outline,
         label: "Nom d'utilisateur",
       ),
@@ -131,7 +131,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
       const SizedBox(height: AppSpacing.lg),
-      const _SectionHeader(
+      const SectionLabel(
         icon: Icons.lock_outline,
         label: 'Code d\'invitation',
       ),
@@ -182,11 +182,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SizedBox(height: AppSpacing.xs),
         const Text(
           'Le code expire après 30 jours et ne peut être utilisé qu\'une seule fois.',
-          style: TextStyle(
-            fontSize: 12,
-            fontFamily: 'monospace',
-            color: AppColors.muted,
-          ),
+          style: AppTheme.monoCaption,
         ),
         const SizedBox(height: AppSpacing.sm),
       ],
@@ -200,7 +196,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       const SizedBox(height: AppSpacing.xl),
       const Divider(),
       const SizedBox(height: AppSpacing.lg),
-      const _SectionHeader(
+      const SectionLabel(
         icon: Icons.logout,
         label: 'Déconnexion',
       ),
@@ -223,33 +219,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     ];
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _SectionHeader({
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: AppColors.muted),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          label.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            fontFamily: 'monospace',
-            color: AppColors.muted,
-          ),
-        ),
-      ],
-    );
   }
 }
 

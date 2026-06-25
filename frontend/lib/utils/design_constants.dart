@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 class AppRadii {
   AppRadii._();
 
@@ -21,16 +23,26 @@ class AppSpacing {
 class AppElevation {
   AppElevation._();
 
-  static const double card = 0;
-  static const double appBar = 1;
-  static const double sheet = 4;
-  static const double fab = 6;
-  static const double dropdown = 8;
-  static const double modal = 8;
+  static const double popup = 8;
+}
+
+class AppPadding {
+  AppPadding._();
+
+  static const EdgeInsets inputField = EdgeInsets.symmetric(horizontal: 14, vertical: 10);
+  static const EdgeInsets cardContent = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
+}
+
+class AppOpacity {
+  AppOpacity._();
+
+  static const double disabled = 0.55;
 }
 
 class DesignConstants {
   DesignConstants._();
+
+  static const double desktopBreakpoint = 768.0;
 
   static const searchDebounce = Duration(milliseconds: 300);
 

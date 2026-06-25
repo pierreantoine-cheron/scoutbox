@@ -53,7 +53,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
         if (tagCount > 0)
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: _CountBadge(count: tagCount),
+            child: CountBadge(count: tagCount, label: 'étiquette'),
           ),
         Builder(
           builder: (context) {
@@ -141,32 +141,16 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
         ? 'L\'étiquette "${tag.name}" sera supprimée. $count tente(s) l\'utilisent.'
         : 'L\'étiquette "${tag.name}" sera supprimée.';
 
-    final confirmed = await showConfirmDialog(
-      context,
+    await showDeleteConfirmation(
+      context: context,
       title: 'Supprimer l\'étiquette ?',
       content: content,
-      confirmLabel: 'Supprimer',
-      isDestructive: true,
+      errorMessage: 'Impossible de supprimer l\'étiquette. Réessayez.',
+      onDelete: () => ref.read(tagsProvider.notifier).deleteTag(tag.id),
+      onSuccess: () {
+        if (mounted) ref.read(successIndicatorProvider.notifier).fire();
+      },
     );
-
-    if (!confirmed) return;
-
-    try {
-      await ref.read(tagsProvider.notifier).deleteTag(tag.id);
-      if (mounted) {
-        ref.read(successIndicatorProvider.notifier).fire();
-      }
-    } catch (error) {
-      if (mounted) {
-        showErrorDialog(
-          context,
-          toUserFacingError(
-            error,
-            'Impossible de supprimer l\'étiquette. Réessayez.',
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _showCreateSheet() async {
@@ -190,24 +174,6 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
       'Impossible d\'actualiser les étiquettes pour le moment.',
     );
     return 'Les données affichées peuvent être anciennes. $detail';
-  }
-}
-
-class _CountBadge extends StatelessWidget {
-  final int count;
-
-  const _CountBadge({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '$count étiquette${count > 1 ? 's' : ''}',
-      style: const TextStyle(
-        fontSize: 12,
-        fontFamily: 'monospace',
-        color: AppColors.muted,
-      ),
-    );
   }
 }
 

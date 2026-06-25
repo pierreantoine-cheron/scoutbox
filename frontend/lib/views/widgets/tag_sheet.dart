@@ -4,6 +4,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../repositories/tag_repository.dart';
 import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/app_theme.dart';
 import '../../utils/constants.dart';
 import '../../utils/design_constants.dart';
 import 'sheet_scaffold.dart';
@@ -138,11 +139,7 @@ class _TagSheetState extends State<TagSheet> {
           maxLength: ValidationConstants.tagNameMaxLength,
           decoration: const InputDecoration(
             hintText: 'Nom de l\'étiquette',
-            counterStyle: TextStyle(
-              fontSize: 12,
-              fontFamily: 'monospace',
-              color: AppColors.muted,
-            ),
+            counterStyle: AppTheme.monoCaption,
           ),
           validator: _validateName,
           onChanged: (_) => setState(() => _submitError = null),

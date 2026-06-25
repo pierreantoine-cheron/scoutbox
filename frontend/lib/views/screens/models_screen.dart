@@ -53,7 +53,7 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
         if (modelCount > 0)
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: _CountBadge(count: modelCount),
+            child: CountBadge(count: modelCount, label: 'modèle'),
           ),
         Builder(
           builder: (context) {
@@ -182,24 +182,6 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
         );
       }
     }
-  }
-}
-
-class _CountBadge extends StatelessWidget {
-  final int count;
-
-  const _CountBadge({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '$count modèle${count > 1 ? 's' : ''}',
-      style: const TextStyle(
-        fontSize: 12,
-        fontFamily: 'monospace',
-        color: AppColors.muted,
-      ),
-    );
   }
 }
 

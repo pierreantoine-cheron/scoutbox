@@ -702,13 +702,7 @@ class _CommentsPreview extends ConsumerWidget {
   Widget _displayComments(ThemeData theme) {
     final normalized = tent.comments?.trim();
     if (normalized == null || normalized.isEmpty) {
-      return Text(
-        'Pas de commentaire',
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.outline,
-          fontStyle: FontStyle.italic,
-        ),
-      );
+      return const PlaceholderText(text: 'Pas de commentaire');
     }
     return Text(
       normalized,
@@ -770,8 +764,6 @@ class _TagsBlock extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14),
       child: Column(
@@ -780,7 +772,7 @@ class _TagsBlock extends ConsumerWidget {
           Row(
             children: [
               const Expanded(
-                child: _SectionHeader(
+                child: SectionLabel(
                   label: 'Étiquettes',
                 ),
               ),
@@ -792,12 +784,7 @@ class _TagsBlock extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           if (tent.tags.isEmpty)
-            Text(
-              'Aucune étiquette',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
-            )
+            const PlaceholderText(text: 'Aucune étiquette')
           else
             Wrap(
               spacing: 6,
@@ -911,7 +898,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
           Row(
             children: [
               Expanded(
-                child: _SectionHeader(
+                child: SectionLabel(
                   label: 'Éléments (${widget.parts.length})',
                 ),
               ),
@@ -947,13 +934,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
           ],
           const SizedBox(height: 12),
           if (widget.parts.isEmpty)
-            Text(
-              'Aucun élément',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.outline,
-                fontStyle: FontStyle.italic,
-              ),
-            )
+            const PlaceholderText(text: 'Aucun élément')
           else
             ...widget.parts.map((part) => _buildPartRow(part, theme)),
         ],
@@ -1185,22 +1166,6 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
         ref.read(successIndicatorProvider.notifier).fire();
       }
     }
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String label;
-
-  const _SectionHeader({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: Theme.of(context).colorScheme.outline,
-      ),
-    );
   }
 }
 

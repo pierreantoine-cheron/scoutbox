@@ -5,7 +5,7 @@ import '../../models/part_kind.dart';
 import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import '../../services/error_localizer.dart';
-import '../../utils/app_colors.dart';
+import '../../utils/app_theme.dart';
 import 'part_kind_row.dart';
 import 'sheet_scaffold.dart';
 
@@ -110,11 +110,7 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
           buildCounter: (context, {required currentLength, required isFocused, maxLength}) {
             return Text(
               '$currentLength / $maxLength',
-              style: const TextStyle(
-                fontSize: 12,
-                fontFamily: 'monospace',
-                color: AppColors.muted,
-              ),
+              style: AppTheme.monoCaption,
             );
           },
           decoration: const InputDecoration(

@@ -53,7 +53,7 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
         if (partKindCount > 0)
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: _CountBadge(count: partKindCount),
+            child: CountBadge(count: partKindCount, label: 'élément'),
           ),
         Builder(
           builder: (context) {
@@ -153,32 +153,16 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
         ? 'L\'élément "${partKind.name}" sera supprimé. $count tente(s) l\'utilisent.'
         : 'L\'élément "${partKind.name}" sera supprimé.';
 
-    final confirmed = await showConfirmDialog(
-      context,
+    await showDeleteConfirmation(
+      context: context,
       title: 'Supprimer l\'élément ?',
       content: content,
-      confirmLabel: 'Supprimer',
-      isDestructive: true,
+      errorMessage: 'Impossible de supprimer l\'élément. Réessayez.',
+      onDelete: () => ref.read(partKindsProvider.notifier).deletePartKind(partKind.id),
+      onSuccess: () {
+        if (mounted) ref.read(successIndicatorProvider.notifier).fire();
+      },
     );
-
-    if (!confirmed) return;
-
-    try {
-      await ref.read(partKindsProvider.notifier).deletePartKind(partKind.id);
-      if (mounted) {
-        ref.read(successIndicatorProvider.notifier).fire();
-      }
-    } catch (error) {
-      if (mounted) {
-        showErrorDialog(
-          context,
-          toUserFacingError(
-            error,
-            'Impossible de supprimer l\'élément. Réessayez.',
-          ),
-        );
-      }
-    }
   }
 
   String _refreshWarning(Object issue) {
@@ -187,24 +171,6 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
       'Impossible d\'actualiser les éléments pour le moment.',
     );
     return 'Les données affichées peuvent être anciennes. $detail';
-  }
-}
-
-class _CountBadge extends StatelessWidget {
-  final int count;
-
-  const _CountBadge({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '$count élément${count > 1 ? 's' : ''}',
-      style: const TextStyle(
-        fontSize: 12,
-        fontFamily: 'monospace',
-        color: AppColors.muted,
-      ),
-    );
   }
 }
 

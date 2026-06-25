@@ -143,7 +143,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildSectionLabel('Modèle'),
+                  const SectionLabel(label: 'Modèle'),
                   const SizedBox(height: AppSpacing.sm),
                   _buildModelDropdown(models, creationState, notifier),
                   const SizedBox(height: AppSpacing.lg),
@@ -171,18 +171,6 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildSectionLabel(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 0),
-      child: Text(
-        label.toUpperCase(),
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-      ),
     );
   }
 

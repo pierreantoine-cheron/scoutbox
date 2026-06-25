@@ -55,6 +55,12 @@ class AppTheme {
 
   static const _semanticColors = AppSemanticColors.fallback;
 
+  static const monoCaption = TextStyle(
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: AppColors.muted,
+  );
+
   static ThemeData theme(BuildContext context) {
     return ThemeData(
       colorScheme: _colorScheme(),
@@ -145,7 +151,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.lg),
         ),
-        elevation: AppElevation.modal,
+        elevation: AppElevation.popup,
       ),
     );
   }

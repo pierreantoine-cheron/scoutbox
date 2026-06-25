@@ -5,6 +5,7 @@ import '../../models/tent.dart';
 import '../../providers/tent_filter_provider.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/app_theme_context.dart';
+import 'count_badge.dart';
 import 'scout_pill.dart';
 import 'scout_segmented_toggle.dart';
 
@@ -265,14 +266,7 @@ class _FilterBarBase extends StatelessWidget {
             child: _PillsOverflow(pills: pills),
           ),
           const SizedBox(width: 10),
-          Text(
-            '$tentCount tente${tentCount != 1 ? 's' : ''}',
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 12,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
+          CountBadge(count: tentCount, label: 'tente'),
           const SizedBox(width: 6),
           _ExpandToggle(
             isExpanded: isPanelExpanded,

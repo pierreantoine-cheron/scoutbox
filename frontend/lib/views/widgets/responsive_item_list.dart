@@ -105,7 +105,7 @@ class ResponsiveItemList<T> extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadii.md),
                   side: const BorderSide(color: AppColors.border),
                 ),
-                elevation: AppElevation.dropdown,
+                elevation: AppElevation.popup,
                 color: colorScheme.surface,
                 itemBuilder: (_) {
                   return const [
