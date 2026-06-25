@@ -100,22 +100,23 @@ No custom font assets are loaded — the design relies on the native platform sy
 ### Contextual type rules
 
 | Context | Size | Weight | Family | Color |
-|---|---|---|---|---|
+|---|---|---|---|---|---|
 | Card title | 17px | w600 | default | `foreground` |
 | Item name (list/detail) | 17px | w600 | default | `foreground` |
 | Metadata / secondary line | 12px | w400 | default | `muted` |
-| Sheet title | 20px | w600 | default | `foreground` |
+| Sheet title | 22px | w600 | default | `foreground` |
 | Sheet form label | 13px | w500 | default | `foreground` |
-| Section header (uppercase) | 11px | w500 | mono | `muted`, `letter-spacing: 0.5` |
+| Section header (uppercase) | 11px | w500 | mono | `muted`, `letter-spacing: 0.66` |
 | Count badges ("3 modèles") | 12px | w400 | mono | `muted` |
 | Character counter | 12px | w400 | mono | `muted` |
-| Invite code display | 16px | w400 | mono | default, `letter-spacing: 2` |
+| Invite code display | 17px | w400 | mono | default, `letter-spacing: 2` |
+| Navigation brand text | 17px | w700 | default | `foreground` |
 | Desktop tab label | 13px | w600 (sel) / w500 | default | `foreground` / `muted` |
 | Drawer item label | 14px | w600 (sel) / w400 | default | `foreground` / `muted` |
 | ScoutPill label (full) | 14px | w500 | default | foreground color |
 | ScoutPill label (compact) | 11px | w600 | default | foreground color |
 | Button text | 14px | w600 | default | — |
-| Empty state title | 20px | w600 | default | `foreground` |
+| Empty state title | 22px | w600 | default | `foreground` |
 | Empty state subtitle | 14px | w400 | default | `muted` |
 
 ---
@@ -179,15 +180,17 @@ No custom font assets are loaded — the design relies on the native platform sy
 ### Tokens (`AppElevation`)
 
 | Token | Value | Context |
-|---|---|---|
+|---|---|---|---|
 | `none` | 0 | Cards, app bar (unscrolled) |
 | `scrolled` | 1 | App bar when scrolled under |
+| `sheet` | 4 | Bottom sheets |
 | `fab` | 6 | FAB shadow |
-| `modal` | 8 | Dialogs, bottom sheets |
+| `modal` | 8 | Dialogs |
+| `dropdown` | 8 | Dropdown menus, popup overlays |
 
 ### Philosophy
 
-The design is intentionally **low-elevation, border-driven**. Cards have no elevation (`elevation: 0`) and rely on a 1px `outlineVariant` border for separation. Elevation is reserved for floating elements (FAB, dialogs, sheets) and the subtle scrolled-under app bar shadow.
+The design is intentionally **low-elevation, border-driven**. Cards have no elevation (`elevation: 0`) and rely on a 1px `outlineVariant` border for separation. Elevation is reserved for floating elements (sheets at 4px, FAB at 6px, dialogs and dropdowns at 8px) and the subtle scrolled-under app bar shadow at 1px.
 
 ---
 
@@ -225,10 +228,10 @@ The design is intentionally **low-elevation, border-driven**. Cards have no elev
 ### Buttons
 
 | Variant | Shape | Min size | Text | Padding |
-|---|---|---|---|---|
+|---|---|---|---|---|---|
 | FilledButton | radius 10px | 0×48 | 14px w600 | h:18 v:14 |
-| ElevatedButton | radius 10px | inf×48 | 15px w600 | h:18 v:10 |
-| OutlinedButton | radius 10px | — | — | — |
+| ElevatedButton | radius 10px | inf×48 | 14px w600 | h:18 v:10 |
+| OutlinedButton | radius 10px | — | 14px w600 | — |
 | Desktop create | radius 10px | — | 13px w600 | 14×7 |
 | Sheet footer outline | radius 10px | 0×48 | 14px w600 | — |
 | Sheet footer filled | radius 10px | 0×48 | 14px w600 | h:18 v:14 |
@@ -295,7 +298,7 @@ Bottom sheet pattern used for all create/edit flows:
 ```
 ┌─────────────────────────────────────┐
 │         ━━━━━━━ (handle, 36×4px)   │  ← mobile only
-│  Titre (20px w600)           [✕]   │
+│  Titre (22px w600)           [✕]   │
 │ ─────────────────────────────────── │
 │                                     │
 │  [form content, scrollable]         │
@@ -306,7 +309,7 @@ Bottom sheet pattern used for all create/edit flows:
 ```
 
 - Handle: mobile only, hidden ≥768px
-- Header: `EdgeInsets.fromLTRB(24, 12, 24, 0)`, title 20px w600
+- Header: `EdgeInsets.fromLTRB(24, 12, 24, 0)`, title 22px w600
 - Body: scrollable, 24px horizontal padding, 4px gap between fields
 - Footer: divider + row of [OutlinedButton cancel, FilledButton save], both 48px height
 - Presentation: mobile = bottom sheet (`showModalBottomSheet`), desktop = dialog (`showDialog`)
@@ -322,7 +325,7 @@ Bottom sheet pattern used for all create/edit flows:
 
 - Centered column
 - Icon: 64px, `muted`
-- Title: 20px w600, `foreground`
+- Title: 22px w600, `foreground`
 - Subtitle (optional): 14px w400, `muted`
 - Gaps: 16px after icon, 8px after title
 
@@ -500,6 +503,37 @@ All interactive surfaces (cards, list items, buttons) use `InkWell` with matchin
 
 ---
 
+## Style unification — 2026-06-25
+
+Six close-but-different styles were identified and resolved. The table below lists every change — this doc reflects the unified values, while the code still needs updating to match.
+
+### Changes applied to DESIGN.md (code changes are described, not yet made in code)
+
+| # | Issue | Old (code) | Unified to | Affected files |
+|---|---|---|---|---|
+| 1 | **Button font sizes** — FilledButton 14px vs ElevatedButton 15px | 15px on ElevatedButton | **14px** (all buttons) | `app_theme.dart` ElevatedButton text style |
+| 2 | **Sheet & empty-state titles** vs `titleLarge` | 20px w600 inline | **22px** w600 (`titleLarge`) | `sheet_scaffold.dart:49`, `empty_state_view.dart:29` |
+| 3 | **Navigation brand text** — 18px w700 floats between tokens | 18px w700 inline | **17px** w700 (reuse `titleMedium`) | `navigation_drawer.dart:116`, `auth_gate.dart:179` |
+| 4 | **11px label letter-spacing** — three different spacings | 0.5, 0.66, omitted | **0.66** (match `labelSmall`) | `settings_screen.dart:247`, filter bar lines |
+| 5 | **Elevation tokens** — missing `sheet` and `dropdown` | sheet=4 and dropdown=8 existed in code but not DESIGN.md | Added **`sheet: 4`**, **`dropdown: 8`** to table | `design_constants.dart` (already correct) |
+| 6 | **Invite code display** — 16px has no token | 16px w400 inline | **17px** w400 (reuse `titleMedium` weight) | `settings_screen.dart:169` |
+
+### Code changes still needed
+
+These unifications are locked in DESIGN.md but must be applied to the Flutter source:
+
+1. **`app_theme.dart`** — Change `ElevatedButton` text style from 15px to 14px.
+2. **`sheet_scaffold.dart:49`** — Change `fontSize: 20` to `Theme.of(context).textTheme.titleLarge` (22px w600).
+3. **`empty_state_view.dart:29`** — Change `fontSize: 20` to `Theme.of(context).textTheme.titleLarge` (22px w600).
+4. **`navigation_drawer.dart:116`** — Change `fontSize: 18` to `Theme.of(context).textTheme.titleMedium` (17px w700).
+5. **`auth_gate.dart:179`** — Change `fontSize: 18` to `Theme.of(context).textTheme.titleMedium` (17px w700).
+6. **`settings_screen.dart:247`** — Change 11px w600 with no letter-spacing to `Theme.of(context).textTheme.labelSmall` (11px w500, letter-spacing 0.66).
+7. **Filter bar section header lines** — Change 11px w500 `letter-spacing: 0.5` to `Theme.of(context).textTheme.labelSmall` (0.66).
+8. **`settings_screen.dart:169`** — Change `fontSize: 16` to `Theme.of(context).textTheme.titleMedium` (17px w400).
+
+---
+
 ## Changelog
 
 - **2026-06-25** — Initial DESIGN.md extracted from Flutter codebase (`frontend/lib/utils/`) and `design/v1/scoutbox.html`.
+- **2026-06-25** — Style unification: 6 close styles resolved (buttons 14px, sheet/empty titles 22px, brand text 17px, labels 0.66 l-s, elevation tokens complete, invite code 17px). Code changes listed above still pending.
