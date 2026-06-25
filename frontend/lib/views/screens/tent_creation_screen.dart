@@ -153,6 +153,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
                     _buildDualColumn(creationState, notifier)
                   else
                     _buildSingleColumn(creationState, notifier),
+                  const SizedBox(height: AppSpacing.lg),
                   _buildStateSegment(creationState, notifier),
                   const SizedBox(height: AppSpacing.md),
                   _buildCommentsField(creationState, notifier),
