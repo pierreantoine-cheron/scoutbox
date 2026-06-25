@@ -12,6 +12,7 @@ import 'scout_pill.dart';
 import 'sheet_scaffold.dart';
 import 'app_progress_indicator.dart';
 import 'async_error_view.dart';
+import 'placeholder_text.dart';
 
 class TagAssignmentSheet extends ConsumerStatefulWidget {
   final String tentId;
@@ -97,9 +98,8 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Aucune \u00e9tiquette disponible. Cr\u00e9ez d\'abord des \u00e9tiquettes.',
-              textAlign: TextAlign.center,
+            const PlaceholderText(
+              text: 'Aucune \u00e9tiquette disponible. Cr\u00e9ez d\'abord des \u00e9tiquettes.',
             ),
             const SizedBox(height: 8),
             TextButton(
@@ -120,7 +120,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
     }).toList()..sort((a, b) => a.name.compareTo(b.name));
 
     if (filteredTags.isEmpty) {
-      return const Center(child: Text('Aucune \u00e9tiquette trouv\u00e9e'));
+      return const PlaceholderText(text: 'Aucune \u00e9tiquette trouv\u00e9e');
     }
 
     return Wrap(

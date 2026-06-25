@@ -90,7 +90,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final isDesktop = MediaQuery.sizeOf(context).width >= 768;
+    final isDesktop = MediaQuery.sizeOf(context).width >= DesignConstants.desktopBreakpoint;
 
     return Material(
       child: SafeArea(

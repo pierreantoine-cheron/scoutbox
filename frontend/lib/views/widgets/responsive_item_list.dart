@@ -45,12 +45,12 @@ class ResponsiveItemList<T> extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
-          final crossAxisCount = width >= 1100 ? 3 : width >= 768 ? 2 : 1;
+          final crossAxisCount = width >= 1100 ? 3 : width >= DesignConstants.desktopBreakpoint ? 2 : 1;
           final spacing = AppSpacing.sm;
           final cardWidth = (width - 2 * 16 - (crossAxisCount - 1) * spacing) / crossAxisCount;
 
           // Extra bottom padding on mobile so the last card is not hidden behind the FAB
-          final bottomPadding = width < 768 ? 16.0 + 72.0 : 16.0;
+          final bottomPadding = width < DesignConstants.desktopBreakpoint ? 16.0 + 72.0 : 16.0;
 
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -90,7 +90,7 @@ class ResponsiveItemList<T> extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.xl),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding: AppPadding.cardContent,
           child: Row(
             children: [
               Expanded(child: itemContent(context, item)),

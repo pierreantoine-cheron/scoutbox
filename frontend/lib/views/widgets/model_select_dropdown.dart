@@ -53,7 +53,7 @@ class _ModelSelectDropdownState extends State<ModelSelectDropdown> {
             onTap: _toggle,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: AppPadding.inputField,
               decoration: BoxDecoration(
                 border: Border.all(
                   color: _isOpen ? colorScheme.primary : colorScheme.outlineVariant,
@@ -114,7 +114,7 @@ class _ModelSelectDropdownState extends State<ModelSelectDropdown> {
 
   Widget _buildDropdownList(ColorScheme colorScheme) {
     return Material(
-      elevation: 8,
+      elevation: AppElevation.popup,
       borderRadius: BorderRadius.circular(AppRadii.md),
       shadowColor: colorScheme.shadow.withAlpha(30),
       child: Container(

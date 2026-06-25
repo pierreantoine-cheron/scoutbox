@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tent.dart';
 import '../../providers/providers.dart';
+import '../../utils/design_constants.dart';
 import '../../utils/error_messages.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
@@ -55,7 +56,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   AppBarConfig buildAppBarConfig() {
     if (!mounted) return const AppBarConfig(screenId: '');
 
-    final isDesktop = MediaQuery.sizeOf(context).width >= 768;
+    final isDesktop = MediaQuery.sizeOf(context).width >= DesignConstants.desktopBreakpoint;
     final tentsState = ref.read(tentListProvider);
 
     return AppBarConfig(
@@ -143,7 +144,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     required TentListFilterState filterState,
     required List allTags,
   }) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 768;
+    final isDesktop = MediaQuery.sizeOf(context).width >= DesignConstants.desktopBreakpoint;
     final optionSourceTents = _archiveScopedTents(
       rawTents,
       filterState.archiveFilter,

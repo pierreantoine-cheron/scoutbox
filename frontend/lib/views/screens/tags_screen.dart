@@ -57,7 +57,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
           ),
         Builder(
           builder: (context) {
-            final isDesktop = MediaQuery.of(context).size.width >= 768;
+            final isDesktop = MediaQuery.of(context).size.width >= DesignConstants.desktopBreakpoint;
             if (!isDesktop) return const SizedBox.shrink();
             return DesktopCreateButton(
               label: 'Créer',
@@ -67,7 +67,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen>
         ),
         Builder(
           builder: (context) {
-            final isDesktop = MediaQuery.of(context).size.width >= 768;
+            final isDesktop = MediaQuery.of(context).size.width >= DesignConstants.desktopBreakpoint;
             if (!isDesktop) return const SizedBox.shrink();
             return IconButton(
               icon: const Icon(Icons.refresh),

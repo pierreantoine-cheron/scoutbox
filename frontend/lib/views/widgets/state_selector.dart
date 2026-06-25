@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../utils/design_constants.dart';
 import 'state_badge.dart';
 
 class StateSelector<T> extends StatelessWidget {
@@ -76,7 +77,7 @@ class StateSelector<T> extends StatelessWidget {
         }).toList();
       },
       child: Opacity(
-        opacity: enabled ? 1 : 0.55,
+        opacity: enabled ? 1 : AppOpacity.disabled,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

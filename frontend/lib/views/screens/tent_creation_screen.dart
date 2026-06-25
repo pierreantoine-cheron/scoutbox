@@ -120,7 +120,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
 
   Widget _buildModelsEmpty() {
     return const Center(
-      child: Text('Aucun modèle de tente disponible pour le moment.'),
+      child: PlaceholderText(text: 'Aucun modèle de tente disponible pour le moment.'),
     );
   }
 
@@ -381,7 +381,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
       fillColor: Colors.transparent,
       counterText: '',
       isDense: false,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      contentPadding: AppPadding.inputField,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadii.md),
         borderSide: BorderSide(color: colorScheme.outlineVariant),

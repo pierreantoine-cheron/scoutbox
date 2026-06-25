@@ -50,7 +50,7 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
 
     final tentAsync = ref.read(tentDetailProvider(widget.tentId));
     final tent = tentAsync.asData?.value;
-    final isDesktop = MediaQuery.sizeOf(context).width >= 768;
+    final isDesktop = MediaQuery.sizeOf(context).width >= DesignConstants.desktopBreakpoint;
 
     return AppBarConfig(
       screenId: 'tent_detail',
@@ -376,7 +376,7 @@ class _ArchiveBanner extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: AppPadding.inputField,
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(AppRadii.md),
@@ -503,7 +503,7 @@ class _InfoChipsRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final opacity = isArchived ? 0.55 : 1.0;
+    final opacity = isArchived ? AppOpacity.disabled : 1.0;
     final sizeLabel = tent.size == 1 ? '1 place' : '${tent.size} places';
     final modelName = (tent.tentModelName?.trim().isNotEmpty ?? false)
         ? tent.tentModelName!
@@ -858,31 +858,24 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
   }
 
   Future<void> _confirmDeleteSelected() async {
-    final confirmed = await showConfirmDialog(
-      context,
+    await showDeleteConfirmation(
+      context: context,
       title: 'Supprimer ces pièces ?',
       content:
           '${_selectedPartIds.length} pièce(s) seront supprimées définitivement. Cette action est irréversible.',
-      confirmLabel: 'Supprimer',
-      isDestructive: true,
+      errorMessage: 'Impossible de supprimer les pièces. Réessayez.',
       barrierDismissible: false,
+      onDelete: () async {
+        for (final partId in _selectedPartIds.toList()) {
+          if (!mounted) throw Exception();
+          final success = await ref
+              .read(partManagementProvider(widget.tentId).notifier)
+              .removePart(partId);
+          if (!success) throw Exception();
+        }
+      },
+      onSuccess: () => _exitSelectionMode(),
     );
-
-    if (!confirmed || !mounted) return;
-
-    var allSucceeded = true;
-    for (final partId in _selectedPartIds.toList()) {
-      final success = await ref
-          .read(partManagementProvider(widget.tentId).notifier)
-          .removePart(partId);
-      if (!mounted) return;
-      if (!success) {
-        allSucceeded = false;
-        break;
-      }
-    }
-
-    if (allSucceeded) _exitSelectionMode();
   }
 
   @override

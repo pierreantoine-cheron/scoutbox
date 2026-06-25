@@ -39,7 +39,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       final section = ref.watch(navigationSectionProvider);
       final appBarConfig = ref.watch(appBarConfigProvider);
       final successTrigger = ref.watch(successIndicatorProvider);
-      final isDesktop = MediaQuery.sizeOf(context).width >= 768;
+      final isDesktop = MediaQuery.sizeOf(context).width >= DesignConstants.desktopBreakpoint;
 
       final isRootScreen = !appBarConfig.showBackButton;
 

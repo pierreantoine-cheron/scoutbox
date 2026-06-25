@@ -103,7 +103,7 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(0, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding: AppPadding.cardContent,
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.md),
@@ -128,7 +128,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: const BorderSide(color: AppColors.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        contentPadding: AppPadding.inputField,
         hintStyle: const TextStyle(color: AppColors.muted),
       ),
       chipTheme: ChipThemeData(

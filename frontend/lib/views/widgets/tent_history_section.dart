@@ -8,6 +8,7 @@ import '../../utils/error_messages.dart';
 import 'search_field.dart';
 import 'app_progress_indicator.dart';
 import 'async_error_view.dart';
+import 'placeholder_text.dart';
 
 class _FilterOption {
   final String label;
@@ -130,7 +131,7 @@ class _TentHistorySectionState extends ConsumerState<TentHistorySection> {
     if (filtered.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: Text('Aucun historique à afficher.')),
+        child: PlaceholderText(text: 'Aucun historique à afficher.'),
       );
     }
 

@@ -4,10 +4,13 @@ import '../../models/tag.dart';
 import '../../models/tent.dart';
 import '../../providers/tent_filter_provider.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/app_theme.dart';
 import '../../utils/app_theme_context.dart';
 import 'count_badge.dart';
+import 'placeholder_text.dart';
 import 'scout_pill.dart';
 import 'scout_segmented_toggle.dart';
+import 'section_label.dart';
 
 class TentTypeFilterOption {
   final String id;
@@ -327,13 +330,7 @@ class _PillsOverflow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (pills.isEmpty) {
-      return Text(
-        'Aucun filtre actif',
-        style: TextStyle(
-          fontSize: 12,
-          color: colorScheme.onSurfaceVariant,
-        ),
-      );
+      return const PlaceholderText(text: 'Aucun filtre actif');
     }
 
     return LayoutBuilder(
@@ -364,9 +361,7 @@ class _PillsOverflow extends StatelessWidget {
                   child: Center(
                     child: Text(
                       '+${pills.length - maxTokens}',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
+                      style: AppTheme.monoCaption.copyWith(
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -607,8 +602,6 @@ class _FilterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 13),
       child: Wrap(
@@ -616,12 +609,7 @@ class _FilterRow extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: [
-          Text(
-            label.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
+          SectionLabel(label: label),
           ...children,
         ],
       ),

@@ -5,6 +5,7 @@ import '../../providers/providers.dart';
 import '../../repositories/tent_repository.dart';
 import 'app_progress_indicator.dart';
 import 'part_kind_row.dart';
+import 'placeholder_text.dart';
 import 'sheet_scaffold.dart';
 
 class AddPartSheet extends ConsumerStatefulWidget {
@@ -69,7 +70,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
     if (partKinds.isEmpty) {
-      return const Center(child: Text('Aucun \u00e9l\u00e9ment disponible.'));
+      return const PlaceholderText(text: 'Aucun \u00e9l\u00e9ment disponible.');
     }
 
     return ListView.builder(

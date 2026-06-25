@@ -65,7 +65,7 @@ class SheetFooter extends StatelessWidget {
       foregroundColor: theme.colorScheme.onSurface,
       side: BorderSide(color: theme.colorScheme.outlineVariant),
       minimumSize: const Size(0, 48),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: AppPadding.cardContent,
       textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
     );
   }
@@ -73,7 +73,7 @@ class SheetFooter extends StatelessWidget {
   static ButtonStyle filledStyle(ThemeData theme) {
     return FilledButton.styleFrom(
       minimumSize: const Size(0, 48),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: AppPadding.cardContent,
       textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.md),

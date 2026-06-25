@@ -512,7 +512,7 @@ class _ToggleButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.md - 2),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+          padding: AppPadding.inputField,
           decoration: BoxDecoration(
             color: isActive ? AppColors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadii.md - 2),
