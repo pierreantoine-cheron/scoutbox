@@ -219,14 +219,7 @@ class _TagContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                '${tag.tentCount} tente${tag.tentCount > 1 ? 's' : ''}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  color: AppColors.muted,
-                ),
-              ),
+              CountBadge(count: tag.tentCount, label: 'tente'),
             ],
           ),
         ),

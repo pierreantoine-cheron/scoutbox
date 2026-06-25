@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tent_model.dart';
 import '../../providers/providers.dart';
-import '../../utils/app_colors.dart';
+import '../../utils/app_theme.dart';
 import '../../utils/design_constants.dart';
-import '../../utils/error_messages.dart';
 import '../../utils/responsive_sheet.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
@@ -153,35 +152,19 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
   Future<void> _showDeleteDialog(TentModel model) async {
     final hasTents = model.tentCount > 0;
 
-    final confirmed = await showConfirmDialog(
-      context,
+    await showDeleteConfirmation(
+      context: context,
       title: 'Supprimer le modèle ?',
       content: hasTents
           ? 'Le modèle "${model.name}" est utilisé par ${model.tentCount} tente${model.tentCount != 1 ? 's' : ''}. Impossible de le supprimer.'
           : 'Le modèle "${model.name}" sera supprimé.',
-      confirmLabel: 'Supprimer',
-      isDestructive: true,
+      errorMessage: 'Impossible de supprimer le modèle. Réessayez.',
       enabled: !hasTents,
+      onDelete: () => ref.read(tentModelsProvider.notifier).deleteModel(model.id),
+      onSuccess: () {
+        if (mounted) ref.read(successIndicatorProvider.notifier).fire();
+      },
     );
-
-    if (!confirmed) return;
-
-    try {
-      await ref.read(tentModelsProvider.notifier).deleteModel(model.id);
-      if (mounted) {
-        ref.read(successIndicatorProvider.notifier).fire();
-      }
-    } catch (error) {
-      if (mounted) {
-        showErrorDialog(
-          context,
-          toUserFacingError(
-            error,
-            'Impossible de supprimer le modèle. Réessayez.',
-          ),
-        );
-      }
-    }
   }
 }
 
@@ -210,14 +193,12 @@ class _ModelContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                '${model.tentCount} tente${model.tentCount != 1 ? 's' : ''} · '
-                '${model.componentCount} élément${model.componentCount != 1 ? 's' : ''}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  color: AppColors.muted,
-                ),
+              Row(
+                children: [
+                  CountBadge(count: model.tentCount, label: 'tente'),
+                  const Text(' · ', style: AppTheme.monoCaption),
+                  CountBadge(count: model.componentCount, label: 'élément'),
+                ],
               ),
             ],
           ),

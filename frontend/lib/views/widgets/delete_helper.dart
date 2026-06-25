@@ -10,6 +10,7 @@ Future<void> showDeleteConfirmation({
   required String errorMessage,
   required Future<void> Function() onDelete,
   required VoidCallback onSuccess,
+  bool enabled = true,
 }) async {
   final confirmed = await showConfirmDialog(
     context,
@@ -17,6 +18,7 @@ Future<void> showDeleteConfirmation({
     content: content,
     confirmLabel: 'Supprimer',
     isDestructive: true,
+    enabled: enabled,
   );
 
   if (!confirmed) return;

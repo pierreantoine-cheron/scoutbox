@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/part_kind.dart';
 import '../../providers/providers.dart';
-import '../../utils/app_colors.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/error_messages.dart';
 import '../../utils/responsive_sheet.dart';
@@ -199,14 +198,7 @@ class _PartKindContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                '${partKind.tentCount} tente${partKind.tentCount > 1 ? 's' : ''}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontFamily: 'monospace',
-                  color: AppColors.muted,
-                ),
-              ),
+              CountBadge(count: partKind.tentCount, label: 'tente'),
             ],
           ),
         ),
