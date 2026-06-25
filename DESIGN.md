@@ -30,6 +30,23 @@ ScoutBox is a gear-inventory tool for scouts (scoutisme francophone). The brand 
 | `border` | `#DEE2E5` | `oklch(91% 0.006 250)` | Card borders, dividers, input outlines |
 | `accentSoft` | `#186A23` at 12% opacity | — | Selected item backgrounds, chip highlights |
 
+### CSS `:root` block (supplied to Open Design HTML seed)
+
+```css
+:root {
+  --bg:      oklch(98.5% 0.002 240);
+  --surface: oklch(100% 0 0);
+  --fg:      oklch(20% 0.014 250);
+  --muted:   oklch(52% 0.012 250);
+  --border:  oklch(91% 0.006 250);
+  --accent:  oklch(46% 0.13 145);
+
+  --font-display: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', monospace;
+}
+```
+
 ### Surface container hierarchy (Material 3)
 
 | Token | Hex | Role |
