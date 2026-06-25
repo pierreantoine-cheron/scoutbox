@@ -109,8 +109,8 @@ class AuthNotifier extends _$AuthNotifier {
 
       if (result.success) {
         // Tokens are already saved by AuthService.register()
-        _setAuthenticatedState(serverUrl, result.authResponse!.accessToken);
         await _authService.saveCurrentUsername(username);
+        _setAuthenticatedState(serverUrl, result.authResponse!.accessToken);
       } else {
         state = state.copyWith(isLoading: false, error: result.error);
       }
@@ -150,8 +150,8 @@ class AuthNotifier extends _$AuthNotifier {
       );
 
       if (result.success) {
-        _setAuthenticatedState(serverUrl, result.authResponse!.accessToken);
         await _authService.saveCurrentUsername(username);
+        _setAuthenticatedState(serverUrl, result.authResponse!.accessToken);
         state = state.copyWith(logoutSuccessMessage: null);
       } else {
         state = state.copyWith(

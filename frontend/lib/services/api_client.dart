@@ -27,6 +27,7 @@ class ApiClient {
     ApiRoutes.login,
     ApiRoutes.register,
     ApiRoutes.refresh,
+    ApiRoutes.logout,
     ApiRoutes.health,
   ];
 

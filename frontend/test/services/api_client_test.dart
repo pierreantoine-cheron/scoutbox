@@ -11,6 +11,7 @@ void main() {
         expect(ApiRoutes.login, equals('/api/auth/login'));
         expect(ApiRoutes.register, equals('/api/auth/register'));
         expect(ApiRoutes.refresh, equals('/api/auth/refresh'));
+        expect(ApiRoutes.logout, equals('/api/auth/logout'));
         expect(ApiRoutes.health, equals('/api/health'));
       });
 
@@ -19,13 +20,15 @@ void main() {
           ApiRoutes.login,
           ApiRoutes.register,
           ApiRoutes.refresh,
+          ApiRoutes.logout,
           ApiRoutes.health,
         ];
 
-        expect(excludedPaths.length, equals(4));
+        expect(excludedPaths.length, equals(5));
         expect(excludedPaths, contains('/api/auth/login'));
         expect(excludedPaths, contains('/api/auth/register'));
         expect(excludedPaths, contains('/api/auth/refresh'));
+        expect(excludedPaths, contains('/api/auth/logout'));
         expect(excludedPaths, contains('/api/health'));
       });
     });
@@ -36,6 +39,7 @@ void main() {
           ApiRoutes.login,
           ApiRoutes.register,
           ApiRoutes.refresh,
+          ApiRoutes.logout,
           ApiRoutes.health,
         ];
 
@@ -57,6 +61,7 @@ void main() {
           '/api/auth/login/',
           '/api/auth/register/',
           '/api/auth/refresh/',
+          '/api/auth/logout/',
           '/api/health/',
         ];
 
@@ -64,6 +69,7 @@ void main() {
           ApiRoutes.login,
           ApiRoutes.register,
           ApiRoutes.refresh,
+          ApiRoutes.logout,
           ApiRoutes.health,
         ];
 
@@ -85,6 +91,7 @@ void main() {
           '/api/auth/loginMalicious',
           '/api/auth/registerEvil',
           '/api/auth/refreshToken',
+          '/api/auth/logoutAll',
           '/api/healthCheck',
           '/api/users/refresh-token',
         ];
@@ -93,6 +100,7 @@ void main() {
           ApiRoutes.login,
           ApiRoutes.register,
           ApiRoutes.refresh,
+          ApiRoutes.logout,
           ApiRoutes.health,
         ];
 
@@ -120,6 +128,7 @@ void main() {
           ApiRoutes.login,
           ApiRoutes.register,
           ApiRoutes.refresh,
+          ApiRoutes.logout,
           ApiRoutes.health,
         ];
 

@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:client/providers/auth_provider.dart';
-import 'package:client/models/auth_state.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/models/tent_model.dart';
 import 'package:client/providers/app_bar_config_provider.dart';
@@ -35,7 +33,10 @@ void main() {
               ]),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -57,7 +58,10 @@ void main() {
             ),
             tentModelsProvider.overrideWith(() => _TentModelsTestNotifier()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -85,7 +89,10 @@ void main() {
               () => _TentListTestNotifier(_buildSampleTents()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -129,7 +136,10 @@ void main() {
               ]),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -201,7 +211,10 @@ void main() {
               ]),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -250,7 +263,10 @@ void main() {
               ]),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -283,7 +299,10 @@ void main() {
               () => _TentListTestNotifier(_buildSampleTents()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -303,7 +322,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentListProvider.overrideWith(() => notifier)],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -329,7 +351,10 @@ void main() {
               () => _TentListTestNotifier(_buildSampleTents()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -355,7 +380,10 @@ void main() {
               () => _TentListTestNotifier(_buildSampleTents()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -382,7 +410,10 @@ void main() {
             ),
             tentListRefreshIssueProvider.overrideWithValue(warning),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -401,7 +432,10 @@ void main() {
           overrides: [
             tentListProvider.overrideWith(() => _LoadingTentListNotifier()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pump();
@@ -446,7 +480,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentListProvider.overrideWith(() => notifier)],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -469,7 +506,10 @@ void main() {
             ),
             tentListFilteredModeProvider.overrideWith((ref) => true),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -491,7 +531,10 @@ void main() {
               () => _TentListTestNotifier(_buildFilteringSampleTents()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -519,7 +562,10 @@ void main() {
               () => _TentListTestNotifier(_buildFilteringSampleTents()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -555,7 +601,10 @@ void main() {
               () => _TentListTestNotifier(_buildFilteringSampleTents()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -588,7 +637,10 @@ void main() {
               () => _TentListTestNotifier(_buildFilteringSampleTents()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -622,7 +674,10 @@ void main() {
               () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -653,7 +708,10 @@ void main() {
               () => _TentModelsLoadedNotifier(_buildArchiveModelOptionsMetadata()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -688,7 +746,10 @@ void main() {
               () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -714,7 +775,10 @@ void main() {
                 () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
               ),
             ],
-            child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+            child: MaterialApp(
+              theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+              home: const TentListScreen(),
+            ),
           ),
         );
         await tester.pumpAndSettle();
@@ -753,7 +817,10 @@ void main() {
                 () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
               ),
             ],
-            child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+            child: MaterialApp(
+              theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+              home: const TentListScreen(),
+            ),
           ),
         );
         await tester.pumpAndSettle();
@@ -787,7 +854,10 @@ void main() {
               () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -817,7 +887,10 @@ void main() {
               () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -848,7 +921,10 @@ void main() {
               () => _TentModelsLoadedNotifier(_buildManyModelOptionsMetadata()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -874,7 +950,10 @@ void main() {
               () => _TentModelsLoadedNotifier(_buildModelOptionsMetadata()),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -908,7 +987,10 @@ void main() {
             ),
             tentModelsProvider.overrideWith(() => _TentModelsFailingNotifier()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -933,7 +1015,10 @@ void main() {
             ),
             tentModelsProvider.overrideWith(() => _TentModelsLoadingNotifier()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -968,7 +1053,10 @@ void main() {
               ]),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentListScreen()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const TentListScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -1005,7 +1093,10 @@ void main() {
             ),
             tentModelsProvider.overrideWith(() => _TentModelsTestNotifier()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const _TentListTestShell()),
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const _TentListTestShell(),
+          ),
         ),
       );
       await tester.pumpAndSettle();

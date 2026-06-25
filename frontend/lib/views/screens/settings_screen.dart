@@ -50,6 +50,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         setState(() {
           _generatedCode = invite.code;
           _isGenerating = false;
+          _isCopied = false;
         });
       }
     } catch (e) {
@@ -66,6 +67,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _copyToClipboard() async {
     if (_generatedCode == null) return;
     await Clipboard.setData(ClipboardData(text: _generatedCode!));
+    if (!mounted) return;
     setState(() => _isCopied = true);
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _isCopied = false);
@@ -115,7 +117,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   List<Widget> _buildContent(ColorScheme colorScheme) {
     return [
-      _SectionHeader(
+      const _SectionHeader(
         icon: Icons.person_outline,
         label: "Nom d'utilisateur",
       ),
@@ -129,7 +131,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
       const SizedBox(height: AppSpacing.lg),
-      _SectionHeader(
+      const _SectionHeader(
         icon: Icons.lock_outline,
         label: 'Code d\'invitation',
       ),
@@ -178,9 +180,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
+        const Text(
           'Le code expire après 30 jours et ne peut être utilisé qu\'une seule fois.',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontFamily: 'monospace',
             color: AppColors.muted,
@@ -198,7 +200,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       const SizedBox(height: AppSpacing.xl),
       const Divider(),
       const SizedBox(height: AppSpacing.lg),
-      _SectionHeader(
+      const _SectionHeader(
         icon: Icons.logout,
         label: 'Déconnexion',
       ),
@@ -241,7 +243,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Text(
           label.toUpperCase(),
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 11,
             fontFamily: 'monospace',
             color: AppColors.muted,
