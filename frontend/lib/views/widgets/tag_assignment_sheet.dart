@@ -52,7 +52,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
     final theme = Theme.of(context);
 
     return SheetScaffold(
-      title: 'Modifier les \u00e9tiquettes',
+      title: 'Modifier les étiquettes',
       errorMessage: _errorMessage,
       isLoading: _isSaving,
       onCancel: () => Navigator.of(context).pop(),
@@ -72,7 +72,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
           TextField(
             controller: _searchController,
             decoration: const InputDecoration(
-              hintText: 'Rechercher une \u00e9tiquette...',
+              hintText: 'Rechercher une étiquette...',
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(),
             ),
@@ -82,7 +82,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
           tagsAsync.when(
             loading: () => const Center(child: AppProgressIndicator()),
             error: (error, _) => AsyncErrorView(
-              message: 'Impossible de charger les \u00e9tiquettes.',
+              message: 'Impossible de charger les étiquettes.',
               onRetry: () => ref.read(tagsProvider.notifier).retry(),
             ),
             data: (tags) => _buildTagContent(tags),
@@ -99,14 +99,14 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const PlaceholderText(
-              text: 'Aucune \u00e9tiquette disponible. Cr\u00e9ez d\'abord des \u00e9tiquettes.',
+              text: 'Aucune étiquette disponible. Créez d\'abord des étiquettes.',
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const TagsScreen()),
               ),
-              child: const Text('Cr\u00e9er une \u00e9tiquette'),
+              child: const Text('Créer une étiquette'),
             ),
           ],
         ),
@@ -120,7 +120,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
     }).toList()..sort((a, b) => a.name.compareTo(b.name));
 
     if (filteredTags.isEmpty) {
-      return const PlaceholderText(text: 'Aucune \u00e9tiquette trouv\u00e9e');
+      return const PlaceholderText(text: 'Aucune étiquette trouvée');
     }
 
     return Wrap(
@@ -177,7 +177,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
 
       final message = error is TentRepositoryException
           ? ErrorLocalizer.localize(error.code, fallback: error.message)
-          : 'Impossible de modifier les \u00e9tiquettes. R\u00e9essayez.';
+          : 'Impossible de modifier les étiquettes. Réessayez.';
       setState(() {
         _errorMessage = message;
       });

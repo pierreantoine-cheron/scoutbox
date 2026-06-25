@@ -110,6 +110,7 @@ scoutbox/
 
 - Write user-facing error messages in french
 - Write internal/API error messages in english
+- Use literal French characters (é, è, ê, à, etc.) in Dart strings — never `\u00e9` escape sequences
 - If uncertain, ask user for clarification
 
 ## Architecture Patterns

@@ -61,8 +61,8 @@ class _TentDataTableState extends State<TentDataTable> {
         ),
         child: const EmptyStateView(
           icon: Icons.cabin,
-          title: 'Aucune tente trouv\u00e9e',
-          subtitle: 'Essayez d\'ajuster vos filtres ou d\'en cr\u00e9er une nouvelle.',
+          title: 'Aucune tente trouvée',
+          subtitle: 'Essayez d\'ajuster vos filtres ou d\'en créer une nouvelle.',
         ),
       );
     }

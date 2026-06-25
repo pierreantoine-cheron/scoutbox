@@ -450,7 +450,7 @@ class _EmptyState extends StatelessWidget {
         const EmptyStateView(
           icon: Icons.cabin,
           title: 'Aucune tente disponible',
-          subtitle: 'Commencez par cr\u00e9er votre premi\u00e8re tente.',
+          subtitle: 'Commencez par créer votre première tente.',
         ),
       ],
     );
@@ -477,8 +477,8 @@ class _FilteredEmptyState extends StatelessWidget {
         const SizedBox(height: 72),
         const EmptyStateView(
           icon: Icons.filter_alt_off,
-          title: 'Aucune tente trouv\u00e9e',
-          subtitle: 'Essayez d\'ajuster vos filtres ou d\'en cr\u00e9er une nouvelle.',
+          title: 'Aucune tente trouvée',
+          subtitle: 'Essayez d\'ajuster vos filtres ou d\'en créer une nouvelle.',
         ),
       ],
     );

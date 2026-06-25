@@ -43,7 +43,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
     final theme = Theme.of(context);
 
     return SheetScaffold(
-      title: 'Modifier les \u00e9l\u00e9ments',
+      title: 'Modifier les éléments',
       errorMessage: _errorMessage,
       isLoading: _isSaving,
       onCancel: () => Navigator.of(context).pop(),
@@ -70,7 +70,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
     if (partKinds.isEmpty) {
-      return const PlaceholderText(text: 'Aucun \u00e9l\u00e9ment disponible.');
+      return const PlaceholderText(text: 'Aucun élément disponible.');
     }
 
     return ListView.builder(
@@ -149,7 +149,7 @@ class _AddPartSheetState extends ConsumerState<AddPartSheet> {
 
       final message = error is TentRepositoryException
           ? error.message
-          : 'Impossible de modifier les \u00e9l\u00e9ments. R\u00e9essayez.';
+          : 'Impossible de modifier les éléments. Réessayez.';
       setState(() {
         _errorMessage = message;
       });

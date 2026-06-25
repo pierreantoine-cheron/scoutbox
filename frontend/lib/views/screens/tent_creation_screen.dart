@@ -436,7 +436,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
             child: SizedBox(
               width: 200,
               child: PrimarySubmitButton(
-                label: 'Cr\u00e9er la tente',
+                label: 'Créer la tente',
                 icon: Icons.add,
                 isLoading: creationState.isSubmitting,
                 enabled: isValid,
