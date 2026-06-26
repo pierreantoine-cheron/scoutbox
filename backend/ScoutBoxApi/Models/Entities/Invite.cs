@@ -13,4 +13,10 @@ public class Invite
 
     public User? CreatedBy { get; set; }
     public User? UsedBy { get; set; }
+
+    public string GenerateInviteLink(string serverUrl)
+    {
+        var encodedServer = Uri.EscapeDataString(serverUrl);
+        return $"scoutbox://register?server={encodedServer}&invite={Uri.EscapeDataString(Code)}";
+    }
 }

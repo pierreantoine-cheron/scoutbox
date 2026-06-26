@@ -67,8 +67,8 @@ public class AuthServiceConcurrencyTests
         var auditService2 = new AuditService(context2, auditLogger2.Object);
         var inviteLogger1 = new Mock<ILogger<InviteService>>();
         var inviteLogger2 = new Mock<ILogger<InviteService>>();
-        var inviteService1 = new InviteService(context1, auditService1, inviteLogger1.Object);
-        var inviteService2 = new InviteService(context2, auditService2, inviteLogger2.Object);
+        var inviteService1 = new InviteService(context1, auditService1, inviteLogger1.Object, config);
+        var inviteService2 = new InviteService(context2, auditService2, inviteLogger2.Object, config);
 
         var service1 = new AuthService(context1, tokenService, inviteService1, auditService1, logger1.Object);
         var service2 = new AuthService(context2, tokenService, inviteService2, auditService2, logger2.Object);

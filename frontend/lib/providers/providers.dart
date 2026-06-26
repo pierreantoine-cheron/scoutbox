@@ -1,5 +1,6 @@
 export 'app_bar_config_provider.dart';
 export 'auth_provider.dart';
+export 'deep_link_provider.dart';
 export 'navigation_provider.dart';
 export 'part_kinds_provider.dart';
 export 'part_management_provider.dart';

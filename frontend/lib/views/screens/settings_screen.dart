@@ -18,6 +18,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String? _username;
   String? _generatedCode;
+  String? _inviteLink;
   bool _isGenerating = false;
   bool _isCopied = false;
 
@@ -49,6 +50,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         setState(() {
           _generatedCode = invite.code;
+          _inviteLink = invite.inviteLink;
           _isGenerating = false;
           _isCopied = false;
         });
@@ -65,8 +67,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _copyToClipboard() async {
-    if (_generatedCode == null) return;
-    await Clipboard.setData(ClipboardData(text: _generatedCode!));
+    final textToCopy = _inviteLink ?? _generatedCode;
+    if (textToCopy == null) return;
+    await Clipboard.setData(ClipboardData(text: textToCopy));
     if (!mounted) return;
     setState(() => _isCopied = true);
     Future.delayed(const Duration(seconds: 2), () {
@@ -150,34 +153,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Center(child: CircularProgressIndicator()),
         ),
       if (_generatedCode != null) ...[
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(AppRadii.sm),
-                ),
-                child: Text(
-                  _generatedCode!,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 17,
-                    letterSpacing: 2,
+        if (_inviteLink != null) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                  child: Text(
+                    _inviteLink!,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
+              const SizedBox(width: AppSpacing.sm),
+              _CopyButton(
+                isCopied: _isCopied,
+                onTap: _copyToClipboard,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
+          child: Text(
+            _generatedCode!,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 17,
+              letterSpacing: 2,
             ),
-            const SizedBox(width: AppSpacing.sm),
-            _CopyButton(
-              isCopied: _isCopied,
-              onTap: _copyToClipboard,
-            ),
-          ],
+          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         const Text(

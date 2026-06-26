@@ -540,6 +540,7 @@ class AuthService {
         code: response.data['code'] as String,
         expiresAt: DateTime.parse(response.data['expiresAt'] as String),
         isUsed: response.data['isUsed'] as bool,
+        inviteLink: response.data['inviteLink'] as String?,
       );
     } catch (_) {
       throw Exception("Impossible de générer le code d'invitation. Réessayez.");

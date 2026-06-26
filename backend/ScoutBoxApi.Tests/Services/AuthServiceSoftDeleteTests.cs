@@ -69,7 +69,7 @@ public class AuthServiceSoftDeleteTests
 
         await using var context = new ScoutBoxDbContext(options);
         var auditService = new AuditService(context, auditLoggerMock.Object);
-        var inviteService = new InviteService(context, auditService, inviteLoggerMock.Object);
+        var inviteService = new InviteService(context, auditService, inviteLoggerMock.Object, config);
         var authService = new AuthService(context, tokenService, inviteService, auditService, loggerMock.Object);
 
         // Attempt to refresh token for deleted user
@@ -137,7 +137,7 @@ public class AuthServiceSoftDeleteTests
 
         await using var context = new ScoutBoxDbContext(options);
         var auditService = new AuditService(context, auditLoggerMock.Object);
-        var inviteService = new InviteService(context, auditService, inviteLoggerMock.Object);
+        var inviteService = new InviteService(context, auditService, inviteLoggerMock.Object, config);
         var authService = new AuthService(context, tokenService, inviteService, auditService, loggerMock.Object);
 
         // Attempt to refresh token for non-existent user
@@ -206,7 +206,7 @@ public class AuthServiceSoftDeleteTests
 
         await using var context = new ScoutBoxDbContext(options);
         var auditService = new AuditService(context, auditLoggerMock.Object);
-        var inviteService = new InviteService(context, auditService, inviteLoggerMock.Object);
+        var inviteService = new InviteService(context, auditService, inviteLoggerMock.Object, config);
         var authService = new AuthService(context, tokenService, inviteService, auditService, loggerMock.Object);
 
         // Refresh token for active user should succeed

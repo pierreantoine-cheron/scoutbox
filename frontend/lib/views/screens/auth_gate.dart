@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../providers/providers.dart';
+import '../../services/deep_link_service.dart';
 import '../../utils/design_constants.dart';
 import '../widgets/widgets.dart';
 import 'login_screen.dart';
@@ -34,6 +35,19 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+
+    ref.listen<InviteLinkData?>(deepLinkProvider, (previous, next) {
+      if (next != null && authState.isAuthenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Déconnectez-vous avant d'utiliser un lien d'invitation"),
+            duration: Duration(seconds: 4),
+          ),
+        );
+        ref.read(deepLinkProvider.notifier).clear();
+        DeepLinkService.consumeInitialLink();
+      }
+    });
 
     if (authState.isAuthenticated) {
       final section = ref.watch(navigationSectionProvider);

@@ -10,12 +10,14 @@ public class InviteService
     private readonly ScoutBoxDbContext _db;
     private readonly IAuditService _auditService;
     private readonly ILogger<InviteService> _logger;
+    private readonly IConfiguration _configuration;
 
-    public InviteService(ScoutBoxDbContext db, IAuditService auditService, ILogger<InviteService> logger)
+    public InviteService(ScoutBoxDbContext db, IAuditService auditService, ILogger<InviteService> logger, IConfiguration configuration)
     {
         _db = db;
         _auditService = auditService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<(InviteResponse? Response, ErrorResponse? Error)> CreateInviteAsync(Guid createdByUserId, CreateInviteRequest request)
@@ -81,7 +83,10 @@ public class InviteService
 
         _logger.LogInformation("Invite created: {Code} by user {UserId}", code, createdByUserId);
 
-        return (new InviteResponse(invite.Id, invite.Code, invite.ExpiresAt, invite.IsUsed), null);
+        var serverUrl = request.ServerUrl ?? _configuration["Server:Url"] ?? "";
+        var inviteLink = invite.GenerateInviteLink(serverUrl);
+
+        return (new InviteResponse(invite.Id, invite.Code, invite.ExpiresAt, invite.IsUsed, inviteLink), null);
     }
 
     public async Task<bool> TryConsumeInviteAsync(string inviteCode, Guid userId, DateTime consumedAt)

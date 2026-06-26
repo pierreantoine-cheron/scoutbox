@@ -1,7 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:client/services/deep_link_service.dart';
+import 'package:client/providers/deep_link_provider.dart';
 import 'package:client/views/screens/register_screen.dart';
+
+class _FakeDeepLinkService extends DeepLinkService {
+  Uri? _initialLink;
+
+  @override
+  Stream<Uri> get uriLinkStream => const Stream.empty();
+
+  @override
+  Future<Uri?> getInitialLink() async => _initialLink;
+
+  void setInitialLink(Uri? uri) {
+    _initialLink = uri;
+  }
+}
 
 void main() {
   group('RegisterScreen', () {
@@ -176,6 +194,84 @@ void main() {
       expect(find.text("Le code d'invitation est requis"), findsNothing);
       expect(find.text("Le nom d'utilisateur est requis"), findsNothing);
       expect(find.text('Le mot de passe est requis'), findsNothing);
+    });
+  });
+
+  group('RegisterScreen deep link prefill', () {
+    testWidgets('prefills server and invite fields from deep link data', (
+      WidgetTester tester,
+    ) async {
+      final fakeService = _FakeDeepLinkService();
+      fakeService.setInitialLink(
+        Uri.parse('scoutbox://register?server=https://deep-test.groupe.fr&invite=DEEP-2024'),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deepLinkServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(home: RegisterScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('https://deep-test.groupe.fr'), findsOneWidget);
+      expect(find.text('DEEP-2024'), findsOneWidget);
+    });
+
+    testWidgets('shows confirmation snackbar when deep link data is loaded', (
+      WidgetTester tester,
+    ) async {
+      final fakeService = _FakeDeepLinkService();
+      fakeService.setInitialLink(
+        Uri.parse('scoutbox://register?server=https://test.groupe.fr&invite=SNACK-123'),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deepLinkServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(home: RegisterScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text("Serveur et code d'invitation préremplis depuis le lien"),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('fields remain editable after deep link prefill', (
+      WidgetTester tester,
+    ) async {
+      final fakeService = _FakeDeepLinkService();
+      fakeService.setInitialLink(
+        Uri.parse('scoutbox://register?server=https://original.groupe.fr&invite=ORIG-CODE'),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deepLinkServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(home: RegisterScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'https://edited.groupe.fr');
+      await tester.enterText(find.byType(TextFormField).at(1), 'EDITED-CODE');
+
+      await tester.pump();
+
+      expect(find.text('https://edited.groupe.fr'), findsOneWidget);
+      expect(find.text('EDITED-CODE'), findsOneWidget);
     });
   });
 }

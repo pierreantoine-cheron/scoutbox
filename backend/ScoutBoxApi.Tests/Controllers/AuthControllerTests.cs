@@ -38,6 +38,7 @@ public class AuthControllerTests : IDisposable
                 new KeyValuePair<string, string?>("Jwt:Key", "test-key-that-is-32-characters-long"),
                 new KeyValuePair<string, string?>("Jwt:Issuer", "TestIssuer"),
                 new KeyValuePair<string, string?>("Jwt:Audience", "TestAudience"),
+                new KeyValuePair<string, string?>("Server:Url", "https://test.scoutbox.local"),
             })
             .Build();
 
@@ -47,7 +48,7 @@ public class AuthControllerTests : IDisposable
 
         _tokenService = new TokenService(config);
         var auditService = new AuditService(_db, auditServiceLoggerMock.Object);
-        var inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object);
+        var inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object, config);
         _authService = new AuthService(_db, _tokenService, inviteService, auditService, authServiceLoggerMock.Object);
         _currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         _currentUserAccessorMock
@@ -525,6 +526,37 @@ public class AuthControllerTests : IDisposable
         var response = Assert.IsType<InviteResponse>(okResult.Value);
         Assert.NotNull(response.Code);
         Assert.True(response.ExpiresAt >= DateTime.UtcNow.AddDays(6.9) && response.ExpiresAt <= DateTime.UtcNow.AddDays(7.1));
+        Assert.NotNull(response.InviteLink);
+        Assert.StartsWith("scoutbox://register?server=", response.InviteLink);
+    }
+
+    [Fact]
+    public async Task CreateInvite_WithServerUrlInRequest_ReturnsInviteLinkWithCustomServer()
+    {
+        var owner = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "owner-link",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(owner);
+        await _db.SaveChangesAsync();
+
+        SetControllerUser(owner.Id, owner.Username);
+
+        var request = new CreateInviteRequest
+        {
+            ExpiresInDays = 7,
+            ServerUrl = "https://custom-server.groupe.fr"
+        };
+
+        var result = await _controller.CreateInvite(request);
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<InviteResponse>(okResult.Value);
+        Assert.NotNull(response.InviteLink);
+        Assert.Contains("server=https%3A%2F%2Fcustom-server.groupe.fr", response.InviteLink);
     }
 
     [Fact]

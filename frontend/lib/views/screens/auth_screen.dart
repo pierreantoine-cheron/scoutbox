@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../providers/providers.dart';
 import '../../models/auth_state.dart';
+import '../../services/deep_link_service.dart';
 import '../../services/secure_storage_service.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/auth_validators.dart';
@@ -58,6 +59,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     _passwordController.addListener(_onFieldChanged);
     _inviteController.addListener(_onFieldChanged);
     _confirmPasswordController.addListener(_onFieldChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleDeepLink();
+    });
   }
 
   void _onFieldChanged() {
@@ -96,6 +100,45 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  void _handleDeepLink() {
+    _checkInitialLinkDirectly();
+  }
+
+  void _applyDeepLinkData(InviteLinkData data) {
+    setState(() {
+      _serverController.text = data.serverUrl;
+      _inviteController.text = data.inviteCode;
+      if (_isLogin) {
+        _mode = AuthMode.register;
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Serveur et code d'invitation préremplis depuis le lien"),
+        duration: Duration(seconds: 3),
+      ),
+    );
+    ref.read(deepLinkProvider.notifier).clear();
+  }
+
+  Future<void> _checkInitialLinkDirectly() async {
+    final uri = await ref.read(deepLinkServiceProvider).getInitialLink();
+    if (!mounted) return;
+    if (uri != null && uri.scheme == 'scoutbox' && uri.host == 'register') {
+      final data = DeepLinkService.parseInviteLink(uri);
+      if (data != null) {
+        _applyDeepLinkData(data);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Le lien d'invitation est incomplet"),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _serverController.dispose();
@@ -128,6 +171,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+
+    ref.listen<InviteLinkData?>(deepLinkProvider, (previous, next) {
+      if (next != null && mounted) {
+        _applyDeepLinkData(next);
+      }
+    });
 
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.errorCode == ErrorCodes.invalidCredentials && next.error != null) {
