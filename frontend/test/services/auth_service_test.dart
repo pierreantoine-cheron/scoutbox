@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:client/utils/constants.dart';
+import 'package:client/utils/error_messages.dart';
 import 'package:client/services/auth_service.dart';
 import 'package:client/models/auth_response.dart';
 
@@ -181,6 +182,19 @@ void main() {
         expect(result.error, equals('Identifiants incorrects'));
         expect(result.code, equals(ErrorCodes.invalidCredentials));
         expect(result.authResponse, isNull);
+      });
+    });
+
+    group('AuthServiceException', () {
+      test('toUserFacingError returns auth service exception message', () {
+        const message = "Impossible de générer le lien d'invitation : serveur inconnu.";
+
+        final result = toUserFacingError(
+          const AuthServiceException(message),
+          'Message de secours',
+        );
+
+        expect(result, equals(message));
       });
     });
 

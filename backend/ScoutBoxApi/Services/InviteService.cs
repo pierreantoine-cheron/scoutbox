@@ -10,14 +10,12 @@ public class InviteService
     private readonly ScoutBoxDbContext _db;
     private readonly IAuditService _auditService;
     private readonly ILogger<InviteService> _logger;
-    private readonly IConfiguration _configuration;
 
-    public InviteService(ScoutBoxDbContext db, IAuditService auditService, ILogger<InviteService> logger, IConfiguration configuration)
+    public InviteService(ScoutBoxDbContext db, IAuditService auditService, ILogger<InviteService> logger)
     {
         _db = db;
         _auditService = auditService;
         _logger = logger;
-        _configuration = configuration;
     }
 
     public async Task<(InviteResponse? Response, ErrorResponse? Error)> CreateInviteAsync(Guid createdByUserId, CreateInviteRequest request)
@@ -25,6 +23,12 @@ public class InviteService
         if (request.ExpiresInDays is < 1 or > 365)
         {
             return (null, new ErrorResponse("Invite expiration must be between 1 and 365 days", "INVALID_EXPIRES_IN_DAYS"));
+        }
+
+        var serverUrl = request.ServerUrl?.Trim();
+        if (string.IsNullOrEmpty(serverUrl))
+        {
+            return (null, new ErrorResponse("Server URL is required to generate invite link", "INVALID_SERVER_URL"));
         }
 
         string? code;
@@ -83,7 +87,6 @@ public class InviteService
 
         _logger.LogInformation("Invite created: {Code} by user {UserId}", code, createdByUserId);
 
-        var serverUrl = request.ServerUrl ?? _configuration["Server:Url"] ?? "";
         var inviteLink = invite.GenerateInviteLink(serverUrl);
 
         return (new InviteResponse(invite.Id, invite.Code, invite.ExpiresAt, invite.IsUsed, inviteLink), null);

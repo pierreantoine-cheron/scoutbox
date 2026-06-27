@@ -11,6 +11,15 @@ import 'api_client.dart';
 import 'error_localizer.dart';
 import 'secure_storage_service.dart';
 
+class AuthServiceException implements Exception {
+  final String message;
+
+  const AuthServiceException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 /// Maps backend error codes to user-friendly error messages in French
 ///
 /// Internal API error messages (english) should remain as-is
@@ -530,10 +539,20 @@ class AuthService {
   }
 
   Future<InviteResponse> createInvite() async {
+    final serverUrl = await SecureStorageService.getServerUrl();
+    if (serverUrl == null || serverUrl.trim().isEmpty) {
+      throw const AuthServiceException(
+        "Impossible de générer le lien d'invitation : serveur inconnu.",
+      );
+    }
+
     try {
       final response = await ApiClient.instance.post(
         ApiRoutes.invites,
-        data: {'expiresInDays': 30},
+        data: {
+          'expiresInDays': 30,
+          'serverUrl': serverUrl.trim(),
+        },
       );
       return InviteResponse(
         id: response.data['id'] as String,

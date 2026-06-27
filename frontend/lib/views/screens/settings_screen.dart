@@ -184,23 +184,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(AppRadii.sm),
-          ),
-          child: Text(
-            _generatedCode!,
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 17,
-              letterSpacing: 2,
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
+                ),
+                child: Text(
+                  _generatedCode!,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 17,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ),
             ),
-          ),
+            if (_inviteLink == null) ...[
+              const SizedBox(width: AppSpacing.sm),
+              _CopyButton(
+                isCopied: _isCopied,
+                onTap: _copyToClipboard,
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: AppSpacing.xs),
         const Text(

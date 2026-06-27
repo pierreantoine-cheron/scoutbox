@@ -25,6 +25,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
+  bool _checkedAuthenticatedInitialLink = false;
 
   @override
   void initState() {
@@ -36,20 +37,20 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    ref.listen<InviteLinkData?>(deepLinkProvider, (previous, next) {
+    ref.listen<DeepLinkEvent?>(deepLinkProvider, (previous, next) {
       if (next != null && authState.isAuthenticated) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Déconnectez-vous avant d'utiliser un lien d'invitation"),
-            duration: Duration(seconds: 4),
-          ),
-        );
+        if (next.kind == DeepLinkEventKind.validInvite) {
+          _showAuthenticatedDeepLinkBlocker();
+        } else {
+          _showIncompleteDeepLinkWarning();
+        }
         ref.read(deepLinkProvider.notifier).clear();
         DeepLinkService.consumeInitialLink();
       }
     });
 
     if (authState.isAuthenticated) {
+      _checkAuthenticatedInitialLinkOnce();
       final section = ref.watch(navigationSectionProvider);
       final appBarConfig = ref.watch(appBarConfigProvider);
       final successTrigger = ref.watch(successIndicatorProvider);
@@ -96,6 +97,41 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     }
 
     return authState.showLoginScreen ? const LoginScreen() : const RegisterScreen();
+  }
+
+  void _checkAuthenticatedInitialLinkOnce() {
+    if (_checkedAuthenticatedInitialLink) return;
+    _checkedAuthenticatedInitialLink = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final uri = await ref.read(deepLinkServiceProvider).getInitialLink();
+      if (!mounted || uri == null || !DeepLinkService.isInviteLink(uri)) return;
+
+      final data = DeepLinkService.parseInviteLink(uri);
+      if (data != null) {
+        _showAuthenticatedDeepLinkBlocker();
+      } else {
+        _showIncompleteDeepLinkWarning();
+      }
+      ref.read(deepLinkProvider.notifier).clear();
+    });
+  }
+
+  void _showAuthenticatedDeepLinkBlocker() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Déconnectez-vous avant d'utiliser un lien d'invitation"),
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _showIncompleteDeepLinkWarning() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Le lien d'invitation est incomplet"),
+        duration: Duration(seconds: 3),
+      ),
+    );
   }
 
   void _navigateToSection(NavigationSection section) {
@@ -190,10 +226,10 @@ class _DesktopTitleRow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           'ScoutBox',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface,
+          ),
         ),
         const SizedBox(width: 12),
         Flexible(

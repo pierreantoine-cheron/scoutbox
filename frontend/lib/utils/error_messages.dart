@@ -1,6 +1,7 @@
 import '../repositories/part_kind_repository.dart';
 import '../repositories/tag_repository.dart';
 import '../repositories/tent_repository.dart';
+import '../services/auth_service.dart';
 import '../services/error_localizer.dart';
 
 String toUserFacingError(Object error, String fallback) {
@@ -12,6 +13,9 @@ String toUserFacingError(Object error, String fallback) {
   }
   if (error is PartKindRepositoryException) {
     return ErrorLocalizer.localize(error.code, fallback: error.message);
+  }
+  if (error is AuthServiceException) {
+    return error.message;
   }
   return fallback;
 }

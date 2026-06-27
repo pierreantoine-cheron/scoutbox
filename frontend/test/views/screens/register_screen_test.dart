@@ -273,5 +273,30 @@ void main() {
       expect(find.text('https://edited.groupe.fr'), findsOneWidget);
       expect(find.text('EDITED-CODE'), findsOneWidget);
     });
+
+    testWidgets('shows warning and leaves fields empty for incomplete deep link', (
+      WidgetTester tester,
+    ) async {
+      final fakeService = _FakeDeepLinkService();
+      fakeService.setInitialLink(
+        Uri.parse('scoutbox://register?server=https://missing-invite.groupe.fr'),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deepLinkServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(home: RegisterScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text("Le lien d'invitation est incomplet"), findsOneWidget);
+      expect(find.text('https://missing-invite.groupe.fr'), findsNothing);
+      expect(tester.widget<EditableText>(find.byType(EditableText).at(0)).controller.text, isEmpty);
+      expect(tester.widget<EditableText>(find.byType(EditableText).at(1)).controller.text, isEmpty);
+    });
   });
 }

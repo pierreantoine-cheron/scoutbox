@@ -26,8 +26,12 @@ class DeepLinkService {
     _everConsumed = true;
   }
 
+  static bool isInviteLink(Uri uri) {
+    return uri.scheme == 'scoutbox' && uri.host == 'register';
+  }
+
   static InviteLinkData? parseInviteLink(Uri uri) {
-    if (uri.scheme != 'scoutbox' || uri.host != 'register') {
+    if (!isInviteLink(uri)) {
       return null;
     }
     final serverUrl = uri.queryParameters['server'];
@@ -36,8 +40,8 @@ class DeepLinkService {
       return null;
     }
     return InviteLinkData(
-      serverUrl: Uri.decodeComponent(serverUrl),
-      inviteCode: Uri.decodeComponent(inviteCode),
+      serverUrl: serverUrl,
+      inviteCode: inviteCode,
     );
   }
 }

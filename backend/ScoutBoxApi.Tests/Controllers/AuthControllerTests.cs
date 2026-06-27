@@ -38,7 +38,6 @@ public class AuthControllerTests : IDisposable
                 new KeyValuePair<string, string?>("Jwt:Key", "test-key-that-is-32-characters-long"),
                 new KeyValuePair<string, string?>("Jwt:Issuer", "TestIssuer"),
                 new KeyValuePair<string, string?>("Jwt:Audience", "TestAudience"),
-                new KeyValuePair<string, string?>("Server:Url", "https://test.scoutbox.local"),
             })
             .Build();
 
@@ -48,7 +47,7 @@ public class AuthControllerTests : IDisposable
 
         _tokenService = new TokenService(config);
         var auditService = new AuditService(_db, auditServiceLoggerMock.Object);
-        var inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object, config);
+        var inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object);
         _authService = new AuthService(_db, _tokenService, inviteService, auditService, authServiceLoggerMock.Object);
         _currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         _currentUserAccessorMock
@@ -518,7 +517,11 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest { ExpiresInDays = 7 };
+        var request = new CreateInviteRequest
+        {
+            ExpiresInDays = 7,
+            ServerUrl = "https://test.scoutbox.local"
+        };
 
         var result = await _controller.CreateInvite(request);
 
@@ -574,7 +577,12 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest { Code = "CUSTOM-123", ExpiresInDays = 30 };
+        var request = new CreateInviteRequest
+        {
+            Code = "CUSTOM-123",
+            ExpiresInDays = 30,
+            ServerUrl = "https://test.scoutbox.local"
+        };
 
         var result = await _controller.CreateInvite(request);
 
@@ -608,7 +616,12 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest { Code = "EXISTING-999", ExpiresInDays = 30 };
+        var request = new CreateInviteRequest
+        {
+            Code = "EXISTING-999",
+            ExpiresInDays = 30,
+            ServerUrl = "https://test.scoutbox.local"
+        };
 
         var result = await _controller.CreateInvite(request);
 
@@ -638,6 +651,30 @@ public class AuthControllerTests : IDisposable
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
         Assert.Equal("INVALID_EXPIRES_IN_DAYS", error.Code);
+    }
+
+    [Fact]
+    public async Task CreateInvite_WithMissingServerUrl_ReturnsBadRequest()
+    {
+        var owner = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "owner-missing-server",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.Users.Add(owner);
+        await _db.SaveChangesAsync();
+
+        SetControllerUser(owner.Id, owner.Username);
+
+        var request = new CreateInviteRequest { ExpiresInDays = 7 };
+
+        var result = await _controller.CreateInvite(request);
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var error = Assert.IsType<ErrorResponse>(badRequestResult.Value);
+        Assert.Equal("INVALID_SERVER_URL", error.Code);
     }
 
     [Fact]

@@ -62,6 +62,16 @@ void main() {
       expect(result!.serverUrl, equals('https://my-server.com/path'));
     });
 
+    test('does not decode query parameters twice', () {
+      final uri = Uri.parse(
+        'scoutbox://register?server=https%3A%2F%2Fmy-server.com%2Fpath%252Fencoded&invite=CODE%2525',
+      );
+      final result = DeepLinkService.parseInviteLink(uri);
+      expect(result, isNotNull);
+      expect(result!.serverUrl, equals('https://my-server.com/path%2Fencoded'));
+      expect(result.inviteCode, equals('CODE%25'));
+    });
+
     test('returns null for null-like input on empty host', () {
       final uri = Uri.parse('scoutbox://');
       expect(DeepLinkService.parseInviteLink(uri), isNull);

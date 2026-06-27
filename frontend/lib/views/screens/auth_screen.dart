@@ -43,6 +43,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   late AuthMode _mode;
   bool _rememberMe = false;
+  bool _deepLinkApplied = false;
   final _autovalidate = FormAutovalidate();
 
   bool get _isLogin => _mode == AuthMode.login;
@@ -54,14 +55,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     super.initState();
     _mode = widget.initialMode;
     _loadInitialValues();
+    _checkInitialLinkDirectly();
     _serverController.addListener(_onFieldChanged);
     _usernameController.addListener(_onFieldChanged);
     _passwordController.addListener(_onFieldChanged);
     _inviteController.addListener(_onFieldChanged);
     _confirmPasswordController.addListener(_onFieldChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleDeepLink();
-    });
   }
 
   void _onFieldChanged() {
@@ -83,9 +82,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     try {
       final serverUrl = await SecureStorageService.getServerUrl();
       if (!mounted) return;
-      setState(() {
-        _serverController.text = serverUrl ?? '';
-      });
+      if (!_deepLinkApplied) {
+        setState(() {
+          _serverController.text = serverUrl ?? '';
+        });
+      }
       if (_isLogin) {
         final rememberedUsername = await SecureStorageService.getRememberedUsername();
         final rememberPref = await SecureStorageService.getRememberUsernamePreference();
@@ -100,12 +101,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
-  void _handleDeepLink() {
-    _checkInitialLinkDirectly();
-  }
-
   void _applyDeepLinkData(InviteLinkData data) {
     setState(() {
+      _deepLinkApplied = true;
       _serverController.text = data.serverUrl;
       _inviteController.text = data.inviteCode;
       if (_isLogin) {
@@ -121,20 +119,30 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     ref.read(deepLinkProvider.notifier).clear();
   }
 
+  void _showIncompleteDeepLinkWarning() {
+    setState(() {
+      _deepLinkApplied = true;
+      _serverController.clear();
+      _inviteController.clear();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Le lien d'invitation est incomplet"),
+        duration: Duration(seconds: 3),
+      ),
+    );
+    ref.read(deepLinkProvider.notifier).clear();
+  }
+
   Future<void> _checkInitialLinkDirectly() async {
     final uri = await ref.read(deepLinkServiceProvider).getInitialLink();
     if (!mounted) return;
-    if (uri != null && uri.scheme == 'scoutbox' && uri.host == 'register') {
+    if (uri != null && DeepLinkService.isInviteLink(uri)) {
       final data = DeepLinkService.parseInviteLink(uri);
       if (data != null) {
         _applyDeepLinkData(data);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Le lien d'invitation est incomplet"),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        _showIncompleteDeepLinkWarning();
       }
     }
   }
@@ -172,9 +180,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    ref.listen<InviteLinkData?>(deepLinkProvider, (previous, next) {
-      if (next != null && mounted) {
-        _applyDeepLinkData(next);
+    ref.listen<DeepLinkEvent?>(deepLinkProvider, (previous, next) {
+      if (next == null || !mounted) return;
+      if (next.kind == DeepLinkEventKind.validInvite) {
+        _applyDeepLinkData(next.data!);
+      } else {
+        _showIncompleteDeepLinkWarning();
       }
     });
 

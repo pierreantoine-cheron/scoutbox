@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ScoutBoxApi.Data;
@@ -14,7 +13,6 @@ public class InviteServiceTests : IDisposable
 {
     private readonly ScoutBoxDbContext _db;
     private readonly InviteService _inviteService;
-    private readonly IConfiguration _config;
 
     public InviteServiceTests()
     {
@@ -24,18 +22,11 @@ public class InviteServiceTests : IDisposable
 
         _db = new ScoutBoxDbContext(options);
 
-        _config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new[]
-            {
-                new KeyValuePair<string, string?>("Server:Url", "https://test.scoutbox.local"),
-            })
-            .Build();
-
         var auditServiceLoggerMock = new Mock<ILogger<AuditService>>();
         var auditService = new AuditService(_db, auditServiceLoggerMock.Object);
         var inviteServiceLoggerMock = new Mock<ILogger<InviteService>>();
 
-        _inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object, _config);
+        _inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object);
     }
 
     public void Dispose()
@@ -95,17 +86,29 @@ public class InviteServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateInviteAsync_WithoutServerUrlInRequest_UsesConfigFallback()
+    public async Task CreateInviteAsync_WithoutServerUrlInRequest_ReturnsInvalidServerUrl()
     {
         var userId = Guid.NewGuid();
         var request = new CreateInviteRequest(ExpiresInDays: 30);
 
         var (response, error) = await _inviteService.CreateInviteAsync(userId, request);
 
-        Assert.Null(error);
-        Assert.NotNull(response);
-        Assert.NotNull(response!.InviteLink);
-        Assert.Contains("server=https%3A%2F%2Ftest.scoutbox.local", response.InviteLink);
+        Assert.Null(response);
+        Assert.NotNull(error);
+        Assert.Equal("INVALID_SERVER_URL", error!.Code);
+    }
+
+    [Fact]
+    public async Task CreateInviteAsync_WithBlankServerUrlInRequest_ReturnsInvalidServerUrl()
+    {
+        var userId = Guid.NewGuid();
+        var request = new CreateInviteRequest(ExpiresInDays: 30, ServerUrl: "   ");
+
+        var (response, error) = await _inviteService.CreateInviteAsync(userId, request);
+
+        Assert.Null(response);
+        Assert.NotNull(error);
+        Assert.Equal("INVALID_SERVER_URL", error!.Code);
     }
 
     [Fact]
