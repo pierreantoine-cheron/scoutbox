@@ -84,11 +84,38 @@ void main() {
 
     test('clear resets state to null', () async {
       fakeService.emit(
-        Uri.parse('scoutbox://register?server=https://test.fr&invite=INVITE-1'),
+        Uri.parse('scoutbox://register?server=https://clear-test.fr&invite=INVITE-1'),
       );
       await Future<void>.delayed(Duration.zero);
 
       container.read(deepLinkProvider.notifier).clear();
+
+      expect(container.read(deepLinkProvider), isNull);
+    });
+
+    test('ignores stream replay of an already consumed initial link', () async {
+      final uri = Uri.parse(
+        'scoutbox://register?server=https://replay-test.fr&invite=REPLAY-1',
+      );
+      DeepLinkService.consumeLink(uri);
+
+      fakeService.emit(uri);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(deepLinkProvider), isNull);
+    });
+
+    test('ignores replay when the same invite data has different encoding', () async {
+      final encodedUri = Uri.parse(
+        'scoutbox://register?server=https%3A%2F%2Freplay-test.fr&invite=REPLAY-2',
+      );
+      final decodedUri = Uri.parse(
+        'scoutbox://register?server=https://replay-test.fr&invite=REPLAY-2',
+      );
+      DeepLinkService.consumeLink(encodedUri);
+
+      fakeService.emit(decodedUri);
+      await Future<void>.delayed(Duration.zero);
 
       expect(container.read(deepLinkProvider), isNull);
     });

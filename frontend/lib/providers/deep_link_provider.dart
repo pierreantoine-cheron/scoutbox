@@ -31,6 +31,10 @@ class DeepLinkNotifier extends _$DeepLinkNotifier {
         if (!DeepLinkService.isInviteLink(uri)) {
           return;
         }
+        if (DeepLinkService.isConsumed(uri)) {
+          return;
+        }
+        DeepLinkService.consumeLink(uri);
         final data = DeepLinkService.parseInviteLink(uri);
         state = data != null
             ? DeepLinkEvent.validInvite(data)

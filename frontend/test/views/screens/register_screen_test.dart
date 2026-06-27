@@ -9,15 +9,37 @@ import 'package:client/views/screens/register_screen.dart';
 
 class _FakeDeepLinkService extends DeepLinkService {
   Uri? _initialLink;
+  bool _initialConsumed = false;
+  Completer<void>? initialLinkGate;
+  final _streamController = StreamController<Uri>();
 
   @override
-  Stream<Uri> get uriLinkStream => const Stream.empty();
+  Stream<Uri> get uriLinkStream => _streamController.stream;
 
   @override
-  Future<Uri?> getInitialLink() async => _initialLink;
+  Future<Uri?> getInitialLink() async {
+    if (_initialConsumed) return null;
+    final gate = initialLinkGate;
+    if (gate != null) {
+      await gate.future;
+    }
+    final link = _initialLink;
+    if (link == null || DeepLinkService.isConsumed(link)) return null;
+    _initialConsumed = true;
+    DeepLinkService.consumeLink(link);
+    return link;
+  }
 
   void setInitialLink(Uri? uri) {
     _initialLink = uri;
+  }
+
+  void emit(Uri uri) {
+    _streamController.add(uri);
+  }
+
+  Future<void> dispose() async {
+    await _streamController.close();
   }
 }
 
@@ -202,6 +224,7 @@ void main() {
       WidgetTester tester,
     ) async {
       final fakeService = _FakeDeepLinkService();
+      addTearDown(fakeService.dispose);
       fakeService.setInitialLink(
         Uri.parse('scoutbox://register?server=https://deep-test.groupe.fr&invite=DEEP-2024'),
       );
@@ -225,6 +248,7 @@ void main() {
       WidgetTester tester,
     ) async {
       final fakeService = _FakeDeepLinkService();
+      addTearDown(fakeService.dispose);
       fakeService.setInitialLink(
         Uri.parse('scoutbox://register?server=https://test.groupe.fr&invite=SNACK-123'),
       );
@@ -250,6 +274,7 @@ void main() {
       WidgetTester tester,
     ) async {
       final fakeService = _FakeDeepLinkService();
+      addTearDown(fakeService.dispose);
       fakeService.setInitialLink(
         Uri.parse('scoutbox://register?server=https://original.groupe.fr&invite=ORIG-CODE'),
       );
@@ -278,6 +303,7 @@ void main() {
       WidgetTester tester,
     ) async {
       final fakeService = _FakeDeepLinkService();
+      addTearDown(fakeService.dispose);
       fakeService.setInitialLink(
         Uri.parse('scoutbox://register?server=https://missing-invite.groupe.fr'),
       );
@@ -297,6 +323,90 @@ void main() {
       expect(find.text('https://missing-invite.groupe.fr'), findsNothing);
       expect(tester.widget<EditableText>(find.byType(EditableText).at(0)).controller.text, isEmpty);
       expect(tester.widget<EditableText>(find.byType(EditableText).at(1)).controller.text, isEmpty);
+    });
+
+    testWidgets('does not replay initial link snackbar when switching to login', (
+      WidgetTester tester,
+    ) async {
+      final fakeService = _FakeDeepLinkService();
+      addTearDown(fakeService.dispose);
+      final uri = Uri.parse(
+        'scoutbox://register?server=https://replay.groupe.fr&invite=REPLAY-CODE',
+      );
+      fakeService.setInitialLink(uri);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deepLinkServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(home: RegisterScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(
+        find.text("Serveur et code d'invitation préremplis depuis le lien"),
+        findsOneWidget,
+      );
+
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+      expect(
+        find.text("Serveur et code d'invitation préremplis depuis le lien"),
+        findsNothing,
+      );
+
+      fakeService.emit(uri);
+      await tester.ensureVisible(find.text('Connexion').first);
+      await tester.tap(find.text('Connexion').first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text("Serveur et code d'invitation préremplis depuis le lien"),
+        findsNothing,
+      );
+    });
+
+    testWidgets('does not queue second snackbar when stream beats initial link', (
+      WidgetTester tester,
+    ) async {
+      final fakeService = _FakeDeepLinkService();
+      addTearDown(fakeService.dispose);
+      final gate = Completer<void>();
+      final uri = Uri.parse(
+        'scoutbox://register?server=https://race.groupe.fr&invite=RACE-CODE',
+      );
+      fakeService
+        ..initialLinkGate = gate
+        ..setInitialLink(uri);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deepLinkServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(home: RegisterScreen()),
+        ),
+      );
+
+      await tester.pump();
+      fakeService.emit(uri);
+      await tester.pumpAndSettle();
+      expect(
+        find.text("Serveur et code d'invitation préremplis depuis le lien"),
+        findsOneWidget,
+      );
+
+      gate.complete();
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text("Serveur et code d'invitation préremplis depuis le lien"),
+        findsNothing,
+      );
     });
   });
 }
