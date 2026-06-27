@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -105,9 +105,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           );
         }
       } else {
-        await SharePlus.instance.share(ShareParams(text: message));
+        await SharePlus.instance
+            .share(ShareParams(text: message))
+            .timeout(const Duration(seconds: 10));
       }
     } catch (e) {
+      debugPrint('Share failed: $e');
       if (mounted) {
         showErrorDialog(
           context,
@@ -196,7 +199,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Center(child: CircularProgressIndicator()),
         ),
-      if (_generatedCode != null) ...[
+      if (_generatedCode != null && _inviteLink != null) ...[
         Row(
           children: [
             Expanded(
