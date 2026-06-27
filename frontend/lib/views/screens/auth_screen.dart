@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,12 +56,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     super.initState();
     _mode = widget.initialMode;
     _loadInitialValues();
-    _checkInitialLinkDirectly();
     _serverController.addListener(_onFieldChanged);
     _usernameController.addListener(_onFieldChanged);
     _passwordController.addListener(_onFieldChanged);
     _inviteController.addListener(_onFieldChanged);
     _confirmPasswordController.addListener(_onFieldChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (kIsWeb) {
+        final webData = DeepLinkService.parseWebQueryParams(Uri.base);
+        if (webData != null) {
+          _applyDeepLinkData(webData);
+          return;
+        }
+      }
+      _checkInitialLinkDirectly();
+    });
   }
 
   void _onFieldChanged() {

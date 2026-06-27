@@ -9,4 +9,6 @@ RUN chmod +x apk-release/inject.sh && apk-release/inject.sh
 FROM nginx:alpine
 COPY --from=build /app/build/app/outputs/apk/release/scoutbox-*-release.apk /usr/share/nginx/html/
 COPY --from=build /tmp/apk-download/ /usr/share/nginx/html/
+COPY apk-release/register.html /usr/share/nginx/html/register.html
+COPY apk-release/nginx/default.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80

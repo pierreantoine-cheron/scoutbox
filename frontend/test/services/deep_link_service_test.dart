@@ -77,4 +77,44 @@ void main() {
       expect(DeepLinkService.parseInviteLink(uri), isNull);
     });
   });
+
+  group('parseWebQueryParams', () {
+    test('returns InviteLinkData for valid web URL params', () {
+      final uri = Uri.parse('https://web.scoutbox.app?server=https://tentes.fr&invite=SCOUT123');
+      final result = DeepLinkService.parseWebQueryParams(uri);
+      expect(result, isNotNull);
+      expect(result!.serverUrl, 'https://tentes.fr');
+      expect(result.inviteCode, 'SCOUT123');
+    });
+
+    test('URL-decodes parameter values', () {
+      final uri = Uri.parse(
+        'https://web.scoutbox.app?server=https%3A%2F%2Ftentes.fr%2Fpath&invite=CODE%20XYZ',
+      );
+      final result = DeepLinkService.parseWebQueryParams(uri);
+      expect(result, isNotNull);
+      expect(result!.serverUrl, 'https://tentes.fr/path');
+      expect(result.inviteCode, 'CODE XYZ');
+    });
+
+    test('returns null when server param is missing', () {
+      final uri = Uri.parse('https://web.scoutbox.app?invite=SCOUT123');
+      expect(DeepLinkService.parseWebQueryParams(uri), isNull);
+    });
+
+    test('returns null when invite param is missing', () {
+      final uri = Uri.parse('https://web.scoutbox.app?server=https://tentes.fr');
+      expect(DeepLinkService.parseWebQueryParams(uri), isNull);
+    });
+
+    test('returns null when both params are missing', () {
+      final uri = Uri.parse('https://web.scoutbox.app');
+      expect(DeepLinkService.parseWebQueryParams(uri), isNull);
+    });
+
+    test('returns null for empty parameter values', () {
+      final uri = Uri.parse('https://web.scoutbox.app?server=&invite=');
+      expect(DeepLinkService.parseWebQueryParams(uri), isNull);
+    });
+  });
 }

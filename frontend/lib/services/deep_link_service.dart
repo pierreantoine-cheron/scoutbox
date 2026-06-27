@@ -66,4 +66,20 @@ class DeepLinkService {
       inviteCode: inviteCode,
     );
   }
+
+  /// Parses invite data from web URL query parameters.
+  ///
+  /// Expected URL format: https://web.scoutbox.app?server=...&invite=...
+  /// Only intended for web (kIsWeb). Returns null if parameters are missing.
+  static InviteLinkData? parseWebQueryParams(Uri uri) {
+    final server = uri.queryParameters['server'];
+    final invite = uri.queryParameters['invite'];
+    if (server == null || server.isEmpty || invite == null || invite.isEmpty) {
+      return null;
+    }
+    return InviteLinkData(
+      serverUrl: Uri.decodeComponent(server),
+      inviteCode: Uri.decodeComponent(invite),
+    );
+  }
 }

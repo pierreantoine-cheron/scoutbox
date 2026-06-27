@@ -7,59 +7,51 @@ void main() {
       final message = composeInviteMessage(
         serverUrl: 'https://tentes.mon-groupe.fr',
         inviteCode: 'SCOUT-ABCDE',
-        inviteLink: 'scoutbox://register?server=https%3A%2F%2Ftentes.mon-groupe.fr&invite=SCOUT-ABCDE',
       );
 
       expect(message, contains('Vous avez été invité à rejoindre Scoutbox'));
       expect(message, contains('https://www.scoutbox.app'));
+      expect(message, contains('scoutbox.app/register'));
       expect(message, contains('SCOUT-ABCDE'));
       expect(message, contains('https://tentes.mon-groupe.fr'));
-      expect(message, contains('scoutbox://register'));
       expect(message, contains('ne peut être utilisé qu\'une seule fois'));
       expect(message, contains('expire au bout de 30 jours'));
     });
 
-    test('interpolates serverUrl, inviteCode, and inviteLink correctly', () {
+    test('HTTPS link is properly URL-encoded', () {
       final message = composeInviteMessage(
-        serverUrl: 'http://localhost:5000',
-        inviteCode: 'TEST-12345',
-        inviteLink: 'scoutbox://register?server=http%3A%2F%2Flocalhost%3A5000&invite=TEST-12345',
-      );
-
-      expect(message, contains('- URL du serveur : http://localhost:5000'));
-      expect(message, contains('- Code d\'invitation : TEST-12345'));
-      expect(message, contains('scoutbox://register?server=http%3A%2F%2Flocalhost%3A5000&invite=TEST-12345'));
-    });
-
-    test('handles special characters in server URL', () {
-      final message = composeInviteMessage(
-        serverUrl: 'https://tentes.groupe.fr/path?param=value',
+        serverUrl: 'https://tentes.groupe.fr/path',
         inviteCode: 'CODE-XYZ',
-        inviteLink: 'scoutbox://register?server=https%3A%2F%2Ftentes.groupe.fr%2Fpath%3Fparam%3Dvalue&invite=CODE-XYZ',
       );
 
-      expect(message, contains('- URL du serveur : https://tentes.groupe.fr/path?param=value'));
+      expect(message, contains(
+        'https://www.scoutbox.app/register?server=https%3A%2F%2Ftentes.groupe.fr%2Fpath&invite=CODE-XYZ',
+      ));
     });
 
-    test('message uses correct French text', () {
+    test('no scoutbox:// deep link in message', () {
       final message = composeInviteMessage(
         serverUrl: 'https://test.fr',
         inviteCode: 'ABC',
-        inviteLink: 'scoutbox://register?server=test&invite=ABC',
       );
 
-      expect(message, contains('Vous avez été invité'));
-      expect(message, contains('ouvrir l\'interface web ici'));
-      expect(message, contains('préremplir votre inscription'));
-      expect(message, contains('informations d\'inscription manuelle'));
-      expect(message, contains('ne peut être utilisé'));
+      expect(message, isNot(contains('scoutbox://')));
+    });
+
+    test('manual fallback section still present', () {
+      final message = composeInviteMessage(
+        serverUrl: 'https://test.fr',
+        inviteCode: 'ABC',
+      );
+
+      expect(message, contains('- URL du serveur : https://test.fr'));
+      expect(message, contains('- Code d\'invitation : ABC'));
     });
 
     test('no emojis in message', () {
       final message = composeInviteMessage(
         serverUrl: 'https://test.fr',
         inviteCode: 'ABC',
-        inviteLink: 'scoutbox://register?server=test&invite=ABC',
       );
 
       final hasEmoji = RegExp(

@@ -91,7 +91,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final message = composeInviteMessage(
         serverUrl: serverUrl.trim(),
         inviteCode: code,
-        inviteLink: inviteLink,
       );
 
       if (kIsWeb) {

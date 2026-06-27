@@ -1,15 +1,14 @@
 String composeInviteMessage({
   required String serverUrl,
   required String inviteCode,
-  required String inviteLink,
 }) {
   return 'Vous avez été invité à rejoindre Scoutbox\n'
       '\n'
       'Vous pouvez télécharger l\'application ou ouvrir l\'interface web ici :\n'
       'https://www.scoutbox.app\n'
       '\n'
-      'Si vous avez installé l\'application, ouvrez ce lien dans votre navigateur pour préremplir votre inscription :\n'
-      '$inviteLink\n'
+      'Pour une inscription simplifiée, ouvrez ce lien :\n'
+      'https://www.scoutbox.app/register?server=${Uri.encodeComponent(serverUrl)}&invite=${Uri.encodeComponent(inviteCode)}\n'
       '\n'
       'Sinon, voici les informations d\'inscription manuelle :\n'
       '- URL du serveur : $serverUrl\n'
