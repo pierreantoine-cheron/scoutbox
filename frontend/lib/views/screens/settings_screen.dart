@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../../utils/invite_message.dart';
 
 import '../../providers/providers.dart';
 import '../../utils/app_theme.dart';
@@ -20,7 +24,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String? _generatedCode;
   String? _inviteLink;
   bool _isGenerating = false;
-  bool _isCopied = false;
+  bool _isSharing = false;
 
   @override
   void initState() {
@@ -52,7 +56,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _generatedCode = invite.code;
           _inviteLink = invite.inviteLink;
           _isGenerating = false;
-          _isCopied = false;
         });
       }
     } catch (e) {
@@ -66,15 +69,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  Future<void> _copyToClipboard() async {
-    final textToCopy = _inviteLink ?? _generatedCode;
-    if (textToCopy == null) return;
-    await Clipboard.setData(ClipboardData(text: textToCopy));
-    if (!mounted) return;
-    setState(() => _isCopied = true);
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _isCopied = false);
-    });
+  Future<void> _shareMessage() async {
+    final inviteLink = _inviteLink;
+    final code = _generatedCode;
+    if (inviteLink == null || code == null) return;
+
+    setState(() => _isSharing = true);
+
+    try {
+      final serverUrl = await ref.read(authServiceProvider).getServerUrl();
+      if (serverUrl == null || serverUrl.trim().isEmpty) {
+        if (mounted) {
+          showErrorDialog(
+            context,
+            'Impossible de partager le message : serveur inconnu.',
+          );
+        }
+        return;
+      }
+
+      final message = composeInviteMessage(
+        serverUrl: serverUrl.trim(),
+        inviteCode: code,
+        inviteLink: inviteLink,
+      );
+
+      if (kIsWeb) {
+        await Clipboard.setData(ClipboardData(text: message));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Message copié !'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        await SharePlus.instance.share(ShareParams(text: message));
+      }
+    } catch (e) {
+      if (mounted) {
+        showErrorDialog(
+          context,
+          'Impossible de partager le message. Réessayez.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
+    }
   }
 
   Future<void> _showLogoutConfirmation() async {
@@ -153,37 +197,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Center(child: CircularProgressIndicator()),
         ),
       if (_generatedCode != null) ...[
-        if (_inviteLink != null) ...[
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.sm,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(AppRadii.sm),
-                  ),
-                  child: Text(
-                    _inviteLink!,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _CopyButton(
-                isCopied: _isCopied,
-                onTap: _copyToClipboard,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
         Row(
           children: [
             Expanded(
@@ -206,19 +219,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
-            if (_inviteLink == null) ...[
-              const SizedBox(width: AppSpacing.sm),
-              _CopyButton(
-                isCopied: _isCopied,
-                onTap: _copyToClipboard,
-              ),
-            ],
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
         const Text(
           'Le code expire après 30 jours et ne peut être utilisé qu\'une seule fois.',
           style: AppTheme.monoCaption,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        FilledButton.icon(
+          onPressed: (_isSharing || _isGenerating) ? null : _shareMessage,
+          icon: _isSharing
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.share, size: 18),
+          label: const Text('Partager'),
         ),
         const SizedBox(height: AppSpacing.sm),
       ],
@@ -258,35 +276,3 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
-class _CopyButton extends StatelessWidget {
-  final bool isCopied;
-  final VoidCallback onTap;
-
-  const _CopyButton({
-    required this.isCopied,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    if (isCopied) {
-      return FilledButton.tonalIcon(
-        onPressed: onTap,
-        icon: const Icon(Icons.check, size: 16),
-        label: const Text('Copié !'),
-        style: FilledButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-        ),
-      );
-    }
-
-    return FilledButton.tonalIcon(
-      onPressed: onTap,
-      icon: const Icon(Icons.copy, size: 16),
-      label: const Text('Copier'),
-    );
-  }
-}
