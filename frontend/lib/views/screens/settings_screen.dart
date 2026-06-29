@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/services.dart';
@@ -104,9 +106,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           );
         }
       } else {
-        await SharePlus.instance
-            .share(ShareParams(text: message))
-            .timeout(const Duration(seconds: 10));
+        unawaited(SharePlus.instance.share(ShareParams(text: message)));
       }
     } catch (e) {
       debugPrint('Share failed: $e');
