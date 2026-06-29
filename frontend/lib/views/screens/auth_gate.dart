@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -103,6 +104,15 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     if (_checkedAuthenticatedInitialLink) return;
     _checkedAuthenticatedInitialLink = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (kIsWeb) {
+        final webData = DeepLinkService.parseWebQueryParams(Uri.base);
+        if (webData != null) {
+          _showAuthenticatedDeepLinkBlocker();
+          ref.read(deepLinkProvider.notifier).clear();
+          return;
+        }
+      }
+
       final uri = await ref.read(deepLinkServiceProvider).getInitialLink();
       if (!mounted || uri == null || !DeepLinkService.isInviteLink(uri)) return;
 

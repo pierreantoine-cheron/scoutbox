@@ -78,8 +78,8 @@ class DeepLinkService {
       return null;
     }
     return InviteLinkData(
-      serverUrl: Uri.decodeComponent(server),
-      inviteCode: Uri.decodeComponent(invite),
+      serverUrl: server,
+      inviteCode: invite,
     );
   }
 }
