@@ -32,13 +32,23 @@ public class DataSeederTests : IDisposable
     {
         DataSeeder.Seed(_db);
 
+        Assert.Equal(1, await _db.Users.CountAsync(u => u.Username == "SYSTEM"));
         Assert.Equal(10, await _db.PartKinds.CountAsync());
         Assert.Equal(6, await _db.TentModels.CountAsync());
         Assert.Equal(27, await _db.TentModelComponents.CountAsync());
+        Assert.Equal(5, await _db.Tags.CountAsync());
         Assert.Equal(1, await _db.Invites.CountAsync());
 
         var seedInfo = await _db.Set<SeedInfo>().SingleAsync();
         Assert.True(seedInfo.IsSeeded);
+
+        var tags = await _db.Tags.OrderBy(t => t.Name).ToListAsync();
+        Assert.Equal("Compagnons", tags[0].Name);
+        Assert.Equal("#007254", tags[0].Color);
+        Assert.Equal("Farfadets", tags[1].Name);
+        Assert.Equal("#65bc99", tags[1].Color);
+        Assert.Equal("Scouts-Guides", tags[4].Name);
+        Assert.Equal("#0077b3", tags[4].Color);
 
         var partKindNames = await _db.PartKinds.OrderBy(x => x.DisplayOrder).Select(x => x.Name).ToListAsync();
         Assert.Contains("Arceaux", partKindNames);
@@ -134,11 +144,17 @@ public class DataSeederTests : IDisposable
     }
 
     [Fact]
-    public async Task Seed_TagsSkippedWhenNoUserExists()
+    public async Task Seed_TagsSeededWithSystemUserWhenNoRealUserExists()
     {
         DataSeeder.Seed(_db);
 
-        Assert.Empty(await _db.Tags.ToListAsync());
+        var tags = await _db.Tags.OrderBy(t => t.Name).ToListAsync();
+        Assert.Equal(5, tags.Count);
+        Assert.Equal("Compagnons", tags[0].Name);
+        Assert.Equal("Farfadets", tags[1].Name);
+        Assert.Equal("Louveteaux-Jeannettes", tags[2].Name);
+        Assert.Equal("Pionniers-Caravelles", tags[3].Name);
+        Assert.Equal("Scouts-Guides", tags[4].Name);
     }
 
     [Fact]
@@ -178,6 +194,7 @@ public class DataSeederTests : IDisposable
         var initialPartKindCount = await _db.PartKinds.CountAsync();
         var initialTentModelCount = await _db.TentModels.CountAsync();
         var initialComponentCount = await _db.TentModelComponents.CountAsync();
+        var initialTagCount = await _db.Tags.CountAsync();
         var initialInviteCount = await _db.Invites.CountAsync();
 
         DataSeeder.Seed(_db);
@@ -185,6 +202,7 @@ public class DataSeederTests : IDisposable
         Assert.Equal(initialPartKindCount, await _db.PartKinds.CountAsync());
         Assert.Equal(initialTentModelCount, await _db.TentModels.CountAsync());
         Assert.Equal(initialComponentCount, await _db.TentModelComponents.CountAsync());
+        Assert.Equal(initialTagCount, await _db.Tags.CountAsync());
         Assert.Equal(initialInviteCount, await _db.Invites.CountAsync());
     }
 

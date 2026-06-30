@@ -4,6 +4,8 @@ namespace ScoutBoxApi.Data;
 
 public static class DataSeeder
 {
+    private static readonly Guid SystemUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+
     private static Guid Pk(string suffix) => Guid.Parse("00000000-0000-0000-0000-00000000" + suffix);
 
     public static void Seed(ScoutBoxDbContext context)
@@ -15,13 +17,15 @@ public static class DataSeeder
             || context.TentModels.Any()
             || context.TentModelComponents.Any()
             || context.Tags.Any()
-            || context.Invites.Any())
+            || context.Invites.Any()
+            || context.Users.Any(u => u.Username == "SYSTEM"))
         {
             context.Set<SeedInfo>().Add(new SeedInfo { Id = 1, IsSeeded = true, SeededAt = DateTime.UtcNow });
             context.SaveChanges();
             return;
         }
 
+        SeedSystemUser(context);
         SeedPartKinds(context);
         SeedTentModels(context);
         SeedTentModelComponents(context);
@@ -30,6 +34,24 @@ public static class DataSeeder
 
         context.Set<SeedInfo>().Add(new SeedInfo { Id = 1, IsSeeded = true, SeededAt = DateTime.UtcNow });
         context.SaveChanges();
+    }
+
+    private static bool SeedSystemUser(ScoutBoxDbContext context)
+    {
+        if (context.Users.Any(u => u.Username == "SYSTEM"))
+            return false;
+
+        var systemUser = new User
+        {
+            Id = SystemUserId,
+            Username = "SYSTEM",
+            PasswordHash = "SYSTEM_NO_LOGIN",
+            CreatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+
+        context.Users.Add(systemUser);
+        return true;
     }
 
     private static bool SeedPartKinds(ScoutBoxDbContext context)
@@ -150,18 +172,14 @@ public static class DataSeeder
         if (context.Tags.Any())
             return false;
 
-        var admin = context.Users.FirstOrDefault();
-        if (admin == null)
-            return false;
-
         var now = DateTime.UtcNow;
         var tags = new[]
         {
-            new Tag { Name = "Farfadets",              Color = "#65bc99", CreatedAt = now, UpdatedAt = now, CreatedByUserId = admin.Id, UpdatedByUserId = admin.Id },
-            new Tag { Name = "Louveteaux-Jeannettes",  Color = "#ff8300", CreatedAt = now, UpdatedAt = now, CreatedByUserId = admin.Id, UpdatedByUserId = admin.Id },
-            new Tag { Name = "Scouts-Guides",          Color = "#0077b3", CreatedAt = now, UpdatedAt = now, CreatedByUserId = admin.Id, UpdatedByUserId = admin.Id },
-            new Tag { Name = "Pionniers-Caravelles",   Color = "#d03f15", CreatedAt = now, UpdatedAt = now, CreatedByUserId = admin.Id, UpdatedByUserId = admin.Id },
-            new Tag { Name = "Compagnons",             Color = "#007254", CreatedAt = now, UpdatedAt = now, CreatedByUserId = admin.Id, UpdatedByUserId = admin.Id }
+            new Tag { Name = "Farfadets",              Color = "#65bc99", CreatedAt = now, UpdatedAt = now, CreatedByUserId = SystemUserId, UpdatedByUserId = SystemUserId },
+            new Tag { Name = "Louveteaux-Jeannettes",  Color = "#ff8300", CreatedAt = now, UpdatedAt = now, CreatedByUserId = SystemUserId, UpdatedByUserId = SystemUserId },
+            new Tag { Name = "Scouts-Guides",          Color = "#0077b3", CreatedAt = now, UpdatedAt = now, CreatedByUserId = SystemUserId, UpdatedByUserId = SystemUserId },
+            new Tag { Name = "Pionniers-Caravelles",   Color = "#d03f15", CreatedAt = now, UpdatedAt = now, CreatedByUserId = SystemUserId, UpdatedByUserId = SystemUserId },
+            new Tag { Name = "Compagnons",             Color = "#007254", CreatedAt = now, UpdatedAt = now, CreatedByUserId = SystemUserId, UpdatedByUserId = SystemUserId }
         };
 
         context.Tags.AddRange(tags);
