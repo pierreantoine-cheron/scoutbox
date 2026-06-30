@@ -83,16 +83,22 @@ class _AuthGateState extends ConsumerState<AuthGate> {
                 ),
               ),
         floatingActionButton: isDesktop ? null : appBarConfig.fab,
-        body: Navigator(
-          key: _navigatorKey,
-          observers: [_routeObserver],
-          onGenerateInitialRoutes: (navigator, initialRoute) {
-            return [
-              MaterialPageRoute(
-                builder: (_) => _buildRootScreen(section),
-              ),
-            ];
+        body: NavigatorPopHandler(
+          enabled: !isRootScreen,
+          onPopWithResult: (_) {
+            _navigatorKey.currentState?.maybePop();
           },
+          child: Navigator(
+            key: _navigatorKey,
+            observers: [_routeObserver],
+            onGenerateInitialRoutes: (navigator, initialRoute) {
+              return [
+                MaterialPageRoute(
+                  builder: (_) => _buildRootScreen(section),
+                ),
+              ];
+            },
+          ),
         ),
       );
     }
