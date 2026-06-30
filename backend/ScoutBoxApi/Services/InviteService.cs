@@ -31,24 +31,11 @@ public class InviteService
             return (null, new ErrorResponse("Server URL is required to generate invite link", "INVALID_SERVER_URL"));
         }
 
-        string? code;
+        var code = await GenerateAvailableCodeAsync();
 
-        if (!string.IsNullOrEmpty(request.Code))
+        if (code == null)
         {
-            if (await _db.Invites.AnyAsync(i => i.Code == request.Code))
-            {
-                return (null, new ErrorResponse("This invite code already exists", "DUPLICATE_CODE"));
-            }
-            code = request.Code;
-        }
-        else
-        {
-            code = await GenerateAvailableCodeAsync();
-
-            if (code == null)
-            {
-                return (null, new ErrorResponse("Unable to generate an available invite code. Please provide a custom code.", "CODE_GENERATION_FAILED"));
-            }
+            return (null, new ErrorResponse("Unable to generate an available invite code. Please try again.", "CODE_GENERATION_FAILED"));
         }
 
         var invite = new Invite
@@ -71,19 +58,10 @@ public class InviteService
             new Dictionary<string, object?>
             {
                 ["code"] = code,
-                ["expiresInDays"] = request.ExpiresInDays,
-                ["isCustomCode"] = !string.IsNullOrEmpty(request.Code)
+                ["expiresInDays"] = request.ExpiresInDays
             });
 
-        try
-        {
-            await _db.SaveChangesAsync();
-        }
-        catch (DbUpdateException ex) when (IsDuplicateInviteCodeViolation(ex))
-        {
-            _logger.LogWarning(ex, "Duplicate invite code blocked by DB constraint: {Code}", code);
-            return (null, new ErrorResponse("This invite code already exists", "DUPLICATE_CODE"));
-        }
+        await _db.SaveChangesAsync();
 
         _logger.LogInformation("Invite created: {Code} by user {UserId}", code, createdByUserId);
 
@@ -136,12 +114,5 @@ public class InviteService
         }
 
         return null;
-    }
-
-    private static bool IsDuplicateInviteCodeViolation(DbUpdateException exception)
-    {
-        var message = exception.InnerException?.Message ?? exception.Message;
-        return message.Contains("Invites.Code", StringComparison.OrdinalIgnoreCase)
-            || message.Contains("IX_Invites_Code", StringComparison.OrdinalIgnoreCase);
     }
 }

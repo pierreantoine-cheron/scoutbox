@@ -49,7 +49,6 @@ class ValidationConstants {
 class ErrorCodes {
   static const String invalidInvite = 'INVALID_INVITE';
   static const String usernameExists = 'USERNAME_EXISTS';
-  static const String duplicateCode = 'DUPLICATE_CODE';
   static const String codeGenerationFailed = 'CODE_GENERATION_FAILED';
   static const String invalidRefreshToken = 'INVALID_REFRESH_TOKEN';
   static const String invalidCredentials = 'INVALID_CREDENTIALS';

@@ -1,4 +1,5 @@
 using ScoutBoxApi.Models.Entities;
+using ScoutBoxApi.Services;
 
 namespace ScoutBoxApi.Data;
 
@@ -191,10 +192,11 @@ public static class DataSeeder
         if (context.Invites.Any())
             return false;
 
+        var code = TokenService.GenerateRandomCode(9);
         var adminInvite = new Invite
         {
             Id = Guid.NewGuid(),
-            Code = "ADMIN-SETUP",
+            Code = code,
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
             IsUsed = false,
@@ -202,7 +204,7 @@ public static class DataSeeder
         };
 
         context.Invites.Add(adminInvite);
-        Console.WriteLine($"[SETUP] Admin invite created: {adminInvite.Code}");
+        Console.WriteLine($"[SETUP] Admin invite code: {code}");
         Console.WriteLine($"[SETUP] Use this code to register the first user.");
 
         return true;

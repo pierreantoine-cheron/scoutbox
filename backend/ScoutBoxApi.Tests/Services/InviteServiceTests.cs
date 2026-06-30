@@ -113,18 +113,4 @@ public class InviteServiceTests : IDisposable
         Assert.Equal("INVALID_SERVER_URL", error!.Code);
     }
 
-    [Fact]
-    public async Task CreateInviteAsync_InviteLinkContainsGeneratedCode()
-    {
-        var userId = Guid.NewGuid();
-        var request = new CreateInviteRequest(Code: "MYCUSTOM-456", ExpiresInDays: 30,
-            ServerUrl: "https://server.fr");
-
-        var (response, error) = await _inviteService.CreateInviteAsync(userId, request);
-
-        Assert.Null(error);
-        Assert.NotNull(response);
-        Assert.NotNull(response!.InviteLink);
-        Assert.Contains("invite=MYCUSTOM-456", response.InviteLink);
-    }
 }

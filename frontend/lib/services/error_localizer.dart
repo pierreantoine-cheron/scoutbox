@@ -18,7 +18,6 @@ class ErrorLocalizer {
   static const _messages = <String, String>{
     ErrorCodes.invalidInvite: "Code d'invitation invalide, expiré ou déjà utilisé",
     ErrorCodes.usernameExists: "Ce nom d'utilisateur est déjà pris",
-    ErrorCodes.duplicateCode: "Ce code d'invitation existe déjà",
     ErrorCodes.codeGenerationFailed:
         "Impossible de générer un code d'invitation. Veuillez réessayer.",
     ErrorCodes.invalidRefreshToken: 'Session expirée. Veuillez vous reconnecter.',

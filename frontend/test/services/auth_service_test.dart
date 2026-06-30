@@ -11,7 +11,6 @@ void main() {
       test('ErrorCodes have correct values', () {
         expect(ErrorCodes.invalidInvite, equals('INVALID_INVITE'));
         expect(ErrorCodes.usernameExists, equals('USERNAME_EXISTS'));
-        expect(ErrorCodes.duplicateCode, equals('DUPLICATE_CODE'));
         expect(
           ErrorCodes.codeGenerationFailed,
           equals('CODE_GENERATION_FAILED'),

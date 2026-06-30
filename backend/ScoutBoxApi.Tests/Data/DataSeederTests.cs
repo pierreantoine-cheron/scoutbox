@@ -90,7 +90,10 @@ public class DataSeederTests : IDisposable
             .CountAsync(c => c.TentModelId == new Guid("00000000-0000-0000-0000-000000000205"));
         Assert.Equal(0, autreComponents);
 
-        Assert.Equal(1, await _db.Invites.CountAsync(i => i.Code == "ADMIN-SETUP"));
+        var invite = await _db.Invites.SingleAsync();
+        Assert.NotNull(invite.Code);
+        Assert.NotEmpty(invite.Code);
+        Assert.Equal(9, invite.Code.Length);
     }
 
     [Fact]
