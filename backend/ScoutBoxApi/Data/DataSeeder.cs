@@ -198,7 +198,7 @@ public static class DataSeeder
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
             IsUsed = false,
-            CreatedByUserId = null
+            CreatedByUserId = SystemUserId
         };
 
         context.Invites.Add(adminInvite);

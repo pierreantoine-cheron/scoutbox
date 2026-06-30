@@ -92,7 +92,8 @@ public class AuthControllerTests : IDisposable
             Code = "VALID-123",
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
-            IsUsed = false
+            IsUsed = false,
+            CreatedByUserId = Guid.NewGuid()
         };
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
@@ -138,6 +139,7 @@ public class AuthControllerTests : IDisposable
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
             IsUsed = true,
+            CreatedByUserId = Guid.NewGuid(),
             UsedByUserId = Guid.NewGuid(),
             UsedAt = DateTime.UtcNow
         };
@@ -162,7 +164,8 @@ public class AuthControllerTests : IDisposable
             Code = "EXPIRED-123",
             CreatedAt = DateTime.UtcNow.AddDays(-40),
             ExpiresAt = DateTime.UtcNow.AddDays(-10),
-            IsUsed = false
+            IsUsed = false,
+            CreatedByUserId = Guid.NewGuid()
         };
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
@@ -194,7 +197,8 @@ public class AuthControllerTests : IDisposable
             Code = "VALID-456",
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
-            IsUsed = false
+            IsUsed = false,
+            CreatedByUserId = Guid.NewGuid()
         };
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
@@ -218,7 +222,8 @@ public class AuthControllerTests : IDisposable
             Code = "VALID-789",
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
-            IsUsed = false
+            IsUsed = false,
+            CreatedByUserId = Guid.NewGuid()
         };
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
@@ -241,7 +246,8 @@ public class AuthControllerTests : IDisposable
             Code = "VALID-ABC",
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
-            IsUsed = false
+            IsUsed = false,
+            CreatedByUserId = Guid.NewGuid()
         };
         _db.Invites.Add(invite);
         await _db.SaveChangesAsync();
@@ -609,7 +615,8 @@ public class AuthControllerTests : IDisposable
             Code = "EXISTING-999",
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
-            IsUsed = false
+            IsUsed = false,
+            CreatedByUserId = owner.Id
         };
         _db.Invites.Add(existingInvite);
         await _db.SaveChangesAsync();

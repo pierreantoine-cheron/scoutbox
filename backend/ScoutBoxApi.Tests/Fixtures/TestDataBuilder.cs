@@ -54,7 +54,7 @@ public class TestDataBuilder
         bool isUsed = false,
         Guid? usedByUserId = null,
         int expiresInDays = 30,
-        Guid? createdByUserId = null)
+        Guid createdByUserId = default)
     {
         var invite = new Invite
         {

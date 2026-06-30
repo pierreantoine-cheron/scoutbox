@@ -43,7 +43,8 @@ public class InviteServiceTests : IDisposable
             Code = "TEST-123",
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
-            IsUsed = false
+            IsUsed = false,
+            CreatedByUserId = Guid.NewGuid()
         };
 
         var link = invite.GenerateInviteLink("https://tentes.groupe.fr");
@@ -60,7 +61,8 @@ public class InviteServiceTests : IDisposable
             Code = "CODE+123",
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(30),
-            IsUsed = false
+            IsUsed = false,
+            CreatedByUserId = Guid.NewGuid()
         };
 
         var link = invite.GenerateInviteLink("https://my-server.com/path?param=value");

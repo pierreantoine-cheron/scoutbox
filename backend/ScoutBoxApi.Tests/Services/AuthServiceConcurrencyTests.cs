@@ -33,13 +33,23 @@ public class AuthServiceConcurrencyTests
         {
             await setupContext.Database.EnsureCreatedAsync();
 
+            var systemUser = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = "concurrency-test-user",
+                PasswordHash = "skip",
+                CreatedAt = DateTime.UtcNow
+            };
+            setupContext.Users.Add(systemUser);
+
             setupContext.Invites.Add(new Invite
             {
                 Id = Guid.NewGuid(),
                 Code = "RACE-INVITE-001",
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(10),
-                IsUsed = false
+                IsUsed = false,
+                CreatedByUserId = systemUser.Id
             });
 
             await setupContext.SaveChangesAsync();

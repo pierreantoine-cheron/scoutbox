@@ -85,13 +85,14 @@ public class ScoutBoxDbContext : DbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.ExpiresAt).IsRequired();
             entity.Property(e => e.IsUsed).IsRequired();
+            entity.Property(e => e.CreatedByUserId).IsRequired();
             entity.HasIndex(e => e.Code).IsUnique();
             entity.HasIndex(e => e.IsUsed);
 
             entity.HasOne(e => e.CreatedBy)
                 .WithMany(u => u.CreatedInvites)
                 .HasForeignKey(e => e.CreatedByUserId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.UsedBy)
                 .WithMany(u => u.UsedInvites)

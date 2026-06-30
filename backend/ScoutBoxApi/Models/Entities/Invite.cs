@@ -7,11 +7,11 @@ public class Invite
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
     public bool IsUsed { get; set; }
-    public Guid? CreatedByUserId { get; set; }
+    public Guid CreatedByUserId { get; set; }
     public Guid? UsedByUserId { get; set; }
     public DateTime? UsedAt { get; set; }
 
-    public User? CreatedBy { get; set; }
+    public User CreatedBy { get; set; } = null!;
     public User? UsedBy { get; set; }
 
     public string GenerateInviteLink(string serverUrl)
