@@ -523,11 +523,10 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest
-        {
-            ExpiresInDays = 7,
-            ServerUrl = "https://test.scoutbox.local"
-        };
+        var request = new CreateInviteRequest(
+            ExpiresInDays: 7,
+            ServerUrl: "https://test.scoutbox.local"
+        );
 
         var result = await _controller.CreateInvite(request);
 
@@ -554,11 +553,10 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest
-        {
-            ExpiresInDays = 7,
-            ServerUrl = "https://custom-server.groupe.fr"
-        };
+        var request = new CreateInviteRequest(
+            ExpiresInDays: 7,
+            ServerUrl: "https://custom-server.groupe.fr"
+        );
 
         var result = await _controller.CreateInvite(request);
 
@@ -583,7 +581,7 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest { ExpiresInDays = 0 };
+        var request = new CreateInviteRequest(ExpiresInDays: 0, ServerUrl: null!);
 
         var result = await _controller.CreateInvite(request);
 
@@ -607,7 +605,7 @@ public class AuthControllerTests : IDisposable
 
         SetControllerUser(owner.Id, owner.Username);
 
-        var request = new CreateInviteRequest { ExpiresInDays = 7 };
+        var request = new CreateInviteRequest(ExpiresInDays: 7, ServerUrl: null!);
 
         var result = await _controller.CreateInvite(request);
 
@@ -620,7 +618,7 @@ public class AuthControllerTests : IDisposable
     public async Task CreateInvite_WithoutAuthHeader_ThrowsUnauthorizedAccessException()
     {
         // Arrange - no user set in controller context
-        var request = new CreateInviteRequest { ExpiresInDays = 7 };
+        var request = new CreateInviteRequest(ExpiresInDays: 7, ServerUrl: "https://test.local");
 
         // Act & Assert - should throw UnauthorizedAccessException (filter would convert to 401 in real request)
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _controller.CreateInvite(request));

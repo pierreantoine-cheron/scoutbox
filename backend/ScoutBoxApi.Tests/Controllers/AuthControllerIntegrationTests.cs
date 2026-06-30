@@ -58,7 +58,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomApiFactory>
         });
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(TestAuthHandler.SchemeName, "integration");
 
-        var inviteResponse = await client.PostAsJsonAsync("/api/auth/invites", new { code = "TEST-VALIDATION", expiresInDays = 0 });
+        var inviteResponse = await client.PostAsJsonAsync("/api/auth/invites", new { expiresInDays = 0, serverUrl = "https://test.local" });
 
         Assert.Equal(HttpStatusCode.BadRequest, inviteResponse.StatusCode);
 

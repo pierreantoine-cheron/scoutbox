@@ -91,7 +91,7 @@ public class InviteServiceTests : IDisposable
     public async Task CreateInviteAsync_WithoutServerUrlInRequest_ReturnsInvalidServerUrl()
     {
         var userId = Guid.NewGuid();
-        var request = new CreateInviteRequest(ExpiresInDays: 30);
+        var request = new CreateInviteRequest(ExpiresInDays: 30, ServerUrl: null!);
 
         var (response, error) = await _inviteService.CreateInviteAsync(userId, request);
 
