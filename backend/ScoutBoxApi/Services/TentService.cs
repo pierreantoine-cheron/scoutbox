@@ -419,8 +419,7 @@ public class TentService
             {
                 Id = Guid.NewGuid(),
                 TentModelId = model.Id,
-                PartKindId = pkId,
-                IsStandard = true
+                PartKindId = pkId
             });
         }
 
@@ -497,8 +496,7 @@ public class TentService
                 {
                     Id = Guid.NewGuid(),
                     TentModelId = id,
-                    PartKindId = pkId,
-                    IsStandard = true
+                    PartKindId = pkId
                 });
             }
         }

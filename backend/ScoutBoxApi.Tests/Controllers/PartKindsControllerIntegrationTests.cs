@@ -461,8 +461,7 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
             {
                 Id = Guid.NewGuid(),
                 TentModelId = modelId,
-                PartKindId = pkId,
-                IsStandard = true
+                PartKindId = pkId
             });
             await db.SaveChangesAsync();
         }

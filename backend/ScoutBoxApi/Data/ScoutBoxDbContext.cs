@@ -205,7 +205,6 @@ public class ScoutBoxDbContext : DbContext
         modelBuilder.Entity<TentModelComponent>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.IsStandard).IsRequired();
 
             entity.HasOne(e => e.TentModel)
                 .WithMany(e => e.TentModelComponents)

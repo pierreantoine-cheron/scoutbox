@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ScoutBoxApi.Data;
 
@@ -10,9 +11,11 @@ using ScoutBoxApi.Data;
 namespace ScoutBoxApi.Migrations
 {
     [DbContext(typeof(ScoutBoxDbContext))]
-    partial class ScoutBoxDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260701122234_RemoveIsStandardFromTentModelComponent")]
+    partial class RemoveIsStandardFromTentModelComponent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");

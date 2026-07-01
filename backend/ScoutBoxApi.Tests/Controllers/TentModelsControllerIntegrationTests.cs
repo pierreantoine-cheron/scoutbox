@@ -46,8 +46,7 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
                 TentModelComponents = partKindIds.Select(pkId => new TentModelComponent
                 {
                     Id = Guid.NewGuid(),
-                    PartKindId = pkId,
-                    IsStandard = true
+                    PartKindId = pkId
                 }).ToList()
             };
             db.TentModels.Add(model);
@@ -228,8 +227,7 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
                 TentModelComponents = partKindIds.Select(pkId => new TentModelComponent
                 {
                     Id = Guid.NewGuid(),
-                    PartKindId = pkId,
-                    IsStandard = true
+                    PartKindId = pkId
                 }).ToList()
             };
             db.TentModels.Add(model);
@@ -286,8 +284,7 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
                 TentModelComponents = initialComponentIds.Select(pkId => new TentModelComponent
                 {
                     Id = Guid.NewGuid(),
-                    PartKindId = pkId,
-                    IsStandard = true
+                    PartKindId = pkId
                 }).ToList()
             };
             db.TentModels.Add(model);
@@ -408,8 +405,7 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
                     new()
                     {
                         Id = Guid.NewGuid(),
-                        PartKindId = partKindId,
-                        IsStandard = true
+                        PartKindId = partKindId
                     }
                 }
             };

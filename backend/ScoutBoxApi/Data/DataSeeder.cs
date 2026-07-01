@@ -165,7 +165,7 @@ public static class DataSeeder
     }
 
     private static TentModelComponent C(Guid modelId, Guid partKindId) =>
-        new() { Id = Guid.NewGuid(), TentModelId = modelId, PartKindId = partKindId, IsStandard = true };
+        new() { Id = Guid.NewGuid(), TentModelId = modelId, PartKindId = partKindId };
 
     private static bool SeedTags(ScoutBoxDbContext context)
     {
