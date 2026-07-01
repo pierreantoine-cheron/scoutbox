@@ -11,6 +11,12 @@ namespace ScoutBoxApi.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            var systemUserId = new Guid("00000000-0000-0000-0000-000000000001");
+
+            migrationBuilder.Sql(
+                $"INSERT OR IGNORE INTO \"Users\" (\"Id\", \"Username\", \"PasswordHash\", \"CreatedAt\", \"IsDeleted\") " +
+                $"VALUES ('{systemUserId}', 'SYSTEM', 'SYSTEM_NO_LOGIN', '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}', 0);");
+
             migrationBuilder.DropForeignKey(
                 name: "FK_Invites_Users_CreatedByUserId",
                 table: "Invites");
@@ -20,7 +26,7 @@ namespace ScoutBoxApi.Migrations
                 table: "Invites",
                 type: "TEXT",
                 nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"),
+                defaultValue: systemUserId,
                 oldClrType: typeof(Guid),
                 oldType: "TEXT",
                 oldNullable: true);

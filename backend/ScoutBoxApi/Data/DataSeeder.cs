@@ -18,8 +18,7 @@ public static class DataSeeder
             || context.TentModels.Any()
             || context.TentModelComponents.Any()
             || context.Tags.Any()
-            || context.Invites.Any()
-            || context.Users.Any(u => u.Username == "SYSTEM"))
+            || context.Invites.Any())
         {
             context.Set<SeedInfo>().Add(new SeedInfo { Id = 1, IsSeeded = true, SeededAt = DateTime.UtcNow });
             context.SaveChanges();
