@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ $# -lt 4 ]; then
-  echo "Usage: build-apk-manifest.sh <apk-output-dir> <version-name> <version-code> <artifacts-out-dir> [commit-sha]" >&2
+  echo "Usage: build-apk-manifest.sh <apk-output-dir> <version-name> <version-code> <artifacts-out-dir> [commit-sha]"
   exit 1
 fi
 
@@ -12,25 +12,25 @@ VERSION_CODE="$3"
 ARTIFACTS_DIR="$4"
 COMMIT_SHA="${5:-}"
 
-echo "--- build-apk-manifest ---" >&2
-echo "APK_DIR: $APK_DIR" >&2
-echo "VERSION_NAME: $VERSION_NAME" >&2
-echo "VERSION_CODE: $VERSION_CODE" >&2
-echo "ARTIFACTS_DIR: $ARTIFACTS_DIR" >&2
-echo "COMMIT_SHA: ${COMMIT_SHA:-<empty>}" >&2
-echo "ANDROID_HOME: ${ANDROID_HOME:-<not set>}" >&2
+echo "--- build-apk-manifest ---"
+echo "APK_DIR: $APK_DIR"
+echo "VERSION_NAME: $VERSION_NAME"
+echo "VERSION_CODE: $VERSION_CODE"
+echo "ARTIFACTS_DIR: $ARTIFACTS_DIR"
+echo "COMMIT_SHA: ${COMMIT_SHA:-<empty>}"
+echo "ANDROID_HOME: ${ANDROID_HOME:-<not set>}"
 
 APK_FILE=$(ls "$APK_DIR"/scoutbox-v*.apk 2>/dev/null | head -1) || true
 if [ -z "$APK_FILE" ]; then
   APK_FILE=$(ls "$APK_DIR"/*.apk 2>/dev/null | head -1) || true
 fi
 if [ -z "$APK_FILE" ]; then
-  echo "ERROR: No APK found in $APK_DIR" >&2
-  echo "Contents of $APK_DIR:" >&2
-  ls -la "$APK_DIR" 2>&1 || echo "(directory not found)" >&2
+  echo "ERROR: No APK found in $APK_DIR"
+  echo "Contents of $APK_DIR:"
+  ls -la "$APK_DIR" 2>&1 || echo "(directory not found)"
   exit 1
 fi
-echo "APK_FILE: $APK_FILE" >&2
+echo "APK_FILE: $APK_FILE"
 
 APK_FILENAME=$(basename "$APK_FILE")
 
@@ -40,24 +40,24 @@ case "$APK_SIZE" in
   ,*) APK_SIZE="0${APK_SIZE}" ;;
 esac
 APK_SIZE="${APK_SIZE} Mo"
-echo "APK_SIZE: $APK_SIZE" >&2
+echo "APK_SIZE: $APK_SIZE"
 
 SDK_VERSION=""
 BUILD_TOOLS="${ANDROID_HOME:-}/build-tools"
-echo "BUILD_TOOLS: $BUILD_TOOLS" >&2
+echo "BUILD_TOOLS: $BUILD_TOOLS"
 if [ -d "$BUILD_TOOLS" ]; then
   for bt_dir in "$BUILD_TOOLS"/*/; do
-    echo "Checking: ${bt_dir}aapt" >&2
+    echo "Checking: ${bt_dir}aapt"
     if [ -x "${bt_dir}aapt" ]; then
       SDK_VERSION=$("${bt_dir}aapt" dump badging "$APK_FILE" 2>/dev/null | grep "sdkVersion:" | sed "s/.*sdkVersion:'\([0-9]*\)'.*/\1/") || true
-      echo "SDK_VERSION from aapt: $SDK_VERSION" >&2
+      echo "SDK_VERSION from aapt: $SDK_VERSION"
       break
     fi
   done
 fi
 
 if [ -z "$SDK_VERSION" ]; then
-  echo "SDK_VERSION: using default 21" >&2
+  echo "SDK_VERSION: using default 21"
   SDK_VERSION=21
 fi
 
@@ -106,7 +106,7 @@ MANIFEST
 
 cp "$APK_FILE" "$ARTIFACTS_DIR/"
 
-echo "--- build-apk-manifest complete ---" >&2
-echo "Manifest written to: $ARTIFACTS_DIR/manifest.json" >&2
-echo "APK copied to: $ARTIFACTS_DIR/$APK_FILENAME" >&2
-cat "$ARTIFACTS_DIR/manifest.json" >&2
+echo "--- build-apk-manifest complete ---"
+echo "Manifest written to: $ARTIFACTS_DIR/manifest.json"
+echo "APK copied to: $ARTIFACTS_DIR/$APK_FILENAME"
+cat "$ARTIFACTS_DIR/manifest.json"
