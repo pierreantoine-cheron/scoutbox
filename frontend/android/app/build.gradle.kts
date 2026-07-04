@@ -22,6 +22,17 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    flavorDimensions += "channel"
+    productFlavors {
+        create("production") {
+            dimension = "channel"
+        }
+        create("staging") {
+            dimension = "channel"
+            applicationIdSuffix = ".staging"
+        }
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "app.scoutbox.client"
