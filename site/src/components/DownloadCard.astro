@@ -1,0 +1,47 @@
+---
+const webAppUrl = import.meta.env.PUBLIC_WEB_APP_URL;
+const apkManifestUrl = import.meta.env.PUBLIC_APK_MANIFEST_URL;
+---
+<div class="hero">
+  <div class="hero-logo" aria-label="ScoutBox">
+    <img src="/brand/logo.svg" alt="ScoutBox" />
+  </div>
+  <h1>ScoutBox</h1>
+  <p class="tagline">Gérer l'inventaire de votre matériel de camp, sans prise de tête.</p>
+  <p class="version" id="version-line">Chargement…</p>
+  <div class="btn-group">
+    <a class="btn-download" id="apk-link" href="#" download>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      Télécharger l'APK
+    </a>
+    <a class="btn-web" href={webAppUrl} target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+      </svg>
+      Ouvrir dans le navigateur
+    </a>
+  </div>
+</div>
+<script is:inline define:vars={{ apkManifestUrl }}>
+  (async () => {
+    const el = document.getElementById('version-line');
+    const link = document.getElementById('apk-link');
+    if (!el) return;
+    try {
+      const r = await fetch(apkManifestUrl);
+      if (!r.ok) throw new Error(r.status);
+      const m = await r.json();
+      el.textContent = `Version ${m.version} (${m.build}) — ${m.sizeLabel} — ${m.minAndroid}`;
+      if (link) link.href = m.filename;
+    } catch (e) {
+      el.textContent = 'Information de version indisponible.';
+      if (link) link.style.display = 'none';
+    }
+  })();
+</script>

@@ -82,6 +82,13 @@ dotnet format
 ```
 scoutbox/
 ├── frontend/                    # Flutter application
+│   ├── Dockerfile               # Multi-stage (web/apk targets)
+│   ├── nginx/
+│   │   ├── web.conf             # SPA fallback for Flutter web
+│   │   └── apk.conf             # Serves APK + manifest.json
+│   ├── tool/
+│   │   ├── compute-version.sh   # Git-based version derivation
+│   │   └── build-apk-manifest.sh # Emits manifest.json + copies APK
 │   ├── lib/
 │   │   ├── main.dart           # App entry point
 │   │   ├── models/             # Data models
@@ -93,6 +100,15 @@ scoutbox/
 │   │   │   └── widgets/        # Reusable UI components
 │   │   └── utils/              # Helpers, constants
 │   └── test/                   # Tests mirror lib structure
+├── site/                        # Astro marketing/landing site (static SSG)
+│   ├── Dockerfile
+│   ├── src/
+│   │   ├── layouts/BaseLayout.astro
+│   │   ├── components/DownloadCard.astro
+│   │   └── pages/
+│   │       ├── index.astro      # Landing page
+│   │       └── register.astro   # Invite registration helper
+│   └── public/brand/logo.svg
 ├── backend/
 │   ├── ScoutBoxApi/            # .NET Web API
 │   │   ├── Controllers/        # API endpoints
@@ -152,6 +168,34 @@ scoutbox/
 
 When changing a decision from _bmad-output files, replace the old decision with the new, no need to justify or mark as new, do not add history to file, I handle the versionning myself through git.
 Use windows-style line endings.
+
+## Frontend Docker & Site
+
+### Coolify Services
+
+| Env | Service | Domain | Dockerfile | Target | Build args |
+|---|---|---|---|---|---|
+| prod | web | `web.scoutbox.app` | `frontend/Dockerfile` | `--target=web` | (none) |
+| prod | apk | `download.scoutbox.app` | `frontend/Dockerfile` | `--target=apk` | `APP_FLAVOR=production` |
+| prod | site | `www.scoutbox.app` | `site/Dockerfile` | (single stage) | `PUBLIC_APK_MANIFEST_URL=https://download.scoutbox.app/manifest.json`, `PUBLIC_WEB_APP_URL=https://web.scoutbox.app` |
+| staging | web | `web.staging.scoutbox.app` | `frontend/Dockerfile` | `--target=web` | (none) |
+| staging | apk | `download.staging.scoutbox.app` | `frontend/Dockerfile` | `--target=apk` | `APP_FLAVOR=staging` |
+
+### Build conventions
+
+- **`APP_FLAVOR` build arg**: used only for the apk target. Values: `production` or `staging`. The web target takes no flavor arg (web builds are environment-agnostic).
+- **Versioning**: `versionName` is derived from the latest git tag (`git describe --tags --abbrev=0`). `versionCode` is the commit count (`git rev-list --count HEAD`). The versioning logic lives in `tool/compute-version.sh`.
+- **Manifest**: `tool/build-apk-manifest.sh` emits `manifest.json` with version, size, minSdk, and commit hash. It also copies the APK into the nginx runtime image.
+- **Full clone required**: Coolify must perform a full git clone for versioning to work. If shallow clones are unavoidable, set `OVERRIDE_VERSION_NAME` and `OVERRIDE_VERSION_CODE` build args to bypass git-based versioning.
+- **nginx configs**: `frontend/nginx/web.conf` (SPA fallback), `frontend/nginx/apk.conf` (serves APK + `manifest.json`), `site/nginx/default.conf` (SPA fallback for Astro site).
+
+### No Dart-side environment branching
+
+`SCOUTBOX_CHANNEL` is gone. Staging and prod are identical Dart builds; they differ only in Android packaging identity (`applicationIdSuffix`) and version strings injected via `--build-name`/`--build-number`. Diagnostics gate on `kDebugMode`, not on a build-time channel dart-define.
+
+### Rule: Single `APP_FLAVOR` + `kDebugMode`-only diagnostics
+
+Staging and prod share the same Dart code. The only packaging difference is `applicationIdSuffix=".staging"` in `build.gradle.kts`. Version strings are injected at build time via `--build-name`/`--build-number`. No `--dart-define` flags touch Dart code. Debug/verbose behavior uses `kDebugMode` only.
 
 ## Skills
 
