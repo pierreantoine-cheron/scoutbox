@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-import '../utils/app_config.dart';
 import '../utils/constants.dart';
 import 'auth_service.dart' show RefreshResult, RefreshFailureType;
 
@@ -101,7 +100,7 @@ class ApiClient {
     );
 
     // Add logging interceptor in debug mode or beta channel
-    if (kDebugMode || AppConfig.enableHttpLogging) {
+    if (kDebugMode) {
       dio.interceptors.add(
         LogInterceptor(requestBody: true, responseBody: true, error: true),
       );

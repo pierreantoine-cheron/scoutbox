@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 
 import '../models/auth_response.dart';
 import '../models/invite_response.dart';
-import '../utils/app_config.dart';
 import '../utils/constants.dart';
 import '../utils/design_constants.dart';
 import '../repositories/auth_repository.dart';
@@ -385,7 +384,7 @@ class AuthService {
     } catch (e) {
       debugPrint('Failed to read refresh token from storage: $e');
       return RefreshResult.failure(
-        error: AppConfig.isBetaChannel
+        error: kDebugMode
             ? 'Erreur de lecture du token de rafraîchissement: $e'
             : 'Erreur de stockage. Veuillez réessayer.',
         failureType: RefreshFailureType.storageFailure,
@@ -419,7 +418,7 @@ class AuthService {
           // Continue with failure result, don't cascade
         }
         return RefreshResult.failure(
-          error: AppConfig.isBetaChannel
+          error: kDebugMode
               ? 'Erreur de sauvegarde des tokens: $e'
               : 'Session expirée. Veuillez vous reconnecter.',
           failureType: RefreshFailureType.storageFailure,
@@ -439,7 +438,7 @@ class AuthService {
     } catch (e) {
       debugPrint('Unexpected error during token refresh: $e');
       return RefreshResult.failure(
-        error: AppConfig.isBetaChannel
+        error: kDebugMode
             ? 'Erreur inattendue lors du rafraîchissement: $e'
             : 'Erreur de connexion. Veuillez réessayer.',
         failureType: RefreshFailureType.transientNetwork,
