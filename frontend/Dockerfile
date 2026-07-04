@@ -13,7 +13,7 @@ RUN flutter build web --release
 FROM deps AS apk-builder
 ARG APP_FLAVOR=production
 ENV APP_FLAVOR=${APP_FLAVOR}
-RUN bash -c '. <(bash tool/compute-version.sh) && \
+RUN bash -c '. tool/compute-version.sh && \
     flutter build apk --release \
       --flavor ${FLAVOR} \
       --build-name=${VERSION_NAME} \
