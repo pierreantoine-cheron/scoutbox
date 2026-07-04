@@ -13,7 +13,7 @@ RUN flutter build web --release
 FROM deps AS apk-builder
 ARG APP_FLAVOR=production
 ENV APP_FLAVOR=${APP_FLAVOR}
-RUN . <(bash tool/compute-version.sh) && \
+RUN bash -c '. <(bash tool/compute-version.sh) && \
     flutter build apk --release \
       --flavor ${FLAVOR} \
       --build-name=${VERSION_NAME} \
@@ -21,7 +21,7 @@ RUN . <(bash tool/compute-version.sh) && \
     tool/build-apk-manifest.sh \
       "build/app/outputs/apk/${FLAVOR}/release" \
       "${VERSION_NAME}" "${VERSION_CODE}" \
-      /tmp/artifacts "${SHORT_SHA}"
+      /tmp/artifacts "${SHORT_SHA}"'
 
 FROM nginx:alpine AS web
 COPY nginx/web.conf /etc/nginx/conf.d/default.conf
