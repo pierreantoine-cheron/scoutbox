@@ -177,35 +177,42 @@ body.redirecting .page-content { visibility: hidden; }
   color: var(--muted);
 }
 </style>
+
 <script is:inline define:vars={{ webAppUrl }}>
-  (function() {
-    var params = new URLSearchParams(window.location.search);
-    var server = params.get('server');
-    var invite = params.get('invite');
+  window.__SCOUTBOX_CONFIG__ = { webAppUrl };
+</script>
 
-    if (!server || !invite) {
-      document.getElementById('error-state').style.display = 'block';
-      return;
-    }
+<script>
+  interface ScoutBoxConfig {
+    webAppUrl: string;
+  }
 
-    var deepLink = 'scoutbox://register?server=' + encodeURIComponent(server) + '&invite=' + encodeURIComponent(invite);
-    var webUrl = webAppUrl + '?server=' + encodeURIComponent(server) + '&invite=' + encodeURIComponent(invite);
+  const config = (window as any).__SCOUTBOX_CONFIG__ as ScoutBoxConfig;
+  const params = new URLSearchParams(window.location.search);
+  const server = params.get('server');
+  const invite = params.get('invite');
 
-    document.getElementById('open-app-btn').href = deepLink;
-    document.getElementById('open-web-btn').href = webUrl;
-    document.getElementById('manual-server').textContent = server;
-    document.getElementById('manual-code').textContent = invite;
-    document.getElementById('normal-state').style.display = 'block';
+  if (!server || !invite) {
+    document.getElementById('error-state')!.style.display = 'block';
+  } else {
+    const deepLink = 'scoutbox://register?server=' + encodeURIComponent(server) + '&invite=' + encodeURIComponent(invite);
+    const webUrl = config.webAppUrl + '?server=' + encodeURIComponent(server) + '&invite=' + encodeURIComponent(invite);
+
+    (document.getElementById('open-app-btn') as HTMLAnchorElement).href = deepLink;
+    (document.getElementById('open-web-btn') as HTMLAnchorElement).href = webUrl;
+    document.getElementById('manual-server')!.textContent = server;
+    document.getElementById('manual-code')!.textContent = invite;
+    document.getElementById('normal-state')!.style.display = 'block';
 
     if (/Android/i.test(navigator.userAgent)) {
       document.body.classList.add('redirecting');
       window.location.href = deepLink;
 
-      setTimeout(function() {
+      setTimeout(() => {
         document.body.classList.remove('redirecting');
       }, 2500);
     }
-  })();
+  }
 </script>
 </head>
 <body>

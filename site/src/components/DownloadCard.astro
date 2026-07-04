@@ -2,6 +2,35 @@
 const webAppUrl = import.meta.env.PUBLIC_WEB_APP_URL;
 const apkManifestUrl = import.meta.env.PUBLIC_APK_MANIFEST_URL;
 ---
+<script is:inline define:vars={{ apkManifestUrl }}>
+  window.__SCOUTBOX_CONFIG__ = { apkManifestUrl };
+</script>
+
+<script>
+  interface ScoutBoxConfig {
+    apkManifestUrl: string;
+  }
+
+  const config = (window as any).__SCOUTBOX_CONFIG__ as ScoutBoxConfig;
+
+  (async () => {
+    const el = document.getElementById('version-line');
+    const link = document.getElementById('apk-link') as HTMLAnchorElement | null;
+    if (!el) return;
+
+    try {
+      const r = await fetch(config.apkManifestUrl);
+      if (!r.ok) throw new Error(String(r.status));
+      const m = await r.json();
+      el.textContent = `Version ${m.version} (${m.build}) — ${m.sizeLabel} — ${m.minAndroid}`;
+      if (link) link.href = String(m.filename);
+    } catch {
+      el.textContent = 'Information de version indisponible.';
+      if (link) link.style.display = 'none';
+    }
+  })();
+</script>
+
 <div class="hero">
   <div class="hero-logo" aria-label="ScoutBox">
     <img src="/brand/logo.svg" alt="ScoutBox" />
@@ -28,20 +57,3 @@ const apkManifestUrl = import.meta.env.PUBLIC_APK_MANIFEST_URL;
     </a>
   </div>
 </div>
-<script is:inline define:vars={{ apkManifestUrl }}>
-  (async () => {
-    const el = document.getElementById('version-line');
-    const link = document.getElementById('apk-link');
-    if (!el) return;
-    try {
-      const r = await fetch(apkManifestUrl);
-      if (!r.ok) throw new Error(r.status);
-      const m = await r.json();
-      el.textContent = `Version ${m.version} (${m.build}) — ${m.sizeLabel} — ${m.minAndroid}`;
-      if (link) link.href = m.filename;
-    } catch (e) {
-      el.textContent = 'Information de version indisponible.';
-      if (link) link.style.display = 'none';
-    }
-  })();
-</script>
