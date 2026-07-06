@@ -27,6 +27,7 @@ RUN flutter pub get
 COPY lib/ lib/
 COPY assets/ assets/
 COPY analysis_options.yaml build.yaml* l10n.yaml* ./
+COPY web/ web/
 
 # ── Code generation ──
 RUN dart run build_runner build
