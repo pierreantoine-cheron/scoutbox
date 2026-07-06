@@ -4,9 +4,11 @@ FROM ghcr.io/cirruslabs/flutter:stable AS deps
 WORKDIR /app
 COPY pubspec.* ./
 RUN flutter pub get
+COPY lib/ lib/
+COPY android/ android/
+RUN dart run build_runner build --delete-conflicting-outputs
 COPY . .
 RUN chmod +x tool/compute-version.sh tool/build-apk-manifest.sh
-RUN dart run build_runner build --delete-conflicting-outputs
 
 FROM deps AS web-builder
 RUN flutter build web --release
@@ -14,7 +16,9 @@ RUN flutter build web --release
 FROM deps AS apk-builder
 ARG APP_FLAVOR=production
 ENV APP_FLAVOR=${APP_FLAVOR}
-RUN bash -c '. tool/compute-version.sh && \
+RUN --mount=type=cache,target=/root/.gradle \
+    --mount=type=cache,target=/opt/android-sdk-linux \
+    bash -c '. tool/compute-version.sh && \
     flutter build apk --release \
       --flavor ${FLAVOR} \
       --build-name=${VERSION_NAME} \
