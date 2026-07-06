@@ -17,7 +17,6 @@ FROM deps AS apk-builder
 ARG APP_FLAVOR=production
 ENV APP_FLAVOR=${APP_FLAVOR}
 RUN --mount=type=cache,target=/root/.gradle \
-    --mount=type=cache,target=/opt/android-sdk-linux \
     bash -c '. tool/compute-version.sh && \
     flutter build apk --release \
       --flavor ${FLAVOR} \
