@@ -20,7 +20,7 @@ RUN bash -c '. tool/compute-version.sh && \
       --build-name=${VERSION_NAME} \
       --build-number=${VERSION_CODE} && \
     tool/build-apk-manifest.sh \
-      "build/app/outputs/apk/${FLAVOR}/release" \
+      "build/app/outputs/flutter-apk" \
       "${VERSION_NAME}" "${VERSION_CODE}" \
       /tmp/artifacts "${SHORT_SHA}"'
 
