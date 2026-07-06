@@ -5,6 +5,7 @@ WORKDIR /app
 COPY pubspec.* ./
 RUN flutter pub get
 COPY . .
+RUN chmod +x tool/compute-version.sh tool/build-apk-manifest.sh
 RUN dart run build_runner build --delete-conflicting-outputs
 
 FROM deps AS web-builder
