@@ -30,6 +30,7 @@ COPY --from=web-builder /app/build/web /usr/share/nginx/html
 EXPOSE 80
 
 FROM nginx:alpine AS apk
+RUN rm -f /usr/share/nginx/html/index.html
 COPY nginx/apk.conf /etc/nginx/conf.d/default.conf
 COPY --from=apk-builder /tmp/artifacts/ /usr/share/nginx/html/
 EXPOSE 80
