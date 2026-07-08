@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using ScoutBoxApi.Data;
 using ScoutBoxApi.Models.DTOs;
 using ScoutBoxApi.Models.Entities;
@@ -12,14 +13,16 @@ public class AuthService
     private readonly InviteService _inviteService;
     private readonly IAuditService _auditService;
     private readonly ILogger<AuthService> _logger;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(ScoutBoxDbContext db, TokenService tokenService, InviteService inviteService, IAuditService auditService, ILogger<AuthService> logger)
+    public AuthService(ScoutBoxDbContext db, TokenService tokenService, InviteService inviteService, IAuditService auditService, ILogger<AuthService> logger, IConfiguration configuration)
     {
         _db = db;
         _tokenService = tokenService;
         _inviteService = inviteService;
         _auditService = auditService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<(AuthResponse? Response, ErrorResponse? Error)> RegisterAsync(RegisterRequest request)
@@ -61,23 +64,25 @@ public class AuthService
             return (null, new ErrorResponse("This username already exists", "USERNAME_EXISTS"));
         }
 
-        // Consume invite
-        var inviteConsumed = await _inviteService.TryConsumeInviteAsync(request.InviteCode, userId, now);
-
-        if (!inviteConsumed)
+        if (!_configuration.GetValue<bool>("Demo"))
         {
-            if (transaction != null)
-            {
-                await transaction.RollbackAsync();
-            }
-            else
-            {
-                _db.Users.Remove(user);
-                await _db.SaveChangesAsync();
-            }
+            var inviteConsumed = await _inviteService.TryConsumeInviteAsync(request.InviteCode, userId, now);
 
-            _logger.LogWarning("Invalid or expired invite code attempted: {InviteCode}", request.InviteCode);
-            return (null, new ErrorResponse("Invalid or expired invite code", "INVALID_INVITE"));
+            if (!inviteConsumed)
+            {
+                if (transaction != null)
+                {
+                    await transaction.RollbackAsync();
+                }
+                else
+                {
+                    _db.Users.Remove(user);
+                    await _db.SaveChangesAsync();
+                }
+
+                _logger.LogWarning("Invalid or expired invite code attempted: {InviteCode}", request.InviteCode);
+                return (null, new ErrorResponse("Invalid or expired invite code", "INVALID_INVITE"));
+            }
         }
 
         // Issue session (generates tokens, persists refresh token, records audit)

@@ -80,8 +80,8 @@ public class AuthServiceConcurrencyTests
         var inviteService1 = new InviteService(context1, auditService1, inviteLogger1.Object);
         var inviteService2 = new InviteService(context2, auditService2, inviteLogger2.Object);
 
-        var service1 = new AuthService(context1, tokenService, inviteService1, auditService1, logger1.Object);
-        var service2 = new AuthService(context2, tokenService, inviteService2, auditService2, logger2.Object);
+        var service1 = new AuthService(context1, tokenService, inviteService1, auditService1, logger1.Object, config);
+        var service2 = new AuthService(context2, tokenService, inviteService2, auditService2, logger2.Object, config);
 
         var t1 = service1.RegisterAsync(new RegisterRequest("RACE-INVITE-001", $"race_user_{Guid.NewGuid():N}", "password123"));
         var t2 = service2.RegisterAsync(new RegisterRequest("RACE-INVITE-001", $"race_user_{Guid.NewGuid():N}", "password123"));

@@ -70,7 +70,7 @@ public class AuthServiceSoftDeleteTests
         await using var context = new ScoutBoxDbContext(options);
         var auditService = new AuditService(context, auditLoggerMock.Object);
         var inviteService = new InviteService(context, auditService, inviteLoggerMock.Object);
-        var authService = new AuthService(context, tokenService, inviteService, auditService, loggerMock.Object);
+        var authService = new AuthService(context, tokenService, inviteService, auditService, loggerMock.Object, config);
 
         // Attempt to refresh token for deleted user
         var (response, error) = await authService.RefreshTokenAsync("valid-refresh-token");
@@ -138,7 +138,7 @@ public class AuthServiceSoftDeleteTests
         await using var context = new ScoutBoxDbContext(options);
         var auditService = new AuditService(context, auditLoggerMock.Object);
         var inviteService = new InviteService(context, auditService, inviteLoggerMock.Object);
-        var authService = new AuthService(context, tokenService, inviteService, auditService, loggerMock.Object);
+        var authService = new AuthService(context, tokenService, inviteService, auditService, loggerMock.Object, config);
 
         // Attempt to refresh token for non-existent user
         var (response, error) = await authService.RefreshTokenAsync("orphan-refresh-token");
@@ -207,7 +207,7 @@ public class AuthServiceSoftDeleteTests
         await using var context = new ScoutBoxDbContext(options);
         var auditService = new AuditService(context, auditLoggerMock.Object);
         var inviteService = new InviteService(context, auditService, inviteLoggerMock.Object);
-        var authService = new AuthService(context, tokenService, inviteService, auditService, loggerMock.Object);
+        var authService = new AuthService(context, tokenService, inviteService, auditService, loggerMock.Object, config);
 
         // Refresh token for active user should succeed
         var (response, error) = await authService.RefreshTokenAsync("active-refresh-token");

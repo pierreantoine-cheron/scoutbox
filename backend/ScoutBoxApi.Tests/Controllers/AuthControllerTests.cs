@@ -48,7 +48,7 @@ public class AuthControllerTests : IDisposable
         _tokenService = new TokenService(config);
         var auditService = new AuditService(_db, auditServiceLoggerMock.Object);
         var inviteService = new InviteService(_db, auditService, inviteServiceLoggerMock.Object);
-        _authService = new AuthService(_db, _tokenService, inviteService, auditService, authServiceLoggerMock.Object);
+        _authService = new AuthService(_db, _tokenService, inviteService, auditService, authServiceLoggerMock.Object, config);
         _currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         _currentUserAccessorMock
             .Setup(accessor => accessor.GetValidatedUserId())
