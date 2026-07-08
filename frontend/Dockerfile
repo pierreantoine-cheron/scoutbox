@@ -50,8 +50,11 @@ RUN bash -c '. tool/compute-version.sh && \
       --flavor ${FLAVOR} \
       --build-name=${VERSION_NAME} \
       --build-number=${VERSION_CODE} && \
+    APK_DIR="build/app/outputs/flutter-apk" && \
+    APK_FILE=$(ls "$APK_DIR"/app-*.apk 2>/dev/null | head -1) && \
+    mv "$APK_FILE" "$APK_DIR/scoutbox-v${VERSION_NAME}-${VERSION_CODE}.apk" && \
     tool/build-apk-manifest.sh \
-      "build/app/outputs/flutter-apk" \
+      "$APK_DIR" \
       "${VERSION_NAME}" "${VERSION_CODE}" \
       /tmp/artifacts "${SHORT_SHA}"'
 
