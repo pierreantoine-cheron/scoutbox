@@ -1,46 +1,23 @@
-# syntax=docker/dockerfile:1.7
-
 FROM ghcr.io/cirruslabs/flutter:stable AS builder
 WORKDIR /app
-
-RUN SDKMANAGER=$(which sdkmanager 2>/dev/null || echo "") && \
-    if [ -z "$SDKMANAGER" ] && [ -n "${ANDROID_HOME:-}" ]; then \
-      SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"; \
-    fi && \
-    if [ -x "$SDKMANAGER" ]; then \
-      yes | "$SDKMANAGER" --licenses > /dev/null 2>&1; \
-      "$SDKMANAGER" --install \
-        "platforms;android-35" \
-        "build-tools;35.0.0"; \
-    else \
-      echo "sdkmanager not found, skipping pre-install"; \
-    fi
 
 COPY pubspec.* ./
 RUN flutter pub get
 
-COPY lib/ lib/
-COPY assets/ assets/
-COPY analysis_options.yaml build.yaml* l10n.yaml* ./
-
-RUN dart run build_runner build
-
-COPY android/ android/
-COPY tool/ tool/
-RUN chmod +x tool/compute-version.sh tool/build-apk-manifest.sh
+COPY . .
+RUN dart run build_runner build && \
+    chmod +x tool/compute-version.sh tool/build-apk-manifest.sh
 
 ARG APP_FLAVOR=production
 ENV APP_FLAVOR=${APP_FLAVOR}
 RUN bash -c '. tool/compute-version.sh && \
-    flutter build apk --release \
-      --flavor ${FLAVOR} \
-      --build-name=${VERSION_NAME} \
-      --build-number=${VERSION_CODE} && \
-    APK_FILE=build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk && \
-    APK_DIR=$(dirname "$APK_FILE") && \
-    mv "$APK_FILE" "$APK_DIR/scoutbox-v${VERSION_NAME}-${VERSION_CODE}.apk" && \
+    flutter build apk --release --flavor ${FLAVOR} \
+      --build-name=${VERSION_NAME} --build-number=${VERSION_CODE} && \
+    mkdir -p /tmp/artifacts && \
+    APK=build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk && \
+    cp "$APK" /tmp/artifacts/scoutbox-v${VERSION_NAME}-${VERSION_CODE}.apk && \
     tool/build-apk-manifest.sh \
-      "$APK_DIR" \
+      build/app/outputs/flutter-apk \
       "${VERSION_NAME}" "${VERSION_CODE}" \
       /tmp/artifacts "${SHORT_SHA}"'
 
