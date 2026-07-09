@@ -82,7 +82,8 @@ dotnet format
 ```
 scoutbox/
 ├── frontend/                    # Flutter application
-│   ├── Dockerfile               # Multi-stage (web/apk targets)
+│   ├── Dockerfile.web            # Web-only build
+│   ├── Dockerfile.apk            # APK-only build
 │   ├── nginx/
 │   │   ├── web.conf             # SPA fallback for Flutter web
 │   │   └── apk.conf             # Serves APK + manifest.json
@@ -175,15 +176,15 @@ Use windows-style line endings.
 
 | Env | Service | Domain | Dockerfile | Target | Build args |
 |---|---|---|---|---|---|
-| prod | web | `web.scoutbox.app` | `frontend/Dockerfile` | `--target=web` | (none) |
-| prod | apk | `download.scoutbox.app` | `frontend/Dockerfile` | `--target=apk` | `APP_FLAVOR=production` |
+| prod | web | `web.scoutbox.app` | `frontend/Dockerfile.web` | (single stage) | (none) |
+| prod | apk | `download.scoutbox.app` | `frontend/Dockerfile.apk` | (single stage) | `APP_FLAVOR=production` |
 | prod | site | `www.scoutbox.app` | `site/Dockerfile` | (single stage) | `PUBLIC_APK_MANIFEST_URL=https://download.scoutbox.app/manifest.json`, `PUBLIC_WEB_APP_URL=https://web.scoutbox.app` |
-| staging | web | `web.staging.scoutbox.app` | `frontend/Dockerfile` | `--target=web` | (none) |
-| staging | apk | `download.staging.scoutbox.app` | `frontend/Dockerfile` | `--target=apk` | `APP_FLAVOR=staging` |
+| staging | web | `web.staging.scoutbox.app` | `frontend/Dockerfile.web` | (single stage) | (none) |
+| staging | apk | `download.staging.scoutbox.app` | `frontend/Dockerfile.apk` | (single stage) | `APP_FLAVOR=staging` |
 
 ### Build conventions
 
-- **`APP_FLAVOR` build arg**: used only for the apk target. Values: `production` or `staging`. The web target takes no flavor arg (web builds are environment-agnostic).
+- **`APP_FLAVOR` build arg**: used only for the apk Dockerfile. Values: `production` or `staging`. The web Dockerfile takes no flavor arg (web builds are environment-agnostic).
 - **Versioning**: `versionName` is derived from the latest git tag (`git describe --tags --abbrev=0`). `versionCode` is the commit count (`git rev-list --count HEAD`). The versioning logic lives in `tool/compute-version.sh`.
 - **Manifest**: `tool/build-apk-manifest.sh` emits `manifest.json` with version, size, minSdk, and commit hash. It also copies the APK into the nginx runtime image.
 - **Full clone required**: Coolify must perform a full git clone for versioning to work. If shallow clones are unavoidable, set `OVERRIDE_VERSION_NAME` and `OVERRIDE_VERSION_CODE` build args to bypass git-based versioning.
