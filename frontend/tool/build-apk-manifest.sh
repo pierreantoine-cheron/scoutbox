@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ $# -lt 4 ]; then
-  echo "Usage: build-apk-manifest.sh <apk-output-dir> <version-name> <version-code> <artifacts-out-dir> [commit-sha]"
+  echo "Usage: build-apk-manifest.sh <apk-output-dir> <version-name> <version-code> <artifacts-out-dir>"
   exit 1
 fi
 
@@ -10,14 +10,12 @@ APK_DIR="$1"
 VERSION_NAME="$2"
 VERSION_CODE="$3"
 ARTIFACTS_DIR="$4"
-COMMIT_SHA="${5:-}"
 
 echo "--- build-apk-manifest ---"
 echo "APK_DIR: $APK_DIR"
 echo "VERSION_NAME: $VERSION_NAME"
 echo "VERSION_CODE: $VERSION_CODE"
 echo "ARTIFACTS_DIR: $ARTIFACTS_DIR"
-echo "COMMIT_SHA: ${COMMIT_SHA:-<empty>}"
 echo "ANDROID_HOME: ${ANDROID_HOME:-<not set>}"
 
 APK_FILE=$(ls "$APK_DIR"/scoutbox-v*.apk 2>/dev/null | head -1) || true
@@ -95,7 +93,6 @@ cat > "$ARTIFACTS_DIR/manifest.json" <<MANIFEST
   "versionName": "${VERSION_NAME}",
   "build": ${VERSION_CODE},
   "flavor": "${FLAVOR}",
-  "commit": "${COMMIT_SHA}",
   "filename": "${APK_FILENAME}",
   "sizeBytes": ${APK_BYTES},
   "sizeLabel": "${APK_SIZE}",

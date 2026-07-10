@@ -9,7 +9,11 @@ RUN dart run build_runner build && \
     chmod +x tool/compute-version.sh tool/build-apk-manifest.sh
 
 ARG APP_FLAVOR=production
+ARG VERSION_NAME
+ARG VERSION_CODE
 ENV APP_FLAVOR=${APP_FLAVOR}
+ENV VERSION_NAME=${VERSION_NAME}
+ENV VERSION_CODE=${VERSION_CODE}
 RUN bash -c '. tool/compute-version.sh && \
     flutter build apk --release --flavor ${FLAVOR} \
       --build-name=${VERSION_NAME} --build-number=${VERSION_CODE} && \
@@ -19,7 +23,7 @@ RUN bash -c '. tool/compute-version.sh && \
     tool/build-apk-manifest.sh \
       build/app/outputs/flutter-apk \
       "${VERSION_NAME}" "${VERSION_CODE}" \
-      /tmp/artifacts "${SHORT_SHA}"'
+      /tmp/artifacts'
 
 FROM nginx:alpine
 RUN rm -f /usr/share/nginx/html/index.html
