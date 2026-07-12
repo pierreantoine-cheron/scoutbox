@@ -63,7 +63,12 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
           ),
           const Divider(height: 1),
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
+            padding: EdgeInsets.only(
+              top: AppSpacing.sm,
+              left: AppSpacing.sm,
+              right: AppSpacing.sm,
+              bottom: AppSpacing.sm + MediaQuery.of(context).padding.bottom,
+            ),
             child: _DrawerItem(
               section: NavigationSection.settings,
               icon: NavigationSection.settings.icon,
