@@ -59,7 +59,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
       final isRootScreen = !appBarConfig.showBackButton;
 
-      return Scaffold(
+      Widget content = Scaffold(
         key: _scaffoldKey,
         appBar: _buildAppBar(
           config: appBarConfig,
@@ -101,9 +101,34 @@ class _AuthGateState extends ConsumerState<AuthGate> {
           ),
         ),
       );
+
+      if (kIsWeb) {
+        content = PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && !isRootScreen) {
+              _navigatorKey.currentState?.maybePop();
+            }
+          },
+          child: content,
+        );
+      }
+
+      return content;
     }
 
-    return authState.showLoginScreen ? const LoginScreen() : const RegisterScreen();
+    Widget authContent =
+        authState.showLoginScreen ? const LoginScreen() : const RegisterScreen();
+
+    if (kIsWeb) {
+      authContent = PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {},
+        child: authContent,
+      );
+    }
+
+    return authContent;
   }
 
   void _checkAuthenticatedInitialLinkOnce() {
