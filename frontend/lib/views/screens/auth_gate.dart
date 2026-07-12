@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../providers/providers.dart';
 import '../../services/deep_link_service.dart';
+import '../../services/web_back_guard.dart';
 import '../../utils/design_constants.dart';
 import '../widgets/widgets.dart';
 import 'login_screen.dart';
@@ -25,6 +26,7 @@ class AuthGate extends ConsumerStatefulWidget {
 class _AuthGateState extends ConsumerState<AuthGate> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _webBackGuard = WebBackGuard();
   late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
   bool _checkedAuthenticatedInitialLink = false;
 
@@ -32,6 +34,13 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   void initState() {
     super.initState();
     _routeObserver = ref.read(routeObserverProvider);
+    _webBackGuard.initialize();
+  }
+
+  @override
+  void dispose() {
+    _webBackGuard.dispose();
+    super.dispose();
   }
 
   @override
@@ -117,8 +126,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       return content;
     }
 
-    Widget authContent =
-        authState.showLoginScreen ? const LoginScreen() : const RegisterScreen();
+    Widget authContent = authState.showLoginScreen ? const LoginScreen() : const RegisterScreen();
 
     if (kIsWeb) {
       authContent = PopScope(
