@@ -19,7 +19,7 @@ RUN bash -c '. tool/compute-version.sh && \
       --build-name=${VERSION_NAME} --build-number=${VERSION_CODE} && \
     mkdir -p /tmp/artifacts && \
     APK=build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk && \
-    cp "$APK" /tmp/artifacts/scoutbox-v${VERSION_NAME}-${VERSION_CODE}.apk && \
+    cp "$APK" "build/app/outputs/flutter-apk/scoutbox-v${VERSION_NAME}-${VERSION_CODE}.apk" && \
     tool/build-apk-manifest.sh \
       build/app/outputs/flutter-apk \
       "${VERSION_NAME}" "${VERSION_CODE}" \
