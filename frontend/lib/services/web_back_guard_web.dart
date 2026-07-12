@@ -5,9 +5,12 @@ import 'package:web/web.dart' as web;
 class WebBackGuard {
   JSFunction? _popStateListener;
 
-  void initialize() {
+  void initialize(void Function() onBack) {
     _pushGuard();
-    _popStateListener = ((web.Event _) => _pushGuard()).toJS;
+    _popStateListener = ((web.Event _) {
+      _pushGuard();
+      onBack();
+    }).toJS;
     web.window.addEventListener('popstate', _popStateListener);
   }
 
@@ -20,6 +23,10 @@ class WebBackGuard {
   }
 
   void _pushGuard() {
-    web.window.history.pushState(null, '', web.window.location.href);
+    web.window.history.pushState(
+      web.window.history.state,
+      '',
+      web.window.location.href,
+    );
   }
 }

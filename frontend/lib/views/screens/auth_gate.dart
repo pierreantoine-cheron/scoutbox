@@ -34,7 +34,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   void initState() {
     super.initState();
     _routeObserver = ref.read(routeObserverProvider);
-    _webBackGuard.initialize();
+    _webBackGuard.initialize(_handleBack);
   }
 
   @override
@@ -93,10 +93,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
               ),
         floatingActionButton: isDesktop ? null : appBarConfig.fab,
         body: NavigatorPopHandler(
-          enabled: !isRootScreen,
-          onPopWithResult: (_) {
-            _navigatorKey.currentState?.maybePop();
-          },
+          enabled: !kIsWeb && !isRootScreen,
+          onPopWithResult: (_) => _handleBack(),
           child: Navigator(
             key: _navigatorKey,
             observers: [_routeObserver],
@@ -114,11 +112,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       if (kIsWeb) {
         content = PopScope(
           canPop: false,
-          onPopInvokedWithResult: (didPop, _) {
-            if (!didPop && !isRootScreen) {
-              _navigatorKey.currentState?.maybePop();
-            }
-          },
+          onPopInvokedWithResult: (_, _) {},
           child: content,
         );
       }
@@ -137,6 +131,10 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     }
 
     return authContent;
+  }
+
+  void _handleBack() {
+    _navigatorKey.currentState?.maybePop();
   }
 
   void _checkAuthenticatedInitialLinkOnce() {
@@ -222,7 +220,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       );
     } else if (!isRootScreen) {
       leading = BackButton(
-        onPressed: () => _navigatorKey.currentState?.pop(),
+        onPressed: _handleBack,
       );
     }
 
