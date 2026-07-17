@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../providers/providers.dart';
 import '../../services/deep_link_service.dart';
-import '../../services/web_back_guard.dart';
 import '../../utils/design_constants.dart';
 import '../widgets/widgets.dart';
 import 'login_screen.dart';
@@ -26,7 +25,6 @@ class AuthGate extends ConsumerStatefulWidget {
 class _AuthGateState extends ConsumerState<AuthGate> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _webBackGuard = WebBackGuard();
   late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
   bool _checkedAuthenticatedInitialLink = false;
 
@@ -34,13 +32,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   void initState() {
     super.initState();
     _routeObserver = ref.read(routeObserverProvider);
-    _webBackGuard.initialize(_handleBack);
-  }
-
-  @override
-  void dispose() {
-    _webBackGuard.dispose();
-    super.dispose();
   }
 
   @override
@@ -93,7 +84,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
               ),
         floatingActionButton: isDesktop ? null : appBarConfig.fab,
         body: NavigatorPopHandler(
-          enabled: !kIsWeb && !isRootScreen,
           onPopWithResult: (_) => _handleBack(),
           child: Navigator(
             key: _navigatorKey,
@@ -112,7 +102,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       if (kIsWeb) {
         content = PopScope(
           canPop: false,
-          onPopInvokedWithResult: (_, _) {},
           child: content,
         );
       }
@@ -125,7 +114,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     if (kIsWeb) {
       authContent = PopScope(
         canPop: false,
-        onPopInvokedWithResult: (didPop, _) {},
         child: authContent,
       );
     }
