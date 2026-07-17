@@ -46,6 +46,9 @@ class FakeAuthService extends AuthService {
       ),
     );
   }
+
+  @override
+  Future<void> saveCurrentUsername(String username) async {}
 }
 
 void main() {

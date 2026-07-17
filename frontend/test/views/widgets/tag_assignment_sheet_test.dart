@@ -76,7 +76,10 @@ void main() {
             tentRepositoryProvider.overrideWithValue(_TentRepositoryStub()),
           ],
           child: MaterialApp(
-            theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
+            theme: ThemeData(
+              splashFactory: NoSplash.splashFactory,
+              extensions: const [AppTheme.semanticColorsForTests],
+            ),
             home: Builder(
               builder: (context) {
                 return Scaffold(
@@ -121,7 +124,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Une erreur est survenue. Veuillez r\u00e9essayer.'),
+        find.text('Impossible de modifier les étiquettes.'),
         findsOneWidget,
       );
     });
@@ -141,7 +144,10 @@ Widget _buildWidget({List<Tag>? tags, _TentRepositoryStub? tentRepository}) {
       ),
     ],
     child: MaterialApp(
-      theme: ThemeData(splashFactory: NoSplash.splashFactory, extensions: const [AppTheme.semanticColorsForTests]),
+      theme: ThemeData(
+        splashFactory: NoSplash.splashFactory,
+        extensions: const [AppTheme.semanticColorsForTests],
+      ),
       home: const Scaffold(
         body: TagAssignmentSheet(tentId: 'tent-1', assignedTagIds: {'tag-1'}),
       ),

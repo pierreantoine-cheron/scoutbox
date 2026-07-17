@@ -76,7 +76,7 @@ void main() {
       expect(state.isSaving('part-1'), isFalse);
       expect(
         state.errorFor('part-1'),
-        'Une erreur est survenue. Veuillez réessayer.',
+        'Échec réseau.',
       );
       expect(
         state.resolveDisplayedState(_part(PartState.good)),

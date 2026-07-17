@@ -81,7 +81,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.textContaining('Une erreur est survenue'),
+        find.text('Impossible de charger le détail de la tente.'),
         findsOneWidget,
       );
       expect(find.text('Réessayer'), findsOneWidget);
@@ -238,7 +238,7 @@ void main() {
       expect(repo.updateCallCount, equals(0));
     });
 
-    testWidgets('parts remain read-only when fields are edited inline', (
+    testWidgets('parts remain read-only after cancelling name editing', (
       tester,
     ) async {
       final repo = _EditableTentRepository();
@@ -255,7 +255,10 @@ void main() {
       await tester.tap(find.text('Tente Atlas'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Éléments (1)'), findsOneWidget);
+      expect(find.text('Modifier le nom'), findsOneWidget);
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+
       expect(find.text('Toile extérieure'), findsOneWidget);
     });
 
@@ -339,7 +342,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text('Une erreur est survenue. Veuillez réessayer.'),
+        find.text('Impossible d\'archiver la tente. Réessayez.'),
         findsOneWidget,
       );
       expect(find.text('Tente Atlas'), findsOneWidget);
@@ -554,7 +557,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-          find.text('Une erreur est survenue. Veuillez réessayer.'),
+          find.text('Impossible de supprimer les pièces. Réessayez.'),
           findsOneWidget,
         );
         expect(find.byIcon(Icons.close), findsWidgets);
