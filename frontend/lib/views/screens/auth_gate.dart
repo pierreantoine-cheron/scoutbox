@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../providers/providers.dart';
 import '../../services/deep_link_service.dart';
+import '../../services/firefox_mobile_back_bridge.dart';
 import '../../utils/design_constants.dart';
 import '../widgets/widgets.dart';
 import 'login_screen.dart';
@@ -25,6 +26,7 @@ class AuthGate extends ConsumerStatefulWidget {
 class _AuthGateState extends ConsumerState<AuthGate> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _firefoxMobileBackBridge = FirefoxMobileBackBridge();
   late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
   bool _checkedAuthenticatedInitialLink = false;
 
@@ -32,6 +34,13 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   void initState() {
     super.initState();
     _routeObserver = ref.read(routeObserverProvider);
+    _firefoxMobileBackBridge.initialize(_handleFirefoxMobileBack);
+  }
+
+  @override
+  void dispose() {
+    _firefoxMobileBackBridge.dispose();
+    super.dispose();
   }
 
   @override
@@ -123,6 +132,11 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
   void _handleBack() {
     _navigatorKey.currentState?.maybePop();
+  }
+
+  void _handleFirefoxMobileBack() {
+    if (!mounted) return;
+    Navigator.of(context).maybePop();
   }
 
   void _checkAuthenticatedInitialLinkOnce() {

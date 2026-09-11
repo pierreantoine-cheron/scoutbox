@@ -7,35 +7,18 @@ import 'package:client/utils/app_theme.dart';
 import 'package:client/views/screens/auth_gate.dart';
 import 'package:client/views/screens/tent_detail_screen.dart';
 import 'package:client/views/screens/tent_list_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../helpers/firefox_mobile_back_event.dart';
 
 void main() {
   testWidgets('back pops a nested page and is consumed at the section root', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(600, 900);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          authProvider.overrideWithValue(const AuthState(isAuthenticated: true)),
-          tentRepositoryProvider.overrideWithValue(_TentRepositoryStub()),
-          tentListProvider.overrideWith(() => _TentListNotifier()),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-          home: const AuthGate(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await _pumpAuthenticatedApp(tester);
 
     expect(find.byType(TentListScreen), findsOneWidget);
     await tester.tap(find.text('Tente Atlas'));
@@ -53,6 +36,53 @@ void main() {
 
     expect(find.byType(TentListScreen), findsOneWidget);
   });
+
+  testWidgets(
+    'Firefox mobile back event uses the outer navigation pipeline',
+    (WidgetTester tester) async {
+      await _pumpAuthenticatedApp(tester);
+
+      await tester.tap(find.text('Tente Atlas'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TentDetailScreen), findsOneWidget);
+
+      dispatchFirefoxMobileBackEvent();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TentDetailScreen), findsNothing);
+      expect(find.byType(TentListScreen), findsOneWidget);
+
+      dispatchFirefoxMobileBackEvent();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TentListScreen), findsOneWidget);
+    },
+    skip: !kIsWeb,
+  );
+}
+
+Future<void> _pumpAuthenticatedApp(WidgetTester tester) async {
+  tester.view.physicalSize = const Size(600, 900);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        authProvider.overrideWithValue(const AuthState(isAuthenticated: true)),
+        tentRepositoryProvider.overrideWithValue(_TentRepositoryStub()),
+        tentListProvider.overrideWith(() => _TentListNotifier()),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+        home: const AuthGate(),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
 
 class _TentListNotifier extends TentListNotifier {
