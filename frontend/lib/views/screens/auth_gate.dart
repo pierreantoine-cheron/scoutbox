@@ -12,11 +12,23 @@ import 'register_screen.dart';
 import 'models_screen.dart';
 import 'part_kinds_screen.dart';
 import 'tags_screen.dart';
+import 'tent_detail_screen.dart';
 import 'tent_list_screen.dart';
 import 'settings_screen.dart';
 
 class AuthGate extends ConsumerStatefulWidget {
-  const AuthGate({super.key});
+  final String? browserTentId;
+  final ValueChanged<String>? onOpenTentDetail;
+  final VoidCallback? onReturnToRoot;
+  final VoidCallback? onBrowserBack;
+
+  const AuthGate({
+    super.key,
+    this.browserTentId,
+    this.onOpenTentDetail,
+    this.onReturnToRoot,
+    this.onBrowserBack,
+  });
 
   @override
   ConsumerState<AuthGate> createState() => _AuthGateState();
@@ -27,6 +39,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
   bool _checkedAuthenticatedInitialLink = false;
+  String? _localTentId;
 
   @override
   void initState() {
@@ -37,6 +50,15 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+
+    ref.listen(authProvider, (previous, next) {
+      if (previous?.isAuthenticated == true && !next.isAuthenticated) {
+        final onReturnToRoot = widget.onReturnToRoot;
+        if (onReturnToRoot != null) {
+          Router.neglect(context, onReturnToRoot);
+        }
+      }
+    });
 
     ref.listen<DeepLinkEvent?>(deepLinkProvider, (previous, next) {
       if (next != null && authState.isAuthenticated) {
@@ -88,13 +110,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
           child: Navigator(
             key: _navigatorKey,
             observers: [_routeObserver],
-            onGenerateInitialRoutes: (navigator, initialRoute) {
-              return [
-                MaterialPageRoute(
-                  builder: (_) => _buildRootScreen(section),
-                ),
-              ];
-            },
+            pages: _buildPages(section),
+            onDidRemovePage: _handlePageRemoved,
           ),
         ),
       );
@@ -104,7 +121,59 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   }
 
   void _handleBack() {
+    if (widget.browserTentId != null) {
+      final onBrowserBack = widget.onBrowserBack;
+      if (onBrowserBack != null) {
+        onBrowserBack();
+        return;
+      }
+
+      final onReturnToRoot = widget.onReturnToRoot;
+      if (onReturnToRoot != null) {
+        Router.neglect(context, onReturnToRoot);
+        return;
+      }
+    }
+
     _navigatorKey.currentState?.maybePop();
+  }
+
+  List<Page<void>> _buildPages(NavigationSection section) {
+    final tentId = widget.onOpenTentDetail == null ? _localTentId : widget.browserTentId;
+    return [
+      MaterialPage<void>(
+        key: ValueKey('section-${section.name}'),
+        child: _buildRootScreen(section),
+      ),
+      if (tentId != null)
+        MaterialPage<void>(
+          key: ValueKey('tent-$tentId'),
+          child: TentDetailScreen(tentId: tentId),
+        ),
+    ];
+  }
+
+  void _handlePageRemoved(Page<void> page) {
+    final key = page.key;
+    if (key is! ValueKey<String> || !key.value.startsWith('tent-')) {
+      return;
+    }
+
+    final onReturnToRoot = widget.onReturnToRoot;
+    if (onReturnToRoot != null) {
+      onReturnToRoot();
+    } else if (mounted) {
+      setState(() => _localTentId = null);
+    }
+  }
+
+  void _openTentDetail(String tentId) {
+    final onOpenTentDetail = widget.onOpenTentDetail;
+    if (onOpenTentDetail != null) {
+      onOpenTentDetail(tentId);
+    } else {
+      setState(() => _localTentId = tentId);
+    }
   }
 
   void _checkAuthenticatedInitialLinkOnce() {
@@ -152,21 +221,21 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   }
 
   void _navigateToSection(NavigationSection section) {
+    widget.onReturnToRoot?.call();
     ref
         .read(appBarConfigProvider.notifier)
         .set(
           const AppBarConfig(screenId: ''),
         );
     ref.read(navigationSectionProvider.notifier).set(section);
-    _navigatorKey.currentState?.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => _buildRootScreen(section)),
-      (_) => false,
-    );
   }
 
   Widget _buildRootScreen(NavigationSection section) {
     return switch (section) {
-      NavigationSection.tents => const TentListScreen(),
+      NavigationSection.tents => TentListScreen(
+        onOpenTentDetail: _openTentDetail,
+        onSwitchToTags: () => _navigateToSection(NavigationSection.tags),
+      ),
       NavigationSection.tags => const TagsScreen(),
       NavigationSection.parts => const PartKindsScreen(),
       NavigationSection.models => const ModelsScreen(),

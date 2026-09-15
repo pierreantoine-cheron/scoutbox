@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'navigation/app_router.dart';
 import 'providers/providers.dart';
 import 'utils/app_theme.dart';
-import 'views/screens/auth_gate.dart';
-import 'views/widgets/widgets.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +19,7 @@ class ScoutBoxApp extends ConsumerStatefulWidget {
 }
 
 class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> with WidgetsBindingObserver {
-  bool _isInitializing = true;
+  final _routerDelegate = AppRouterDelegate();
 
   @override
   void initState() {
@@ -32,6 +31,7 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> with WidgetsBindingOb
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _routerDelegate.dispose();
     super.dispose();
   }
 
@@ -56,9 +56,7 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> with WidgetsBindingOb
       debugPrint('Auth initialization failed: $e');
     }
     if (mounted) {
-      setState(() {
-        _isInitializing = false;
-      });
+      _routerDelegate.completeInitialization();
     }
   }
 
@@ -70,19 +68,12 @@ class _ScoutBoxAppState extends ConsumerState<ScoutBoxApp> with WidgetsBindingOb
   Widget build(BuildContext context) {
     ref.watch(authProvider);
 
-    if (_isInitializing) {
-      return MaterialApp(
-        title: 'ScoutBox',
-        theme: AppTheme.minimal(),
-        home: const Scaffold(body: Center(child: AppProgressIndicator())),
-      );
-    }
-
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'ScoutBox',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme(context),
-      home: const AuthGate(),
+      routerDelegate: _routerDelegate,
+      routeInformationParser: const AppRouteInformationParser(),
     );
   }
 }

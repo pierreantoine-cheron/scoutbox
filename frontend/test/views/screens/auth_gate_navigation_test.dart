@@ -1,5 +1,6 @@
 import 'package:client/models/auth_state.dart';
 import 'package:client/models/tent.dart';
+import 'package:client/navigation/app_router.dart';
 import 'package:client/providers/auth_provider.dart';
 import 'package:client/providers/tent_list_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
@@ -47,9 +48,42 @@ void main() {
       expect(find.byType(BackButton), findsNothing);
     },
   );
+
+  testWidgets('browser history restores tent list and detail routes', (
+    WidgetTester tester,
+  ) async {
+    final routerDelegate = AppRouterDelegate()..completeInitialization();
+    final routeInformationProvider = _TestRouteInformationProvider();
+    addTearDown(routerDelegate.dispose);
+    addTearDown(routeInformationProvider.dispose);
+
+    await _pumpAuthenticatedApp(
+      tester,
+      app: MaterialApp.router(
+        theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+        routeInformationProvider: routeInformationProvider,
+        routeInformationParser: const AppRouteInformationParser(),
+        routerDelegate: routerDelegate,
+      ),
+    );
+
+    await tester.tap(find.text('Tente Atlas'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TentDetailScreen), findsOneWidget);
+    expect(routerDelegate.currentConfiguration.uri.path, '/tents/tent-1');
+
+    routeInformationProvider.go('/');
+    await tester.pumpAndSettle();
+    expect(find.byType(TentListScreen), findsOneWidget);
+    expect(find.byType(TentDetailScreen), findsNothing);
+
+    routeInformationProvider.go('/tents/tent-1');
+    await tester.pumpAndSettle();
+    expect(find.byType(TentDetailScreen), findsOneWidget);
+  });
 }
 
-Future<void> _pumpAuthenticatedApp(WidgetTester tester) async {
+Future<void> _pumpAuthenticatedApp(WidgetTester tester, {Widget? app}) async {
   tester.view.physicalSize = const Size(600, 900);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(() {
@@ -64,13 +98,35 @@ Future<void> _pumpAuthenticatedApp(WidgetTester tester) async {
         tentRepositoryProvider.overrideWithValue(_TentRepositoryStub()),
         tentListProvider.overrideWith(() => _TentListNotifier()),
       ],
-      child: MaterialApp(
-        theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-        home: const AuthGate(),
-      ),
+      child:
+          app ??
+          MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: const AuthGate(),
+          ),
     ),
   );
   await tester.pumpAndSettle();
+}
+
+class _TestRouteInformationProvider extends RouteInformationProvider with ChangeNotifier {
+  RouteInformation _value = RouteInformation(uri: Uri(path: '/'));
+
+  @override
+  RouteInformation get value => _value;
+
+  void go(String location) {
+    _value = RouteInformation(uri: Uri.parse(location));
+    notifyListeners();
+  }
+
+  @override
+  void routerReportsNewRouteInformation(
+    RouteInformation routeInformation, {
+    RouteInformationReportingType type = RouteInformationReportingType.none,
+  }) {
+    _value = routeInformation;
+  }
 }
 
 class _TentListNotifier extends TentListNotifier {
