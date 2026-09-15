@@ -7,15 +7,12 @@ import 'package:client/utils/app_theme.dart';
 import 'package:client/views/screens/auth_gate.dart';
 import 'package:client/views/screens/tent_detail_screen.dart';
 import 'package:client/views/screens/tent_list_screen.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../helpers/firefox_mobile_back_event.dart';
-
 void main() {
-  testWidgets('back pops a nested page and is consumed at the section root', (
+  testWidgets('system back pops a nested page', (
     WidgetTester tester,
   ) async {
     await _pumpAuthenticatedApp(tester);
@@ -30,15 +27,10 @@ void main() {
 
     expect(find.byType(TentDetailScreen), findsNothing);
     expect(find.byType(TentListScreen), findsOneWidget);
-
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-
-    expect(find.byType(TentListScreen), findsOneWidget);
   });
 
   testWidgets(
-    'Firefox mobile back event uses the outer navigation pipeline',
+    'app bar back pops a nested page',
     (WidgetTester tester) async {
       await _pumpAuthenticatedApp(tester);
 
@@ -46,18 +38,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TentDetailScreen), findsOneWidget);
 
-      dispatchFirefoxMobileBackEvent();
+      await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
       expect(find.byType(TentDetailScreen), findsNothing);
       expect(find.byType(TentListScreen), findsOneWidget);
 
-      dispatchFirefoxMobileBackEvent();
-      await tester.pumpAndSettle();
-
-      expect(find.byType(TentListScreen), findsOneWidget);
+      expect(find.byType(BackButton), findsNothing);
     },
-    skip: !kIsWeb,
   );
 }
 
