@@ -44,9 +44,10 @@ void main() {
       expect(find.byIcon(Icons.logout), findsNothing);
     });
 
-    testWidgets('opens tent creation screen from empty-state action', (
+    testWidgets('requests tent creation from empty-state action', (
       WidgetTester tester,
     ) async {
+      var createTentCalls = 0;
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -60,7 +61,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const _TentListTestShell(),
+            home: _TentListTestShell(onCreateTent: () => createTentCalls++),
           ),
         ),
       );
@@ -71,10 +72,7 @@ void main() {
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Aucun modèle de tente disponible pour le moment.'),
-        findsOneWidget,
-      );
+      expect(createTentCalls, 1);
     });
 
     testWidgets('renders desktop table for wide screens', (
@@ -301,7 +299,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -382,7 +380,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -412,7 +410,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -434,7 +432,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -482,7 +480,7 @@ void main() {
           overrides: [tentListProvider.overrideWith(() => notifier)],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -508,7 +506,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -533,7 +531,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -676,7 +674,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -710,7 +708,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -777,7 +775,7 @@ void main() {
             ],
             child: MaterialApp(
               theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-              home: const TentListScreen(),
+              home: _tentListScreen(),
             ),
           ),
         );
@@ -819,7 +817,7 @@ void main() {
             ],
             child: MaterialApp(
               theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-              home: const TentListScreen(),
+              home: _tentListScreen(),
             ),
           ),
         );
@@ -856,7 +854,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -889,7 +887,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -923,7 +921,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -989,7 +987,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -1017,7 +1015,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -1055,7 +1053,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const TentListScreen(),
+            home: _tentListScreen(),
           ),
         ),
       );
@@ -1069,9 +1067,10 @@ void main() {
       expect(find.text('Dome'), findsWidgets);
     });
 
-    testWidgets('opens tent creation screen from fab', (
+    testWidgets('requests tent creation from fab', (
       WidgetTester tester,
     ) async {
+      var createTentCalls = 0;
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -1095,7 +1094,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const _TentListTestShell(),
+            home: _TentListTestShell(onCreateTent: () => createTentCalls++),
           ),
         ),
       );
@@ -1104,16 +1103,15 @@ void main() {
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Aucun modèle de tente disponible pour le moment.'),
-        findsOneWidget,
-      );
+      expect(createTentCalls, 1);
     });
   });
 }
 
 class _TentListTestShell extends ConsumerWidget {
-  const _TentListTestShell();
+  final VoidCallback? onCreateTent;
+
+  const _TentListTestShell({this.onCreateTent});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1124,7 +1122,7 @@ class _TentListTestShell extends ConsumerWidget {
         actions: appBarConfig.actions,
       ),
       floatingActionButton: appBarConfig.fab,
-      body: const TentListScreen(),
+      body: _tentListScreen(onCreateTent: onCreateTent),
     );
   }
 }
@@ -1382,4 +1380,12 @@ class _TentModelsFailingNotifier extends TentModelsNotifier {
 class _TentModelsLoadingNotifier extends TentModelsNotifier {
   @override
   Future<List<TentModel>> build() => Completer<List<TentModel>>().future;
+}
+
+Widget _tentListScreen({VoidCallback? onCreateTent}) {
+  return TentListScreen(
+    onOpenTentDetail: (_) {},
+    onSwitchToTags: () {},
+    onCreateTent: onCreateTent ?? () {},
+  );
 }

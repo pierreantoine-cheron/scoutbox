@@ -5,7 +5,6 @@ import 'package:client/providers/auth_provider.dart';
 import 'package:client/providers/tent_list_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/utils/app_theme.dart';
-import 'package:client/views/screens/auth_gate.dart';
 import 'package:client/views/screens/tent_detail_screen.dart';
 import 'package:client/views/screens/tent_list_screen.dart';
 import 'package:flutter/material.dart';
@@ -13,9 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('system back pops a nested page', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('system back pops a nested page', (WidgetTester tester) async {
     await _pumpAuthenticatedApp(tester);
 
     expect(find.byType(TentListScreen), findsOneWidget);
@@ -30,84 +27,68 @@ void main() {
     expect(find.byType(TentListScreen), findsOneWidget);
   });
 
-  testWidgets(
-    'app bar back pops a nested page',
-    (WidgetTester tester) async {
-      await _pumpAuthenticatedApp(tester);
-
-      await tester.tap(find.text('Tente Atlas'));
-      await tester.pumpAndSettle();
-      expect(find.byType(TentDetailScreen), findsOneWidget);
-
-      await tester.tap(find.byType(BackButton));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(TentDetailScreen), findsNothing);
-      expect(find.byType(TentListScreen), findsOneWidget);
-
-      expect(find.byType(BackButton), findsNothing);
-    },
-  );
-
-  testWidgets('browser history restores tent list and detail routes', (
-    WidgetTester tester,
-  ) async {
-    final routerDelegate = AppRouterDelegate()..completeInitialization();
-    final routeInformationProvider = _TestRouteInformationProvider();
-    addTearDown(routerDelegate.dispose);
-    addTearDown(routeInformationProvider.dispose);
-
-    await _pumpAuthenticatedApp(
-      tester,
-      app: MaterialApp.router(
-        theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-        routeInformationProvider: routeInformationProvider,
-        routeInformationParser: const AppRouteInformationParser(),
-        routerDelegate: routerDelegate,
-      ),
-    );
+  testWidgets('app bar back pops a nested page', (WidgetTester tester) async {
+    await _pumpAuthenticatedApp(tester);
 
     await tester.tap(find.text('Tente Atlas'));
     await tester.pumpAndSettle();
     expect(find.byType(TentDetailScreen), findsOneWidget);
-    expect(routerDelegate.currentConfiguration.uri.path, '/tents/tent-1');
 
-    routeInformationProvider.go('/');
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TentDetailScreen), findsNothing);
+    expect(find.byType(TentListScreen), findsOneWidget);
+
+    expect(find.byType(BackButton), findsNothing);
+  });
+
+  testWidgets('browser history restores tent list and detail routes', (
+    WidgetTester tester,
+  ) async {
+    final router = await _pumpAuthenticatedApp(tester);
+
+    await tester.tap(find.text('Tente Atlas'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TentDetailScreen), findsOneWidget);
+    expect(router.delegate.currentConfiguration.uri.path, '/tents/tent-1');
+
+    router.routeInformationProvider.go('/');
     await tester.pumpAndSettle();
     expect(find.byType(TentListScreen), findsOneWidget);
     expect(find.byType(TentDetailScreen), findsNothing);
 
-    routeInformationProvider.go('/tents/tent-1');
+    router.routeInformationProvider.go('/tents/tent-1');
     await tester.pumpAndSettle();
     expect(find.byType(TentDetailScreen), findsOneWidget);
   });
 
   testWidgets('direct detail back reports the tents URL', (WidgetTester tester) async {
-    final routerDelegate = AppRouterDelegate()..completeInitialization();
-    final routeInformationProvider = _TestRouteInformationProvider('/tents/tent-1');
-    addTearDown(routerDelegate.dispose);
-    addTearDown(routeInformationProvider.dispose);
-
-    await _pumpAuthenticatedApp(
-      tester,
-      app: MaterialApp.router(
-        theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-        routeInformationProvider: routeInformationProvider,
-        routeInformationParser: const AppRouteInformationParser(),
-        routerDelegate: routerDelegate,
-      ),
-    );
+    final router = await _pumpAuthenticatedApp(tester, location: '/tents/tent-1');
 
     expect(find.byType(TentDetailScreen), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
     expect(find.byType(TentListScreen), findsOneWidget);
-    expect(routeInformationProvider.value.uri.path, '/');
+    expect(router.routeInformationProvider.value.uri.path, '/');
   });
 }
 
-Future<void> _pumpAuthenticatedApp(WidgetTester tester, {Widget? app}) async {
+typedef _RouterFixture = ({
+  AppRouterDelegate delegate,
+  _TestRouteInformationProvider routeInformationProvider,
+});
+
+Future<_RouterFixture> _pumpAuthenticatedApp(
+  WidgetTester tester, {
+  String location = '/',
+}) async {
+  final delegate = AppRouterDelegate()..completeInitialization();
+  final routeInformationProvider = _TestRouteInformationProvider(location);
+  addTearDown(delegate.dispose);
+  addTearDown(routeInformationProvider.dispose);
+
   tester.view.physicalSize = const Size(600, 900);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(() {
@@ -122,15 +103,16 @@ Future<void> _pumpAuthenticatedApp(WidgetTester tester, {Widget? app}) async {
         tentRepositoryProvider.overrideWithValue(_TentRepositoryStub()),
         tentListProvider.overrideWith(() => _TentListNotifier()),
       ],
-      child:
-          app ??
-          MaterialApp(
-            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
-            home: const AuthGate(),
-          ),
+      child: MaterialApp.router(
+        theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+        routeInformationProvider: routeInformationProvider,
+        routeInformationParser: const AppRouteInformationParser(),
+        routerDelegate: delegate,
+      ),
     ),
   );
   await tester.pumpAndSettle();
+  return (delegate: delegate, routeInformationProvider: routeInformationProvider);
 }
 
 class _TestRouteInformationProvider extends RouteInformationProvider with ChangeNotifier {

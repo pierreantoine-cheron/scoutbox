@@ -48,7 +48,7 @@ void main() {
               splashFactory: NoSplash.splashFactory,
               extensions: const [AppTheme.semanticColorsForTests],
             ),
-            home: const TentDetailScreen(tentId: 'tent-1'),
+            home: TentDetailScreen(tentId: 'tent-1', onManageTags: () {}),
           ),
         ),
       );
@@ -73,7 +73,7 @@ void main() {
               splashFactory: NoSplash.splashFactory,
               extensions: const [AppTheme.semanticColorsForTests],
             ),
-            home: const TentDetailScreen(tentId: 'tent-1'),
+            home: TentDetailScreen(tentId: 'tent-1', onManageTags: () {}),
           ),
         ),
       );
@@ -745,7 +745,7 @@ Widget _testApp() {
       splashFactory: NoSplash.splashFactory,
       extensions: const [AppTheme.semanticColorsForTests],
     ),
-    home: const TentDetailScreen(tentId: 'tent-1'),
+    home: TentDetailScreen(tentId: 'tent-1', onManageTags: () {}),
   );
 }
 
@@ -763,7 +763,7 @@ Widget _testAppWithAppBar() {
             title: appBarConfig.title,
             actions: appBarConfig.actions,
           ),
-          body: const TentDetailScreen(tentId: 'tent-1'),
+          body: TentDetailScreen(tentId: 'tent-1', onManageTags: () {}),
         );
       },
     ),

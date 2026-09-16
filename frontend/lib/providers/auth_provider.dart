@@ -5,7 +5,6 @@ import '../services/services.dart';
 import '../models/auth_state.dart';
 import '../models/invite_response.dart';
 import 'app_bar_config_provider.dart';
-import 'navigation_provider.dart';
 
 part 'auth_provider.g.dart';
 
@@ -27,7 +26,6 @@ class AuthNotifier extends _$AuthNotifier {
 
   /// Sets state to logged-out with success message (used after logout)
   void _setLoggedOutSuccessState() {
-    ref.invalidate(navigationSectionProvider);
     ref.invalidate(appBarConfigProvider);
     state = const AuthState(
       isLoading: false,

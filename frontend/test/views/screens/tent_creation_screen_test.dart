@@ -17,7 +17,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -57,7 +57,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_FailingTentRepository()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -99,7 +99,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -131,7 +131,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -152,7 +152,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -217,7 +217,7 @@ void main() {
               _EmptyModelsTentRepository(),
             ),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -236,7 +236,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [tentRepositoryProvider.overrideWithValue(repo)],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -264,7 +264,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -324,7 +324,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_FailingTentRepository()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -355,7 +355,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -378,7 +378,7 @@ void main() {
           overrides: [
             tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
           ],
-          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: const TentCreationScreen()),
+          child: MaterialApp(theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory), home: _tentCreationScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -401,7 +401,13 @@ class _TentCreationHostScreen extends StatelessWidget {
         child: ElevatedButton(
           onPressed: () {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const TentCreationScreen()),
+              MaterialPageRoute(
+                builder: (routeContext) => TentCreationScreen(
+                  onCreated: (_) {},
+                  onLeaveConfirmed: () => Navigator.of(routeContext).pop(),
+                  onLeaveHandlerChanged: (_) {},
+                ),
+              ),
             );
           },
           child: const Text('Ouvrir création'),
@@ -473,4 +479,12 @@ class _FailingTentRepository extends _SuccessTentRepository {
       message: 'Tent name already exists',
     );
   }
+}
+
+Widget _tentCreationScreen() {
+  return TentCreationScreen(
+    onCreated: (_) {},
+    onLeaveConfirmed: () {},
+    onLeaveHandlerChanged: (_) {},
+  );
 }

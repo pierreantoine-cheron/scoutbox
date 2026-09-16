@@ -15,9 +15,9 @@ import '../widgets/widgets.dart';
 
 class TentDetailScreen extends ConsumerStatefulWidget {
   final String tentId;
-  final VoidCallback? onManageTags;
+  final VoidCallback onManageTags;
 
-  const TentDetailScreen({super.key, required this.tentId, this.onManageTags});
+  const TentDetailScreen({super.key, required this.tentId, required this.onManageTags});
 
   @override
   ConsumerState<TentDetailScreen> createState() => _TentDetailScreenState();
@@ -263,12 +263,12 @@ class _UnarchiveAppBarButtonState extends ConsumerState<_UnarchiveAppBarButton> 
 class _DetailContent extends ConsumerWidget {
   final String tentId;
   final Tent tent;
-  final VoidCallback? onManageTags;
+  final VoidCallback onManageTags;
 
   const _DetailContent({
     required this.tentId,
     required this.tent,
-    this.onManageTags,
+    required this.onManageTags,
   });
 
   @override
@@ -773,9 +773,9 @@ class _CommentsPreview extends ConsumerWidget {
 class _TagsBlock extends ConsumerWidget {
   final String tentId;
   final Tent tent;
-  final VoidCallback? onManageTags;
+  final VoidCallback onManageTags;
 
-  const _TagsBlock({required this.tentId, required this.tent, this.onManageTags});
+  const _TagsBlock({required this.tentId, required this.tent, required this.onManageTags});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

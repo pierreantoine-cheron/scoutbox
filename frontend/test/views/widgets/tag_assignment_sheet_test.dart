@@ -102,9 +102,10 @@ void main() {
                   body: TextButton(
                     onPressed: () => showModalBottomSheet<void>(
                       context: context,
-                      builder: (_) => const TagAssignmentSheet(
+                      builder: (_) => TagAssignmentSheet(
                         tentId: 'tent-1',
-                        assignedTagIds: {'tag-1'},
+                        assignedTagIds: const {'tag-1'},
+                        onManageTags: () {},
                       ),
                     ),
                     child: const Text('Ouvrir'),
@@ -172,7 +173,7 @@ Widget _buildWidget({
         body: TagAssignmentSheet(
           tentId: 'tent-1',
           assignedTagIds: const {'tag-1'},
-          onManageTags: onManageTags,
+          onManageTags: onManageTags ?? () {},
         ),
       ),
     ),

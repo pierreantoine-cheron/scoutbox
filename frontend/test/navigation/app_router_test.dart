@@ -111,4 +111,32 @@ void main() {
 
     expect(router.currentConfiguration.section, NavigationSection.tags);
   });
+
+  test('retains a tent draft when an in-app section switch is cancelled', () async {
+    final router = AppRouterDelegate();
+    addTearDown(router.dispose);
+    router.showTentCreation();
+    router.setCreationLeaveHandler(() async => false);
+
+    await router.showSection(NavigationSection.tags);
+
+    expect(router.currentConfiguration.kind, AppRouteKind.tentCreation);
+  });
+
+  test('leaveTentCreationConfirmed skips the guard and returns home', () {
+    final router = AppRouterDelegate();
+    addTearDown(router.dispose);
+    router.showTentCreation();
+
+    var confirmCalls = 0;
+    router.setCreationLeaveHandler(() async {
+      confirmCalls++;
+      return false;
+    });
+
+    router.leaveTentCreationConfirmed();
+
+    expect(confirmCalls, 0);
+    expect(router.currentConfiguration.uri.path, '/');
+  });
 }

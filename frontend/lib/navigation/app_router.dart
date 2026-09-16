@@ -37,20 +37,37 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   @override
   AppRoutePath get currentConfiguration => _path;
 
-  void showTentDetail(String tentId) {
-    _setPath(AppRoutePath.tentDetail(tentId, hasPreviousAppRoute: true));
+  Future<void> showTentDetail(String tentId) {
+    return _setPathGuarded(AppRoutePath.tentDetail(tentId));
   }
 
-  void showTentCreation() {
-    _setPath(AppRoutePath.tentCreation(hasPreviousAppRoute: true));
+  Future<void> showTentCreation() {
+    return _setPathGuarded(AppRoutePath.tentCreation());
   }
 
-  void showSection(NavigationSection section, {bool hasPreviousAppRoute = true}) {
-    _setPath(AppRoutePath.section(section, hasPreviousAppRoute: hasPreviousAppRoute));
+  Future<void> showSection(NavigationSection section, {bool hasPreviousAppRoute = true}) {
+    return _setPathGuarded(
+      AppRoutePath.section(section, hasPreviousAppRoute: hasPreviousAppRoute),
+    );
   }
 
+  /// Unguarded on purpose: only reachable from the tent list/detail routes or
+  /// from a forced logout, never from an in-progress tent creation.
   void showHome({bool hasPreviousAppRoute = false}) {
-    showSection(NavigationSection.tents, hasPreviousAppRoute: hasPreviousAppRoute);
+    _setPath(
+      AppRoutePath.section(NavigationSection.tents, hasPreviousAppRoute: hasPreviousAppRoute),
+    );
+  }
+
+  /// Leaves the tent creation route after the user already confirmed the
+  /// discard, so the leave guard must not prompt a second time.
+  void leaveTentCreationConfirmed() {
+    _confirmLeaveTentCreation = null;
+    if (BrowserNavigation.canGoBack && _path.hasPreviousAppRoute) {
+      BrowserNavigation.back();
+    } else {
+      showHome();
+    }
   }
 
   void setCreationLeaveHandler(Future<bool> Function()? handler) {
@@ -75,17 +92,25 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
     notifyListeners();
   }
 
-  @override
-  Future<void> setNewRoutePath(AppRoutePath configuration) async {
-    if (_path.kind == AppRouteKind.tentCreation &&
-        configuration.kind != AppRouteKind.tentCreation) {
+  Future<void> _setPathGuarded(
+    AppRoutePath path, {
+    bool restoreHistoryOnCancel = false,
+  }) async {
+    if (_path.kind == AppRouteKind.tentCreation && path.kind != AppRouteKind.tentCreation) {
       final confirmLeave = _confirmLeaveTentCreation;
       if (confirmLeave != null && !await confirmLeave()) {
-        BrowserNavigation.forward();
+        if (restoreHistoryOnCancel) {
+          BrowserNavigation.forward();
+        }
         return;
       }
     }
-    _setPath(configuration);
+    _setPath(path);
+  }
+
+  @override
+  Future<void> setNewRoutePath(AppRoutePath configuration) {
+    return _setPathGuarded(configuration, restoreHistoryOnCancel: true);
   }
 
   @override
@@ -103,6 +128,7 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
                   onOpenTentDetail: showTentDetail,
                   onCreateTent: showTentCreation,
                   onReturnToRoot: showHome,
+                  onLeaveTentCreation: leaveTentCreationConfirmed,
                   onCreationLeaveHandlerChanged: setCreationLeaveHandler,
                   onBrowserBack: BrowserNavigation.canGoBack && _path.hasPreviousAppRoute
                       ? BrowserNavigation.back

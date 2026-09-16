@@ -16,13 +16,13 @@ import 'placeholder_text.dart';
 class TagAssignmentSheet extends ConsumerStatefulWidget {
   final String tentId;
   final Set<String> assignedTagIds;
-  final VoidCallback? onManageTags;
+  final VoidCallback onManageTags;
 
   const TagAssignmentSheet({
     super.key,
     required this.tentId,
     required this.assignedTagIds,
-    this.onManageTags,
+    required this.onManageTags,
   });
 
   @override
@@ -106,7 +106,7 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                widget.onManageTags?.call();
+                widget.onManageTags();
               },
               child: const Text('Créer une étiquette'),
             ),

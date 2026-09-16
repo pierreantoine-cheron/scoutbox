@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum NavigationSection {
   tents,
@@ -28,16 +27,3 @@ enum NavigationSection {
     };
   }
 }
-
-class NavigationSectionNotifier extends Notifier<NavigationSection> {
-  @override
-  NavigationSection build() => NavigationSection.tents;
-
-  void set(NavigationSection section) {
-    state = section;
-  }
-}
-
-final navigationSectionProvider = NotifierProvider<NavigationSectionNotifier, NavigationSection>(
-  NavigationSectionNotifier.new,
-);

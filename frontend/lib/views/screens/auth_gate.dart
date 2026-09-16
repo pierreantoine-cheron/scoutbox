@@ -20,22 +20,24 @@ import 'tent_list_screen.dart';
 import 'settings_screen.dart';
 
 class AuthGate extends ConsumerStatefulWidget {
-  final AppRoutePath? routePath;
-  final ValueChanged<NavigationSection>? onSelectSection;
-  final ValueChanged<String>? onOpenTentDetail;
-  final VoidCallback? onCreateTent;
-  final VoidCallback? onReturnToRoot;
-  final ValueChanged<Future<bool> Function()?>? onCreationLeaveHandlerChanged;
+  final AppRoutePath routePath;
+  final ValueChanged<NavigationSection> onSelectSection;
+  final ValueChanged<String> onOpenTentDetail;
+  final VoidCallback onCreateTent;
+  final VoidCallback onReturnToRoot;
+  final VoidCallback onLeaveTentCreation;
+  final ValueChanged<Future<bool> Function()?> onCreationLeaveHandlerChanged;
   final VoidCallback? onBrowserBack;
 
   const AuthGate({
     super.key,
-    this.routePath,
-    this.onSelectSection,
-    this.onOpenTentDetail,
-    this.onCreateTent,
-    this.onReturnToRoot,
-    this.onCreationLeaveHandlerChanged,
+    required this.routePath,
+    required this.onSelectSection,
+    required this.onOpenTentDetail,
+    required this.onCreateTent,
+    required this.onReturnToRoot,
+    required this.onLeaveTentCreation,
+    required this.onCreationLeaveHandlerChanged,
     this.onBrowserBack,
   });
 
@@ -48,8 +50,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   late final RouteObserver<ModalRoute<dynamic>> _routeObserver;
   bool _checkedAuthenticatedInitialLink = false;
-  String? _localTentId;
-  Future<bool> Function()? _confirmLeaveTentCreation;
 
   @override
   void initState() {
@@ -63,10 +63,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
     ref.listen(authProvider, (previous, next) {
       if (previous?.isAuthenticated == true && !next.isAuthenticated) {
-        final onReturnToRoot = widget.onReturnToRoot;
-        if (onReturnToRoot != null) {
-          onReturnToRoot();
-        }
+        widget.onReturnToRoot();
       }
     });
 
@@ -84,8 +81,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
     if (authState.isAuthenticated) {
       _checkAuthenticatedInitialLinkOnce();
-      final NavigationSection section =
-          widget.routePath?.section ?? ref.watch(navigationSectionProvider);
+      final NavigationSection section = widget.routePath.section;
       final appBarConfig = ref.watch(appBarConfigProvider);
       final successTrigger = ref.watch(successIndicatorProvider);
       final isDesktop = MediaQuery.sizeOf(context).width >= DesignConstants.desktopBreakpoint;
@@ -111,7 +107,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
                   selectedSection: section,
                   onSelectSection: (s) {
                     _scaffoldKey.currentState?.closeDrawer();
-                    _navigateToSection(s);
+                    widget.onSelectSection(s);
                   },
                 ),
               ),
@@ -133,23 +129,19 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
   void _handleBack() {
     final routePath = widget.routePath;
-    if (routePath?.kind == AppRouteKind.tentCreation) {
+    if (routePath.kind == AppRouteKind.tentCreation) {
       _navigatorKey.currentState?.maybePop();
       return;
     }
 
-    if (routePath?.isLeaf ?? false) {
+    if (routePath.isLeaf) {
       final onBrowserBack = widget.onBrowserBack;
       if (onBrowserBack != null) {
         onBrowserBack();
-        return;
+      } else {
+        widget.onReturnToRoot();
       }
-
-      final onReturnToRoot = widget.onReturnToRoot;
-      if (onReturnToRoot != null) {
-        onReturnToRoot();
-        return;
-      }
+      return;
     }
 
     _navigatorKey.currentState?.maybePop();
@@ -157,110 +149,47 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
   List<Page<void>> _buildPages(NavigationSection section) {
     final routePath = widget.routePath;
-    final tentId = routePath?.kind == AppRouteKind.tentDetail
-        ? routePath?.tentId
-        : widget.onOpenTentDetail == null
-        ? _localTentId
-        : null;
     return [
       MaterialPage<void>(
         key: ValueKey('section-${section.name}'),
         child: _buildRootScreen(section),
       ),
-      if (tentId != null)
+      if (routePath.kind == AppRouteKind.tentDetail)
         MaterialPage<void>(
-          key: ValueKey('tent-$tentId'),
+          key: ValueKey('tent-${routePath.tentId}'),
           child: TentDetailScreen(
-            tentId: tentId,
-            onManageTags: () => _navigateToSection(NavigationSection.tags),
+            tentId: routePath.tentId!,
+            onManageTags: () => widget.onSelectSection(NavigationSection.tags),
           ),
         ),
-      if (routePath?.kind == AppRouteKind.tentCreation)
+      if (routePath.kind == AppRouteKind.tentCreation)
         MaterialPage<void>(
           key: const ValueKey('tent-creation'),
           child: TentCreationScreen(
             onCreated: _handleTentCreated,
-            onLeaveConfirmed: _leaveCurrentRoute,
-            onLeaveHandlerChanged: _setCreationLeaveHandler,
+            onLeaveConfirmed: widget.onLeaveTentCreation,
+            onLeaveHandlerChanged: widget.onCreationLeaveHandlerChanged,
           ),
         ),
     ];
   }
 
   void _handlePageRemoved(Page<void> page) {
-    if (widget.routePath?.isLeaf == false) return;
+    if (!widget.routePath.isLeaf) return;
 
     final key = page.key;
-    if (key is! ValueKey<String> ||
-        (!key.value.startsWith('tent-') && key.value != 'tent-creation')) {
+    if (key is! ValueKey<String> || !key.value.startsWith('tent-')) {
       return;
     }
 
-    final onReturnToRoot = widget.onReturnToRoot;
-    if (onReturnToRoot != null) {
-      onReturnToRoot();
-    } else if (mounted) {
-      setState(() => _localTentId = null);
-    }
-  }
-
-  void _openTentDetail(String tentId) {
-    final onOpenTentDetail = widget.onOpenTentDetail;
-    if (onOpenTentDetail != null) {
-      onOpenTentDetail(tentId);
-    } else {
-      setState(() => _localTentId = tentId);
-    }
-  }
-
-  Future<void> _openTentCreation() async {
-    final onCreateTent = widget.onCreateTent;
-    if (onCreateTent != null) {
-      onCreateTent();
-      return;
-    }
-
-    final createdTent = await _navigatorKey.currentState?.push<Tent>(
-      MaterialPageRoute(builder: (_) => const TentCreationScreen()),
-    );
-    if (createdTent == null || !mounted) return;
-
-    _handleTentCreated(createdTent);
-  }
-
-  void _setCreationLeaveHandler(Future<bool> Function()? handler) {
-    _confirmLeaveTentCreation = handler;
-    widget.onCreationLeaveHandlerChanged?.call(handler);
-  }
-
-  void _leaveCurrentRoute() {
-    final onBrowserBack = widget.onBrowserBack;
-    if (onBrowserBack != null) {
-      onBrowserBack();
-      return;
-    }
-
-    final onReturnToRoot = widget.onReturnToRoot;
-    if (onReturnToRoot != null) {
-      onReturnToRoot();
-    }
+    widget.onReturnToRoot();
   }
 
   void _handleTentCreated(Tent tent) {
     ref.read(successIndicatorProvider.notifier).fire();
     ref.read(tentListProvider.notifier).showTent(tent);
     ref.read(tentListProvider.notifier).refresh();
-
-    final onBrowserBack = widget.onBrowserBack;
-    if (onBrowserBack != null) {
-      onBrowserBack();
-      return;
-    }
-
-    final onReturnToRoot = widget.onReturnToRoot;
-    if (onReturnToRoot != null) {
-      onReturnToRoot();
-    }
+    widget.onLeaveTentCreation();
   }
 
   void _checkAuthenticatedInitialLinkOnce() {
@@ -307,34 +236,12 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     );
   }
 
-  Future<void> _navigateToSection(NavigationSection section) async {
-    final wasCreatingTent = widget.routePath?.kind == AppRouteKind.tentCreation;
-    if (wasCreatingTent) {
-      final confirmLeave = _confirmLeaveTentCreation;
-      if (confirmLeave != null && !await confirmLeave()) return;
-      if (!mounted) return;
-    }
-
-    final onSelectSection = widget.onSelectSection;
-    if (onSelectSection != null) {
-      onSelectSection(section);
-      return;
-    }
-
-    ref
-        .read(appBarConfigProvider.notifier)
-        .set(
-          const AppBarConfig(screenId: ''),
-        );
-    ref.read(navigationSectionProvider.notifier).set(section);
-  }
-
   Widget _buildRootScreen(NavigationSection section) {
     return switch (section) {
       NavigationSection.tents => TentListScreen(
-        onOpenTentDetail: _openTentDetail,
-        onSwitchToTags: () => _navigateToSection(NavigationSection.tags),
-        onCreateTent: _openTentCreation,
+        onOpenTentDetail: widget.onOpenTentDetail,
+        onSwitchToTags: () => widget.onSelectSection(NavigationSection.tags),
+        onCreateTent: widget.onCreateTent,
       ),
       NavigationSection.tags => const TagsScreen(),
       NavigationSection.parts => const PartKindsScreen(),
@@ -369,7 +276,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     } else if (isRootScreen && isDesktop) {
       title = _DesktopTitleRow(
         section: section,
-        onSectionTap: (s) => _navigateToSection(s),
+        onSectionTap: widget.onSelectSection,
       );
     }
 

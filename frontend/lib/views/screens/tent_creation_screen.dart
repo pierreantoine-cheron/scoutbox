@@ -14,15 +14,15 @@ import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 
 class TentCreationScreen extends ConsumerStatefulWidget {
-  final ValueChanged<Tent>? onCreated;
-  final VoidCallback? onLeaveConfirmed;
-  final ValueChanged<Future<bool> Function()?>? onLeaveHandlerChanged;
+  final ValueChanged<Tent> onCreated;
+  final VoidCallback onLeaveConfirmed;
+  final ValueChanged<Future<bool> Function()?> onLeaveHandlerChanged;
 
   const TentCreationScreen({
     super.key,
-    this.onCreated,
-    this.onLeaveConfirmed,
-    this.onLeaveHandlerChanged,
+    required this.onCreated,
+    required this.onLeaveConfirmed,
+    required this.onLeaveHandlerChanged,
   });
 
   @override
@@ -46,7 +46,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     _nameController.text = draft.name;
     _sizeController.text = draft.sizeInput;
     _commentsController.text = draft.comments;
-    widget.onLeaveHandlerChanged?.call(_confirmDiscardDraft);
+    widget.onLeaveHandlerChanged(_confirmDiscardDraft);
   }
 
   @override
@@ -58,7 +58,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
 
   @override
   void dispose() {
-    widget.onLeaveHandlerChanged?.call(null);
+    widget.onLeaveHandlerChanged(null);
     unsubscribeRouteObserver();
     _nameController.dispose();
     _sizeController.dispose();
@@ -95,12 +95,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
           if (didPop) return;
           final shouldLeave = await _confirmDiscardDraft();
           if (shouldLeave && context.mounted) {
-            final onLeaveConfirmed = widget.onLeaveConfirmed;
-            if (onLeaveConfirmed != null) {
-              onLeaveConfirmed();
-            } else {
-              Navigator.of(context).pop();
-            }
+            widget.onLeaveConfirmed();
           }
         },
         child: GestureDetector(
@@ -506,12 +501,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     final createdTent = await notifier.submit();
     if (!mounted || createdTent == null) return;
 
-    final onCreated = widget.onCreated;
-    if (onCreated != null) {
-      onCreated(createdTent);
-    } else {
-      Navigator.of(context).pop<Tent>(createdTent);
-    }
+    widget.onCreated(createdTent);
   }
 
   void _syncControllersFromState(TentCreationState creationState) {

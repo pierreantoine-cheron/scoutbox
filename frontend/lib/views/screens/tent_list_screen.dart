@@ -7,16 +7,18 @@ import '../../utils/design_constants.dart';
 import '../../utils/error_messages.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
-import 'tent_creation_screen.dart';
-import 'tent_detail_screen.dart';
-import 'tags_screen.dart';
 
 class TentListScreen extends ConsumerStatefulWidget {
-  final ValueChanged<String>? onOpenTentDetail;
-  final VoidCallback? onSwitchToTags;
-  final VoidCallback? onCreateTent;
+  final ValueChanged<String> onOpenTentDetail;
+  final VoidCallback onSwitchToTags;
+  final VoidCallback onCreateTent;
 
-  const TentListScreen({super.key, this.onOpenTentDetail, this.onSwitchToTags, this.onCreateTent});
+  const TentListScreen({
+    super.key,
+    required this.onOpenTentDetail,
+    required this.onSwitchToTags,
+    required this.onCreateTent,
+  });
 
   @override
   ConsumerState<TentListScreen> createState() => _TentListScreenState();
@@ -82,7 +84,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
           ),
           const SizedBox(width: 8),
           DesktopCreateButton(
-            onPressed: () => _openTentCreation(context),
+            onPressed: widget.onCreateTent,
             label: 'Ajouter',
           ),
           const SizedBox(width: 8),
@@ -96,7 +98,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
         ],
       ],
       fab: FloatingActionButton(
-        onPressed: () => _openTentCreation(context),
+        onPressed: widget.onCreateTent,
         tooltip: 'Ajouter une tente',
         child: const Icon(Icons.add),
       ),
@@ -172,7 +174,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
             child: RefreshIndicator(
               onRefresh: () => ref.read(tentListProvider.notifier).refresh(),
               child: _EmptyState(
-                onCreateTent: () => _openTentCreation(context),
+                onCreateTent: widget.onCreateTent,
                 warningMessage: _toRefreshWarningMessage(refreshIssue),
               ),
             ),
@@ -227,7 +229,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: TentDataTable(
                 tents: visibleTents,
-                onOpenTent: (tent) => _openTentDetail(context, tent),
+                onOpenTent: (tent) => widget.onOpenTentDetail(tent.id),
                 onTagTap: _toggleTagFilter,
                 onStateTap: _toggleStateFilter,
               ),
@@ -265,7 +267,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
                 final tent = visibleTents[tentIndex];
                 return TentCard(
                   tent: tent,
-                  onTap: () => _openTentDetail(context, tent),
+                  onTap: () => widget.onOpenTentDetail(tent.id),
                   onTagTap: _toggleTagFilter,
                   onStateTap: _toggleStateFilter,
                 );
@@ -317,7 +319,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       },
       onClearAll: _clearFiltersHook,
       onClearTags: () => ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
-      onManageTags: () => _switchToTags(),
+      onManageTags: widget.onSwitchToTags,
     );
   }
 
@@ -400,60 +402,8 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     );
   }
 
-  Future<void> _openTentCreation(BuildContext context) async {
-    final onCreateTent = widget.onCreateTent;
-    if (onCreateTent != null) {
-      onCreateTent();
-      return;
-    }
-
-    final createdTent = await Navigator.of(
-      context,
-    ).push<Tent>(MaterialPageRoute(builder: (_) => const TentCreationScreen()));
-
-    if (createdTent == null || !mounted) {
-      return;
-    }
-
-    ref.read(successIndicatorProvider.notifier).fire();
-    ref.read(tentListProvider.notifier).showTent(createdTent);
-    await ref.read(tentListProvider.notifier).refresh();
-  }
-
   String? _toRefreshWarningMessage(Object? refreshIssue) {
     return toRefreshWarning(refreshIssue, 'Impossible d\'actualiser la liste pour le moment.');
-  }
-
-  Future<void> _openTentDetail(BuildContext context, Tent tent) async {
-    final onOpenTentDetail = widget.onOpenTentDetail;
-    if (onOpenTentDetail != null) {
-      onOpenTentDetail(tent.id);
-      return;
-    }
-
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => TentDetailScreen(
-          tentId: tent.id,
-          onManageTags: _switchToTags,
-        ),
-      ),
-    );
-  }
-
-  void _switchToTags() {
-    final onSwitchToTags = widget.onSwitchToTags;
-    if (onSwitchToTags != null) {
-      onSwitchToTags();
-      return;
-    }
-
-    ref.read(navigationSectionProvider.notifier).set(NavigationSection.tags);
-    ref.read(appBarConfigProvider.notifier).set(const AppBarConfig(screenId: ''));
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const TagsScreen()),
-      (_) => false,
-    );
   }
 
   void _clearFiltersHook() {
