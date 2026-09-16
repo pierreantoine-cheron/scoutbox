@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/tent.dart';
 import '../repositories/tent_repository.dart';
+import 'success_indicator_provider.dart';
 import 'tent_filter_provider.dart';
 
 part 'tent_list_provider.g.dart';
@@ -124,5 +125,11 @@ class TentListNotifier extends _$TentListNotifier {
       ...tents.where((existingTent) => existingTent.id != tent.id),
     ];
     state = AsyncValue.data(nextTents);
+  }
+
+  void onTentCreated(Tent tent) {
+    ref.read(successIndicatorProvider.notifier).fire();
+    showTent(tent);
+    refresh();
   }
 }

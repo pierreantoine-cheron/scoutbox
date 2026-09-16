@@ -186,9 +186,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   }
 
   void _handleTentCreated(Tent tent) {
-    ref.read(successIndicatorProvider.notifier).fire();
-    ref.read(tentListProvider.notifier).showTent(tent);
-    ref.read(tentListProvider.notifier).refresh();
+    ref.read(tentListProvider.notifier).onTentCreated(tent);
     widget.onLeaveTentCreation();
   }
 

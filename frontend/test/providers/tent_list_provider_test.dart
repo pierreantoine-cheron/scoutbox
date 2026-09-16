@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/models/tent.dart';
+import 'package:client/providers/success_indicator_provider.dart';
 import 'package:client/providers/tent_list_provider.dart';
 import 'package:client/repositories/tent_repository.dart';
 
@@ -69,6 +70,50 @@ void main() {
       final refreshed = container.read(tentListProvider).requireValue;
       expect(refreshed.first.name, equals('Tente rafraichie'));
       expect(repository.getTentsCallCount, equals(2));
+    });
+
+    test('onTentCreated shows the tent, fires success, and refreshes', () async {
+      final repository = _DelayedRefreshTentListRepository();
+      final container = ProviderContainer(
+        overrides: [tentRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+      final listSubscription = container.listen(tentListProvider, (_, _) {});
+      addTearDown(listSubscription.close);
+      final successSubscription = container.listen(
+        successIndicatorProvider,
+        (_, _) {},
+      );
+      addTearDown(successSubscription.close);
+
+      await container.read(tentListProvider.future);
+      final triggerBefore = container.read(successIndicatorProvider);
+
+      container
+          .read(tentListProvider.notifier)
+          .onTentCreated(
+            const Tent(
+              id: 't2',
+              name: 'Tente créée',
+              size: 6,
+              tentModelId: 'shape-1',
+              tentModelName: 'Canadienne',
+              overallState: TentOverallState.good,
+              comments: null,
+            ),
+          );
+
+      expect(container.read(successIndicatorProvider), greaterThan(triggerBefore));
+      expect(container.read(tentListProvider).requireValue.first.id, equals('t2'));
+      expect(repository.getTentsCallCount, equals(2));
+
+      repository.completeRefresh();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(tentListProvider).requireValue.first.name,
+        equals('Tente apres refresh'),
+      );
     });
 
     test('keeps existing list while refresh is in progress', () async {
