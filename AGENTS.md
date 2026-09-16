@@ -2,7 +2,7 @@
 
 ## Rules
 
-When developing, reviewing, if a change is worthy to be added as a rule to the project, offer to the user adding it to this file.
+When developing, reviewing, if a generic change is worthy to be added as a rule (good practice) to the project, offer to the user adding it to this file.
 
 ## Project Overview
 
