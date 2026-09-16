@@ -7,7 +7,6 @@ import '../../repositories/tent_repository.dart';
 import '../../services/error_localizer.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
-import '../screens/tags_screen.dart';
 import 'scout_pill.dart';
 import 'sheet_scaffold.dart';
 import 'app_progress_indicator.dart';
@@ -17,11 +16,13 @@ import 'placeholder_text.dart';
 class TagAssignmentSheet extends ConsumerStatefulWidget {
   final String tentId;
   final Set<String> assignedTagIds;
+  final VoidCallback? onManageTags;
 
   const TagAssignmentSheet({
     super.key,
     required this.tentId,
     required this.assignedTagIds,
+    this.onManageTags,
   });
 
   @override
@@ -103,9 +104,10 @@ class _TagAssignmentSheetState extends ConsumerState<TagAssignmentSheet> {
             ),
             const SizedBox(height: 8),
             TextButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TagsScreen()),
-              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                widget.onManageTags?.call();
+              },
               child: const Text('Créer une étiquette'),
             ),
           ],

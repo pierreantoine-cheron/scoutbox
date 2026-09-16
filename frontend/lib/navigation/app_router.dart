@@ -1,45 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'app_route_path.dart';
+import '../providers/navigation_provider.dart';
 import '../services/browser_navigation.dart';
 import '../views/screens/auth_gate.dart';
 import '../views/widgets/app_progress_indicator.dart';
 
-class AppRoutePath {
-  static const _hasPreviousAppRouteKey = 'hasPreviousAppRoute';
-
-  final Uri uri;
-  final bool hasPreviousAppRoute;
-
-  const AppRoutePath(this.uri, {this.hasPreviousAppRoute = false});
-
-  AppRoutePath.home() : uri = Uri(path: '/'), hasPreviousAppRoute = false;
-
-  factory AppRoutePath.tentDetail(String tentId) {
-    return AppRoutePath(
-      Uri(pathSegments: ['', 'tents', tentId]),
-      hasPreviousAppRoute: true,
-    );
-  }
-
-  factory AppRoutePath.fromRouteInformation(RouteInformation routeInformation) {
-    final state = routeInformation.state;
-    return AppRoutePath(
-      routeInformation.uri,
-      hasPreviousAppRoute: state is Map<Object?, Object?> && state[_hasPreviousAppRouteKey] == true,
-    );
-  }
-
-  Object? get routeInformationState =>
-      hasPreviousAppRoute ? const {_hasPreviousAppRouteKey: true} : null;
-
-  String? get tentId {
-    final segments = uri.pathSegments;
-    if (segments.length != 2 || segments.first != 'tents' || segments.last.isEmpty) {
-      return null;
-    }
-    return segments.last;
-  }
-}
+export 'app_route_path.dart';
 
 class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
   const AppRouteInformationParser();
@@ -60,8 +27,9 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
 
 class AppRouterDelegate extends RouterDelegate<AppRoutePath>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<AppRoutePath> {
-  AppRoutePath _path = AppRoutePath.home();
+  AppRoutePath _path = AppRoutePath.section(NavigationSection.tents);
   bool _isInitializing = true;
+  Future<bool> Function()? _confirmLeaveTentCreation;
 
   @override
   final navigatorKey = GlobalKey<NavigatorState>();
@@ -70,11 +38,23 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   AppRoutePath get currentConfiguration => _path;
 
   void showTentDetail(String tentId) {
-    _setPath(AppRoutePath.tentDetail(tentId));
+    _setPath(AppRoutePath.tentDetail(tentId, hasPreviousAppRoute: true));
   }
 
-  void showHome() {
-    _setPath(AppRoutePath.home());
+  void showTentCreation() {
+    _setPath(AppRoutePath.tentCreation(hasPreviousAppRoute: true));
+  }
+
+  void showSection(NavigationSection section, {bool hasPreviousAppRoute = true}) {
+    _setPath(AppRoutePath.section(section, hasPreviousAppRoute: hasPreviousAppRoute));
+  }
+
+  void showHome({bool hasPreviousAppRoute = false}) {
+    showSection(NavigationSection.tents, hasPreviousAppRoute: hasPreviousAppRoute);
+  }
+
+  void setCreationLeaveHandler(Future<bool> Function()? handler) {
+    _confirmLeaveTentCreation = handler;
   }
 
   void completeInitialization() {
@@ -84,13 +64,27 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   }
 
   void _setPath(AppRoutePath path) {
-    if (_path.uri == path.uri) return;
+    if (_path.kind == path.kind &&
+        _path.section == path.section &&
+        _path.tentId == path.tentId &&
+        _path.hasPreviousAppRoute == path.hasPreviousAppRoute &&
+        _path.uri == path.uri) {
+      return;
+    }
     _path = path;
     notifyListeners();
   }
 
   @override
   Future<void> setNewRoutePath(AppRoutePath configuration) async {
+    if (_path.kind == AppRouteKind.tentCreation &&
+        configuration.kind != AppRouteKind.tentCreation) {
+      final confirmLeave = _confirmLeaveTentCreation;
+      if (confirmLeave != null && !await confirmLeave()) {
+        BrowserNavigation.forward();
+        return;
+      }
+    }
     _setPath(configuration);
   }
 
@@ -104,9 +98,12 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
           child: _isInitializing
               ? const Scaffold(body: Center(child: AppProgressIndicator()))
               : AuthGate(
-                  browserTentId: _path.tentId,
+                  routePath: _path,
+                  onSelectSection: showSection,
                   onOpenTentDetail: showTentDetail,
+                  onCreateTent: showTentCreation,
                   onReturnToRoot: showHome,
+                  onCreationLeaveHandlerChanged: setCreationLeaveHandler,
                   onBrowserBack: BrowserNavigation.canGoBack && _path.hasPreviousAppRoute
                       ? BrowserNavigation.back
                       : null,

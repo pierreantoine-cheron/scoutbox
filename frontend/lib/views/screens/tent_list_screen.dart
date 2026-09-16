@@ -14,8 +14,9 @@ import 'tags_screen.dart';
 class TentListScreen extends ConsumerStatefulWidget {
   final ValueChanged<String>? onOpenTentDetail;
   final VoidCallback? onSwitchToTags;
+  final VoidCallback? onCreateTent;
 
-  const TentListScreen({super.key, this.onOpenTentDetail, this.onSwitchToTags});
+  const TentListScreen({super.key, this.onOpenTentDetail, this.onSwitchToTags, this.onCreateTent});
 
   @override
   ConsumerState<TentListScreen> createState() => _TentListScreenState();
@@ -400,6 +401,12 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   }
 
   Future<void> _openTentCreation(BuildContext context) async {
+    final onCreateTent = widget.onCreateTent;
+    if (onCreateTent != null) {
+      onCreateTent();
+      return;
+    }
+
     final createdTent = await Navigator.of(
       context,
     ).push<Tent>(MaterialPageRoute(builder: (_) => const TentCreationScreen()));
@@ -425,7 +432,12 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
     }
 
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => TentDetailScreen(tentId: tent.id)),
+      MaterialPageRoute(
+        builder: (_) => TentDetailScreen(
+          tentId: tent.id,
+          onManageTags: _switchToTags,
+        ),
+      ),
     );
   }
 

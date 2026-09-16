@@ -81,6 +81,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(TentDetailScreen), findsOneWidget);
   });
+
+  testWidgets('direct detail back reports the tents URL', (WidgetTester tester) async {
+    final routerDelegate = AppRouterDelegate()..completeInitialization();
+    final routeInformationProvider = _TestRouteInformationProvider('/tents/tent-1');
+    addTearDown(routerDelegate.dispose);
+    addTearDown(routeInformationProvider.dispose);
+
+    await _pumpAuthenticatedApp(
+      tester,
+      app: MaterialApp.router(
+        theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+        routeInformationProvider: routeInformationProvider,
+        routeInformationParser: const AppRouteInformationParser(),
+        routerDelegate: routerDelegate,
+      ),
+    );
+
+    expect(find.byType(TentDetailScreen), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TentListScreen), findsOneWidget);
+    expect(routeInformationProvider.value.uri.path, '/');
+  });
 }
 
 Future<void> _pumpAuthenticatedApp(WidgetTester tester, {Widget? app}) async {
@@ -110,7 +134,10 @@ Future<void> _pumpAuthenticatedApp(WidgetTester tester, {Widget? app}) async {
 }
 
 class _TestRouteInformationProvider extends RouteInformationProvider with ChangeNotifier {
-  RouteInformation _value = RouteInformation(uri: Uri(path: '/'));
+  _TestRouteInformationProvider([String location = '/'])
+    : _value = RouteInformation(uri: Uri.parse(location));
+
+  RouteInformation _value;
 
   @override
   RouteInformation get value => _value;

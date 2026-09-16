@@ -66,6 +66,22 @@ void main() {
       expect(find.text('Créer une étiquette'), findsOneWidget);
     });
 
+    testWidgets('opens tag management from the empty state', (tester) async {
+      var manageTagsCalls = 0;
+      await tester.pumpWidget(
+        _buildWidget(
+          tags: const [],
+          onManageTags: () => manageTagsCalls++,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Créer une étiquette'));
+      await tester.pumpAndSettle();
+
+      expect(manageTagsCalls, 1);
+    });
+
     testWidgets('close button dismisses the sheet route', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -131,7 +147,11 @@ void main() {
   });
 }
 
-Widget _buildWidget({List<Tag>? tags, _TentRepositoryStub? tentRepository}) {
+Widget _buildWidget({
+  List<Tag>? tags,
+  _TentRepositoryStub? tentRepository,
+  VoidCallback? onManageTags,
+}) {
   return ProviderScope(
     overrides: [
       tagRepositoryProvider.overrideWithValue(
@@ -148,8 +168,12 @@ Widget _buildWidget({List<Tag>? tags, _TentRepositoryStub? tentRepository}) {
         splashFactory: NoSplash.splashFactory,
         extensions: const [AppTheme.semanticColorsForTests],
       ),
-      home: const Scaffold(
-        body: TagAssignmentSheet(tentId: 'tent-1', assignedTagIds: {'tag-1'}),
+      home: Scaffold(
+        body: TagAssignmentSheet(
+          tentId: 'tent-1',
+          assignedTagIds: const {'tag-1'},
+          onManageTags: onManageTags,
+        ),
       ),
     ),
   );

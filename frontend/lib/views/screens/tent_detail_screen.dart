@@ -15,8 +15,9 @@ import '../widgets/widgets.dart';
 
 class TentDetailScreen extends ConsumerStatefulWidget {
   final String tentId;
+  final VoidCallback? onManageTags;
 
-  const TentDetailScreen({super.key, required this.tentId});
+  const TentDetailScreen({super.key, required this.tentId, this.onManageTags});
 
   @override
   ConsumerState<TentDetailScreen> createState() => _TentDetailScreenState();
@@ -91,7 +92,11 @@ class _TentDetailScreenState extends ConsumerState<TentDetailScreen>
       state: tentAsync,
       errorFallbackMessage: 'Impossible de charger le détail de la tente.',
       onRetry: () => ref.invalidate(tentDetailProvider(widget.tentId)),
-      builder: (tent) => _DetailContent(tentId: widget.tentId, tent: tent),
+      builder: (tent) => _DetailContent(
+        tentId: widget.tentId,
+        tent: tent,
+        onManageTags: widget.onManageTags,
+      ),
     );
   }
 }
@@ -258,8 +263,13 @@ class _UnarchiveAppBarButtonState extends ConsumerState<_UnarchiveAppBarButton> 
 class _DetailContent extends ConsumerWidget {
   final String tentId;
   final Tent tent;
+  final VoidCallback? onManageTags;
 
-  const _DetailContent({required this.tentId, required this.tent});
+  const _DetailContent({
+    required this.tentId,
+    required this.tent,
+    this.onManageTags,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -290,7 +300,11 @@ class _DetailContent extends ConsumerWidget {
                 editState: editState,
               ),
               const Divider(),
-              _TagsBlock(tentId: tentId, tent: displayedTent),
+              _TagsBlock(
+                tentId: tentId,
+                tent: displayedTent,
+                onManageTags: onManageTags,
+              ),
               const Divider(),
               _PartsBlock(
                 tentId: tentId,
@@ -759,8 +773,9 @@ class _CommentsPreview extends ConsumerWidget {
 class _TagsBlock extends ConsumerWidget {
   final String tentId;
   final Tent tent;
+  final VoidCallback? onManageTags;
 
-  const _TagsBlock({required this.tentId, required this.tent});
+  const _TagsBlock({required this.tentId, required this.tent, this.onManageTags});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -814,6 +829,7 @@ class _TagsBlock extends ConsumerWidget {
       builder: (sheetContext) => TagAssignmentSheet(
         tentId: tentId,
         assignedTagIds: tent.tags.map((tag) => tag.id).toSet(),
+        onManageTags: onManageTags,
       ),
     );
     ref.invalidate(tentDetailProvider(tentId));

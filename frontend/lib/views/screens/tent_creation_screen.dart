@@ -14,7 +14,16 @@ import '../../utils/route_aware_app_bar_mixin.dart';
 import '../widgets/widgets.dart';
 
 class TentCreationScreen extends ConsumerStatefulWidget {
-  const TentCreationScreen({super.key});
+  final ValueChanged<Tent>? onCreated;
+  final VoidCallback? onLeaveConfirmed;
+  final ValueChanged<Future<bool> Function()?>? onLeaveHandlerChanged;
+
+  const TentCreationScreen({
+    super.key,
+    this.onCreated,
+    this.onLeaveConfirmed,
+    this.onLeaveHandlerChanged,
+  });
 
   @override
   ConsumerState<TentCreationScreen> createState() => _TentCreationScreenState();
@@ -37,6 +46,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     _nameController.text = draft.name;
     _sizeController.text = draft.sizeInput;
     _commentsController.text = draft.comments;
+    widget.onLeaveHandlerChanged?.call(_confirmDiscardDraft);
   }
 
   @override
@@ -48,6 +58,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
 
   @override
   void dispose() {
+    widget.onLeaveHandlerChanged?.call(null);
     unsubscribeRouteObserver();
     _nameController.dispose();
     _sizeController.dispose();
@@ -84,7 +95,12 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
           if (didPop) return;
           final shouldLeave = await _confirmDiscardDraft();
           if (shouldLeave && context.mounted) {
-            Navigator.of(context).pop();
+            final onLeaveConfirmed = widget.onLeaveConfirmed;
+            if (onLeaveConfirmed != null) {
+              onLeaveConfirmed();
+            } else {
+              Navigator.of(context).pop();
+            }
           }
         },
         child: GestureDetector(
@@ -490,7 +506,12 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     final createdTent = await notifier.submit();
     if (!mounted || createdTent == null) return;
 
-    Navigator.of(context).pop<Tent>(createdTent);
+    final onCreated = widget.onCreated;
+    if (onCreated != null) {
+      onCreated(createdTent);
+    } else {
+      Navigator.of(context).pop<Tent>(createdTent);
+    }
   }
 
   void _syncControllersFromState(TentCreationState creationState) {
