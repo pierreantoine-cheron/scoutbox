@@ -165,11 +165,6 @@ scoutbox/
 - `Jwt:Audience`
 - `ConnectionStrings:DefaultConnection`
 
-## Documents edit
-
-When changing a decision from _bmad-output files, replace the old decision with the new, no need to justify or mark as new, do not add history to file, I handle the versionning myself through git.
-Use windows-style line endings.
-
 ## Frontend Docker & Site
 
 ### Coolify Services
@@ -197,13 +192,3 @@ Use windows-style line endings.
 ### Rule: Single `APP_FLAVOR` + `kDebugMode`-only diagnostics
 
 Staging and prod share the same Dart code. The only packaging difference is `applicationIdSuffix=".staging"` in `build.gradle.kts`. Version strings are injected at build time via `--build-name`/`--build-number`. No `--dart-define` flags touch Dart code. Debug/verbose behavior uses `kDebugMode` only.
-
-## Skills
-
-For detailed conventions, load the appropriate skill:
-
-| Skill | When to use |
-|-------|-------------|
-| `backend-development` | Writing or modifying backend code (controllers, services, repositories, entities, DTOs, filters) |
-| `frontend-development` | Writing or modifying frontend code (screens, widgets, providers, models, services, repositories) |
-| `scoutbox-refactoring-rules` | Refactoring, fixing test gotchas, deduplicating code, avoiding common pitfalls |

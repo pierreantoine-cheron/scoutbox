@@ -131,6 +131,14 @@ Planned or deferred:
 - French localization (using real localization tech)
 - Offline support
 
+## License
+
+ScoutBox is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See `LICENSE` for the full text.
+
+## Trademark
+
+The "ScoutBox" name and logo are not licensed for use to promote or endorse modified versions of this project. AGPL-3.0 grants rights to the source code only; it does not grant trademark rights.
+
 ---
 
 *ScoutBox - Tent inventory management for scout groups*
