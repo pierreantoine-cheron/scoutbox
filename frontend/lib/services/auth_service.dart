@@ -218,10 +218,7 @@ class AuthService {
         final errorResponse = ErrorResponse.fromJson(
           e.response!.data as Map<String, dynamic>,
         );
-        final userMessage = ErrorLocalizer.localize(
-          errorResponse.code,
-          fallback: errorResponse.error,
-        );
+        final userMessage = ErrorLocalizer.localize(errorResponse.code);
         return AuthResult.failure(error: userMessage, code: errorResponse.code);
       } catch (_) {
         return AuthResult.failure(

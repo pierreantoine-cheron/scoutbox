@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../utils/constants.dart';
 
 class ErrorLocalizer {
@@ -9,7 +7,7 @@ class ErrorLocalizer {
     final message = code != null ? _messages[code] : null;
     if (message != null) return message;
 
-    if (kDebugMode && fallback != null && fallback.isNotEmpty) {
+    if (fallback != null && fallback.isNotEmpty) {
       return fallback;
     }
 

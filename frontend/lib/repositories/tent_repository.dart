@@ -319,10 +319,9 @@ class TentRepository {
     final responseData = exception.response?.data;
     if (responseData is Map<String, dynamic>) {
       final code = responseData['code'] as String?;
-      final error = responseData['error'] as String?;
       return TentRepositoryException(
         code: code,
-        message: ErrorLocalizer.localize(code, fallback: error),
+        message: ErrorLocalizer.localize(code, fallback: fallbackMessage),
       );
     }
 

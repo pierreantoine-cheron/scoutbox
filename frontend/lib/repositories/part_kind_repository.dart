@@ -88,12 +88,10 @@ class PartKindRepository {
     final responseData = exception.response?.data;
     if (responseData is Map<String, dynamic>) {
       final rawCode = responseData['code'];
-      final rawError = responseData['error'];
       final code = rawCode is String ? rawCode : null;
-      final error = rawError is String ? rawError : null;
       return PartKindRepositoryException(
         code: code,
-        message: ErrorLocalizer.localize(code, fallback: error),
+        message: ErrorLocalizer.localize(code, fallback: fallbackMessage),
       );
     }
 
