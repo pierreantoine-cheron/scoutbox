@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/auth_response.dart';
+import '../models/auth_state.dart';
 import '../models/invite_response.dart';
 import '../utils/constants.dart';
 import '../utils/design_constants.dart';
@@ -584,7 +585,7 @@ class AuthService {
       return const AuthInitializationResult(
         isAuthenticated: false,
         isSessionExpired: false,
-        shouldShowLogin: false,
+        mode: AuthMode.register,
       );
     }
 
@@ -596,7 +597,7 @@ class AuthService {
       return const AuthInitializationResult(
         isAuthenticated: true,
         isSessionExpired: false,
-        shouldShowLogin: true,
+        mode: AuthMode.login,
       );
     } else if (tokenStatus == TokenStatus.expired) {
       // Token exists but is expired
@@ -606,19 +607,21 @@ class AuthService {
         isAuthenticated: false,
         isSessionExpired: true,
         canRefresh: canRefresh,
-        shouldShowLogin: true,
+        mode: AuthMode.login,
       );
     }
 
     _cachedAccessToken = null;
 
     final hasRefreshToken = await getRefreshToken() != null;
-    final shouldShowLogin = hasRememberedUsername || hasRefreshToken;
+    final mode = (hasRememberedUsername || hasRefreshToken)
+        ? AuthMode.login
+        : AuthMode.register;
 
     return AuthInitializationResult(
       isAuthenticated: false,
       isSessionExpired: false,
-      shouldShowLogin: shouldShowLogin,
+      mode: mode,
     );
   }
 
@@ -702,13 +705,13 @@ class AuthInitializationResult {
   /// True if refresh token exists and can be used to get new access token
   final bool canRefresh;
 
-  /// True when unauthenticated users should enter from login screen
-  final bool shouldShowLogin;
+  /// Which auth screen unauthenticated users should land on
+  final AuthMode mode;
 
   const AuthInitializationResult({
     required this.isAuthenticated,
     required this.isSessionExpired,
     this.canRefresh = false,
-    this.shouldShowLogin = false,
+    this.mode = AuthMode.login,
   });
 }

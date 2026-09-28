@@ -4,6 +4,7 @@ import 'package:client/utils/constants.dart';
 import 'package:client/utils/error_messages.dart';
 import 'package:client/services/auth_service.dart';
 import 'package:client/models/auth_response.dart';
+import 'package:client/models/auth_state.dart';
 
 void main() {
   group('AuthService Unit Tests', () {
@@ -207,7 +208,7 @@ void main() {
         expect(result.isAuthenticated, isFalse);
         expect(result.isSessionExpired, isFalse);
         expect(result.canRefresh, isFalse);
-        expect(result.shouldShowLogin, isFalse);
+        expect(result.mode, AuthMode.login);
       });
 
       test('AuthInitializationResult with canRefresh true', () {
@@ -215,13 +216,13 @@ void main() {
           isAuthenticated: false,
           isSessionExpired: true,
           canRefresh: true,
-          shouldShowLogin: true,
+          mode: AuthMode.login,
         );
 
         expect(result.isAuthenticated, isFalse);
         expect(result.isSessionExpired, isTrue);
         expect(result.canRefresh, isTrue);
-        expect(result.shouldShowLogin, isTrue);
+        expect(result.mode, AuthMode.login);
       });
     });
 

@@ -234,7 +234,7 @@ class AuthNotifier extends _$AuthNotifier {
       state = state.copyWith(
         isAuthenticated: false,
         isSessionExpired: false,
-        mode: initResult.shouldShowLogin ? AuthMode.login : AuthMode.register,
+        mode: initResult.mode,
       );
     }
   }
@@ -401,7 +401,7 @@ class AuthNotifier extends _$AuthNotifier {
         state = state.copyWith(
           isAuthenticated: false,
           isSessionExpired: false,
-          mode: initResult.shouldShowLogin ? AuthMode.login : AuthMode.register,
+          mode: initResult.mode,
         );
       }
     } catch (e) {
