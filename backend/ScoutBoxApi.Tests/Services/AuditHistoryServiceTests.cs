@@ -299,6 +299,35 @@ public class AuditHistoryServiceTests : TestBase
     }
 
     [Fact]
+    public async Task GetTentHistory_WithArchiveCategory_IncludesUnarchiveEvents()
+    {
+        var user = Builder.CreateUser("archiveuser");
+        var tentId = Guid.NewGuid();
+
+        Builder.CreateAuditEvent(
+            AuditActions.TentArchived,
+            user.Id,
+            "Tent",
+            tentId,
+            DateTime.UtcNow.AddMinutes(-2));
+
+        Builder.CreateAuditEvent(
+            AuditActions.TentUnarchived,
+            user.Id,
+            "Tent",
+            tentId,
+            DateTime.UtcNow.AddMinutes(-1));
+
+        await Builder.SaveChangesAsync();
+
+        var history = await _service.GetTentHistoryAsync(tentId, TentHistoryCategory.Archive);
+
+        Assert.Equal(2, history.Count);
+        Assert.Contains(history, h => h.Action == AuditActions.TentArchived);
+        Assert.Contains(history, h => h.Action == AuditActions.TentUnarchived);
+    }
+
+    [Fact]
     public async Task GetAuditHistory_OrdersByMostRecentFirst()
     {
         var user = Builder.CreateUser("testuser");

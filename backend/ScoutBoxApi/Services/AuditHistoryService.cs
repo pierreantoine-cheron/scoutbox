@@ -313,7 +313,7 @@ public class AuditHistoryService : IAuditHistoryService
         return category switch
         {
             TentHistoryCategory.TentInfo => new[] { AuditActions.TentCreated, AuditActions.TentUpdated },
-            TentHistoryCategory.Archive => new[] { AuditActions.TentArchived },
+            TentHistoryCategory.Archive => new[] { AuditActions.TentArchived, AuditActions.TentUnarchived },
             TentHistoryCategory.PartState => Array.Empty<string>(),
             TentHistoryCategory.PartManagement => Array.Empty<string>(),
             TentHistoryCategory.Tags => Array.Empty<string>(),
