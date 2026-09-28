@@ -35,7 +35,7 @@ class AuthNotifier extends _$AuthNotifier {
       errorCode: null,
       isSessionExpired: false,
       canRefreshToken: false,
-      showLoginScreen: true,
+      mode: AuthMode.login,
       logoutSuccessMessage: 'Déconnexion réussie',
     );
   }
@@ -54,7 +54,7 @@ class AuthNotifier extends _$AuthNotifier {
       isAuthenticated: false,
       isSessionExpired: true,
       canRefreshToken: canRefresh,
-      showLoginScreen: true,
+      mode: AuthMode.login,
       error: error,
     );
   }
@@ -75,7 +75,7 @@ class AuthNotifier extends _$AuthNotifier {
       error: null,
       errorCode: null,
       isSessionExpired: false,
-      showLoginScreen: true,
+      mode: AuthMode.login,
     );
   }
 
@@ -201,12 +201,12 @@ class AuthNotifier extends _$AuthNotifier {
   }
 
   void showLoginScreen() {
-    state = state.copyWith(showLoginScreen: true, error: null, errorCode: null);
+    state = state.copyWith(mode: AuthMode.login, error: null, errorCode: null);
   }
 
   void showRegisterScreen() {
     state = state.copyWith(
-      showLoginScreen: false,
+      mode: AuthMode.register,
       error: null,
       errorCode: null,
     );
@@ -221,20 +221,20 @@ class AuthNotifier extends _$AuthNotifier {
         isAuthenticated: true,
         accessToken: token,
         isSessionExpired: false,
-        showLoginScreen: true,
+        mode: AuthMode.login,
       );
     } else if (initResult.isSessionExpired) {
       state = state.copyWith(
         isAuthenticated: false,
         isSessionExpired: true,
         canRefreshToken: initResult.canRefresh,
-        showLoginScreen: true,
+        mode: AuthMode.login,
       );
     } else {
       state = state.copyWith(
         isAuthenticated: false,
         isSessionExpired: false,
-        showLoginScreen: initResult.shouldShowLogin,
+        mode: initResult.shouldShowLogin ? AuthMode.login : AuthMode.register,
       );
     }
   }
@@ -291,7 +291,7 @@ class AuthNotifier extends _$AuthNotifier {
             isSessionExpired: false,
             canRefreshToken: false,
             error: result.error,
-            showLoginScreen: true,
+            mode: AuthMode.login,
           );
         } else {
           // Transient failure - don't force logout, keep session state
@@ -299,7 +299,7 @@ class AuthNotifier extends _$AuthNotifier {
             isLoading: false,
             error: result.error,
             canRefreshToken: true,
-            showLoginScreen: true,
+            mode: AuthMode.login,
           );
         }
         return false;
@@ -308,7 +308,7 @@ class AuthNotifier extends _$AuthNotifier {
       state = state.copyWith(
         isLoading: false,
         error: 'Erreur de connexion. Veuillez réessayer.',
-        showLoginScreen: true,
+        mode: AuthMode.login,
       );
       return false;
     }
@@ -390,7 +390,7 @@ class AuthNotifier extends _$AuthNotifier {
           isAuthenticated: true,
           accessToken: token,
           isSessionExpired: false,
-          showLoginScreen: true,
+          mode: AuthMode.login,
         );
       } else if (initResult.isSessionExpired && initResult.canRefresh) {
         // Access token expired but refresh token valid - try to restore
@@ -401,7 +401,7 @@ class AuthNotifier extends _$AuthNotifier {
         state = state.copyWith(
           isAuthenticated: false,
           isSessionExpired: false,
-          showLoginScreen: initResult.shouldShowLogin,
+          mode: initResult.shouldShowLogin ? AuthMode.login : AuthMode.register,
         );
       }
     } catch (e) {
@@ -409,7 +409,7 @@ class AuthNotifier extends _$AuthNotifier {
       state = state.copyWith(
         isAuthenticated: false,
         isSessionExpired: false,
-        showLoginScreen: true,
+        mode: AuthMode.login,
         error: "Erreur d'initialisation. Veuillez redémarrer l'application.",
       );
     }

@@ -17,8 +17,6 @@ import '../widgets/primary_submit_button.dart';
 import '../widgets/field_label.dart';
 import '../widgets/password_form_field.dart';
 
-enum AuthMode { login, register }
-
 class AuthScreen extends ConsumerStatefulWidget {
   final AuthMode initialMode;
 

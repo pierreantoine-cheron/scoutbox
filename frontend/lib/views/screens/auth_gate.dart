@@ -124,7 +124,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     }
 
     return AuthScreen(
-      initialMode: authState.showLoginScreen ? AuthMode.login : AuthMode.register,
+      initialMode: authState.mode,
     );
   }
 

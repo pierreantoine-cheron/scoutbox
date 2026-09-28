@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:client/models/auth_response.dart';
+import 'package:client/models/auth_state.dart';
 import 'package:client/providers/auth_provider.dart';
 import 'package:client/services/auth_service.dart';
 
@@ -113,7 +114,7 @@ void main() {
         expect(state.accessToken, equals('access_123'));
         expect(state.isLoading, isFalse);
         expect(state.error, isNull);
-        expect(state.showLoginScreen, isTrue);
+        expect(state.mode, AuthMode.login);
       });
 
       test('failure sets error in state', () async {
@@ -269,12 +270,12 @@ void main() {
     group('navigation toggles', () {
       test('showLoginScreen sets the flag', () {
         container.read(authProvider.notifier).showLoginScreen();
-        expect(container.read(authProvider).showLoginScreen, isTrue);
+        expect(container.read(authProvider).mode, AuthMode.login);
       });
 
       test('showRegisterScreen clears the flag', () {
         container.read(authProvider.notifier).showRegisterScreen();
-        expect(container.read(authProvider).showLoginScreen, isFalse);
+        expect(container.read(authProvider).mode, AuthMode.register);
       });
     });
 
