@@ -270,6 +270,34 @@ void main() {
       );
     });
 
+    testWidgets('preserves deep-link server URL when switching to login', (
+      WidgetTester tester,
+    ) async {
+      final fakeService = _FakeDeepLinkService();
+      addTearDown(fakeService.dispose);
+      fakeService.setInitialLink(
+        Uri.parse('scoutbox://register?server=https://keep-me.groupe.fr&invite=KEEP-CODE'),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deepLinkServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(home: RegisterScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('https://keep-me.groupe.fr'), findsOneWidget);
+
+      await tester.tap(find.text('Connexion').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('https://keep-me.groupe.fr'), findsOneWidget);
+    });
+
     testWidgets('fields remain editable after deep link prefill', (
       WidgetTester tester,
     ) async {

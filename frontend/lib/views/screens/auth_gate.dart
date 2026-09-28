@@ -9,8 +9,7 @@ import '../../providers/providers.dart';
 import '../../services/deep_link_service.dart';
 import '../../utils/design_constants.dart';
 import '../widgets/widgets.dart';
-import 'login_screen.dart';
-import 'register_screen.dart';
+import 'auth_screen.dart';
 import 'models_screen.dart';
 import 'part_kinds_screen.dart';
 import 'tags_screen.dart';
@@ -124,7 +123,9 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       );
     }
 
-    return authState.showLoginScreen ? const LoginScreen() : const RegisterScreen();
+    return AuthScreen(
+      initialMode: authState.showLoginScreen ? AuthMode.login : AuthMode.register,
+    );
   }
 
   void _handleBack() {

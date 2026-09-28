@@ -5,8 +5,6 @@ import 'package:client/main.dart';
 import 'package:client/models/auth_response.dart';
 import 'package:client/providers/auth_provider.dart';
 import 'package:client/services/auth_service.dart';
-import 'package:client/views/screens/login_screen.dart';
-import 'package:client/views/screens/register_screen.dart';
 import 'package:client/views/screens/tent_list_screen.dart';
 
 class FakeAuthService extends AuthService {
@@ -73,7 +71,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
   });
 
   testWidgets('routes to RegisterScreen for first-time users', (
@@ -97,7 +95,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.byType(RegisterScreen), findsOneWidget);
+    expect(find.text("S'inscrire"), findsOneWidget);
   });
 
   testWidgets('transitions to TentListScreen after successful login', (
@@ -122,7 +120,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
 
     await tester.enterText(find.byType(TextFormField).at(0), 'https://api.scoutbox.test');
     await tester.enterText(find.byType(TextFormField).at(1), 'testuser');

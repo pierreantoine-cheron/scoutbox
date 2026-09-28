@@ -178,12 +178,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       _mode = mode;
       _autovalidate.reset();
     });
-    _formKey.currentState?.reset();
-    if (mode == AuthMode.login) {
-      ref.read(authProvider.notifier).showLoginScreen();
-    } else {
-      ref.read(authProvider.notifier).showRegisterScreen();
-    }
   }
 
   @override
