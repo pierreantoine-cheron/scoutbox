@@ -328,6 +328,7 @@ class AuthService {
   Future<void> clearAuthTokensOnly() async {
     await SecureStorageService.clearAuthTokens();
     _cachedAccessToken = null;
+    _cachedAuthResponse = null;
     ApiClient.reset();
   }
 
@@ -406,6 +407,7 @@ class AuthService {
         // Storage failure - attempt to clear tokens to avoid corrupted state
         debugPrint('Failed to persist refreshed tokens: $e');
         _cachedAccessToken = null;
+        _cachedAuthResponse = null;
         try {
           await SecureStorageService.deleteTokens();
         } catch (deleteError) {
