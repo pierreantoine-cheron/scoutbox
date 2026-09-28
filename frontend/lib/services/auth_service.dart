@@ -560,8 +560,19 @@ class AuthService {
         isUsed: response.data['isUsed'] as bool,
         inviteLink: response.data['inviteLink'] as String?,
       );
+    } on DioException catch (e) {
+      final message = _mapDioExceptionToAuthResult(
+        e,
+        connectionErrorMessage:
+            "Impossible de générer le code d'invitation. Réessayez.",
+      ).error;
+      throw AuthServiceException(
+        message ?? "Impossible de générer le code d'invitation. Réessayez.",
+      );
     } catch (_) {
-      throw Exception("Impossible de générer le code d'invitation. Réessayez.");
+      throw const AuthServiceException(
+        "Impossible de générer le code d'invitation. Réessayez.",
+      );
     }
   }
 
