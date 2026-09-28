@@ -162,7 +162,7 @@ void main() {
 
       expect(find.text('Quitter la création ?'), findsOneWidget);
       expect(
-        find.text('Votre brouillon sera conservé pour plus tard.'),
+        find.text('Vos modifications seront perdues.'),
         findsOneWidget,
       );
 

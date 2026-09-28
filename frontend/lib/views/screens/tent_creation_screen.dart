@@ -534,7 +534,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
     return showConfirmDialog(
       context,
       title: 'Quitter la création ?',
-      content: 'Votre brouillon sera conservé pour plus tard.',
+      content: 'Vos modifications seront perdues.',
       confirmLabel: 'Quitter',
       cancelLabel: 'Rester',
     );
