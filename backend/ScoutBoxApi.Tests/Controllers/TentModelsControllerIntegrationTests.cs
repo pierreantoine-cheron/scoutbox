@@ -204,6 +204,43 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
     }
 
     [Fact]
+    public async Task CreateTentModel_DuplicateNameWithInactiveModel_ReturnsBadRequest()
+    {
+        await EnsureTestUserExistsAsync();
+        var name = $"Inactive {Guid.NewGuid():N}"[..20];
+
+        List<Guid> partKindIds;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            partKindIds = await db.PartKinds.Take(2).Select(pk => pk.Id).ToListAsync();
+
+            db.TentModels.Add(new TentModel
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                DisplayOrder = 999,
+                IsActive = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync("/api/tent-models", new
+        {
+            name,
+            componentIds = partKindIds
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("MODEL_NAME_EXISTS", payload.Code);
+    }
+
+    [Fact]
     public async Task UpdateTentModel_NameOnly_ReturnsUpdatedModelAndAuditEvent()
     {
         await EnsureTestUserExistsAsync();

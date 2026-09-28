@@ -66,7 +66,7 @@ public class TentRepository : ITentRepository
     public async Task<bool> HasDuplicateModelNameAsync(string name, Guid? excludingId = null)
     {
         return await _db.TentModels.AnyAsync(m =>
-            m.Name == name && m.IsActive &&
+            m.Name == name &&
             (excludingId == null || m.Id != excludingId));
     }
 
