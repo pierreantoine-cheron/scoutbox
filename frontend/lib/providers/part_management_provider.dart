@@ -106,10 +106,6 @@ class PartManagementNotifier extends _$PartManagementNotifier {
     }
   }
 
-  void clearAddError() {
-    state = state.copyWith(clearAddError: true);
-  }
-
   void clearRemoveError() {
     state = state.copyWith(clearRemoveError: true);
   }

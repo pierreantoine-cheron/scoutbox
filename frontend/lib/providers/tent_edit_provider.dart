@@ -36,7 +36,6 @@ class TentEditNotifier extends _$TentEditNotifier {
 
     state = state.copyWith(
       savingField: _determineSavingField(
-        state.editingField,
         name: name,
         size: size,
         overallState: overallState,
@@ -70,7 +69,6 @@ class TentEditNotifier extends _$TentEditNotifier {
       state = state.copyWith(
         baseTent: updatedTent,
         lastSaveTime: DateTime.now(),
-        clearEditingField: true,
         clearSavingField: true,
         clearFieldError: true,
         clearPendingRetry: true,
@@ -122,31 +120,11 @@ class TentEditNotifier extends _$TentEditNotifier {
     );
   }
 
-  void startEditing(EditableField field, Tent tent) {
-    state = state.copyWith(
-      editingField: field,
-      baseTent: tent,
-      clearSavingField: true,
-      clearFieldError: true,
-      clearPendingRetry: true,
-    );
-  }
-
-  void cancelEditing() {
-    state = state.copyWith(
-      clearEditingField: true,
-      clearSavingField: true,
-      clearFieldError: true,
-      clearPendingRetry: true,
-    );
-  }
-
   void clearError() {
     state = state.copyWith(clearFieldError: true);
   }
 
-  EditableField? _determineSavingField(
-    EditableField? editingField, {
+  EditableField? _determineSavingField({
     required String name,
     required int size,
     required TentOverallState overallState,
@@ -154,7 +132,7 @@ class TentEditNotifier extends _$TentEditNotifier {
     String? tentModelId,
     Tent? baseTent,
   }) {
-    if (baseTent == null) return editingField;
+    if (baseTent == null) return null;
 
     if (baseTent.name != name) return EditableField.name;
     if (baseTent.size != size) return EditableField.size;
@@ -166,12 +144,11 @@ class TentEditNotifier extends _$TentEditNotifier {
       return EditableField.model;
     }
 
-    return editingField;
+    return null;
   }
 }
 
 class TentEditState {
-  final EditableField? editingField;
   final EditableField? savingField;
   final Tent? baseTent;
   final String? fieldError;
@@ -179,7 +156,6 @@ class TentEditState {
   final DateTime? lastSaveTime;
 
   const TentEditState({
-    this.editingField,
     this.savingField,
     this.baseTent,
     this.fieldError,
@@ -188,20 +164,17 @@ class TentEditState {
   });
 
   TentEditState copyWith({
-    EditableField? editingField,
     EditableField? savingField,
     Tent? baseTent,
     String? fieldError,
     PendingTentUpdate? pendingRetry,
     DateTime? lastSaveTime,
-    bool clearEditingField = false,
     bool clearSavingField = false,
     bool clearBaseTent = false,
     bool clearFieldError = false,
     bool clearPendingRetry = false,
   }) {
     return TentEditState(
-      editingField: clearEditingField ? null : editingField ?? this.editingField,
       savingField: clearSavingField ? null : savingField ?? this.savingField,
       baseTent: clearBaseTent ? null : baseTent ?? this.baseTent,
       fieldError: clearFieldError ? null : fieldError ?? this.fieldError,

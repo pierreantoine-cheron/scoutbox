@@ -8,22 +8,16 @@ import 'package:client/views/widgets/tent_list_filter_bar.dart';
 
 void main() {
   group('TentListFilterBar', () {
-    late TextEditingController searchController;
     late Set<TentOverallState> selectedStates;
     late Set<int> selectedSizes;
     late Set<String> selectedModelIds;
     late Set<String> selectedTagIds;
 
     setUp(() {
-      searchController = TextEditingController();
       selectedStates = {};
       selectedSizes = {};
       selectedModelIds = {};
       selectedTagIds = {};
-    });
-
-    tearDown(() {
-      searchController.dispose();
     });
 
     Widget buildBar({bool isDesktop = true}) {
@@ -32,7 +26,6 @@ void main() {
         home: Scaffold(
           body: TentListFilterBar(
             isDesktop: isDesktop,
-            searchController: searchController,
             selectedStates: selectedStates,
             selectedSizes: selectedSizes,
             selectedModelIds: selectedModelIds,
@@ -46,14 +39,12 @@ void main() {
             isFilteredMode: false,
             archiveFilter: ArchiveFilter.active,
             visibleTentCount: 3,
-            onSearchChanged: (_) {},
             onToggleState: (_) {},
             onToggleSize: (_) {},
             onToggleModel: (_) {},
             onToggleTag: (_) {},
             onArchiveFilterChanged: (_) {},
             onClearAll: () {},
-            onManageTags: () {},
           ),
         ),
       );
@@ -101,8 +92,7 @@ void main() {
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
-              searchController: searchController,
-              selectedStates: selectedStates,
+                selectedStates: selectedStates,
               selectedSizes: selectedSizes,
               selectedModelIds: selectedModelIds,
               selectedTagIds: selectedTagIds,
@@ -112,8 +102,7 @@ void main() {
               isFilteredMode: false,
               archiveFilter: ArchiveFilter.active,
               visibleTentCount: 3,
-              onSearchChanged: (_) {},
-              onToggleState: (_) {},
+                onToggleState: (_) {},
               onToggleSize: (_) {},
               onToggleModel: (_) {},
               onToggleTag: (_) {},
@@ -142,8 +131,7 @@ void main() {
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
-              searchController: searchController,
-              selectedStates: selectedStates,
+                selectedStates: selectedStates,
               selectedSizes: selectedSizes,
               selectedModelIds: selectedModelIds,
               selectedTagIds: selectedTagIds,
@@ -153,8 +141,7 @@ void main() {
               isFilteredMode: false,
               archiveFilter: ArchiveFilter.active,
               visibleTentCount: 3,
-              onSearchChanged: (_) {},
-              onToggleState: (s) => toggledState = s,
+                onToggleState: (s) => toggledState = s,
               onToggleSize: (_) {},
               onToggleModel: (_) {},
               onToggleTag: (_) {},
@@ -179,8 +166,7 @@ void main() {
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
-              searchController: searchController,
-              selectedStates: const {TentOverallState.good},
+                selectedStates: const {TentOverallState.good},
               selectedSizes: selectedSizes,
               selectedModelIds: selectedModelIds,
               selectedTagIds: selectedTagIds,
@@ -190,8 +176,7 @@ void main() {
               isFilteredMode: true,
               archiveFilter: ArchiveFilter.active,
               visibleTentCount: 3,
-              onSearchChanged: (_) {},
-              onToggleState: (_) {},
+                onToggleState: (_) {},
               onToggleSize: (_) {},
               onToggleModel: (_) {},
               onToggleTag: (_) {},
@@ -244,8 +229,7 @@ void main() {
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
-              searchController: searchController,
-              selectedStates: selectedStates,
+                selectedStates: selectedStates,
               selectedSizes: selectedSizes,
               selectedModelIds: selectedModelIds,
               selectedTagIds: selectedTagIds,
@@ -255,15 +239,13 @@ void main() {
               isFilteredMode: false,
               archiveFilter: ArchiveFilter.active,
               visibleTentCount: 3,
-              onSearchChanged: (_) {},
-              onToggleState: (_) {},
+                onToggleState: (_) {},
               onToggleSize: (_) {},
               onToggleModel: (_) {},
               onToggleTag: (tagId) => toggledTagId = tagId,
               onArchiveFilterChanged: (_) {},
               onClearAll: () {},
-              onManageTags: () {},
-            ),
+              ),
           ),
         ),
       );
@@ -283,8 +265,7 @@ void main() {
           home: Scaffold(
             body: TentListFilterBar(
               isDesktop: true,
-              searchController: searchController,
-              selectedStates: selectedStates,
+                selectedStates: selectedStates,
               selectedSizes: selectedSizes,
               selectedModelIds: selectedModelIds,
               selectedTagIds: selectedTagIds,
@@ -294,15 +275,13 @@ void main() {
               isFilteredMode: false,
               archiveFilter: ArchiveFilter.active,
               visibleTentCount: 3,
-              onSearchChanged: (_) {},
-              onToggleState: (_) {},
+                onToggleState: (_) {},
               onToggleSize: (_) {},
               onToggleModel: (_) {},
               onToggleTag: (_) {},
               onArchiveFilterChanged: (_) {},
               onClearAll: () {},
-              onManageTags: () {},
-            ),
+              ),
           ),
         ),
       );

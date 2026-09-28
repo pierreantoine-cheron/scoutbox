@@ -239,7 +239,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     return switch (section) {
       NavigationSection.tents => TentListScreen(
         onOpenTentDetail: widget.onOpenTentDetail,
-        onSwitchToTags: () => widget.onSelectSection(NavigationSection.tags),
         onCreateTent: widget.onCreateTent,
       ),
       NavigationSection.tags => const TagsScreen(),

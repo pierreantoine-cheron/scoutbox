@@ -54,7 +54,6 @@ class _ActivePill {
 
 class TentListFilterBar extends StatefulWidget {
   final bool isDesktop;
-  final TextEditingController searchController;
   final Set<TentOverallState> selectedStates;
   final Set<int> selectedSizes;
   final Set<String> selectedModelIds;
@@ -65,20 +64,16 @@ class TentListFilterBar extends StatefulWidget {
   final List<Tag> allTags;
   final int visibleTentCount;
   final bool isFilteredMode;
-  final ValueChanged<String> onSearchChanged;
   final ValueChanged<TentOverallState> onToggleState;
   final ValueChanged<int> onToggleSize;
   final ValueChanged<String> onToggleModel;
   final ValueChanged<String> onToggleTag;
   final ValueChanged<ArchiveFilter> onArchiveFilterChanged;
   final VoidCallback onClearAll;
-  final VoidCallback? onClearTags;
-  final VoidCallback? onManageTags;
 
   const TentListFilterBar({
     super.key,
     required this.isDesktop,
-    required this.searchController,
     required this.selectedStates,
     required this.selectedSizes,
     required this.selectedModelIds,
@@ -89,15 +84,12 @@ class TentListFilterBar extends StatefulWidget {
     required this.allTags,
     required this.visibleTentCount,
     required this.isFilteredMode,
-    required this.onSearchChanged,
     required this.onToggleState,
     required this.onToggleSize,
     required this.onToggleModel,
     required this.onToggleTag,
     required this.onArchiveFilterChanged,
     required this.onClearAll,
-    this.onClearTags,
-    this.onManageTags,
   });
 
   @override
@@ -214,7 +206,6 @@ class _TentListFilterBarState extends State<TentListFilterBar> {
                           onToggleTag: widget.onToggleTag,
                           onArchiveFilterChanged: widget.onArchiveFilterChanged,
                           onClearAll: widget.onClearAll,
-                          onManageTags: widget.onManageTags,
                         )
                       : const SizedBox(width: double.infinity),
                 );
@@ -430,7 +421,6 @@ class _FilterPanel extends StatelessWidget {
   final ValueChanged<String> onToggleTag;
   final ValueChanged<ArchiveFilter> onArchiveFilterChanged;
   final VoidCallback onClearAll;
-  final VoidCallback? onManageTags;
 
   const _FilterPanel({
     required this.selectedStates,
@@ -449,7 +439,6 @@ class _FilterPanel extends StatelessWidget {
     required this.onToggleTag,
     required this.onArchiveFilterChanged,
     required this.onClearAll,
-    this.onManageTags,
   });
 
   @override

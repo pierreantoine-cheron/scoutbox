@@ -10,13 +10,11 @@ import '../widgets/widgets.dart';
 
 class TentListScreen extends ConsumerStatefulWidget {
   final ValueChanged<String> onOpenTentDetail;
-  final VoidCallback onSwitchToTags;
   final VoidCallback onCreateTent;
 
   const TentListScreen({
     super.key,
     required this.onOpenTentDetail,
-    required this.onSwitchToTags,
     required this.onCreateTent,
   });
 
@@ -290,7 +288,6 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
   ) {
     return TentListFilterBar(
       isDesktop: isDesktop,
-      searchController: _searchController,
       selectedStates: filterState.selectedStates,
       selectedSizes: filterState.selectedSizes,
       selectedModelIds: filterState.selectedModelIds,
@@ -301,9 +298,6 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       allTags: allTags.cast(),
       visibleTentCount: visibleTentCount,
       isFilteredMode: isFilteredMode,
-      onSearchChanged: (value) {
-        ref.read(tentListFilterProvider.notifier).setSearchText(value);
-      },
       onToggleState: (state) {
         ref.read(tentListFilterProvider.notifier).toggleState(state);
       },
@@ -318,8 +312,6 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
         ref.read(tentListFilterProvider.notifier).setArchiveFilter(filter);
       },
       onClearAll: _clearFiltersHook,
-      onClearTags: () => ref.read(tentListFilterProvider.notifier).setSelectedTags({}),
-      onManageTags: widget.onSwitchToTags,
     );
   }
 

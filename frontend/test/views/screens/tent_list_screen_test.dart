@@ -1385,7 +1385,6 @@ class _TentModelsLoadingNotifier extends TentModelsNotifier {
 Widget _tentListScreen({VoidCallback? onCreateTent}) {
   return TentListScreen(
     onOpenTentDetail: (_) {},
-    onSwitchToTags: () {},
     onCreateTent: onCreateTent ?? () {},
   );
 }

@@ -212,51 +212,6 @@ class AuthNotifier extends _$AuthNotifier {
     );
   }
 
-  Future<void> checkAuthStatus() async {
-    final initResult = await _authService.initializeFromStorage();
-
-    if (initResult.isAuthenticated) {
-      final token = await _authService.getAccessToken();
-      state = state.copyWith(
-        isAuthenticated: true,
-        accessToken: token,
-        isSessionExpired: false,
-        mode: AuthMode.login,
-      );
-    } else if (initResult.isSessionExpired) {
-      state = state.copyWith(
-        isAuthenticated: false,
-        isSessionExpired: true,
-        canRefreshToken: initResult.canRefresh,
-        mode: AuthMode.login,
-      );
-    } else {
-      state = state.copyWith(
-        isAuthenticated: false,
-        isSessionExpired: false,
-        mode: initResult.mode,
-      );
-    }
-  }
-
-  /// Check if current session is valid, or if token needs refresh
-  Future<void> validateSession() async {
-    final isAuthenticated = await _authService.isAuthenticated();
-    final isSessionExpired = await _authService.isSessionExpired();
-
-    if (!isAuthenticated && isSessionExpired) {
-      final canRefresh = await _authService.canRefreshToken();
-      state = state.copyWith(
-        isAuthenticated: false,
-        isSessionExpired: true,
-        canRefreshToken: canRefresh,
-      );
-    } else if (!isAuthenticated) {
-      state = state.copyWith(isAuthenticated: false, isSessionExpired: false);
-    }
-    // If authenticated, state is already correct
-  }
-
   /// Attempt to restore session by refreshing the token
   ///
   /// Called on startup when access token is expired but refresh token is valid.

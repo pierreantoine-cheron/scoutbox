@@ -275,8 +275,7 @@ class _DetailContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final editState = ref.watch(tentEditProvider(tentId));
     final useLocalTent =
-        editState.baseTent?.id == tentId &&
-        (editState.editingField != null || editState.savingField != null);
+        editState.baseTent?.id == tentId && editState.savingField != null;
     final displayedTent = useLocalTent ? editState.baseTent! : tent;
     final isWide = MediaQuery.sizeOf(context).width >= 900;
 

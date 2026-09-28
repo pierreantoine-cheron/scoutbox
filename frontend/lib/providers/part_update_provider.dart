@@ -177,7 +177,6 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
     );
   }
 
-  PendingPartUpdate? failedRequestFor(String partId) => state.lastFailedRequests[partId];
 }
 
 String? _normalizeComments(String? comments) {
