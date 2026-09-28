@@ -52,11 +52,6 @@ public class TagRepository : ITagRepository
         _db.Tags.Add(tag);
     }
 
-    public void UpdateTag(Tag tag)
-    {
-        _db.Tags.Update(tag);
-    }
-
     public void RemoveTag(Tag tag)
     {
         _db.Tags.Remove(tag);

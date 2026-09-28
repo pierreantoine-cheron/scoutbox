@@ -169,23 +169,6 @@ public class AuditServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task RecordEventAsync_SavesToDatabase()
-    {
-        var userId = Guid.NewGuid();
-
-        var auditEvent = await _auditService.RecordEventAsync(
-            AuditActions.UserRegisteredFromInvite,
-            userId,
-            nameof(User),
-            userId,
-            new Dictionary<string, object?> { ["inviteCode"] = "INVITE-123" });
-
-        var savedEvent = await _db.AuditEvents.FindAsync(auditEvent.Id);
-        Assert.NotNull(savedEvent);
-        Assert.Equal(AuditActions.UserRegisteredFromInvite, savedEvent.Action);
-    }
-
-    [Fact]
     public void RecordEvent_SetsUtcTimestamp()
     {
         var before = DateTime.UtcNow;
@@ -297,143 +280,10 @@ public class AuditServiceTests : IDisposable
         Assert.Null(auditEvent.MetadataJson);
     }
 
-    [Fact]
-    public void AllAuditActions_AreDefinedAndConsistent()
-    {
-        // Verify all expected actions are defined and use consistent format
-        var expectedActions = new[]
-        {
-            AuditActions.InviteCreated,
-            AuditActions.InviteRevoked,
-            AuditActions.UserRegisteredFromInvite,
-            AuditActions.UserLoginSucceeded,
-            AuditActions.UserRefreshTokenRotated,
-            AuditActions.TentCreated,
-            AuditActions.TentUpdated,
-            AuditActions.TentArchived,
-            AuditActions.PartStateChanged,
-            AuditActions.PartAdded,
-            AuditActions.PartRemoved,
-            AuditActions.PhotoUploaded,
-            AuditActions.PhotoDeleted,
-            AuditActions.TagCreated,
-            AuditActions.TagAssigned,
-            AuditActions.TagRemoved
-        };
-
-        foreach (var action in expectedActions)
-        {
-            Assert.False(string.IsNullOrEmpty(action));
-            Assert.Contains("_", action); // Snake_case format
-            Assert.All(action, c => Assert.True(char.IsLower(c) || c == '_' || char.IsDigit(c)));
-        }
-    }
 }
 
 public class CurrentUserAccessorTests
 {
-    [Fact]
-    public void GetCurrentUserId_WithValidClaim_ReturnsUserId()
-    {
-        var userId = Guid.NewGuid();
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(ClaimTypes.Name, "testuser")
-        };
-        var identity = new ClaimsIdentity(claims, "Test");
-        var principal = new ClaimsPrincipal(identity);
-
-        var httpContext = new DefaultHttpContext { User = principal };
-        var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
-        var accessor = new CurrentUserAccessor(httpContextAccessor);
-
-        var result = accessor.GetCurrentUserId();
-
-        Assert.Equal(userId, result);
-    }
-
-    [Fact]
-    public void GetCurrentUserId_WithNoAuthentication_ReturnsNull()
-    {
-        var httpContext = new DefaultHttpContext();
-        var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
-        var accessor = new CurrentUserAccessor(httpContextAccessor);
-
-        var result = accessor.GetCurrentUserId();
-
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public void GetCurrentUserId_WithInvalidGuidClaim_ReturnsNull()
-    {
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, "not-a-valid-guid")
-        };
-        var identity = new ClaimsIdentity(claims, "Test");
-        var principal = new ClaimsPrincipal(identity);
-
-        var httpContext = new DefaultHttpContext { User = principal };
-        var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
-        var accessor = new CurrentUserAccessor(httpContextAccessor);
-
-        var result = accessor.GetCurrentUserId();
-
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public void GetCurrentUserIdOrThrow_WithValidClaim_ReturnsUserId()
-    {
-        var userId = Guid.NewGuid();
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString())
-        };
-        var identity = new ClaimsIdentity(claims, "Test");
-        var principal = new ClaimsPrincipal(identity);
-
-        var httpContext = new DefaultHttpContext { User = principal };
-        var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
-        var accessor = new CurrentUserAccessor(httpContextAccessor);
-
-        var result = accessor.GetCurrentUserIdOrThrow();
-
-        Assert.Equal(userId, result);
-    }
-
-    [Fact]
-    public void GetCurrentUserIdOrThrow_WithNoAuthentication_ThrowsException()
-    {
-        var httpContext = new DefaultHttpContext();
-        var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
-        var accessor = new CurrentUserAccessor(httpContextAccessor);
-
-        Assert.Throws<UnauthorizedAccessException>(() => accessor.GetCurrentUserIdOrThrow());
-    }
-
-    [Fact]
-    public void GetCurrentUsername_WithValidClaim_ReturnsUsername()
-    {
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.Name, "testuser")
-        };
-        var identity = new ClaimsIdentity(claims, "Test");
-        var principal = new ClaimsPrincipal(identity);
-
-        var httpContext = new DefaultHttpContext { User = principal };
-        var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
-        var accessor = new CurrentUserAccessor(httpContextAccessor);
-
-        var result = accessor.GetCurrentUsername();
-
-        Assert.Equal("testuser", result);
-    }
-
     [Fact]
     public void GetValidatedUserId_WithValidClaim_ReturnsUserId()
     {

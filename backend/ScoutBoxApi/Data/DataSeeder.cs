@@ -36,10 +36,10 @@ public static class DataSeeder
         context.SaveChanges();
     }
 
-    private static bool SeedSystemUser(ScoutBoxDbContext context)
+    private static void SeedSystemUser(ScoutBoxDbContext context)
     {
         if (context.Users.Any(u => u.Username == "SYSTEM"))
-            return false;
+            return;
 
         var systemUser = new User
         {
@@ -51,13 +51,12 @@ public static class DataSeeder
         };
 
         context.Users.Add(systemUser);
-        return true;
     }
 
-    private static bool SeedPartKinds(ScoutBoxDbContext context)
+    private static void SeedPartKinds(ScoutBoxDbContext context)
     {
         if (context.PartKinds.Any())
-            return false;
+            return;
 
         var now = DateTime.UtcNow;
         var partKinds = new[]
@@ -75,13 +74,12 @@ public static class DataSeeder
         };
 
         context.PartKinds.AddRange(partKinds);
-        return true;
     }
 
-    private static bool SeedTentModels(ScoutBoxDbContext context)
+    private static void SeedTentModels(ScoutBoxDbContext context)
     {
         if (context.TentModels.Any())
-            return false;
+            return;
 
         var now = DateTime.UtcNow;
         var tentModels = new[]
@@ -95,13 +93,12 @@ public static class DataSeeder
         };
 
         context.TentModels.AddRange(tentModels);
-        return true;
     }
 
-    private static bool SeedTentModelComponents(ScoutBoxDbContext context)
+    private static void SeedTentModelComponents(ScoutBoxDbContext context)
     {
         if (context.TentModelComponents.Any())
-            return false;
+            return;
 
         var toitId       = Pk("0101");
         var doubleToitId = Pk("0102");
@@ -161,16 +158,15 @@ public static class DataSeeder
         // Autre: no components
 
         context.TentModelComponents.AddRange(components);
-        return true;
     }
 
     private static TentModelComponent C(Guid modelId, Guid partKindId) =>
         new() { Id = Guid.NewGuid(), TentModelId = modelId, PartKindId = partKindId };
 
-    private static bool SeedTags(ScoutBoxDbContext context)
+    private static void SeedTags(ScoutBoxDbContext context)
     {
         if (context.Tags.Any())
-            return false;
+            return;
 
         var now = DateTime.UtcNow;
         var tags = new[]
@@ -183,13 +179,12 @@ public static class DataSeeder
         };
 
         context.Tags.AddRange(tags);
-        return true;
     }
 
-    private static bool SeedAdminInvite(ScoutBoxDbContext context)
+    private static void SeedAdminInvite(ScoutBoxDbContext context)
     {
         if (context.Invites.Any())
-            return false;
+            return;
 
         var code = TokenService.GenerateRandomCode(9);
         var adminInvite = new Invite
@@ -205,7 +200,5 @@ public static class DataSeeder
         context.Invites.Add(adminInvite);
         Console.WriteLine($"[SETUP] Admin invite code: {code}");
         Console.WriteLine($"[SETUP] Use this code to register the first user.");
-
-        return true;
     }
 }

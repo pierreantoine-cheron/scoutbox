@@ -21,7 +21,6 @@ public class ScoutBoxDbContext : DbContext
     public DbSet<Part> Parts { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<TentTag> TentTags { get; set; }
-    public DbSet<SeedInfo> SeedInfos { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -310,11 +309,14 @@ public class ScoutBoxDbContext : DbContext
             entity.HasIndex(e => e.CreatedByUserId);
         });
 
+        // TODO: Generate a migration to rename the SeedInfo table (removing this explicit
+        // ToTable) now that SeedInfo is no longer exposed as a DbSet property.
         modelBuilder.Entity<SeedInfo>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.IsSeeded).IsRequired();
             entity.Property(e => e.SeededAt).IsRequired();
+            entity.ToTable("SeedInfos");
         });
     }
 }

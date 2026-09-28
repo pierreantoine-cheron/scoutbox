@@ -35,11 +35,6 @@ public class TentRepository : ITentRepository
             .ToListAsync();
     }
 
-    public async Task<TentModel?> GetTentModelByIdAsync(Guid id)
-    {
-        return await _db.TentModels.FindAsync(id);
-    }
-
     public async Task<TentModel?> GetTentModelByIdWithComponentsAsync(Guid id)
     {
         return await _db.TentModels

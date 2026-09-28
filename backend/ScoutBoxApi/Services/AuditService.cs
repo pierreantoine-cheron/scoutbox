@@ -24,17 +24,6 @@ public interface IAuditService
         string? targetEntityType = null,
         Guid? targetEntityId = null,
         Dictionary<string, object?>? metadata = null);
-
-    /// <summary>
-    /// Records an audit event asynchronously (for standalone operations outside transactions).
-    /// </summary>
-    Task<AuditEvent> RecordEventAsync(
-        string action,
-        Guid? actorUserId,
-        string? targetEntityType = null,
-        Guid? targetEntityId = null,
-        Dictionary<string, object?>? metadata = null,
-        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -87,38 +76,6 @@ public class AuditService : IAuditService
 
         _logger.LogDebug(
             "Audit event recorded: {Action} by user {ActorUserId} on {TargetEntityType}:{TargetEntityId}",
-            action, actorUserId, targetEntityType, targetEntityId);
-
-        return auditEvent;
-    }
-
-    public async Task<AuditEvent> RecordEventAsync(
-        string action,
-        Guid? actorUserId,
-        string? targetEntityType = null,
-        Guid? targetEntityId = null,
-        Dictionary<string, object?>? metadata = null,
-        CancellationToken cancellationToken = default)
-    {
-        var filteredMetadata = FilterMetadata(metadata);
-        var metadataJson = SerializeMetadata(filteredMetadata);
-
-        var auditEvent = new AuditEvent
-        {
-            Id = Guid.NewGuid(),
-            Action = action,
-            ActorUserId = actorUserId,
-            OccurredAt = DateTime.UtcNow,
-            TargetEntityType = targetEntityType,
-            TargetEntityId = targetEntityId,
-            MetadataJson = metadataJson
-        };
-
-        _db.AuditEvents.Add(auditEvent);
-        await _db.SaveChangesAsync(cancellationToken);
-
-        _logger.LogDebug(
-            "Audit event recorded asynchronously: {Action} by user {ActorUserId} on {TargetEntityType}:{TargetEntityId}",
             action, actorUserId, targetEntityType, targetEntityId);
 
         return auditEvent;

@@ -10,7 +10,6 @@ public interface ITentRepository
     Task<Tent?> GetTentByIdForUpdateAsync(Guid id);
     Task<Part?> GetPartByIdForUpdateAsync(Guid id);
     Task<TentModel?> GetActiveTentModelByIdAsync(Guid id);
-    Task<TentModel?> GetTentModelByIdAsync(Guid id);
     Task<TentModel?> GetTentModelByIdWithComponentsAsync(Guid id);
     Task<bool> HasDuplicateTentNameAsync(string normalizedName, Guid? excludedTentId = null);
     Task<bool> HasDuplicateModelNameAsync(string name, Guid? excludingId = null);
