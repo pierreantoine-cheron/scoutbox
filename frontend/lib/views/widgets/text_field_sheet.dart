@@ -67,9 +67,13 @@ class _TextFieldSheetState extends State<TextFieldSheet> {
               : TextInputAction.done,
           onFieldSubmitted: (widget.maxLines ?? 1) > 1
               ? null
-              : (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Navigator.of(context).pop(true);
-                }),
+              : (_) {
+                  final form = widget.formKey?.currentState;
+                  if (form != null && !form.validate()) return;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.of(context).pop(true);
+                  });
+                },
           validator:
               widget.validator ??
               (value) {
