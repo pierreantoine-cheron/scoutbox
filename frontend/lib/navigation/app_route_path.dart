@@ -72,6 +72,7 @@ class AppRoutePath {
 
     if (segments.length == 1) {
       final section = switch (segments.single) {
+        'journal' => NavigationSection.journal,
         'tags' => NavigationSection.tags,
         'parts' => NavigationSection.parts,
         'models' => NavigationSection.models,
@@ -106,6 +107,7 @@ class AppRoutePath {
   static Uri _sectionUri(NavigationSection section) {
     return switch (section) {
       NavigationSection.tents => Uri(path: '/'),
+      NavigationSection.journal => Uri(path: '/journal'),
       NavigationSection.tags => Uri(path: '/tags'),
       NavigationSection.parts => Uri(path: '/parts'),
       NavigationSection.models => Uri(path: '/models'),

@@ -42,6 +42,7 @@ void main() {
   test('parses every full-screen destination', () async {
     final cases = {
       '/': (AppRouteKind.section, NavigationSection.tents),
+      '/journal': (AppRouteKind.section, NavigationSection.journal),
       '/tags': (AppRouteKind.section, NavigationSection.tags),
       '/parts': (AppRouteKind.section, NavigationSection.parts),
       '/models': (AppRouteKind.section, NavigationSection.models),
@@ -58,6 +59,11 @@ void main() {
       expect(path.section, entry.value.$2);
       expect(parser.restoreRouteInformation(path).uri.path, entry.key);
     }
+  });
+
+  test('journal sits second in the navigation', () {
+    expect(NavigationSection.values[1], NavigationSection.journal);
+    expect(NavigationSection.journal.label, 'Journal');
   });
 
   test('canonicalizes unknown URLs to the tents section', () async {

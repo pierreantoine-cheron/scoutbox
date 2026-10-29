@@ -9,6 +9,7 @@ class ApiRoutes {
   static const String tentModels = '/api/tent-models';
   static const String partKinds = '/api/part-kinds';
   static const String tags = '/api/tags';
+  static const String activity = '/api/activity';
 
   // Auth endpoints
   static const String register = '$authBase/register';

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 enum NavigationSection {
   tents,
+  journal,
   tags,
   parts,
   models,
@@ -10,6 +11,7 @@ enum NavigationSection {
   String get label {
     return switch (this) {
       tents => 'Tentes',
+      journal => 'Journal',
       tags => 'Étiquettes',
       parts => 'Éléments',
       models => 'Modèles',
@@ -20,6 +22,7 @@ enum NavigationSection {
   IconData get icon {
     return switch (this) {
       tents => Icons.cabin,
+      journal => Icons.history,
       tags => Icons.label_outline,
       parts => Icons.build_outlined,
       models => Icons.grid_view_outlined,

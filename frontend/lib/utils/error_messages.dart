@@ -1,3 +1,4 @@
+import '../repositories/activity_repository.dart';
 import '../repositories/part_kind_repository.dart';
 import '../repositories/tag_repository.dart';
 import '../repositories/tent_repository.dart';
@@ -6,6 +7,9 @@ import '../services/error_localizer.dart';
 
 String toUserFacingError(Object error, String fallback) {
   if (error is TentRepositoryException) {
+    return ErrorLocalizer.localize(error.code, fallback: error.message);
+  }
+  if (error is ActivityRepositoryException) {
     return ErrorLocalizer.localize(error.code, fallback: error.message);
   }
   if (error is TagRepositoryException) {

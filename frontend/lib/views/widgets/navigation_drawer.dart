@@ -24,6 +24,7 @@ class ScoutBoxNavigationDrawer extends ConsumerWidget {
         count: () =>
             ref.watch(tentListProvider).asData?.value.where((t) => !t.isArchived).length ?? 0,
       ),
+      const _NavigationDrawerItem(section: NavigationSection.journal),
       _NavigationDrawerItem(
         section: NavigationSection.tags,
         count: () => ref.watch(tagsProvider).asData?.value.length ?? 0,

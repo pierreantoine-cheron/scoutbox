@@ -1,15 +1,21 @@
+import 'package:client/models/activity_item.dart';
 import 'package:client/models/auth_state.dart';
 import 'package:client/models/tent.dart';
 import 'package:client/navigation/app_router.dart';
 import 'package:client/providers/auth_provider.dart';
+import 'package:client/providers/navigation_provider.dart';
 import 'package:client/providers/tent_list_provider.dart';
+import 'package:client/repositories/activity_repository.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/utils/app_theme.dart';
+import 'package:client/views/screens/journal_screen.dart';
 import 'package:client/views/screens/tent_detail_screen.dart';
 import 'package:client/views/screens/tent_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../helpers/fake_activity_repository.dart';
 
 void main() {
   testWidgets('system back pops a nested page', (WidgetTester tester) async {
@@ -73,6 +79,23 @@ void main() {
     expect(find.byType(TentListScreen), findsOneWidget);
     expect(router.routeInformationProvider.value.uri.path, '/');
   });
+
+  testWidgets('journal is reachable at its own URL and restores on reload', (
+    WidgetTester tester,
+  ) async {
+    final router = await _pumpAuthenticatedApp(tester, location: '/journal');
+
+    expect(find.byType(JournalScreen), findsOneWidget);
+    expect(router.delegate.currentConfiguration.section, NavigationSection.journal);
+
+    router.routeInformationProvider.go('/');
+    await tester.pumpAndSettle();
+    expect(find.byType(TentListScreen), findsOneWidget);
+
+    router.routeInformationProvider.go('/journal');
+    await tester.pumpAndSettle();
+    expect(find.byType(JournalScreen), findsOneWidget);
+  });
 }
 
 typedef _RouterFixture = ({
@@ -101,6 +124,7 @@ Future<_RouterFixture> _pumpAuthenticatedApp(
       overrides: [
         authProvider.overrideWithValue(const AuthState(isAuthenticated: true)),
         tentRepositoryProvider.overrideWithValue(_TentRepositoryStub()),
+        activityRepositoryProvider.overrideWithValue(_ActivityRepositoryStub()),
         tentListProvider.overrideWith(() => _TentListNotifier()),
       ],
       child: MaterialApp.router(
@@ -168,5 +192,12 @@ class _TentRepositoryStub extends TentRepository {
       overallState: TentOverallState.good,
       comments: null,
     );
+  }
+}
+
+class _ActivityRepositoryStub extends FakeActivityRepository {
+  _ActivityRepositoryStub() {
+    handler = (category, window, cursor, limit) async =>
+        const ActivityPage(items: []);
   }
 }

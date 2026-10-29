@@ -36,6 +36,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAuditHistoryService, AuditHistoryService>();
+builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<ITentRepository, TentRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<TentService>();

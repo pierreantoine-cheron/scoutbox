@@ -1,4 +1,5 @@
 export 'auth_response.dart';
+export 'activity_item.dart';
 export 'auth_state.dart';
 export 'part.dart';
 export 'part_kind.dart';

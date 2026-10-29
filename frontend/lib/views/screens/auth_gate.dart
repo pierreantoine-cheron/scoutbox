@@ -10,6 +10,7 @@ import '../../services/deep_link_service.dart';
 import '../../utils/design_constants.dart';
 import '../widgets/widgets.dart';
 import 'auth_screen.dart';
+import 'journal_screen.dart';
 import 'models_screen.dart';
 import 'part_kinds_screen.dart';
 import 'tags_screen.dart';
@@ -240,6 +241,9 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       NavigationSection.tents => TentListScreen(
         onOpenTentDetail: widget.onOpenTentDetail,
         onCreateTent: widget.onCreateTent,
+      ),
+      NavigationSection.journal => JournalScreen(
+        onOpenTentDetail: widget.onOpenTentDetail,
       ),
       NavigationSection.tags => const TagsScreen(),
       NavigationSection.parts => const PartKindsScreen(),
