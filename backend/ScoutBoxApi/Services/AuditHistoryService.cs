@@ -52,7 +52,7 @@ public static class TentHistoryCategoryMapper
 
 /// <summary>
 /// Service for querying audit history with resolved user display names.
-/// Handles soft-deleted users by showing "Utilisateur supprimé" as fallback.
+/// The seeded system account is displayed as "Système".
 /// </summary>
 public interface IAuditHistoryService
 {
@@ -74,8 +74,8 @@ public class AuditHistoryService : IAuditHistoryService
     private readonly ScoutBoxDbContext _db;
     private readonly ILogger<AuditHistoryService> _logger;
 
-    // French display text for deleted users per specification
-    private const string DeletedUserDisplayName = "Utilisateur supprimé";
+    private static readonly Guid SystemUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    private const string SystemDisplayName = "Système";
 
     public AuditHistoryService(ScoutBoxDbContext db, ILogger<AuditHistoryService> logger)
     {
@@ -249,8 +249,7 @@ public class AuditHistoryService : IAuditHistoryService
         CancellationToken cancellationToken)
     {
         var actorIds = events
-            .Where(e => e.ActorUserId.HasValue)
-            .Select(e => e.ActorUserId!.Value)
+            .Select(e => e.ActorUserId)
             .Distinct()
             .ToList();
 
@@ -280,9 +279,7 @@ public class AuditHistoryService : IAuditHistoryService
         out string? metadataJson)
     {
         metadataJson = ae.MetadataJson;
-        var actorName = ae.ActorUserId.HasValue && displayNameMap.ContainsKey(ae.ActorUserId.Value)
-            ? displayNameMap[ae.ActorUserId.Value]
-            : DeletedUserDisplayName;
+        var actorName = displayNameMap[ae.ActorUserId];
 
         return ae.Action switch
         {
@@ -555,10 +552,13 @@ public class AuditHistoryService : IAuditHistoryService
         var users = await _db.Users
             .AsNoTracking()
             .IgnoreQueryFilters()
-            .Where(u => actorIds.Contains(u.Id) && !u.IsDeleted)
+            .Where(u => actorIds.Contains(u.Id))
             .Select(u => new { u.Id, u.Username })
-            .ToDictionaryAsync((x) => x.Id, (x) => x.Username, cancellationToken);
+            .ToListAsync(cancellationToken);
 
-        return users;
+        return users.ToDictionary(u => u.Id, u => ToDisplayName(u.Id, u.Username));
     }
+
+    private static string ToDisplayName(Guid userId, string username) =>
+        userId == SystemUserId ? SystemDisplayName : username;
 }

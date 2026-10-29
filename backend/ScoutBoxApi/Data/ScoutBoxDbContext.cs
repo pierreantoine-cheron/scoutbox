@@ -126,7 +126,7 @@ public class ScoutBoxDbContext : DbContext
             entity.HasOne(e => e.Actor)
                 .WithMany()
                 .HasForeignKey(e => e.ActorUserId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(e => e.OccurredAt);
             entity.HasIndex(e => e.ActorUserId);

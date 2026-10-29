@@ -5,7 +5,7 @@ public record TentHistoryItemDto(
     string Action,
     string Category,
     DateTime OccurredAt,
-    Guid? ActorUserId,
+    Guid ActorUserId,
     string ActorDisplayName,
     string? SubjectName,
     List<TentHistoryDetailDto> Details,

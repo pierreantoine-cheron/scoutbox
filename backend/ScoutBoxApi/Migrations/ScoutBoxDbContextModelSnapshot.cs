@@ -28,7 +28,7 @@ namespace ScoutBoxApi.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ActorUserId")
+                    b.Property<Guid>("ActorUserId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("MetadataJson")
@@ -471,7 +471,8 @@ namespace ScoutBoxApi.Migrations
                     b.HasOne("ScoutBoxApi.Models.Entities.User", "Actor")
                         .WithMany()
                         .HasForeignKey("ActorUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Actor");
                 });

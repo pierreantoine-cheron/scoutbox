@@ -76,7 +76,7 @@ public class TestDataBuilder
     /// </summary>
     public AuditEvent CreateAuditEvent(
         string action,
-        Guid? actorUserId = null,
+        Guid actorUserId,
         string? targetEntityType = null,
         Guid? targetEntityId = null,
         DateTime? occurredAt = null,

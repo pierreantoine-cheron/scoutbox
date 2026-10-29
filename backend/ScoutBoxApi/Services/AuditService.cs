@@ -13,14 +13,14 @@ public interface IAuditService
     /// Records an audit event synchronously (for use within transactions).
     /// </summary>
     /// <param name="action">The action type from AuditActions constants</param>
-    /// <param name="actorUserId">The user who performed the action (null for system)</param>
+    /// <param name="actorUserId">The user who performed the action, or the seeded system account</param>
     /// <param name="targetEntityType">Type of affected entity (e.g., "Invite", "User")</param>
     /// <param name="targetEntityId">ID of affected entity</param>
     /// <param name="metadata">Additional context (optional, simple key-value pairs recommended)</param>
     /// <returns>The created audit event</returns>
     AuditEvent RecordEvent(
         string action,
-        Guid? actorUserId,
+        Guid actorUserId,
         string? targetEntityType = null,
         Guid? targetEntityId = null,
         Dictionary<string, object?>? metadata = null);
@@ -53,7 +53,7 @@ public class AuditService : IAuditService
 
     public AuditEvent RecordEvent(
         string action,
-        Guid? actorUserId,
+        Guid actorUserId,
         string? targetEntityType = null,
         Guid? targetEntityId = null,
         Dictionary<string, object?>? metadata = null)

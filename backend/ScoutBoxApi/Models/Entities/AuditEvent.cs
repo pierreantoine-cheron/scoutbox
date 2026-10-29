@@ -15,10 +15,10 @@ public class AuditEvent
     public string Action { get; set; } = string.Empty;
 
     /// <summary>
-    /// The user who performed the action. Null for system-generated events or if user was deleted.
-    /// FK to Users table with SetNull behavior to preserve history.
+    /// The user who performed the action. Machine-generated events use the seeded system account.
+    /// FK to Users table with Restrict behavior to preserve history.
     /// </summary>
-    public Guid? ActorUserId { get; set; }
+    public Guid ActorUserId { get; set; }
 
     /// <summary>
     /// UTC timestamp when the action occurred.
@@ -43,5 +43,5 @@ public class AuditEvent
     public string? MetadataJson { get; set; }
 
     // Navigation property
-    public User? Actor { get; set; }
+    public User Actor { get; set; } = null!;
 }

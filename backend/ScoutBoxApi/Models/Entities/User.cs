@@ -15,8 +15,7 @@ public class User
     public DateTime CreatedAt { get; set; }
 
     // Soft delete fields for audit trail integrity
-    // Historical records (AuditEvents, etc.) maintain FK associations via SetNull behavior
-    // Deleted users display as "Utilisateur supprimé" in history views
+    // Historical records (AuditEvents, etc.) keep their FK to the user via Restrict behavior
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
 

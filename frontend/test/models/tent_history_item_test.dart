@@ -44,20 +44,20 @@ void main() {
       expect(item.targetEntityId, 'tent-1');
     });
 
-    test('fromJson uses fallback for null actorDisplayName', () {
+    test('fromJson keeps the system account display name', () {
       final json = {
         'id': 'evt-2',
         'action': 'tent_updated',
         'category': 'tent_info',
         'occurredAt': '2026-05-19T11:00:00Z',
-        'actorDisplayName': null,
+        'actorDisplayName': 'Système',
         'subjectName': null,
         'details': [],
       };
 
       final item = TentHistoryItem.fromJson(json);
 
-      expect(item.actorDisplayName, 'Utilisateur supprimé');
+      expect(item.actorDisplayName, 'Système');
     });
 
     test('fromJson parses details', () {

@@ -39,7 +39,7 @@ class TentHistoryItem {
         fieldName: 'occurredAt',
       ),
       actorUserId: json['actorUserId'] as String?,
-      actorDisplayName: json['actorDisplayName'] as String? ?? 'Utilisateur supprimé',
+      actorDisplayName: json['actorDisplayName'] as String,
       subjectName: json['subjectName'] as String?,
       details:
           (json['details'] as List<dynamic>?)
