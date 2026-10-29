@@ -75,6 +75,49 @@ class ActivityItem {
 
   String? get lead => tentName ?? subjectName;
 
+  IconData get actionIcon {
+    return switch (action) {
+      'tent_created' => Icons.add_circle_outline,
+      'tent_updated' => Icons.edit_outlined,
+      'tent_archived' => Icons.archive_outlined,
+      'tent_unarchived' => Icons.unarchive_outlined,
+      'part_state_changed' => Icons.swap_horiz,
+      'part_comments_changed' => Icons.comment_outlined,
+      'part_added' => Icons.add_box_outlined,
+      'part_deleted' => Icons.remove_circle_outline,
+      'tag_assigned' => Icons.label_outlined,
+      'tag_removed' => Icons.label_off_outlined,
+      'tag_created' => Icons.label,
+      'tag_renamed' => Icons.edit_outlined,
+      'tag_color_changed' => Icons.palette_outlined,
+      'tag_deleted' => Icons.delete_outline,
+      'model_created' => Icons.grid_view_outlined,
+      'model_renamed' => Icons.edit_outlined,
+      'model_deleted' => Icons.delete_outline,
+      'invite_created' => Icons.mail_outline,
+      'user_registered_from_invite' => Icons.person_add_alt_1_outlined,
+      _ => Icons.info_outline,
+    };
+  }
+
+  Color actionDotColor(ColorScheme colorScheme) {
+    return switch (action) {
+      'tent_created' || 'tent_updated' || 'tent_unarchived' => colorScheme.primary,
+      'tent_archived' || 'part_deleted' || 'tag_deleted' || 'model_deleted' =>
+        colorScheme.error,
+      'part_state_changed' || 'part_added' => colorScheme.tertiary,
+      'part_comments_changed' => colorScheme.primary,
+      'tag_assigned' ||
+      'tag_removed' ||
+      'tag_created' ||
+      'tag_renamed' ||
+      'tag_color_changed' => colorScheme.secondary,
+      'model_created' || 'model_renamed' => colorScheme.primary,
+      'invite_created' || 'user_registered_from_invite' => colorScheme.tertiary,
+      _ => colorScheme.outline,
+    };
+  }
+
   String buildSummary() {
     final subject = subjectName ?? 'Pièce inconnue';
 
@@ -106,6 +149,8 @@ class ActivityItem {
         return 'Étiquette créée : $subject';
       case 'tag_renamed':
         return _buildCatalogueRenameText('Étiquette renommée', subject);
+      case 'tag_color_changed':
+        return 'Couleur de l\'étiquette modifiée : $subject';
       case 'tag_deleted':
         return 'Étiquette supprimée : $subject';
       case 'model_created':
@@ -138,7 +183,7 @@ class ActivityItem {
       style: normalStyle,
       children: [
         TextSpan(text: leadText, style: boldStyle),
-        TextSpan(text: ' — ', style: normalStyle),
+        TextSpan(text: ' : ', style: normalStyle),
         summary,
       ],
     );
@@ -186,6 +231,8 @@ class ActivityItem {
         return _subjectSpan('Étiquette créée : ', subject, normalStyle, boldStyle);
       case 'tag_renamed':
         return _catalogueRenameSpan('Étiquette renommée', subject, normalStyle, boldStyle);
+      case 'tag_color_changed':
+        return _subjectSpan('Couleur de l\'étiquette modifiée : ', subject, normalStyle, boldStyle);
       case 'tag_deleted':
         return _subjectSpan('Étiquette supprimée : ', subject, normalStyle, boldStyle);
       case 'model_created':

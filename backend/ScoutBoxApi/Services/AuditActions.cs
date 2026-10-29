@@ -37,6 +37,7 @@ public static class AuditActions
     // Tag management actions (for future stories)
     public const string TagCreated = "tag_created";
     public const string TagRenamed = "tag_renamed";
+    public const string TagColorChanged = "tag_color_changed";
     public const string TagDeleted = "tag_deleted";
     public const string TagAssigned = "tag_assigned";
     public const string TagRemoved = "tag_removed";

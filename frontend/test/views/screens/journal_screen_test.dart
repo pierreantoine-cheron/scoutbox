@@ -64,7 +64,7 @@ void main() {
     expect(find.text('Hier'), findsOneWidget);
     expect(find.textContaining('09:30 • Jean Dupont'), findsOneWidget);
     expect(find.textContaining('21:00 • Jean Dupont'), findsOneWidget);
-    expect(find.textContaining('Tente Atlas — Tente créée'), findsOneWidget);
+    expect(find.textContaining('Tente Atlas : Tente créée'), findsOneWidget);
   });
 
   testWidgets('shows the no activity empty state', (tester) async {
@@ -112,7 +112,7 @@ void main() {
     await tester.tap(find.text('Réessayer'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Tente Atlas — Tente créée'), findsOneWidget);
+    expect(find.textContaining('Tente Atlas : Tente créée'), findsOneWidget);
   });
 
   testWidgets('pull-to-refresh refetches the journal', (tester) async {
@@ -156,13 +156,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.textContaining('Tente Atlas — Tente créée'));
+    await tester.tap(find.textContaining('Tente Atlas : Tente créée'));
     await tester.pumpAndSettle();
 
     expect(openedTentId, 'tent-1');
   });
 
-  testWidgets('catalogue rows without a tent are not tappable', (tester) async {
+  testWidgets('tapping a tag row opens the tags page', (tester) async {
     final repository = FakeActivityRepository();
     repository.handler = (category, window, cursor, limit) async {
       return ActivityPage(
@@ -170,6 +170,7 @@ void main() {
           _item(
             id: 'tag',
             action: 'tag_created',
+            category: 'tags',
             tentId: null,
             tentName: null,
             subjectName: 'Groupe A',
@@ -177,26 +178,111 @@ void main() {
         ],
       );
     };
-    String? openedTentId;
+    var openedTags = 0;
 
     await tester.pumpWidget(
-      _buildApp(
-        repository,
-        onOpenTentDetail: (tentId) => openedTentId = tentId,
-      ),
+      _buildApp(repository, onOpenTags: () => openedTags++),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.textContaining('Groupe A — Étiquette créée'));
+    await tester.tap(find.textContaining('Groupe A : Étiquette créée'));
     await tester.pumpAndSettle();
 
-    expect(openedTentId, isNull);
+    expect(openedTags, 1);
+  });
+
+  testWidgets('tapping a model row opens the models page', (tester) async {
+    final repository = FakeActivityRepository();
+    repository.handler = (category, window, cursor, limit) async {
+      return ActivityPage(
+        items: [
+          _item(
+            id: 'model',
+            action: 'model_created',
+            category: 'models',
+            tentId: null,
+            tentName: null,
+            subjectName: 'Canadienne',
+          ),
+        ],
+      );
+    };
+    var openedModels = 0;
+
+    await tester.pumpWidget(
+      _buildApp(repository, onOpenModels: () => openedModels++),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('Canadienne : Modèle créé'));
+    await tester.pumpAndSettle();
+
+    expect(openedModels, 1);
+  });
+
+  testWidgets('account rows are not interactive', (tester) async {
+    final repository = FakeActivityRepository();
+    repository.handler = (category, window, cursor, limit) async {
+      return ActivityPage(
+        items: [
+          _item(
+            id: 'account',
+            action: 'invite_created',
+            category: 'accounts',
+            tentId: null,
+            tentName: null,
+            subjectName: 'ABC123',
+          ),
+        ],
+      );
+    };
+
+    await tester.pumpWidget(_buildApp(repository));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.chevron_right), findsNothing);
+  });
+
+  testWidgets('interactive rows show a chevron', (tester) async {
+    final repository = FakeActivityRepository();
+    repository.handler = (category, window, cursor, limit) async {
+      return ActivityPage(items: [_item(id: 'tap', tentName: 'Tente Atlas')]);
+    };
+
+    await tester.pumpWidget(_buildApp(repository));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+  });
+
+  testWidgets('rows use an icon that matches their action', (tester) async {
+    final repository = FakeActivityRepository();
+    repository.handler = (category, window, cursor, limit) async {
+      return ActivityPage(
+        items: [
+          _item(id: 'created', tentName: 'Tente Atlas'),
+          _item(
+            id: 'archived',
+            action: 'tent_archived',
+            tentName: 'Tente Bouleau',
+          ),
+        ],
+      );
+    };
+
+    await tester.pumpWidget(_buildApp(repository));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+    expect(find.byIcon(Icons.archive_outlined), findsOneWidget);
   });
 }
 
 Widget _buildApp(
   ActivityRepository repository, {
   ValueChanged<String>? onOpenTentDetail,
+  VoidCallback? onOpenModels,
+  VoidCallback? onOpenTags,
 }) {
   final routeObserver = RouteObserver<ModalRoute<dynamic>>();
   return ProviderScope(
@@ -210,6 +296,8 @@ Widget _buildApp(
       home: Scaffold(
         body: JournalScreen(
           onOpenTentDetail: onOpenTentDetail ?? (_) {},
+          onOpenModels: onOpenModels ?? () {},
+          onOpenTags: onOpenTags ?? () {},
         ),
       ),
     ),
@@ -219,6 +307,7 @@ Widget _buildApp(
 ActivityItem _item({
   required String id,
   String action = 'tent_created',
+  String category = 'tents',
   DateTime? occurredAt,
   String? tentId = 'tent-1',
   String? tentName = 'Tente Atlas',
@@ -227,7 +316,7 @@ ActivityItem _item({
   return ActivityItem(
     id: id,
     action: action,
-    category: 'tents',
+    category: category,
     occurredAt: occurredAt ?? DateTime.now(),
     actorUserId: 'user-1',
     actorDisplayName: 'Jean Dupont',

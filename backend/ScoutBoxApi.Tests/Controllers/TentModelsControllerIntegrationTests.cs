@@ -291,6 +291,9 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
                 a.TargetEntityId == modelId && a.Action == "model_renamed");
             Assert.NotNull(audit);
             Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
+            using var metadata = JsonDocument.Parse(audit.MetadataJson!);
+            Assert.Equal(originalName, metadata.RootElement.GetProperty("oldName").GetString());
+            Assert.Equal(newName, metadata.RootElement.GetProperty("newName").GetString());
         }
     }
 

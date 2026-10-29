@@ -1,4 +1,5 @@
 import 'package:client/models/activity_item.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -90,6 +91,7 @@ void main() {
       'tag_removed': 'Étiquette retirée : Groupe A',
       'tag_created': 'Étiquette créée : Groupe A',
       'tag_renamed': 'Étiquette renommée : Groupe A',
+      'tag_color_changed': "Couleur de l'étiquette modifiée : Groupe A",
       'tag_deleted': 'Étiquette supprimée : Groupe A',
       'model_created': 'Modèle créé : Canadienne',
       'model_renamed': 'Modèle renommé : Canadienne',
@@ -163,6 +165,22 @@ void main() {
 
       expect(parsed.buildSummary(), 'Activité enregistrée');
       expect(parsed.buildSummary(), isNot(contains('something_new')));
+    });
+
+    test('each event type carries its own icon', () {
+      final icons = {
+        'tent_created': Icons.add_circle_outline,
+        'tent_archived': Icons.archive_outlined,
+        'part_state_changed': Icons.swap_horiz,
+        'tag_assigned': Icons.label_outlined,
+        'tag_color_changed': Icons.palette_outlined,
+        'model_created': Icons.grid_view_outlined,
+        'invite_created': Icons.mail_outline,
+      };
+
+      for (final entry in icons.entries) {
+        expect(item(action: entry.key).actionIcon, entry.value, reason: entry.key);
+      }
     });
   });
 

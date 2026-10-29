@@ -84,21 +84,50 @@ public class TagService
             return (null, new ErrorResponse("Tag name already exists", "TAG_NAME_EXISTS"), false);
         }
 
+        var oldName = tag.Name;
+        var oldColor = tag.Color;
+        var nameChanged = !string.Equals(oldName, name, StringComparison.Ordinal);
+        var colorChanged = !string.Equals(oldColor, color, StringComparison.OrdinalIgnoreCase);
+
         tag.Name = name;
         tag.Color = color;
         tag.UpdatedAt = DateTime.UtcNow;
         tag.UpdatedByUserId = userId;
 
-        _auditService.RecordEvent(
-            AuditActions.TagRenamed,
-            userId,
-            targetEntityType: "Tag",
-            targetEntityId: tag.Id,
-            metadata: new Dictionary<string, object?>
+        if (!nameChanged && colorChanged)
+        {
+            _auditService.RecordEvent(
+                AuditActions.TagColorChanged,
+                userId,
+                targetEntityType: "Tag",
+                targetEntityId: tag.Id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["name"] = name,
+                    ["oldColor"] = oldColor,
+                    ["newColor"] = color
+                });
+        }
+        else
+        {
+            var metadata = new Dictionary<string, object?>
             {
                 ["name"] = name,
                 ["color"] = color
-            });
+            };
+            if (nameChanged)
+            {
+                metadata["oldName"] = oldName;
+                metadata["newName"] = name;
+            }
+
+            _auditService.RecordEvent(
+                AuditActions.TagRenamed,
+                userId,
+                targetEntityType: "Tag",
+                targetEntityId: tag.Id,
+                metadata: metadata);
+        }
 
         try
         {

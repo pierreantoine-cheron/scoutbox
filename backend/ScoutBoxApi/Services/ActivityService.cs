@@ -39,6 +39,7 @@ public static class ActivityCategoryMapper
     [
         AuditActions.TagCreated,
         AuditActions.TagRenamed,
+        AuditActions.TagColorChanged,
         AuditActions.TagDeleted,
         AuditActions.TagAssigned,
         AuditActions.TagRemoved
@@ -380,6 +381,8 @@ public class ActivityService : IActivityService
                 TryGetMetadataString(ae.MetadataJson, "tagName") ?? UnknownTagName,
             AuditActions.TagCreated or AuditActions.TagRenamed or AuditActions.TagDeleted =>
                 TryGetMetadataString(ae.MetadataJson, "name") ?? UnknownTagName,
+            AuditActions.TagColorChanged =>
+                TryGetMetadataString(ae.MetadataJson, "name") ?? UnknownTagName,
             AuditActions.TentModelCreated or
             AuditActions.TentModelRenamed or
             AuditActions.TentModelDeleted =>
@@ -414,6 +417,7 @@ public class ActivityService : IActivityService
             AuditActions.TagAssigned or AuditActions.TagRemoved => BuildTagDetails(ae),
             AuditActions.TagCreated or AuditActions.TagRenamed or AuditActions.TagDeleted =>
                 BuildCatalogueDetails(ae, "Étiquette", "tag"),
+            AuditActions.TagColorChanged => BuildTagColorDetails(ae),
             AuditActions.TentModelCreated or
             AuditActions.TentModelRenamed or
             AuditActions.TentModelDeleted =>
@@ -485,7 +489,7 @@ public class ActivityService : IActivityService
     {
         var oldName = TryGetMetadataString(ae.MetadataJson, "oldName");
         var newName = TryGetMetadataString(ae.MetadataJson, "newName");
-        if (!string.IsNullOrEmpty(oldName) && !string.IsNullOrEmpty(newName))
+        if (!string.IsNullOrEmpty(oldName) && !string.IsNullOrEmpty(newName) && oldName != newName)
         {
             return [new TentHistoryDetailDto(label, oldName, newName, null, "old_new")];
         }
@@ -494,6 +498,16 @@ public class ActivityService : IActivityService
         return name == null
             ? []
             : [new TentHistoryDetailDto(label, null, null, name, valueType)];
+    }
+
+    private static List<TentHistoryDetailDto> BuildTagColorDetails(AuditEvent ae)
+    {
+        var oldColor = TryGetMetadataString(ae.MetadataJson, "oldColor");
+        var newColor = TryGetMetadataString(ae.MetadataJson, "newColor");
+
+        return oldColor == null && newColor == null
+            ? []
+            : [new TentHistoryDetailDto("Couleur", oldColor, newColor, null, "color")];
     }
 
     private async Task<Dictionary<Guid, string>> ResolveActorDisplayNamesAsync(

@@ -260,6 +260,52 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
     }
 
     [Fact]
+    public async Task GetActivity_ShowsModelRenamesAsBeforeAndAfter()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        await InsertAuditEventsAsync(
+            Event(AuditActions.TentModelRenamed, DateTime.UtcNow.AddHours(-1), "TentModel", Guid.NewGuid(),
+                """{"name":"Canadienne","oldName":"Dôme","newName":"Canadienne","componentCount":1}"""));
+
+        using var client = CreateAuthenticatedClient();
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("models", item.Category);
+        Assert.Equal("Canadienne", item.SubjectName);
+        var detail = Assert.Single(item.Details);
+        Assert.Equal("Modèle", detail.Label);
+        Assert.Equal("Dôme", detail.OldValue);
+        Assert.Equal("Canadienne", detail.NewValue);
+        Assert.Equal("old_new", detail.ValueType);
+    }
+
+    [Fact]
+    public async Task GetActivity_ShowsTagColorChangesInTheTagsCategory()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        await InsertAuditEventsAsync(
+            Event(AuditActions.TagColorChanged, DateTime.UtcNow.AddHours(-1), "Tag", Guid.NewGuid(),
+                """{"name":"Groupe A","oldColor":"#2196F3","newColor":"#F44336"}"""));
+
+        using var client = CreateAuthenticatedClient();
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("tags", item.Category);
+        Assert.Equal("Groupe A", item.SubjectName);
+        Assert.Null(item.TentId);
+        var detail = Assert.Single(item.Details);
+        Assert.Equal("Couleur", detail.Label);
+        Assert.Equal("#2196F3", detail.OldValue);
+        Assert.Equal("#F44336", detail.NewValue);
+    }
+
+    [Fact]
     public async Task GetActivity_ResolvesTagAssignmentsToTheirTent()
     {
         await EnsureTestUserExistsAsync();

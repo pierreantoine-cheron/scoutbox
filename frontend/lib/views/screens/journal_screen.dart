@@ -9,8 +9,15 @@ import '../widgets/widgets.dart';
 
 class JournalScreen extends ConsumerStatefulWidget {
   final ValueChanged<String> onOpenTentDetail;
+  final VoidCallback onOpenModels;
+  final VoidCallback onOpenTags;
 
-  const JournalScreen({super.key, required this.onOpenTentDetail});
+  const JournalScreen({
+    super.key,
+    required this.onOpenTentDetail,
+    required this.onOpenModels,
+    required this.onOpenTags,
+  });
 
   @override
   ConsumerState<JournalScreen> createState() => _JournalScreenState();
@@ -118,13 +125,24 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
           final item = row as ActivityItem;
           return _JournalRow(
             item: item,
-            onTap: item.tentId == null
-                ? null
-                : () => widget.onOpenTentDetail(item.tentId!),
+            onTap: _onTapFor(item),
           );
         },
       ),
     );
+  }
+
+  VoidCallback? _onTapFor(ActivityItem item) {
+    final tentId = item.tentId;
+    if (tentId != null) {
+      return () => widget.onOpenTentDetail(tentId);
+    }
+
+    return switch (item.category) {
+      'models' => widget.onOpenModels,
+      'tags' => widget.onOpenTags,
+      _ => null,
+    };
   }
 
   List<Object> _buildRows(List<ActivityItem> items) {
@@ -193,6 +211,10 @@ class _JournalRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isInteractive = onTap != null;
+    final iconColor = isInteractive
+        ? item.actionDotColor(colorScheme)
+        : item.actionDotColor(colorScheme).withValues(alpha: 0.55);
 
     return InkWell(
       onTap: onTap,
@@ -208,9 +230,9 @@ class _JournalRow extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Icon(
-                Icons.edit_outlined,
+                item.actionIcon,
                 size: 16,
-                color: colorScheme.outline,
+                color: iconColor,
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -229,6 +251,15 @@ class _JournalRow extends StatelessWidget {
                 ],
               ),
             ),
+            if (isInteractive)
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.xs, top: 2),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: colorScheme.outline,
+                ),
+              ),
           ],
         ),
       ),

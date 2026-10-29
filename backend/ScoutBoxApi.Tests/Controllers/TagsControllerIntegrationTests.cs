@@ -201,6 +201,9 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
                 a.TargetEntityId == tag.Id && a.Action == "tag_renamed");
             Assert.NotNull(audit);
             Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
+            using var metadata = JsonDocument.Parse(audit.MetadataJson!);
+            Assert.Equal(originalName, metadata.RootElement.GetProperty("oldName").GetString());
+            Assert.Equal(newName, metadata.RootElement.GetProperty("newName").GetString());
         }
     }
 
@@ -236,6 +239,39 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
                 a.TargetEntityId == tag.Id && a.Action == "tag_renamed");
             Assert.NotNull(audit);
         }
+    }
+
+    [Fact]
+    public async Task UpdateTag_ColorOnly_RecordsColorChangedEvent()
+    {
+        await EnsureTestUserExistsAsync();
+        var name = $"Color {Guid.NewGuid():N}"[..24];
+
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            db.Tags.Add(CreateTag(name, "#2196F3"));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var getResponse = await client.GetAsync("/api/tags");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        var tag = getPayload!.First(t => t.Name == name);
+
+        var response = await client.PutAsJsonAsync($"/api/tags/{tag.Id}", new { name, color = "#F44336" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var auditDb = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var audit = await auditDb.AuditEvents.FirstOrDefaultAsync(a =>
+            a.TargetEntityId == tag.Id && a.Action == "tag_color_changed");
+        Assert.NotNull(audit);
+        Assert.Null(await auditDb.AuditEvents.FirstOrDefaultAsync(a =>
+            a.TargetEntityId == tag.Id && a.Action == "tag_renamed"));
+        Assert.Contains("\"oldColor\":\"#2196F3\"", audit.MetadataJson);
+        Assert.Contains("\"newColor\":\"#F44336\"", audit.MetadataJson);
     }
 
     [Fact]

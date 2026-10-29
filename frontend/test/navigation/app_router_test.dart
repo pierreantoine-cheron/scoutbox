@@ -61,8 +61,9 @@ void main() {
     }
   });
 
-  test('journal sits second in the navigation', () {
-    expect(NavigationSection.values[1], NavigationSection.journal);
+  test('journal sits after models in the navigation', () {
+    expect(NavigationSection.values[4], NavigationSection.journal);
+    expect(NavigationSection.values[3], NavigationSection.models);
     expect(NavigationSection.journal.label, 'Journal');
   });
 

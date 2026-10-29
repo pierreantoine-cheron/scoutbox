@@ -450,6 +450,7 @@ public class TentService
 
         var nameChanged = request.Name != null;
         var componentsChanged = request.ComponentIds != null;
+        var oldName = model.Name;
 
         if (!nameChanged && !componentsChanged)
             return (null, new ErrorResponse("At least one of Name or ComponentIds must be provided", "MODEL_UPDATE_NO_CHANGES"), false);
@@ -509,6 +510,8 @@ public class TentService
             metadata: new Dictionary<string, object?>
             {
                 ["name"] = model.Name,
+                ["oldName"] = oldName,
+                ["newName"] = model.Name,
                 ["componentCount"] = request.ComponentIds?.Count ?? model.TentModelComponents.Count
             });
 
