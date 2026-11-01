@@ -51,4 +51,16 @@ void main() {
       'Un modèle de tente avec ce nom existe déjà.',
     );
   });
+
+  test('localizes part errors with pièce vocabulary', () {
+    expect(ErrorLocalizer.localize(ErrorCodes.partNotFound), 'Pièce introuvable.');
+    expect(
+      ErrorLocalizer.localize(ErrorCodes.invalidPartState),
+      "L'état de la pièce est invalide.",
+    );
+    expect(
+      ErrorLocalizer.localize(ErrorCodes.invalidPartKind),
+      'Modèle de pièce invalide.',
+    );
+  });
 }

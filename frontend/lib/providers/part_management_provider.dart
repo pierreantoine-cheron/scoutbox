@@ -25,7 +25,7 @@ class PartManagementNotifier extends _$PartManagementNotifier {
       if (!ref.mounted) return [];
       final message = e is TentRepositoryException
           ? ErrorLocalizer.localize(e.code, fallback: e.message)
-          : 'Impossible de charger les types de pièces.';
+          : 'Impossible de charger les modèles de pièce.';
       state = state.copyWith(
         isLoadingPartKinds: false,
         partKindsError: message,

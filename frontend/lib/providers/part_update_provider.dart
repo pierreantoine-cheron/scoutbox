@@ -136,7 +136,7 @@ class PartUpdateNotifier extends _$PartUpdateNotifier {
 
       final pending = Map<String, PendingPartUpdate>.from(state.pendingUpdates)..remove(partId);
       final errors = Map<String, String>.from(state.errors)
-        ..[partId] = 'Impossible de mettre à jour l\'élément. Réessayez.';
+        ..[partId] = 'Impossible de mettre à jour la pièce. Réessayez.';
       final confirmed = Map<String, PartState>.from(state.confirmedStates)..remove(partId);
       final confirmedSources = Map<String, PartState>.from(
         state.confirmedSourceStates,
