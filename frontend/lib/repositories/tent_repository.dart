@@ -241,8 +241,8 @@ class TentRepository {
 
   Future<List<PartKind>> getPartKinds() async {
     return _request(
-      fallbackMessage: 'Impossible de charger les types de pièces.',
-      invalidResponseMessage: 'Réponse du serveur invalide lors du chargement des types de pièces.',
+      fallbackMessage: 'Impossible de charger les modèles de pièce.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors du chargement des modèles de pièce.',
       action: () async {
         final response = await ApiClient.instance.get(ApiRoutes.partKinds);
         final rawKinds = response.data! as List<dynamic>;
@@ -284,8 +284,8 @@ class TentRepository {
     required String? comments,
   }) async {
     return _request(
-      fallbackMessage: 'Impossible de mettre à jour l\'élément. Réessayez.',
-      invalidResponseMessage: 'Réponse du serveur invalide lors de la mise à jour de l\'élément.',
+      fallbackMessage: 'Impossible de mettre à jour la pièce. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la mise à jour de la pièce.',
       action: () async {
         final response = await ApiClient.instance.put(
           '${ApiRoutes.parts}/$id',

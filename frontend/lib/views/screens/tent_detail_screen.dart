@@ -520,7 +520,7 @@ class _InfoChipsRow extends ConsumerWidget {
     final sizeLabel = tent.size == 1 ? '1 place' : '${tent.size} places';
     final modelName = (tent.tentModelName?.trim().isNotEmpty ?? false)
         ? tent.tentModelName!
-        : 'Type inconnu';
+        : 'Modèle de tente inconnu';
 
     return Opacity(
       opacity: opacity,
@@ -549,7 +549,7 @@ class _InfoChipsRow extends ConsumerWidget {
               foregroundColor: theme.colorScheme.onSurface,
               borderColor: theme.colorScheme.outlineVariant,
               onTap: () => _showEditModelSheet(context, ref),
-              semanticLabel: 'Modèle : $modelName',
+              semanticLabel: 'Modèle de tente : $modelName',
             ),
           ],
         ),
@@ -663,7 +663,7 @@ class _InfoChipsRow extends ConsumerWidget {
       context: context,
       builder: (sheetContext) {
         return PickerSheet<String>(
-          title: 'Modifier le modèle',
+          title: 'Modifier le modèle de tente',
           items: models.map((m) => PickerItem(value: m.id, label: m.name)).toList(),
           currentValue: tent.tentModelId,
           onSelected: (modelId) => Navigator.of(sheetContext).pop(modelId),
@@ -907,7 +907,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
             children: [
               Expanded(
                 child: SectionLabel(
-                  label: 'Éléments (${widget.parts.length})',
+                  label: 'Pièces (${widget.parts.length})',
                 ),
               ),
               if (!_isSelectionMode)
@@ -942,7 +942,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
           ],
           const SizedBox(height: 12),
           if (widget.parts.isEmpty)
-            const PlaceholderText(text: 'Aucun élément')
+            const PlaceholderText(text: 'Aucune pièce')
           else
             ...widget.parts.map((part) => _buildPartRow(part, theme)),
         ],
@@ -1144,7 +1144,7 @@ class _PartsBlockState extends ConsumerState<_PartsBlock> {
       context: context,
       builder: (sheetContext) {
         return PickerSheet<PartState>(
-          title: 'Modifier l\'état de l\'élément',
+          title: 'Modifier l\'état de la pièce',
           items: PartState.values.map((s) {
             final style = partStateBadgeStyle(sheetContext, s);
             return PickerItem(
