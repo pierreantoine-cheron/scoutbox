@@ -43,14 +43,17 @@ class ErrorLocalizer {
     ErrorCodes.invalidTagColor: 'La couleur sélectionnée est invalide',
     ErrorCodes.tagNotFound:
         'Une étiquette sélectionnée est introuvable. La liste a été actualisée.',
-    ErrorCodes.partKindNameExists: 'Un élément avec ce nom existe déjà',
-    ErrorCodes.partKindNameRequired: 'Le nom de l\'élément est requis',
-    ErrorCodes.partKindNameTooLong: 'Le nom de l\'élément est trop long (60 max)',
-    ErrorCodes.partKindNotFound: 'Élément introuvable',
-    ErrorCodes.tentModelNotFound: 'Ce modèle est introuvable.',
-    ErrorCodes.modelInUse: 'Impossible de supprimer ce modèle car des tentes l\'utilisent encore.',
-    ErrorCodes.modelNameExists: 'Un modèle avec ce nom existe déjà.',
-    ErrorCodes.modelNameRequired: 'Le nom du modèle doit contenir au moins 2 caractères.',
-    ErrorCodes.modelNameTooLong: 'Le nom du modèle doit contenir 60 caractères maximum.',
+    ErrorCodes.partKindNameExists: 'Un modèle de pièce avec ce nom existe déjà',
+    ErrorCodes.partKindNameRequired: 'Le nom du modèle de pièce est requis',
+    ErrorCodes.partKindNameTooLong: 'Le nom du modèle de pièce est trop long (60 max)',
+    ErrorCodes.partKindNotFound: 'Modèle de pièce introuvable',
+    ErrorCodes.tentModelNotFound: 'Ce modèle de tente est introuvable.',
+    ErrorCodes.modelInUse:
+        'Impossible de supprimer ce modèle de tente car des tentes l\'utilisent encore.',
+    ErrorCodes.modelNameExists: 'Un modèle de tente avec ce nom existe déjà.',
+    ErrorCodes.modelNameRequired:
+        'Le nom du modèle de tente doit contenir au moins 2 caractères.',
+    ErrorCodes.modelNameTooLong:
+        'Le nom du modèle de tente doit contenir 60 caractères maximum.',
   };
 }

@@ -14,8 +14,8 @@ PartKindRepository partKindRepository(Ref ref) => PartKindRepository();
 class PartKindRepository {
   Future<List<PartKind>> getPartKinds() async {
     return _request(
-      fallbackMessage: 'Impossible de charger les éléments. Réessayez.',
-      invalidResponseMessage: 'Réponse du serveur invalide lors du chargement des éléments.',
+      fallbackMessage: 'Impossible de charger les modèles de pièce. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors du chargement des modèles de pièce.',
       action: () async {
         final response = await ApiClient.instance.get(ApiRoutes.partKinds);
         final rawPartKinds = response.data! as List<dynamic>;
@@ -27,8 +27,8 @@ class PartKindRepository {
 
   Future<PartKind> createPartKind({required String name}) async {
     return _request(
-      fallbackMessage: 'Impossible de créer l\'élément. Réessayez.',
-      invalidResponseMessage: 'Réponse du serveur invalide lors de la création de l\'élément.',
+      fallbackMessage: 'Impossible de créer le modèle de pièce. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la création du modèle de pièce.',
       action: () async {
         final response = await ApiClient.instance.post(
           ApiRoutes.partKinds,
@@ -42,8 +42,8 @@ class PartKindRepository {
 
   Future<PartKind> renamePartKind(String id, {required String name}) async {
     return _request(
-      fallbackMessage: 'Impossible de renommer l\'élément. Réessayez.',
-      invalidResponseMessage: 'Réponse du serveur invalide lors du renommage de l\'élément.',
+      fallbackMessage: 'Impossible de renommer le modèle de pièce. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors du renommage du modèle de pièce.',
       action: () async {
         final response = await ApiClient.instance.put(
           '${ApiRoutes.partKinds}/$id',
@@ -57,8 +57,8 @@ class PartKindRepository {
 
   Future<void> deletePartKind(String id) async {
     return _request<void>(
-      fallbackMessage: 'Impossible de supprimer l\'élément. Réessayez.',
-      invalidResponseMessage: 'Réponse du serveur invalide lors de la suppression de l\'élément.',
+      fallbackMessage: 'Impossible de supprimer le modèle de pièce. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la suppression du modèle de pièce.',
       action: () async {
         await ApiClient.instance.delete('${ApiRoutes.partKinds}/$id');
       },

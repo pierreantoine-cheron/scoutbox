@@ -27,7 +27,8 @@ class _PartKindSheetState extends State<PartKindSheet> {
 
   bool get _isCreate => widget.initialName == null;
   String get _saveLabel => _isCreate ? 'Créer' : 'Enregistrer';
-  String get _title => _isCreate ? 'Nouvel élément' : "Modifier l'élément";
+  String get _title =>
+      _isCreate ? 'Nouveau modèle de pièce' : 'Modifier le modèle de pièce';
 
   bool get _isSaveEnabled =>
       _nameController.text.trim().isNotEmpty &&
@@ -64,7 +65,7 @@ class _PartKindSheetState extends State<PartKindSheet> {
           autofocus: true,
           maxLength: ValidationConstants.partKindNameMaxLength,
           decoration: const InputDecoration(
-            hintText: 'Nom de l\'élément',
+            hintText: 'Nom du modèle de pièce',
           ),
           validator: _validateName,
           onChanged: (_) => setState(() => _submitError = null),
@@ -75,9 +76,9 @@ class _PartKindSheetState extends State<PartKindSheet> {
 
   String? _validateName(String? value) {
     final name = value?.trim() ?? '';
-    if (name.isEmpty) return 'Le nom de l\'élément est requis';
+    if (name.isEmpty) return 'Le nom du modèle de pièce est requis';
     if (name.length > ValidationConstants.partKindNameMaxLength) {
-      return 'Le nom de l\'élément est trop long (60 max)';
+      return 'Le nom du modèle de pièce est trop long (60 max)';
     }
     return null;
   }
@@ -107,8 +108,8 @@ class _PartKindSheetState extends State<PartKindSheet> {
       if (mounted) {
         setState(() {
           _submitError = _isCreate
-              ? 'Impossible de créer l\'élément. Réessayez.'
-              : 'Impossible de renommer l\'élément. Réessayez.';
+              ? 'Impossible de créer le modèle de pièce. Réessayez.'
+              : 'Impossible de renommer le modèle de pièce. Réessayez.';
           _isSubmitting = false;
         });
       }

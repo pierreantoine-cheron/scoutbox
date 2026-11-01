@@ -375,7 +375,7 @@ class _TentListScreenState extends ConsumerState<TentListScreen>
       options.add(
         TentTypeFilterOption(
           id: modelId,
-          label: rawModelLabels[modelId] ?? 'Type inconnu',
+          label: rawModelLabels[modelId] ?? 'Modèle de tente inconnu',
         ),
       );
     }

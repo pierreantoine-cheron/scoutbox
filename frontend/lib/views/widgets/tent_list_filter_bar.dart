@@ -508,7 +508,7 @@ class _FilterPanel extends StatelessWidget {
             ),
           if (availableModelOptions.isNotEmpty)
             _FilterRow(
-              label: 'Modèle',
+              label: 'Modèle de tente',
               children: [
                 for (final option in availableModelOptions)
                   ScoutPill.filterNeutral(

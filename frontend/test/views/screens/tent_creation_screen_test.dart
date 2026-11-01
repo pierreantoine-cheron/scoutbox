@@ -49,6 +49,26 @@ void main() {
       expect(enabledButton.onPressed, isNotNull);
     });
 
+    testWidgets('names the modèle de tente picker', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(_SuccessTentRepository()),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.minimal().copyWith(splashFactory: NoSplash.splashFactory),
+            home: _tentCreationScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('MODÈLE DE TENTE'), findsOneWidget);
+      expect(find.text('Choisir un modèle de tente'), findsOneWidget);
+    });
+
     testWidgets('keeps form values on submit failure', (
       WidgetTester tester,
     ) async {
@@ -242,7 +262,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Impossible de charger les modèles de tentes.'),
+        find.text('Impossible de charger les modèles de tente.'),
         findsOneWidget,
       );
 

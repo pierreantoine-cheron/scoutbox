@@ -45,14 +45,21 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
   AppBarConfig buildAppBarConfig() {
     final modelCount = ref.read(tentModelsProvider).value?.length ?? 0;
     final isLoading = ref.read(tentModelsProvider).isLoading;
+    final isDesktop =
+        MediaQuery.sizeOf(context).width >= DesignConstants.desktopBreakpoint;
 
     return AppBarConfig(
       screenId: 'models',
+      title: isDesktop ? null : const Text('Modèles de tente'),
       actions: [
         if (modelCount > 0)
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: CountBadge(count: modelCount, label: 'modèle'),
+            child: CountBadge(
+              count: modelCount,
+              label: 'modèle de tente',
+              pluralLabel: 'modèles de tente',
+            ),
           ),
         Builder(
           builder: (context) {
@@ -70,7 +77,7 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
             if (!isDesktop) return const SizedBox.shrink();
             return IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Actualiser les modèles',
+              tooltip: 'Actualiser les modèles de tente',
               onPressed:
                   isLoading ? null : () => ref.read(tentModelsProvider.notifier).refresh(),
             );
@@ -79,7 +86,7 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
       ],
       fab: FloatingActionButton(
         onPressed: () => _showCreateSheet(),
-        tooltip: 'Créer un modèle',
+        tooltip: 'Créer un modèle de tente',
         child: const Icon(Icons.add),
       ),
     );
@@ -95,7 +102,7 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
 
     return DataScreenScaffold<List<TentModel>>(
       state: modelsState,
-      errorFallbackMessage: 'Impossible de charger les modèles.',
+      errorFallbackMessage: 'Impossible de charger les modèles de tente.',
       onRetry: () => ref.read(tentModelsProvider.notifier).retry(),
       builder: (models) => _buildDataState(models),
     );
@@ -109,8 +116,8 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
       refreshWarning: null,
       emptyState: EmptyStateView(
         icon: NavigationSection.models.icon,
-        title: 'Aucun modèle',
-        subtitle: 'Créez un modèle de tente avec ses éléments.',
+        title: 'Aucun modèle de tente',
+        subtitle: 'Créez un modèle de tente avec ses modèles de pièce.',
       ),
       onEdit: (model) => _showEditSheet(model),
       onDelete: (model) => _showDeleteDialog(model),
@@ -154,11 +161,11 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
 
     await showDeleteConfirmation(
       context: context,
-      title: 'Supprimer le modèle ?',
+      title: 'Supprimer le modèle de tente ?',
       content: hasTents
-          ? 'Le modèle "${model.name}" est utilisé par ${model.tentCount} tente${model.tentCount != 1 ? 's' : ''}. Impossible de le supprimer.'
-          : 'Le modèle "${model.name}" sera supprimé.',
-      errorMessage: 'Impossible de supprimer le modèle. Réessayez.',
+          ? 'Le modèle de tente "${model.name}" est utilisé par ${model.tentCount} tente${model.tentCount != 1 ? 's' : ''}. Impossible de le supprimer.'
+          : 'Le modèle de tente "${model.name}" sera supprimé.',
+      errorMessage: 'Impossible de supprimer le modèle de tente. Réessayez.',
       enabled: !hasTents,
       onDelete: () => ref.read(tentModelsProvider.notifier).deleteModel(model.id),
       onSuccess: () {
@@ -193,11 +200,16 @@ class _ModelContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Row(
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   CountBadge(count: model.tentCount, label: 'tente'),
                   const Text(' · ', style: AppTheme.monoCaption),
-                  CountBadge(count: model.componentCount, label: 'élément'),
+                  CountBadge(
+                    count: model.componentCount,
+                    label: 'modèle de pièce',
+                    pluralLabel: 'modèles de pièce',
+                  ),
                 ],
               ),
             ],

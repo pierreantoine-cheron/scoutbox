@@ -123,7 +123,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
 
   Widget _buildModelsError() {
     return AsyncErrorView(
-      message: 'Impossible de charger les modèles de tentes.',
+      message: 'Impossible de charger les modèles de tente.',
       isRetrying: _isRetryingModels,
       onRetry: _retryModels,
     );
@@ -154,7 +154,7 @@ class _TentCreationScreenState extends ConsumerState<TentCreationScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SectionLabel(label: 'Modèle'),
+                  const SectionLabel(label: 'Modèle de tente'),
                   const SizedBox(height: AppSpacing.sm),
                   _buildModelDropdown(models, creationState, notifier),
                   const SizedBox(height: AppSpacing.lg),

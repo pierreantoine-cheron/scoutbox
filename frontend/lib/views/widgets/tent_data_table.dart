@@ -117,7 +117,7 @@ class _TentDataTableState extends State<TentDataTable> {
           onTap: () => _toggleSort(TentDesktopSortColumn.size),
         ),
         _SortableHeaderCell(
-          label: 'Modèle',
+          label: 'Modèle de tente',
           isActive: _sortColumn == TentDesktopSortColumn.model,
           ascending: _sortAscending,
           onTap: () => _toggleSort(TentDesktopSortColumn.model),

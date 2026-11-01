@@ -45,14 +45,21 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
   AppBarConfig buildAppBarConfig() {
     final partKindCount = ref.read(partKindsProvider).value?.length ?? 0;
     final isLoading = ref.read(partKindsProvider).isLoading;
+    final isDesktop =
+        MediaQuery.sizeOf(context).width >= DesignConstants.desktopBreakpoint;
 
     return AppBarConfig(
       screenId: 'parts',
+      title: isDesktop ? null : const Text('Modèles de pièce'),
       actions: [
         if (partKindCount > 0)
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: CountBadge(count: partKindCount, label: 'élément'),
+            child: CountBadge(
+              count: partKindCount,
+              label: 'modèle de pièce',
+              pluralLabel: 'modèles de pièce',
+            ),
           ),
         Builder(
           builder: (context) {
@@ -70,7 +77,7 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
             if (!isDesktop) return const SizedBox.shrink();
             return IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Actualiser les éléments',
+              tooltip: 'Actualiser les modèles de pièce',
               onPressed: isLoading ? null : () => ref.read(partKindsProvider.notifier).refresh(),
             );
           },
@@ -78,7 +85,7 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
       ],
       fab: FloatingActionButton(
         onPressed: () => _showCreateSheet(),
-        tooltip: 'Créer un élément',
+        tooltip: 'Créer un modèle de pièce',
         child: const Icon(Icons.add),
       ),
     );
@@ -95,7 +102,7 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
 
     return DataScreenScaffold<List<PartKind>>(
       state: partKindsState,
-      errorFallbackMessage: 'Impossible de charger les éléments.',
+      errorFallbackMessage: 'Impossible de charger les modèles de pièce.',
       onRetry: () => ref.read(partKindsProvider.notifier).retry(),
       builder: (partKinds) => _buildDataState(partKinds, refreshIssue),
     );
@@ -108,8 +115,8 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
       refreshWarning: refreshIssue != null ? _refreshWarning(refreshIssue) : null,
       emptyState: const EmptyStateView(
         icon: Icons.build_outlined,
-        title: 'Aucun élément',
-        subtitle: 'Créez des types d\'éléments pour composer vos modèles de tentes.',
+        title: 'Aucun modèle de pièce',
+        subtitle: 'Créez des modèles de pièce pour composer vos modèles de tente.',
       ),
       onEdit: (pk) => _showRenameSheet(pk),
       onDelete: (pk) => _showDeleteDialog(pk),
@@ -149,14 +156,14 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
   Future<void> _showDeleteDialog(PartKind partKind) async {
     final count = partKind.tentCount;
     final content = count > 0
-        ? 'L\'élément "${partKind.name}" sera supprimé. $count tente(s) l\'utilisent.'
-        : 'L\'élément "${partKind.name}" sera supprimé.';
+        ? 'Le modèle de pièce "${partKind.name}" sera supprimé. $count tente(s) l\'utilisent.'
+        : 'Le modèle de pièce "${partKind.name}" sera supprimé.';
 
     await showDeleteConfirmation(
       context: context,
-      title: 'Supprimer l\'élément ?',
+      title: 'Supprimer le modèle de pièce ?',
       content: content,
-      errorMessage: 'Impossible de supprimer l\'élément. Réessayez.',
+      errorMessage: 'Impossible de supprimer le modèle de pièce. Réessayez.',
       onDelete: () => ref.read(partKindsProvider.notifier).deletePartKind(partKind.id),
       onSuccess: () {
         if (mounted) ref.read(successIndicatorProvider.notifier).fire();
@@ -167,7 +174,7 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
   String _refreshWarning(Object issue) {
     final detail = toUserFacingError(
       issue,
-      'Impossible d\'actualiser les éléments pour le moment.',
+      'Impossible d\'actualiser les modèles de pièce pour le moment.',
     );
     return 'Les données affichées peuvent être anciennes. $detail';
   }
