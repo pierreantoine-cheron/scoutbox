@@ -76,6 +76,7 @@ public class AuditHistoryService : IAuditHistoryService
 
     private static readonly Guid SystemUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
     private const string SystemDisplayName = "Système";
+    private const string UnknownPartName = "Pièce inconnue";
 
     public AuditHistoryService(ScoutBoxDbContext db, ILogger<AuditHistoryService> logger)
     {
@@ -369,7 +370,7 @@ public class AuditHistoryService : IAuditHistoryService
         var partKindId = TryGetMetadataPartKindId(ae.MetadataJson);
         var partName = partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
             ? name
-            : "Modèle de pièce inconnu";
+            : UnknownPartName;
 
         var details = new List<TentHistoryDetailDto>();
         TryParsePartStateMetadata(ae.MetadataJson, out var oldState, out var newState);
@@ -392,7 +393,7 @@ public class AuditHistoryService : IAuditHistoryService
         var partKindId = TryGetMetadataPartKindId(ae.MetadataJson);
         var partName = partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
             ? name
-            : "Modèle de pièce inconnu";
+            : UnknownPartName;
 
         return new TentHistoryItemDto(
             ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartState),
@@ -408,7 +409,7 @@ public class AuditHistoryService : IAuditHistoryService
         var partKindId = TryGetMetadataPartKindId(ae.MetadataJson);
         var partName = partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
             ? name
-            : "Modèle de pièce inconnu";
+            : UnknownPartName;
 
         var details = new List<TentHistoryDetailDto>
         {
@@ -428,7 +429,7 @@ public class AuditHistoryService : IAuditHistoryService
         var partKindId = TryGetMetadataPartKindId(ae.MetadataJson);
         var partName = partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
             ? name
-            : "Modèle de pièce inconnu";
+            : UnknownPartName;
 
         return new TentHistoryItemDto(
             ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartManagement),

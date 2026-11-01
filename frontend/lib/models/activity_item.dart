@@ -299,6 +299,10 @@ class ActivityItem {
 
   String get _unknownSubject {
     return switch (action) {
+      'part_state_changed' ||
+      'part_comments_changed' ||
+      'part_added' ||
+      'part_deleted' => 'Pièce inconnue',
       'model_created' || 'model_renamed' || 'model_deleted' => 'Modèle de tente inconnu',
       'tag_assigned' ||
       'tag_removed' ||
@@ -306,7 +310,8 @@ class ActivityItem {
       'tag_renamed' ||
       'tag_color_changed' ||
       'tag_deleted' => 'Étiquette inconnue',
-      _ => 'Modèle de pièce inconnu',
+      'tent_created' || 'tent_updated' || 'tent_archived' || 'tent_unarchived' => 'Tente inconnue',
+      _ => 'Inconnu',
     };
   }
 

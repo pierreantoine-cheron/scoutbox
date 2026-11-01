@@ -283,7 +283,7 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
     }
 
     [Fact]
-    public async Task GetActivity_UnknownPartKindNamesTheCatalogueEntry()
+    public async Task GetActivity_UnknownPartKind_NamesThePartAsUnknown()
     {
         await EnsureTestUserExistsAsync();
         await ResetAuditEventsAsync();
@@ -296,11 +296,11 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
 
         Assert.NotNull(page);
         var item = Assert.Single(page.Items);
-        Assert.Equal("Modèle de pièce inconnu", item.SubjectName);
+        Assert.Equal("Pièce inconnue", item.SubjectName);
     }
 
     [Fact]
-    public async Task GetActivity_UnknownTentModelNameNamesTheTentModel()
+    public async Task GetActivity_UnknownTentModel_NamesTheTentModelAsUnknown()
     {
         await EnsureTestUserExistsAsync();
         await ResetAuditEventsAsync();
@@ -314,6 +314,39 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
         Assert.NotNull(page);
         var item = Assert.Single(page.Items);
         Assert.Equal("Modèle de tente inconnu", item.SubjectName);
+    }
+
+    [Fact]
+    public async Task GetActivity_UnknownTag_NamesTheTagAsUnknown()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        await InsertAuditEventsAsync(
+            Event(AuditActions.TagAssigned, DateTime.UtcNow.AddHours(-1), "TentTag", Guid.NewGuid(),
+                $$"""{"tentId":"{{Guid.NewGuid()}}"}"""));
+
+        using var client = CreateAuthenticatedClient();
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("Étiquette inconnue", item.SubjectName);
+    }
+
+    [Fact]
+    public async Task GetActivity_TentEventWithoutSubject_LeavesSubjectUnset()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        await InsertAuditEventsAsync(
+            Event(AuditActions.TentArchived, DateTime.UtcNow.AddHours(-1), "Tent", Guid.NewGuid()));
+
+        using var client = CreateAuthenticatedClient();
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Null(item.SubjectName);
     }
 
     [Fact]

@@ -205,7 +205,7 @@ public class ActivityService : IActivityService
 {
     private const string SystemDisplayName = "Système";
     private const string DeletedTentName = "Tente supprimée";
-    private const string UnknownPartName = "Modèle de pièce inconnu";
+    private const string UnknownPartName = "Pièce inconnue";
     private const string UnknownTagName = "Étiquette inconnue";
     private const string UnknownModelName = "Modèle de tente inconnu";
     private const string UnknownActorName = "Utilisateur inconnu";
