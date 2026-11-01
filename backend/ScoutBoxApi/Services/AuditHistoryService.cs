@@ -333,7 +333,7 @@ public class AuditHistoryService : IAuditHistoryService
 
         if (!string.IsNullOrEmpty(oldTentModelName) && !string.IsNullOrEmpty(newTentModelName) && oldTentModelName != newTentModelName)
         {
-            details.Add(new TentHistoryDetailDto("Modèle", oldTentModelName, newTentModelName, null, "old_new"));
+            details.Add(new TentHistoryDetailDto("Modèle de tente", oldTentModelName, newTentModelName, null, "old_new"));
         }
 
         return new TentHistoryItemDto(
@@ -369,7 +369,7 @@ public class AuditHistoryService : IAuditHistoryService
         var partKindId = TryGetMetadataPartKindId(ae.MetadataJson);
         var partName = partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
             ? name
-            : "Pièce inconnue";
+            : "Modèle de pièce inconnu";
 
         var details = new List<TentHistoryDetailDto>();
         TryParsePartStateMetadata(ae.MetadataJson, out var oldState, out var newState);
@@ -392,7 +392,7 @@ public class AuditHistoryService : IAuditHistoryService
         var partKindId = TryGetMetadataPartKindId(ae.MetadataJson);
         var partName = partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
             ? name
-            : "Pièce inconnue";
+            : "Modèle de pièce inconnu";
 
         return new TentHistoryItemDto(
             ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartState),
@@ -408,7 +408,7 @@ public class AuditHistoryService : IAuditHistoryService
         var partKindId = TryGetMetadataPartKindId(ae.MetadataJson);
         var partName = partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
             ? name
-            : "Pièce inconnue";
+            : "Modèle de pièce inconnu";
 
         var details = new List<TentHistoryDetailDto>
         {
@@ -428,7 +428,7 @@ public class AuditHistoryService : IAuditHistoryService
         var partKindId = TryGetMetadataPartKindId(ae.MetadataJson);
         var partName = partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
             ? name
-            : "Pièce inconnue";
+            : "Modèle de pièce inconnu";
 
         return new TentHistoryItemDto(
             ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartManagement),
