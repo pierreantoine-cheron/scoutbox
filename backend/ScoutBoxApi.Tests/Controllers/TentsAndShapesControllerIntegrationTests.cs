@@ -2298,6 +2298,37 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
     }
 
     [Fact]
+    public async Task GetTentHistory_UnknownPartKindNamesTheCatalogueEntry()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            tentId = await CreateTentForTagsAsync(db);
+            db.AuditEvents.Add(new AuditEvent
+            {
+                Id = Guid.NewGuid(),
+                Action = AuditActions.PartStateChanged,
+                ActorUserId = CustomApiFactory.TestUserId,
+                OccurredAt = DateTime.UtcNow,
+                TargetEntityType = "Part",
+                TargetEntityId = Guid.NewGuid(),
+                MetadataJson = $$"""{"tentId":"{{tentId}}","partKindId":"{{Guid.NewGuid()}}","oldState":"Good","newState":"NeedsRepair"}"""
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var historyClient = CreateAuthenticatedClient();
+        var payload = await historyClient.GetFromJsonAsync<List<TentHistoryApiItem>>($"/api/tents/{tentId}/history");
+
+        Assert.NotNull(payload);
+        var partEvent = payload.Single(e => e.Action == AuditActions.PartStateChanged);
+        Assert.Equal("Modèle de pièce inconnu", partEvent.SubjectName);
+    }
+
+    [Fact]
     public async Task GetTentHistory_PartEventsFromOtherTents_AreExcluded()
     {
         await EnsureTestUserExistsAsync();
@@ -2517,7 +2548,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         Assert.Single(tentEvents);
 
         var updateEvent = tentEvents[0];
-        var modelDetail = updateEvent.Details.Find(d => d.Label == "Modèle");
+        var modelDetail = updateEvent.Details.Find(d => d.Label == "Modèle de tente");
         Assert.NotNull(modelDetail);
         Assert.Equal("old_new", modelDetail!.ValueType);
         Assert.NotNull(modelDetail.OldValue);
@@ -2770,6 +2801,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public DateTime OccurredAt { get; set; }
         public string? ActorUserId { get; set; }
         public string ActorDisplayName { get; set; } = string.Empty;
+        public string? SubjectName { get; set; }
         public List<TentHistoryApiDetail> Details { get; set; } = [];
     }
 

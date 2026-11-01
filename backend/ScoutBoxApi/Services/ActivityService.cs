@@ -205,9 +205,9 @@ public class ActivityService : IActivityService
 {
     private const string SystemDisplayName = "Système";
     private const string DeletedTentName = "Tente supprimée";
-    private const string UnknownPartName = "Pièce inconnue";
+    private const string UnknownPartName = "Modèle de pièce inconnu";
     private const string UnknownTagName = "Étiquette inconnue";
-    private const string UnknownModelName = "Modèle inconnu";
+    private const string UnknownModelName = "Modèle de tente inconnu";
     private const string UnknownActorName = "Utilisateur inconnu";
 
     private static readonly Guid SystemUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
@@ -421,7 +421,7 @@ public class ActivityService : IActivityService
             AuditActions.TentModelCreated or
             AuditActions.TentModelRenamed or
             AuditActions.TentModelDeleted =>
-                BuildCatalogueDetails(ae, "Modèle", "model"),
+                BuildCatalogueDetails(ae, "Modèle de tente", "model"),
             _ => []
         };
     }
@@ -460,7 +460,7 @@ public class ActivityService : IActivityService
         var newModelName = TryGetMetadataString(ae.MetadataJson, "newTentModelName");
         if (!string.IsNullOrEmpty(oldModelName) && !string.IsNullOrEmpty(newModelName) && oldModelName != newModelName)
         {
-            details.Add(new TentHistoryDetailDto("Modèle", oldModelName, newModelName, null, "old_new"));
+            details.Add(new TentHistoryDetailDto("Modèle de tente", oldModelName, newModelName, null, "old_new"));
         }
 
         return details;

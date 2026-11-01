@@ -276,10 +276,44 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
         Assert.Equal("models", item.Category);
         Assert.Equal("Canadienne", item.SubjectName);
         var detail = Assert.Single(item.Details);
-        Assert.Equal("Modèle", detail.Label);
+        Assert.Equal("Modèle de tente", detail.Label);
         Assert.Equal("Dôme", detail.OldValue);
         Assert.Equal("Canadienne", detail.NewValue);
         Assert.Equal("old_new", detail.ValueType);
+    }
+
+    [Fact]
+    public async Task GetActivity_UnknownPartKindNamesTheCatalogueEntry()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        await InsertAuditEventsAsync(
+            Event(AuditActions.PartAdded, DateTime.UtcNow.AddHours(-1), "Part", Guid.NewGuid(),
+                $$"""{"tentId":"{{Guid.NewGuid()}}","partKindId":"{{Guid.NewGuid()}}"}"""));
+
+        using var client = CreateAuthenticatedClient();
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("Modèle de pièce inconnu", item.SubjectName);
+    }
+
+    [Fact]
+    public async Task GetActivity_UnknownTentModelNameNamesTheTentModel()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        await InsertAuditEventsAsync(
+            Event(AuditActions.TentModelDeleted, DateTime.UtcNow.AddHours(-1), "TentModel", Guid.NewGuid(),
+                """{"componentCount":2}"""));
+
+        using var client = CreateAuthenticatedClient();
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("Modèle de tente inconnu", item.SubjectName);
     }
 
     [Fact]
