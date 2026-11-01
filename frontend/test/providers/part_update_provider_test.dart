@@ -138,6 +138,30 @@ void main() {
       );
     });
 
+    test('generic failure speaks of updating the pièce', () async {
+      final container = ProviderContainer(
+        overrides: [
+          tentRepositoryProvider.overrideWithValue(_ThrowingPartRepository()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(partUpdateProvider('tent-1').notifier);
+      final result = await notifier.updatePartState(
+        partId: 'part-1',
+        previousState: PartState.good,
+        newState: PartState.needsRepair,
+        previousComments: null,
+        newComments: null,
+      );
+
+      expect(result, PartUpdateResult.failure);
+      expect(
+        container.read(partUpdateProvider('tent-1')).errorFor('part-1'),
+        'Impossible de mettre à jour la pièce. Réessayez.',
+      );
+    });
+
     test('selecting current state is a no-op', () async {
       final repository = _ControlledPartRepository();
       final container = ProviderContainer(
@@ -205,6 +229,17 @@ class _ControlledPartRepository extends TentRepository {
     requests.first.completer.completeError(
       TentRepositoryException(message: message),
     );
+  }
+}
+
+class _ThrowingPartRepository extends TentRepository {
+  @override
+  Future<Part> updatePartState({
+    required String id,
+    required PartState state,
+    required String? comments,
+  }) async {
+    throw Exception('update failed');
   }
 }
 

@@ -13,4 +13,16 @@ void main() {
       'Le nom du modèle doit contenir 60 caractères maximum.',
     );
   });
+
+  test('localizes part errors with pièce vocabulary', () {
+    expect(ErrorLocalizer.localize(ErrorCodes.partNotFound), 'Pièce introuvable.');
+    expect(
+      ErrorLocalizer.localize(ErrorCodes.invalidPartState),
+      "L'état de la pièce est invalide.",
+    );
+    expect(
+      ErrorLocalizer.localize(ErrorCodes.invalidPartKind),
+      'Modèle de pièce invalide.',
+    );
+  });
 }

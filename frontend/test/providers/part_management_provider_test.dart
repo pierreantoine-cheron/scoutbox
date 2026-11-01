@@ -8,6 +8,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('PartManagementNotifier', () {
+    test('generic load failure speaks of modèles de pièce', () async {
+      final repository = _PartManagementRepository()..failLoadPartKinds = true;
+      final container = ProviderContainer(
+        overrides: [tentRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(
+        partManagementProvider('tent-1').notifier,
+      );
+
+      final kinds = await notifier.loadPartKinds();
+      expect(kinds, isEmpty);
+      expect(
+        container.read(partManagementProvider('tent-1')).partKindsError,
+        'Impossible de charger les modèles de pièce.',
+      );
+    });
+
     test('clears add errors before retrying successfully', () async {
       final repository = _PartManagementRepository()..failNextAdd = true;
       final container = ProviderContainer(
@@ -62,11 +81,17 @@ void main() {
 class _PartManagementRepository extends TentRepository {
   bool failNextAdd = false;
   bool failNextRemove = false;
+  bool failLoadPartKinds = false;
 
   @override
-  Future<List<PartKind>> getPartKinds() async => const [
-    PartKind(id: 'kind-1', name: 'Toile', displayOrder: 1, tentCount: 0),
-  ];
+  Future<List<PartKind>> getPartKinds() async {
+    if (failLoadPartKinds) {
+      throw Exception('load failed');
+    }
+    return const [
+      PartKind(id: 'kind-1', name: 'Toile', displayOrder: 1, tentCount: 0),
+    ];
+  }
 
   @override
   Future<List<Part>> addPartsToTent({
