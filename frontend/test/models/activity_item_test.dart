@@ -93,9 +93,9 @@ void main() {
       'tag_renamed': 'Étiquette renommée : Groupe A',
       'tag_color_changed': "Couleur de l'étiquette modifiée : Groupe A",
       'tag_deleted': 'Étiquette supprimée : Groupe A',
-      'model_created': 'Modèle créé : Canadienne',
-      'model_renamed': 'Modèle renommé : Canadienne',
-      'model_deleted': 'Modèle supprimé : Canadienne',
+      'model_created': 'Modèle de tente créé : Canadienne',
+      'model_renamed': 'Modèle de tente renommé : Canadienne',
+      'model_deleted': 'Modèle de tente supprimé : Canadienne',
       'invite_created': 'Invitation créée',
       'user_registered_from_invite': 'Compte créé',
     };
@@ -157,7 +157,89 @@ void main() {
         subjectName: 'Canadienne',
       );
 
-      expect(parsed.buildSummary(), 'Modèle renommé : Canadienne');
+      expect(parsed.buildSummary(), 'Modèle de tente renommé : Canadienne');
+    });
+
+    test('a part with no resolved name names the catalogue entry', () {
+      final parsed = item(action: 'part_added', tentName: null);
+
+      expect(parsed.buildSummary(), 'Pièce ajoutée : Modèle de pièce inconnu');
+    });
+
+    test('a tent model with no resolved name names the tent model', () {
+      final parsed = item(action: 'model_created', tentName: null);
+
+      expect(
+        parsed.buildSummary(),
+        'Modèle de tente créé : Modèle de tente inconnu',
+      );
+    });
+
+    test('a tag with no resolved name names the tag', () {
+      final parsed = item(action: 'tag_created', tentName: null);
+
+      expect(parsed.buildSummary(), 'Étiquette créée : Étiquette inconnue');
+    });
+
+    testWidgets('buildSummarySpan reads like buildSummary', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                final theme = Theme.of(context);
+                final normal = theme.textTheme.bodyMedium ?? const TextStyle();
+                final bold = normal.copyWith(fontWeight: FontWeight.w600);
+
+                for (final action in [
+                  'part_added',
+                  'part_deleted',
+                  'model_created',
+                  'model_renamed',
+                  'tag_created',
+                ]) {
+                  final parsed = item(
+                    action: action,
+                    tentName: null,
+                    subjectName: _subjectFor(action),
+                  );
+                  expect(
+                    parsed.buildSummarySpan(normal, bold).toPlainText(),
+                    parsed.buildSummary(),
+                    reason: action,
+                  );
+                }
+
+                final unresolved = item(action: 'part_added', tentName: null);
+                expect(
+                  unresolved.buildSummarySpan(normal, bold).toPlainText(),
+                  'Pièce ajoutée : Modèle de pièce inconnu',
+                );
+
+                return const SizedBox();
+              },
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('tent model changes read as modèle de tente', () {
+      final parsed = item(
+        action: 'tent_updated',
+        tentName: 'Tente Atlas',
+        details: [
+          {
+            'label': 'Modèle de tente',
+            'oldValue': 'Marabout',
+            'newValue': 'Cabanon',
+            'value': null,
+            'valueType': 'old_new',
+          },
+        ],
+      );
+
+      expect(parsed.buildSummary(), 'Modèle de tente changé de Marabout à Cabanon');
     });
 
     test('unknown action never exposes the raw action code', () {
