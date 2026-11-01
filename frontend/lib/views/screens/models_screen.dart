@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/tent_model.dart';
 import '../../providers/providers.dart';
-import '../../utils/app_theme.dart';
 import '../../utils/design_constants.dart';
 import '../../utils/responsive_sheet.dart';
 import '../../utils/route_aware_app_bar_mixin.dart';
@@ -50,7 +49,7 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen>
 
     return AppBarConfig(
       screenId: 'models',
-      title: isDesktop ? null : const Text('Modèles de tente'),
+      title: isDesktop ? null : Text(NavigationSection.models.label),
       actions: [
         if (modelCount > 0)
           Padding(
@@ -202,9 +201,10 @@ class _ModelContent extends StatelessWidget {
               const SizedBox(height: 2),
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 2,
                 children: [
                   CountBadge(count: model.tentCount, label: 'tente'),
-                  const Text(' · ', style: AppTheme.monoCaption),
                   CountBadge(
                     count: model.componentCount,
                     label: 'modèle de pièce',

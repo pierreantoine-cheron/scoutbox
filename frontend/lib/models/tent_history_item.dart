@@ -300,8 +300,19 @@ class TentHistoryItem {
 
   String get _unknownSubject {
     return switch (action) {
-      'tag_assigned' || 'tag_removed' => 'Étiquette inconnue',
-      _ => 'Modèle de pièce inconnu',
+      'part_state_changed' ||
+      'part_comments_changed' ||
+      'part_added' ||
+      'part_deleted' => 'Pièce inconnue',
+      'model_created' || 'model_renamed' || 'model_deleted' => 'Modèle de tente inconnu',
+      'tag_assigned' ||
+      'tag_removed' ||
+      'tag_created' ||
+      'tag_renamed' ||
+      'tag_color_changed' ||
+      'tag_deleted' => 'Étiquette inconnue',
+      'tent_created' || 'tent_updated' || 'tent_archived' || 'tent_unarchived' => 'Tente inconnue',
+      _ => 'Inconnu',
     };
   }
 

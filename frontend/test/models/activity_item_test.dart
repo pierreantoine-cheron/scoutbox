@@ -160,10 +160,10 @@ void main() {
       expect(parsed.buildSummary(), 'Modèle de tente renommé : Canadienne');
     });
 
-    test('a part with no resolved name names the catalogue entry', () {
+    test('a part with no resolved name names the part as unknown', () {
       final parsed = item(action: 'part_added', tentName: null);
 
-      expect(parsed.buildSummary(), 'Pièce ajoutée : Modèle de pièce inconnu');
+      expect(parsed.buildSummary(), 'Pièce ajoutée : Pièce inconnue');
     });
 
     test('a tent model with no resolved name names the tent model', () {
@@ -179,6 +179,29 @@ void main() {
       final parsed = item(action: 'tag_created', tentName: null);
 
       expect(parsed.buildSummary(), 'Étiquette créée : Étiquette inconnue');
+    });
+
+    test('a part state change with no resolved name names the part', () {
+      final parsed = item(action: 'part_state_changed', tentName: null);
+
+      expect(parsed.buildSummary(), 'État de Pièce inconnue changé de ? à ?');
+    });
+
+    test('a tent action with no subject does not borrow part vocabulary', () {
+      for (final action in [
+        'tent_created',
+        'tent_updated',
+        'tent_archived',
+        'tent_unarchived',
+      ]) {
+        final parsed = item(action: action, tentName: null);
+        final summary = parsed.buildSummary();
+
+        expect(summary, isNot(contains('Pièce inconnue')), reason: action);
+        expect(summary, isNot(contains('Modèle de pièce inconnu')), reason: action);
+        expect(summary, isNot(contains('Modèle de tente inconnu')), reason: action);
+        expect(summary, isNot(contains('Étiquette inconnue')), reason: action);
+      }
     });
 
     testWidgets('buildSummarySpan reads like buildSummary', (tester) async {
@@ -213,7 +236,7 @@ void main() {
                 final unresolved = item(action: 'part_added', tentName: null);
                 expect(
                   unresolved.buildSummarySpan(normal, bold).toPlainText(),
-                  'Pièce ajoutée : Modèle de pièce inconnu',
+                  'Pièce ajoutée : Pièce inconnue',
                 );
 
                 return const SizedBox();

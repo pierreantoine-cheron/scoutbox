@@ -16,7 +16,7 @@ TentHistoryItem makeTentUpdatedItem(List<Map<String, dynamic>> details) {
 
 void main() {
   group('TentHistoryItem', () {
-    test('a part with no resolved name names the catalogue entry', () {
+    test('a part with no resolved name names the part as unknown', () {
       final item = TentHistoryItem.fromJson({
         'id': 'evt-part',
         'action': 'part_added',
@@ -27,7 +27,7 @@ void main() {
         'details': [],
       });
 
-      expect(item.buildSummary(), 'Pièce ajoutée : Modèle de pièce inconnu');
+      expect(item.buildSummary(), 'Pièce ajoutée : Pièce inconnue');
     });
 
     test('a tag with no resolved name names the tag', () {
@@ -42,6 +42,31 @@ void main() {
       });
 
       expect(item.buildSummary(), 'Étiquette ajoutée : Étiquette inconnue');
+    });
+
+    test('a tent action with no subject does not borrow part vocabulary', () {
+      for (final action in [
+        'tent_created',
+        'tent_updated',
+        'tent_archived',
+        'tent_unarchived',
+      ]) {
+        final item = TentHistoryItem.fromJson({
+          'id': 'evt-tent',
+          'action': action,
+          'category': 'tent_info',
+          'occurredAt': '2026-05-19T12:00:00Z',
+          'actorDisplayName': 'Jean',
+          'subjectName': null,
+          'details': [],
+        });
+        final summary = item.buildSummary();
+
+        expect(summary, isNot(contains('Pièce inconnue')), reason: action);
+        expect(summary, isNot(contains('Modèle de pièce inconnu')), reason: action);
+        expect(summary, isNot(contains('Modèle de tente inconnu')), reason: action);
+        expect(summary, isNot(contains('Étiquette inconnue')), reason: action);
+      }
     });
 
     test('fromJson parses required fields', () {

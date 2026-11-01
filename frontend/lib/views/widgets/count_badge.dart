@@ -18,7 +18,7 @@ class CountBadge extends StatelessWidget {
     this.pluralLabel,
   });
 
-  String get _label {
+  String get _displayLabel {
     if (count <= 1) return label;
     return pluralLabel ?? '${label}s';
   }
@@ -26,7 +26,7 @@ class CountBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      '$count $_label',
+      '$count $_displayLabel',
       style: AppTheme.monoCaption,
     );
   }

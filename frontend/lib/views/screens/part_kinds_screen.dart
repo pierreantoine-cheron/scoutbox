@@ -50,7 +50,7 @@ class _PartKindsScreenState extends ConsumerState<PartKindsScreen>
 
     return AppBarConfig(
       screenId: 'parts',
-      title: isDesktop ? null : const Text('Modèles de pièce'),
+      title: isDesktop ? null : Text(NavigationSection.parts.label),
       actions: [
         if (partKindCount > 0)
           Padding(

@@ -2298,7 +2298,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
     }
 
     [Fact]
-    public async Task GetTentHistory_UnknownPartKindNamesTheCatalogueEntry()
+    public async Task GetTentHistory_UnknownPartKind_NamesThePartAsUnknown()
     {
         await EnsureTestUserExistsAsync();
 
@@ -2325,7 +2325,7 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
 
         Assert.NotNull(payload);
         var partEvent = payload.Single(e => e.Action == AuditActions.PartStateChanged);
-        Assert.Equal("Modèle de pièce inconnu", partEvent.SubjectName);
+        Assert.Equal("Pièce inconnue", partEvent.SubjectName);
     }
 
     [Fact]
