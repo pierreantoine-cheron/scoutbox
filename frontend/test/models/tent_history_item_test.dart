@@ -16,6 +16,34 @@ TentHistoryItem makeTentUpdatedItem(List<Map<String, dynamic>> details) {
 
 void main() {
   group('TentHistoryItem', () {
+    test('a part with no resolved name names the catalogue entry', () {
+      final item = TentHistoryItem.fromJson({
+        'id': 'evt-part',
+        'action': 'part_added',
+        'category': 'part_management',
+        'occurredAt': '2026-05-19T12:00:00Z',
+        'actorDisplayName': 'Jean',
+        'subjectName': null,
+        'details': [],
+      });
+
+      expect(item.buildSummary(), 'Pièce ajoutée : Modèle de pièce inconnu');
+    });
+
+    test('a tag with no resolved name names the tag', () {
+      final item = TentHistoryItem.fromJson({
+        'id': 'evt-tag',
+        'action': 'tag_assigned',
+        'category': 'tags',
+        'occurredAt': '2026-05-19T12:00:00Z',
+        'actorDisplayName': 'Jean',
+        'subjectName': null,
+        'details': [],
+      });
+
+      expect(item.buildSummary(), 'Étiquette ajoutée : Étiquette inconnue');
+    });
+
     test('fromJson parses required fields', () {
       final json = {
         'id': 'evt-1',
@@ -163,7 +191,7 @@ void main() {
     test('model change produces descriptive message', () {
       final item = makeTentUpdatedItem([
         {
-          'label': 'Modèle',
+          'label': 'Modèle de tente',
           'oldValue': 'Marabout',
           'newValue': 'Cabanon',
           'value': null,
@@ -173,7 +201,7 @@ void main() {
 
       expect(
         item.buildSummary(),
-        'Modèle de la tente changé de Marabout à Cabanon',
+        'Modèle de tente changé de Marabout à Cabanon',
       );
     });
 

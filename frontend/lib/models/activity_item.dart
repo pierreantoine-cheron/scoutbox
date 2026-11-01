@@ -119,7 +119,7 @@ class ActivityItem {
   }
 
   String buildSummary() {
-    final subject = subjectName ?? 'Pièce inconnue';
+    final subject = subjectName ?? _unknownSubject;
 
     switch (action) {
       case 'tent_created':
@@ -154,11 +154,11 @@ class ActivityItem {
       case 'tag_deleted':
         return 'Étiquette supprimée : $subject';
       case 'model_created':
-        return 'Modèle créé : $subject';
+        return 'Modèle de tente créé : $subject';
       case 'model_renamed':
-        return _buildCatalogueRenameText('Modèle renommé', subject);
+        return _buildCatalogueRenameText('Modèle de tente renommé', subject);
       case 'model_deleted':
-        return 'Modèle supprimé : $subject';
+        return 'Modèle de tente supprimé : $subject';
       case 'invite_created':
         return 'Invitation créée';
       case 'user_registered_from_invite':
@@ -190,7 +190,7 @@ class ActivityItem {
   }
 
   InlineSpan buildSummarySpan(TextStyle normalStyle, TextStyle boldStyle) {
-    final subject = subjectName ?? 'Pièce inconnue';
+    final subject = subjectName ?? _unknownSubject;
 
     switch (action) {
       case 'tent_updated':
@@ -236,11 +236,11 @@ class ActivityItem {
       case 'tag_deleted':
         return _subjectSpan('Étiquette supprimée : ', subject, normalStyle, boldStyle);
       case 'model_created':
-        return _subjectSpan('Modèle créé : ', subject, normalStyle, boldStyle);
+        return _subjectSpan('Modèle de tente créé : ', subject, normalStyle, boldStyle);
       case 'model_renamed':
-        return _catalogueRenameSpan('Modèle renommé', subject, normalStyle, boldStyle);
+        return _catalogueRenameSpan('Modèle de tente renommé', subject, normalStyle, boldStyle);
       case 'model_deleted':
-        return _subjectSpan('Modèle supprimé : ', subject, normalStyle, boldStyle);
+        return _subjectSpan('Modèle de tente supprimé : ', subject, normalStyle, boldStyle);
       default:
         return TextSpan(text: buildSummary(), style: normalStyle);
     }
@@ -293,9 +293,22 @@ class ActivityItem {
       .where(
         (detail) =>
             detail.valueType == 'old_new' &&
-            (detail.label == 'Étiquette' || detail.label == 'Modèle'),
+            (detail.label == 'Étiquette' || detail.label == 'Modèle de tente'),
       )
       .firstOrNull;
+
+  String get _unknownSubject {
+    return switch (action) {
+      'model_created' || 'model_renamed' || 'model_deleted' => 'Modèle de tente inconnu',
+      'tag_assigned' ||
+      'tag_removed' ||
+      'tag_created' ||
+      'tag_renamed' ||
+      'tag_color_changed' ||
+      'tag_deleted' => 'Étiquette inconnue',
+      _ => 'Modèle de pièce inconnu',
+    };
+  }
 
   String _buildUpdateText() {
     if (details.isEmpty) return 'Informations mises à jour';
@@ -310,8 +323,8 @@ class ActivityItem {
         return 'Taille de la tente changée de ${detail.oldValue} places à ${detail.newValue} places';
       case 'Nom':
         return 'Nom de la tente changé de ${detail.oldValue} à ${detail.newValue}';
-      case 'Modèle':
-        return 'Modèle de la tente changé de ${detail.oldValue} à ${detail.newValue}';
+      case 'Modèle de tente':
+        return 'Modèle de tente changé de ${detail.oldValue} à ${detail.newValue}';
       case 'Commentaire':
         return 'Commentaire modifié';
       default:
@@ -359,9 +372,9 @@ class ActivityItem {
           TextSpan(text: ' à ', style: normal),
           TextSpan(text: detail.newValue!, style: bold),
         ];
-      case 'Modèle':
+      case 'Modèle de tente':
         return [
-          TextSpan(text: 'Modèle de la tente changé de ', style: normal),
+          TextSpan(text: 'Modèle de tente changé de ', style: normal),
           TextSpan(text: detail.oldValue!, style: bold),
           TextSpan(text: ' à ', style: normal),
           TextSpan(text: detail.newValue!, style: bold),

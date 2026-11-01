@@ -214,7 +214,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.textContaining('Canadienne : Modèle créé'));
+    await tester.tap(find.textContaining('Canadienne : Modèle de tente créé'));
     await tester.pumpAndSettle();
 
     expect(openedModels, 1);
