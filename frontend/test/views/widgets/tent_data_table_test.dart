@@ -69,7 +69,7 @@ void main() {
       expect(find.text('Nom'), findsAtLeast(1));
       expect(find.text('État'), findsAtLeast(1));
       expect(find.text('Taille'), findsAtLeast(1));
-      expect(find.text('Modèle'), findsAtLeast(1));
+      expect(find.text('Modèle de tente'), findsAtLeast(1));
       expect(find.text('Étiquettes'), findsAtLeast(1));
     });
 

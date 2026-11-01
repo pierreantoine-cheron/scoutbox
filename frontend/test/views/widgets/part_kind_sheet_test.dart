@@ -9,7 +9,8 @@ void main() {
   testWidgets('create mode shows title and save button', (tester) async {
     await tester.pumpWidget(_buildSheet(initialName: null));
 
-    expect(find.text('Nouvel élément'), findsOneWidget);
+    expect(find.text('Nouveau modèle de pièce'), findsOneWidget);
+    expect(find.text('Nom du modèle de pièce'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Créer'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, 'Annuler'), findsOneWidget);
   });
@@ -17,7 +18,7 @@ void main() {
   testWidgets('rename mode shows title and pre-filled name', (tester) async {
     await tester.pumpWidget(_buildSheet(initialName: 'Arceaux'));
 
-    expect(find.text("Modifier l'élément"), findsOneWidget);
+    expect(find.text('Modifier le modèle de pièce'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Enregistrer'), findsOneWidget);
     expect(find.text('Arceaux'), findsOneWidget);
   });
@@ -58,7 +59,7 @@ void main() {
         initialName: null,
         onSave: (_) => throw const PartKindRepositoryException(
           code: 'PART_KIND_NAME_EXISTS',
-          message: 'Un élément avec ce nom existe déjà',
+          message: 'Un modèle de pièce avec ce nom existe déjà',
         ),
       ),
     );
@@ -70,7 +71,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Un élément avec ce nom existe déjà'), findsOneWidget);
+    expect(find.text('Un modèle de pièce avec ce nom existe déjà'), findsOneWidget);
   });
 
   testWidgets('name field is limited to 60 characters', (tester) async {
@@ -79,6 +80,27 @@ void main() {
     final textField = tester.widget<TextField>(find.byType(TextField));
 
     expect(textField.maxLength, equals(ValidationConstants.partKindNameMaxLength));
+  });
+
+  testWidgets('create mode generic failure shows create error', (tester) async {
+    await tester.pumpWidget(
+      _buildSheet(
+        initialName: null,
+        onSave: (_) => throw Exception('boom'),
+      ),
+    );
+
+    final textField = find.byType(TextFormField);
+    await tester.enterText(textField, 'Arceaux');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Créer'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Impossible de créer le modèle de pièce. Réessayez.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('rename mode generic failure shows rename error', (tester) async {
@@ -96,7 +118,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Impossible de renommer l\'élément. Réessayez.'), findsOneWidget);
+    expect(find.text('Impossible de renommer le modèle de pièce. Réessayez.'), findsOneWidget);
   });
 }
 

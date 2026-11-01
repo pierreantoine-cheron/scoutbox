@@ -33,7 +33,8 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
 
   bool get _isCreate => widget.initialName == null;
   String get _saveLabel => _isCreate ? 'Créer' : 'Enregistrer';
-  String get _title => _isCreate ? 'Nouveau modèle' : 'Modifier le modèle';
+  String get _title =>
+      _isCreate ? 'Nouveau modèle de tente' : 'Modifier le modèle de tente';
 
   bool get _isSaveEnabled {
     final name = _nameController.text.trim();
@@ -114,7 +115,7 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
             );
           },
           decoration: const InputDecoration(
-            hintText: 'Nom du modèle',
+            hintText: 'Nom du modèle de tente',
           ),
           onChanged: (_) => setState(() => _submitError = null),
         ),
@@ -124,7 +125,7 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
 
   Widget _buildPartsLabel(ColorScheme colorScheme) {
     return Text(
-      'Éléments par défaut',
+      'Modèles de pièce par défaut',
       style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w500,
@@ -144,7 +145,7 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
       error: (_, _) => Padding(
         padding: const EdgeInsets.all(16),
         child: Text(
-          'Impossible de charger les éléments.',
+          'Impossible de charger les modèles de pièce.',
           style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.error),
         ),
       ),
@@ -208,8 +209,8 @@ class _TentModelSheetState extends ConsumerState<TentModelSheet> {
       if (mounted) {
         setState(() {
           _submitError = _isCreate
-              ? 'Impossible de créer le modèle. Réessayez.'
-              : 'Impossible de modifier le modèle. Réessayez.';
+              ? 'Impossible de créer le modèle de tente. Réessayez.'
+              : 'Impossible de modifier le modèle de tente. Réessayez.';
           _isSubmitting = false;
         });
       }

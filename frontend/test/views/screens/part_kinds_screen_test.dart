@@ -15,12 +15,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Aucun élément'), findsOneWidget);
+    expect(find.text('Aucun modèle de pièce'), findsOneWidget);
     expect(
-      find.text('Créez des types d\'éléments pour composer vos modèles de tentes.'),
+      find.text('Créez des modèles de pièce pour composer vos modèles de tente.'),
       findsOneWidget,
     );
-    expect(find.byTooltip('Créer un élément'), findsOneWidget);
+    expect(find.byTooltip('Créer un modèle de pièce'), findsOneWidget);
   });
 
   testWidgets('renders part kind cards with names and tent counts', (
@@ -40,6 +40,39 @@ void main() {
     expect(find.text('Sardines'), findsWidgets);
     expect(find.text('3 tentes'), findsOneWidget);
     expect(find.text('1 tente'), findsOneWidget);
+    expect(find.text('2 modèles de pièce'), findsOneWidget);
+  });
+
+  testWidgets('shows the plural count badge for several part kinds', (
+    tester,
+  ) async {
+    _setMobileViewport(tester);
+    await tester.pumpWidget(
+      _buildApp(
+        _PartKindRepositoryStub(partKinds: [
+          _partKind('1', 'Arceaux'),
+          _partKind('2', 'Sardines'),
+        ]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Modèles de pièce'), findsOneWidget);
+    expect(find.text('2 modèles de pièce'), findsOneWidget);
+  });
+
+  testWidgets('shows the singular count badge for one part kind', (
+    tester,
+  ) async {
+    _setMobileViewport(tester);
+    await tester.pumpWidget(
+      _buildApp(
+        _PartKindRepositoryStub(partKinds: [_partKind('1', 'Arceaux')]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 modèle de pièce'), findsOneWidget);
   });
 
   testWidgets('create button opens sheet', (tester) async {
@@ -50,7 +83,27 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nouvel élément'), findsOneWidget);
+    expect(find.text('Nouveau modèle de pièce'), findsOneWidget);
+  });
+
+  testWidgets('delete confirmation names the modèle de pièce', (tester) async {
+    await tester.pumpWidget(
+      _buildApp(
+        _PartKindRepositoryStub(partKinds: [_partKind('1', 'Arceaux')]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Supprimer'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Supprimer le modèle de pièce ?'), findsOneWidget);
+    expect(
+      find.text('Le modèle de pièce "Arceaux" sera supprimé.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('creating part kind updates list', (tester) async {
@@ -103,6 +156,10 @@ Widget _buildApp(PartKindRepository repository) {
         builder: (context, ref, _) {
           final appBarConfig = ref.watch(appBarConfigProvider);
           return Scaffold(
+            appBar: AppBar(
+              title: appBarConfig.title,
+              actions: appBarConfig.actions,
+            ),
             body: const PartKindsScreen(),
             floatingActionButton: appBarConfig.fab,
           );
@@ -110,6 +167,15 @@ Widget _buildApp(PartKindRepository repository) {
       ),
     ),
   );
+}
+
+void _setMobileViewport(WidgetTester tester) {
+  tester.view.physicalSize = const Size(600, 900);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
 }
 
 PartKind _partKind(String id, String name, {int tentCount = 0}) {

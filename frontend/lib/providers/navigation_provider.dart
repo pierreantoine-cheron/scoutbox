@@ -12,8 +12,8 @@ enum NavigationSection {
     return switch (this) {
       tents => 'Tentes',
       tags => 'Étiquettes',
-      parts => 'Éléments',
-      models => 'Modèles',
+      parts => 'Modèles de pièce',
+      models => 'Modèles de tente',
       journal => 'Journal',
       settings => 'Réglages',
     };

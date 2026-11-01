@@ -98,7 +98,7 @@ void main() {
       expect(find.text('Nom'), findsOneWidget);
       expect(find.text('État'), findsWidgets);
       expect(find.text('Taille'), findsWidgets);
-      expect(find.text('Modèle'), findsOneWidget);
+      expect(find.text('Modèle de tente'), findsOneWidget);
       expect(find.text('Tente Atlas'), findsOneWidget);
       expect(find.text('Forme: Canadienne'), findsNothing);
     });
@@ -217,13 +217,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Modèle'));
+      await tester.tap(find.text('Modèle de tente'));
       await tester.pumpAndSettle();
 
       var textOrder = _extractTextData(tester);
       expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
 
-      await tester.tap(find.text('Modèle'));
+      await tester.tap(find.text('Modèle de tente'));
       await tester.pumpAndSettle();
 
       textOrder = _extractTextData(tester);
@@ -269,13 +269,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Modèle'));
+      await tester.tap(find.text('Modèle de tente'));
       await tester.pumpAndSettle();
 
       var textOrder = _extractTextData(tester);
       expect(textOrder.indexOf('Bravo') < textOrder.indexOf('Alpha'), isTrue);
 
-      await tester.tap(find.text('Modèle'));
+      await tester.tap(find.text('Modèle de tente'));
       await tester.pumpAndSettle();
 
       textOrder = _extractTextData(tester);
@@ -684,7 +684,7 @@ void main() {
 
       expect(find.text('État'), findsWidgets);
       expect(find.text('Taille'), findsWidgets);
-      expect(find.text('Modèle'), findsOneWidget);
+      expect(find.text('Modèle de tente'), findsOneWidget);
       expect(find.text('2 places'), findsOneWidget);
       expect(find.text('4 places'), findsOneWidget);
       expect(find.text('6 places'), findsOneWidget);

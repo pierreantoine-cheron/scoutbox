@@ -65,7 +65,7 @@ class _ModelSelectDropdownState extends State<ModelSelectDropdown> {
                 children: [
                   Expanded(
                     child: Text(
-                      widget.selectedModel?.name ?? 'Choisir un modèle',
+                      widget.selectedModel?.name ?? 'Choisir un modèle de tente',
                       style: TextStyle(
                         fontSize: 14,
                         color: widget.selectedModel != null

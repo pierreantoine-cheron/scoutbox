@@ -27,9 +27,9 @@ class TentRepository {
 
   Future<List<TentModel>> getTentModels() async {
     return _request(
-      fallbackMessage: 'Impossible de charger les modèles de tentes. Réessayez.',
+      fallbackMessage: 'Impossible de charger les modèles de tente. Réessayez.',
       invalidResponseMessage:
-          'Réponse du serveur invalide lors du chargement des modèles de tentes.',
+          'Réponse du serveur invalide lors du chargement des modèles de tente.',
       action: () async {
         final response = await ApiClient.instance.get(ApiRoutes.tentModels);
         final rawModels = response.data! as List<dynamic>;
@@ -55,8 +55,8 @@ class TentRepository {
     required List<String> componentIds,
   }) async {
     return _request(
-      fallbackMessage: 'Impossible de créer le modèle. Réessayez.',
-      invalidResponseMessage: 'Réponse du serveur invalide lors de la création du modèle.',
+      fallbackMessage: 'Impossible de créer le modèle de tente. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la création du modèle de tente.',
       action: () async {
         final response = await ApiClient.instance.post(
           ApiRoutes.tentModels,
@@ -73,8 +73,8 @@ class TentRepository {
     List<String>? componentIds,
   }) async {
     return _request(
-      fallbackMessage: 'Impossible de modifier le modèle. Réessayez.',
-      invalidResponseMessage: 'Réponse du serveur invalide lors de la modification du modèle.',
+      fallbackMessage: 'Impossible de modifier le modèle de tente. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la modification du modèle de tente.',
       action: () async {
         final response = await ApiClient.instance.put(
           '${ApiRoutes.tentModels}/$id',
@@ -90,8 +90,8 @@ class TentRepository {
 
   Future<void> deleteTentModel(String id) async {
     return _request<void>(
-      fallbackMessage: 'Impossible de supprimer le modèle. Réessayez.',
-      invalidResponseMessage: 'Réponse du serveur invalide lors de la suppression du modèle.',
+      fallbackMessage: 'Impossible de supprimer le modèle de tente. Réessayez.',
+      invalidResponseMessage: 'Réponse du serveur invalide lors de la suppression du modèle de tente.',
       action: () async {
         await ApiClient.instance.delete('${ApiRoutes.tentModels}/$id');
       },
