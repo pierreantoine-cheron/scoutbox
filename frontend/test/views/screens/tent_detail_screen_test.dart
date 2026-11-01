@@ -111,6 +111,26 @@ void main() {
       expect(find.text('Toile extérieure'), findsOneWidget);
       expect(find.text('Bon état'), findsWidgets);
       expect(find.text('Pas de commentaire'), findsWidgets);
+      expect(find.text('PIÈCES (1)'), findsOneWidget);
+    });
+
+    testWidgets('shows the modèle de tente fallback when the model is unknown', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tentRepositoryProvider.overrideWithValue(
+              _StaticTentRepository(_buildTent(tentModelName: null)),
+            ),
+          ],
+          child: _testApp(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Modèle de tente inconnu'), findsOneWidget);
     });
 
     testWidgets('shows assigned tags in tags section', (tester) async {
@@ -474,10 +494,15 @@ void main() {
       await tester.pump();
 
       expect(find.text('Canadienne'), findsWidgets);
+      expect(
+        find.bySemanticsLabel('Modèle de tente : Canadienne'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.text('Canadienne'));
       await tester.pumpAndSettle();
 
+      expect(find.text('Modifier le modèle de tente'), findsOneWidget);
       expect(find.text('Tipi'), findsOneWidget);
 
       await tester.tap(find.text('Tipi'));
@@ -503,6 +528,7 @@ void main() {
 
       await tester.tap(find.text('Bon état').last);
       await tester.pumpAndSettle();
+      expect(find.text('Modifier l\'état de la pièce'), findsOneWidget);
       await tester.tap(find.text('À réparer').last);
       await tester.pump();
       await tester.pumpAndSettle();
@@ -579,8 +605,52 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('Modifier les \u00e9l\u00e9ments'), findsOneWidget);
+      expect(find.text('Modifier les pièces'), findsOneWidget);
       expect(find.text('Double toit'), findsOneWidget);
+    });
+
+    testWidgets('add sheet shows modèle de pièce empty state', (tester) async {
+      final repo = _EmptyPartKindsTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: _testApp(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Modifier').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Aucun modèle de pièce disponible.'), findsOneWidget);
+    });
+
+    testWidgets('add sheet uses pièce vocabulary for generic errors', (
+      tester,
+    ) async {
+      final repo = _GenericFailingAddTentRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [tentRepositoryProvider.overrideWithValue(repo)],
+          child: _testApp(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Modifier').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Double toit'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Enregistrer'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Impossible de modifier les pièces. Réessayez.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('removed part disappears after prior tent edit', (
@@ -613,7 +683,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Toile extérieure'), findsNothing);
-      expect(find.text('Aucun élément'), findsOneWidget);
+      expect(find.text('Aucune pièce'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(TextButton, 'Modifier').last);
       await tester.pumpAndSettle();
@@ -770,13 +840,16 @@ Widget _testAppWithAppBar() {
   );
 }
 
-Tent _buildTent({List<Tag> tags = const []}) {
+Tent _buildTent({
+  List<Tag> tags = const [],
+  String? tentModelName = 'Canadienne',
+}) {
   return Tent(
     id: 'tent-1',
     name: 'Tente Atlas',
     size: 6,
     tentModelId: 'shape-1',
-    tentModelName: 'Canadienne',
+    tentModelName: tentModelName,
     overallState: TentOverallState.good,
     comments: 'Une tente de test.',
     createdAt: DateTime.utc(2026, 4, 10, 9),
@@ -991,6 +1064,21 @@ class _PartKindTentRepository extends _EditableTentRepository {
     required String tentId,
     required List<String> partKindIds,
   }) async => const [];
+}
+
+class _EmptyPartKindsTentRepository extends _EditableTentRepository {
+  @override
+  Future<List<PartKind>> getPartKinds() async => const [];
+}
+
+class _GenericFailingAddTentRepository extends _PartKindTentRepository {
+  @override
+  Future<List<Part>> addPartsToTent({
+    required String tentId,
+    required List<String> partKindIds,
+  }) async {
+    throw Exception('add failed');
+  }
 }
 
 class _PartRemovalAfterEditRepository extends _PartKindTentRepository {

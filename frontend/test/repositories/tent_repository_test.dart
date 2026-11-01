@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:client/models/part.dart';
 import 'package:client/repositories/tent_repository.dart';
 import 'package:client/services/api_client.dart';
 import 'package:client/utils/constants.dart';
@@ -52,6 +53,48 @@ void main() {
                 'message',
                 contains('étiquette sélectionnée est introuvable'),
               ),
+        ),
+      );
+    });
+  });
+
+  group('TentRepository part responses', () {
+    test('uses modèle de pièce wording when part kinds cannot be parsed', () async {
+      ApiClient.initialize('https://example.test');
+      ApiClient.instance.httpClientAdapter = _FakeAdapter(
+        (options) => _jsonResponse(200, {}),
+      );
+
+      expect(
+        () => TentRepository().getPartKinds(),
+        throwsA(
+          isA<TentRepositoryException>().having(
+            (error) => error.message,
+            'message',
+            'Réponse du serveur invalide lors du chargement des modèles de pièce.',
+          ),
+        ),
+      );
+    });
+
+    test('uses pièce wording when a part update cannot be parsed', () async {
+      ApiClient.initialize('https://example.test');
+      ApiClient.instance.httpClientAdapter = _FakeAdapter(
+        (options) => _jsonResponse(200, {}),
+      );
+
+      expect(
+        () => TentRepository().updatePartState(
+          id: 'part-1',
+          state: PartState.good,
+          comments: null,
+        ),
+        throwsA(
+          isA<TentRepositoryException>().having(
+            (error) => error.message,
+            'message',
+            'Réponse du serveur invalide lors de la mise à jour de la pièce.',
+          ),
         ),
       );
     });

@@ -103,7 +103,7 @@ class TentHistoryItem {
   }
 
   String buildSummary() {
-    final subject = subjectName ?? 'Pièce inconnue';
+    final subject = subjectName ?? _unknownSubject;
 
     switch (action) {
       case 'tent_created':
@@ -138,7 +138,7 @@ class TentHistoryItem {
     final theme = Theme.of(context);
     final normalStyle = theme.textTheme.bodyMedium ?? const TextStyle();
     final boldStyle = normalStyle.copyWith(fontWeight: FontWeight.w600);
-    final subject = subjectName ?? 'Pièce inconnue';
+    final subject = subjectName ?? _unknownSubject;
 
     switch (action) {
       case 'tent_updated':
@@ -217,8 +217,8 @@ class TentHistoryItem {
         return 'Taille de la tente changée de ${detail.oldValue} places à ${detail.newValue} places';
       case 'Nom':
         return 'Nom de la tente changé de ${detail.oldValue} à ${detail.newValue}';
-      case 'Modèle':
-        return 'Modèle de la tente changé de ${detail.oldValue} à ${detail.newValue}';
+      case 'Modèle de tente':
+        return 'Modèle de tente changé de ${detail.oldValue} à ${detail.newValue}';
       case 'Commentaire':
         return 'Commentaire modifié';
       default:
@@ -284,9 +284,9 @@ class TentHistoryItem {
           TextSpan(text: ' à ', style: normal),
           TextSpan(text: detail.newValue!, style: bold),
         ];
-      case 'Modèle':
+      case 'Modèle de tente':
         return [
-          TextSpan(text: 'Modèle de la tente changé de ', style: normal),
+          TextSpan(text: 'Modèle de tente changé de ', style: normal),
           TextSpan(text: detail.oldValue!, style: bold),
           TextSpan(text: ' à ', style: normal),
           TextSpan(text: detail.newValue!, style: bold),
@@ -296,6 +296,13 @@ class TentHistoryItem {
       default:
         return [TextSpan(text: '${detail.label} modifié', style: normal)];
     }
+  }
+
+  String get _unknownSubject {
+    return switch (action) {
+      'tag_assigned' || 'tag_removed' => 'Étiquette inconnue',
+      _ => 'Modèle de pièce inconnu',
+    };
   }
 
   static String _historyStateLabel(String? value) {
