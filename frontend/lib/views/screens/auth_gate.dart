@@ -244,6 +244,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       ),
       NavigationSection.journal => JournalScreen(
         onOpenTentDetail: widget.onOpenTentDetail,
+        onOpenPartKinds: () =>
+            widget.onSelectSection(NavigationSection.parts),
         onOpenModels: () => widget.onSelectSection(NavigationSection.models),
         onOpenTags: () => widget.onSelectSection(NavigationSection.tags),
       ),

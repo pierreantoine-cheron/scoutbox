@@ -87,6 +87,8 @@ void main() {
       'part_comments_changed': 'Commentaire de Toile modifié',
       'part_added': 'Pièce ajoutée : Toile',
       'part_deleted': 'Pièce supprimée : Toile',
+      'part_kind_created': 'Modèle de pièce créé : Toit',
+      'part_kind_renamed': 'Modèle de pièce renommé : Toit',
       'tag_assigned': 'Étiquette ajoutée : Groupe A',
       'tag_removed': 'Étiquette retirée : Groupe A',
       'tag_created': 'Étiquette créée : Groupe A',
@@ -175,6 +177,28 @@ void main() {
       );
     });
 
+    test('part kind rename shows the old name before the new one', () {
+      final parsed = item(
+        action: 'part_kind_renamed',
+        tentName: null,
+        subjectName: 'Double toit',
+        details: [
+          {
+            'label': 'Modèle de pièce',
+            'oldValue': 'Toit',
+            'newValue': 'Double toit',
+            'value': null,
+            'valueType': 'old_new',
+          },
+        ],
+      );
+
+      expect(
+        parsed.buildSummary(),
+        'Modèle de pièce renommé : Toit → Double toit',
+      );
+    });
+
     testWidgets('tag removal reason appears in the summary span', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -245,6 +269,15 @@ void main() {
       expect(parsed.buildSummary(), 'Étiquette créée : Étiquette inconnue');
     });
 
+    test('a part kind with no resolved name names the part kind', () {
+      final parsed = item(action: 'part_kind_created', tentName: null);
+
+      expect(
+        parsed.buildSummary(),
+        'Modèle de pièce créé : Modèle de pièce inconnu',
+      );
+    });
+
     test('a part state change with no resolved name names the part', () {
       final parsed = item(action: 'part_state_changed', tentName: null);
 
@@ -281,6 +314,8 @@ void main() {
                 for (final action in [
                   'part_added',
                   'part_deleted',
+                  'part_kind_created',
+                  'part_kind_renamed',
                   'model_created',
                   'model_renamed',
                   'tag_created',
@@ -296,6 +331,25 @@ void main() {
                     reason: action,
                   );
                 }
+
+                final partKindRename = item(
+                  action: 'part_kind_renamed',
+                  tentName: null,
+                  subjectName: 'Double toit',
+                  details: [
+                    {
+                      'label': 'Modèle de pièce',
+                      'oldValue': 'Toit',
+                      'newValue': 'Double toit',
+                      'value': null,
+                      'valueType': 'old_new',
+                    },
+                  ],
+                );
+                expect(
+                  partKindRename.buildSummarySpan(normal, bold).toPlainText(),
+                  partKindRename.buildSummary(),
+                );
 
                 final unresolved = item(action: 'part_added', tentName: null);
                 expect(
@@ -341,6 +395,8 @@ void main() {
         'tent_created': Icons.add_circle_outline,
         'tent_archived': Icons.archive_outlined,
         'part_state_changed': Icons.swap_horiz,
+        'part_kind_created': Icons.category_outlined,
+        'part_kind_renamed': Icons.edit_outlined,
         'tag_assigned': Icons.label_outlined,
         'tag_color_changed': Icons.palette_outlined,
         'model_created': Icons.grid_view_outlined,
@@ -377,6 +433,7 @@ void main() {
 }
 
 String? _subjectFor(String action) {
+  if (action.startsWith('part_kind_')) return 'Toit';
   if (action.startsWith('part_')) return 'Toile';
   if (action.startsWith('tag_')) return 'Groupe A';
   if (action.startsWith('model_')) return 'Canadienne';

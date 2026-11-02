@@ -9,12 +9,14 @@ import '../widgets/widgets.dart';
 
 class JournalScreen extends ConsumerStatefulWidget {
   final ValueChanged<String> onOpenTentDetail;
+  final VoidCallback onOpenPartKinds;
   final VoidCallback onOpenModels;
   final VoidCallback onOpenTags;
 
   const JournalScreen({
     super.key,
     required this.onOpenTentDetail,
+    required this.onOpenPartKinds,
     required this.onOpenModels,
     required this.onOpenTags,
   });
@@ -138,9 +140,15 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
       return () => widget.onOpenTentDetail(tentId);
     }
 
-    return switch (item.category) {
-      'models' => widget.onOpenModels,
-      'tags' => widget.onOpenTags,
+    return switch (item.action) {
+      'part_kind_created' || 'part_kind_renamed' || 'part_kind_deleted' =>
+        widget.onOpenPartKinds,
+      'model_created' || 'model_renamed' || 'model_deleted' =>
+        widget.onOpenModels,
+      'tag_created' ||
+      'tag_renamed' ||
+      'tag_color_changed' ||
+      'tag_deleted' => widget.onOpenTags,
       _ => null,
     };
   }
