@@ -511,6 +511,35 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
     }
 
     [Fact]
+    public async Task GetActivity_TagRemovedByTagDeletion_CarriesTheReasonAsADetail()
+    {
+        await EnsureTestUserExistsAsync();
+        var tentId = await CreateTentAsync("Tente étiquette supprimée");
+        var tagId = Guid.NewGuid();
+        await ResetAuditEventsAsync();
+        await InsertAuditEventsAsync(
+            Event(AuditActions.TagRemoved, DateTime.UtcNow.AddHours(-1), "TentTag", tentId,
+                $$"""{"tagId":"{{tagId}}","tagName":"Groupe A","tentId":"{{tentId}}","reason":"tag_deleted"}"""));
+
+        using var client = CreateAuthenticatedClient();
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("tags", item.Category);
+        Assert.Equal(tentId, item.TentId);
+        Assert.Equal("Groupe A", item.SubjectName);
+
+        var tagDetail = Assert.Single(item.Details.Where(d => d.ValueType == "tag").ToList());
+        Assert.Equal("Étiquette", tagDetail.Label);
+        Assert.Equal("Groupe A", tagDetail.Value);
+
+        var reasonDetail = Assert.Single(item.Details.Where(d => d.ValueType == "reason").ToList());
+        Assert.Equal("Raison", reasonDetail.Label);
+        Assert.Equal("tag_deleted", reasonDetail.Value);
+    }
+
+    [Fact]
     public async Task GetActivity_ResolvesTagAssignmentsToTheirTent()
     {
         await EnsureTestUserExistsAsync();

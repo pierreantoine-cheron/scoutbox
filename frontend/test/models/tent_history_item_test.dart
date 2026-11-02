@@ -44,6 +44,34 @@ void main() {
       expect(item.buildSummary(), 'Étiquette ajoutée : Étiquette inconnue');
     });
 
+    test('a tag removed by tag deletion says the tag was deleted', () {
+      final item = TentHistoryItem.fromJson({
+        'id': 'evt-tag',
+        'action': 'tag_removed',
+        'category': 'tags',
+        'occurredAt': '2026-05-19T12:00:00Z',
+        'actorDisplayName': 'Jean',
+        'subjectName': 'Rouge',
+        'details': [
+          {
+            'label': 'Étiquette',
+            'value': 'Rouge',
+            'valueType': 'tag',
+          },
+          {
+            'label': 'Raison',
+            'value': 'tag_deleted',
+            'valueType': 'reason',
+          },
+        ],
+      });
+
+      expect(
+        item.buildSummary(),
+        'Étiquette retirée : Rouge (étiquette supprimée)',
+      );
+    });
+
     test('a tent action with no subject does not borrow part vocabulary', () {
       for (final action in [
         'tent_created',
@@ -448,6 +476,47 @@ void main() {
               expect((children[0] as TextSpan).text, 'Étiquette retirée : ');
               expect((children[1] as TextSpan).text, 'Rouge');
               expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('buildSummarySpan adds the tag removal reason', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = TentHistoryItem.fromJson({
+                'id': 'evt-tag',
+                'action': 'tag_removed',
+                'category': 'tags',
+                'occurredAt': '2026-05-19T12:00:00Z',
+                'actorDisplayName': 'Jean',
+                'subjectName': 'Rouge',
+                'details': [
+                  {
+                    'label': 'Raison',
+                    'value': 'tag_deleted',
+                    'valueType': 'reason',
+                  },
+                ],
+              });
+              final span = item.buildSummarySpan(context);
+              expect(
+                span.toPlainText(),
+                'Étiquette retirée : Rouge (étiquette supprimée)',
+              );
+
+              final children = (span as TextSpan).children!;
+              expect(children.length, 3);
+              expect((children[1] as TextSpan).text, 'Rouge');
+              expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+              expect((children[2] as TextSpan).text, ' (étiquette supprimée)');
 
               return const SizedBox();
             },
