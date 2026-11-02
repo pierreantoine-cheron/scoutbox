@@ -89,6 +89,7 @@ void main() {
       'part_deleted': 'Pièce supprimée : Toile',
       'part_kind_created': 'Modèle de pièce créé : Toit',
       'part_kind_renamed': 'Modèle de pièce renommé : Toit',
+      'part_kind_deleted': 'Modèle de pièce supprimé : Toit',
       'tag_assigned': 'Étiquette ajoutée : Groupe A',
       'tag_removed': 'Étiquette retirée : Groupe A',
       'tag_created': 'Étiquette créée : Groupe A',
@@ -171,6 +172,98 @@ void main() {
       expect(
         parsed.buildSummary(),
         'Modèle de pièce renommé : Toit → Double toit',
+      );
+    });
+
+    test('part kind deletion shows its counts and omits the zero ones', () {
+      final parsed = item(
+        action: 'part_kind_deleted',
+        tentName: null,
+        subjectName: 'Toit',
+        details: [
+          {
+            'label': 'Tentes',
+            'value': '2',
+            'valueType': 'count',
+          },
+          {
+            'label': 'Pièces',
+            'value': '1',
+            'valueType': 'count',
+          },
+          {
+            'label': 'Modèles de tente',
+            'value': '0',
+            'valueType': 'count',
+          },
+        ],
+      );
+
+      expect(
+        parsed.buildSummary(),
+        'Modèle de pièce supprimé : Toit (2 tentes, 1 pièce)',
+      );
+    });
+
+    test('part kind deletion without counts reads plainly', () {
+      final parsed = item(
+        action: 'part_kind_deleted',
+        tentName: null,
+        subjectName: 'Toit',
+        details: [
+          {
+            'label': 'Tentes',
+            'value': '0',
+            'valueType': 'count',
+          },
+        ],
+      );
+
+      expect(parsed.buildSummary(), 'Modèle de pièce supprimé : Toit');
+    });
+
+    test('a cascade part deletion says the modèle de pièce was deleted', () {
+      final parsed = item(
+        action: 'part_deleted',
+        tentName: null,
+        subjectName: 'Toit',
+        details: [
+          {
+            'label': 'Raison',
+            'value': 'part_kind_deleted',
+            'valueType': 'reason',
+          },
+        ],
+      );
+
+      expect(
+        parsed.buildSummary(),
+        'Pièce supprimée : Toit (modèle de pièce supprimé)',
+      );
+    });
+
+    test('a cascade model component change names the removed kind and says why', () {
+      final parsed = item(
+        action: 'model_components_changed',
+        tentName: null,
+        subjectName: 'Canadienne',
+        details: [
+          {
+            'label': 'Modèle de pièce retiré',
+            'value': 'Toit',
+            'valueType': 'removed_component',
+          },
+          {
+            'label': 'Raison',
+            'value': 'part_kind_deleted',
+            'valueType': 'reason',
+          },
+        ],
+      );
+
+      expect(
+        parsed.buildSummary(),
+        'Modèle de pièce retiré : Toit (modèle de pièce supprimé)',
       );
     });
 
@@ -302,6 +395,7 @@ void main() {
                   'part_deleted',
                   'part_kind_created',
                   'part_kind_renamed',
+                  'part_kind_deleted',
                   'model_created',
                   'model_renamed',
                   'model_components_changed',
@@ -361,6 +455,66 @@ void main() {
                   theme.colorScheme.tertiary,
                 );
 
+                final kindDeletion = item(
+                  action: 'part_kind_deleted',
+                  tentName: null,
+                  subjectName: 'Toit',
+                  details: [
+                    {
+                      'label': 'Tentes',
+                      'value': '3',
+                      'valueType': 'count',
+                    },
+                  ],
+                );
+                expect(
+                  kindDeletion.buildSummarySpan(normal, bold).toPlainText(),
+                  kindDeletion.buildSummary(),
+                );
+                expect(
+                  kindDeletion.actionDotColor(theme.colorScheme),
+                  theme.colorScheme.error,
+                );
+
+                final cascadePartDeletion = item(
+                  action: 'part_deleted',
+                  tentName: null,
+                  subjectName: 'Toit',
+                  details: [
+                    {
+                      'label': 'Raison',
+                      'value': 'part_kind_deleted',
+                      'valueType': 'reason',
+                    },
+                  ],
+                );
+                expect(
+                  cascadePartDeletion.buildSummarySpan(normal, bold).toPlainText(),
+                  cascadePartDeletion.buildSummary(),
+                );
+
+                final cascadeComponentChange = item(
+                  action: 'model_components_changed',
+                  tentName: null,
+                  subjectName: 'Canadienne',
+                  details: [
+                    {
+                      'label': 'Modèle de pièce retiré',
+                      'value': 'Toit',
+                      'valueType': 'removed_component',
+                    },
+                    {
+                      'label': 'Raison',
+                      'value': 'part_kind_deleted',
+                      'valueType': 'reason',
+                    },
+                  ],
+                );
+                expect(
+                  cascadeComponentChange.buildSummarySpan(normal, bold).toPlainText(),
+                  cascadeComponentChange.buildSummary(),
+                );
+
                 final unresolved = item(action: 'part_added', tentName: null);
                 expect(
                   unresolved.buildSummarySpan(normal, bold).toPlainText(),
@@ -407,6 +561,7 @@ void main() {
         'part_state_changed': Icons.swap_horiz,
         'part_kind_created': Icons.category_outlined,
         'part_kind_renamed': Icons.edit_outlined,
+        'part_kind_deleted': Icons.delete_outline,
         'tag_assigned': Icons.label_outlined,
         'tag_color_changed': Icons.palette_outlined,
         'model_created': Icons.grid_view_outlined,

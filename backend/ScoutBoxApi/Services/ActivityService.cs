@@ -34,7 +34,8 @@ public static class ActivityCategoryMapper
         AuditActions.PartAdded,
         AuditActions.PartDeleted,
         AuditActions.PartKindCreated,
-        AuditActions.PartKindRenamed
+        AuditActions.PartKindRenamed,
+        AuditActions.PartKindDeleted
     ];
 
     private static readonly string[] TagActions =
@@ -381,7 +382,9 @@ public class ActivityService : IActivityService
             AuditActions.PartCommentsChanged or
             AuditActions.PartAdded or
             AuditActions.PartDeleted => ResolvePartName(ae, partKindNames),
-            AuditActions.PartKindCreated or AuditActions.PartKindRenamed =>
+            AuditActions.PartKindCreated or
+            AuditActions.PartKindRenamed or
+            AuditActions.PartKindDeleted =>
                 TryGetMetadataString(ae.MetadataJson, "name")
                 ?? TryGetMetadataString(ae.MetadataJson, "newName")
                 ?? UnknownPartKindName,
@@ -426,8 +429,10 @@ public class ActivityService : IActivityService
             AuditActions.TentUpdated => BuildTentUpdatedDetails(ae),
             AuditActions.PartStateChanged => BuildPartStateChangedDetails(ae),
             AuditActions.PartAdded => [new TentHistoryDetailDto("État", null, null, "Bon état", "initial_state")],
+            AuditActions.PartDeleted => BuildPartDeletedDetails(ae),
             AuditActions.PartKindCreated or AuditActions.PartKindRenamed =>
                 BuildCatalogueDetails(ae, "Modèle de pièce", "part_kind"),
+            AuditActions.PartKindDeleted => BuildPartKindDeletedDetails(ae),
             AuditActions.TagAssigned or AuditActions.TagRemoved => BuildTagDetails(ae),
             AuditActions.TagCreated or AuditActions.TagRenamed or AuditActions.TagDeleted =>
                 BuildCatalogueDetails(ae, "Étiquette", "tag"),
@@ -515,8 +520,44 @@ public class ActivityService : IActivityService
             : [new TentHistoryDetailDto(label, null, null, name, valueType)];
     }
 
+    private static List<TentHistoryDetailDto> BuildPartDeletedDetails(AuditEvent ae)
+    {
+        var reason = TryGetMetadataString(ae.MetadataJson, "reason");
+        return string.IsNullOrEmpty(reason)
+            ? []
+            : [new TentHistoryDetailDto("Raison", null, null, reason, "reason")];
+    }
+
+    private static List<TentHistoryDetailDto> BuildPartKindDeletedDetails(AuditEvent ae)
+    {
+        return
+        [
+            new TentHistoryDetailDto("Tentes", null, null,
+                (TryGetMetadataInt(ae.MetadataJson, "tentCount") ?? 0).ToString(), "count"),
+            new TentHistoryDetailDto("Pièces", null, null,
+                (TryGetMetadataInt(ae.MetadataJson, "partsRemoved") ?? 0).ToString(), "count"),
+            new TentHistoryDetailDto("Modèles de tente", null, null,
+                (TryGetMetadataInt(ae.MetadataJson, "modelsAffected") ?? 0).ToString(), "count")
+        ];
+    }
+
     private static List<TentHistoryDetailDto> BuildModelComponentsChangedDetails(AuditEvent ae)
     {
+        var removedName = TryGetMetadataString(ae.MetadataJson, "removedPartKindName");
+        var reason = TryGetMetadataString(ae.MetadataJson, "reason");
+        if (!string.IsNullOrEmpty(removedName))
+        {
+            var removedDetails = new List<TentHistoryDetailDto>
+            {
+                new TentHistoryDetailDto("Modèle de pièce retiré", null, null, removedName, "removed_component")
+            };
+            if (!string.IsNullOrEmpty(reason))
+            {
+                removedDetails.Add(new TentHistoryDetailDto("Raison", null, null, reason, "reason"));
+            }
+            return removedDetails;
+        }
+
         var oldNames = TryGetMetadataStringList(ae.MetadataJson, "oldComponentNames");
         var newNames = TryGetMetadataStringList(ae.MetadataJson, "newComponentNames");
 

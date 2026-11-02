@@ -31,6 +31,7 @@ public static class AuditActions
     // PartKind management actions
     public const string PartKindCreated = "part_kind_created";
     public const string PartKindRenamed = "part_kind_renamed";
+    public const string PartKindDeleted = "part_kind_deleted";
 
     // TentModel management actions
     public const string TentModelCreated = "model_created";

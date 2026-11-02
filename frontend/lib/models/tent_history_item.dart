@@ -124,7 +124,7 @@ class TentHistoryItem {
       case 'part_added':
         return 'Pièce ajoutée : $subject';
       case 'part_deleted':
-        return 'Pièce supprimée : $subject';
+        return 'Pièce supprimée : $subject${_reasonSuffix()}';
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
@@ -176,10 +176,13 @@ class TentHistoryItem {
           style: normalStyle,
         );
       case 'part_deleted':
+        final reasonSuffix = _reasonSuffix();
         return TextSpan(
           children: [
             TextSpan(text: 'Pièce supprimée : ', style: normalStyle),
             TextSpan(text: subject, style: boldStyle),
+            if (reasonSuffix.isNotEmpty)
+              TextSpan(text: reasonSuffix, style: normalStyle),
           ],
           style: normalStyle,
         );
@@ -202,6 +205,15 @@ class TentHistoryItem {
       default:
         return TextSpan(text: buildSummary(), style: normalStyle);
     }
+  }
+
+  String _reasonSuffix() {
+    final reason = details
+        .where((detail) => detail.valueType == 'reason')
+        .firstOrNull
+        ?.value;
+    if (reason == 'part_kind_deleted') return ' (modèle de pièce supprimé)';
+    return '';
   }
 
   String _buildUpdateText() {

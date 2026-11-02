@@ -483,6 +483,195 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
     }
 
     [Fact]
+    public async Task DeletePartKind_UsedBySeveralTentsAndModels_RecordsSummaryAboveItsConsequences()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        var prefix = Guid.NewGuid().ToString("N")[..8];
+        var kindName = $"Kind {prefix}";
+
+        var (pkId, tentIds, modelIds) = await SeedUsedPartKindAsync(kindName);
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.DeleteAsync($"/api/part-kinds/{pkId}");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+        Assert.NotNull(page);
+
+        var summary = page.Items[0];
+        Assert.Equal(AuditActions.PartKindDeleted, summary.Action);
+        Assert.Equal("parts", summary.Category);
+        Assert.Equal(kindName, summary.SubjectName);
+        Assert.Null(summary.TentId);
+        Assert.Equal(2, CountDetail(summary, "Tentes"));
+        Assert.Equal(2, CountDetail(summary, "Pièces"));
+        Assert.Equal(2, CountDetail(summary, "Modèles de tente"));
+
+        var modelNames = modelIds.Select(id => id.Name).ToList();
+        var partItems = page.Items.Where(i => i.Action == AuditActions.PartDeleted).ToList();
+        Assert.Equal(2, partItems.Count);
+        Assert.All(partItems, item =>
+        {
+            Assert.Equal(kindName, item.SubjectName);
+            Assert.Contains(item.TentId!.Value, tentIds);
+            Assert.Equal("part_kind_deleted", Detail(item, "Raison").Value);
+        });
+
+        var modelItems = page.Items.Where(i => i.Action == AuditActions.TentModelComponentsChanged).ToList();
+        Assert.Equal(2, modelItems.Count);
+        Assert.All(modelItems, item =>
+        {
+            Assert.Contains(item.SubjectName!, modelNames);
+            Assert.Equal(kindName, Detail(item, "Modèle de pièce retiré").Value);
+            Assert.Equal("part_kind_deleted", Detail(item, "Raison").Value);
+        });
+
+        Assert.All(partItems, item => Assert.True(page.Items.IndexOf(summary) < page.Items.IndexOf(item)));
+        Assert.All(modelItems, item => Assert.True(page.Items.IndexOf(summary) < page.Items.IndexOf(item)));
+    }
+
+    [Fact]
+    public async Task DeletePartKind_RecordsOnePieceDeletionInEachAffectedTentHistory()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        var prefix = Guid.NewGuid().ToString("N")[..8];
+        var kindName = $"Kind {prefix}";
+
+        var (pkId, tentIds, _) = await SeedUsedPartKindAsync(kindName);
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            var response = await client.DeleteAsync($"/api/part-kinds/{pkId}");
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        }
+
+        using var historyClient = CreateAuthenticatedClient();
+        foreach (var tentId in tentIds)
+        {
+            var history = await historyClient.GetFromJsonAsync<List<HistoryItemApi>>($"/api/tents/{tentId}/history");
+            Assert.NotNull(history);
+            var deletion = Assert.Single(history, h => h.Action == AuditActions.PartDeleted);
+            Assert.Equal(kindName, deletion.SubjectName);
+            Assert.Equal("part_management", deletion.Category);
+            Assert.Equal("part_kind_deleted", Detail(deletion, "Raison").Value);
+        }
+    }
+
+    [Fact]
+    public async Task DeletePartKind_UsedNowhere_RecordsOnlyTheDeletion()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        var kindName = $"Unused {Guid.NewGuid().ToString("N")[..8]}";
+
+        Guid pkId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var pk = new PartKind
+            {
+                Id = Guid.NewGuid(),
+                Name = kindName,
+                DisplayOrder = 100,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            db.PartKinds.Add(pk);
+            await db.SaveChangesAsync();
+            pkId = pk.Id;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.DeleteAsync($"/api/part-kinds/{pkId}");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+        Assert.NotNull(page);
+
+        var summary = Assert.Single(page.Items);
+        Assert.Equal(AuditActions.PartKindDeleted, summary.Action);
+        Assert.Equal(kindName, summary.SubjectName);
+        Assert.Equal(0, CountDetail(summary, "Tentes"));
+        Assert.Equal(0, CountDetail(summary, "Pièces"));
+        Assert.Equal(0, CountDetail(summary, "Modèles de tente"));
+    }
+
+    [Fact]
+    public async Task DeletePartKind_WhenRecordingTheActFails_RollsBackTheCatalogue()
+    {
+        using var factory = new CustomApiFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(TestAuthHandler.SchemeName, "integration");
+
+        Guid pkId;
+        Guid partId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var pk = new PartKind
+            {
+                Id = Guid.NewGuid(),
+                Name = $"Rollback {Guid.NewGuid().ToString("N")[..8]}",
+                DisplayOrder = 100,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            db.PartKinds.Add(pk);
+            await db.SaveChangesAsync();
+            pkId = pk.Id;
+
+            var modelId = await db.TentModels.Select(m => m.Id).FirstAsync();
+            var systemUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+            var tent = new Tent
+            {
+                Id = Guid.NewGuid(),
+                Name = $"Rollback tent {Guid.NewGuid().ToString("N")[..8]}",
+                Size = 4,
+                TentModelId = modelId,
+                OverallState = TentOverallState.Good,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = systemUserId,
+                UpdatedByUserId = systemUserId
+            };
+            db.Tents.Add(tent);
+
+            var part = new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tent.Id,
+                PartKindId = pkId,
+                State = PartState.Good,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = systemUserId,
+                UpdatedByUserId = systemUserId
+            };
+            db.Parts.Add(part);
+            await db.SaveChangesAsync();
+            partId = part.Id;
+        }
+
+        // The test actor is not a stored user, so writing the audit row violates its FK
+        // after the bulk deletes have run. The transaction must roll those deletes back.
+        var response = await client.DeleteAsync($"/api/part-kinds/{pkId}");
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            Assert.NotNull(await db.PartKinds.FindAsync(pkId));
+            Assert.NotNull(await db.Parts.FindAsync(partId));
+            Assert.False(await db.AuditEvents.AnyAsync(ae => ae.TargetEntityId == pkId));
+        }
+    }
+
+    [Fact]
     public async Task DeletePartKind_NonExistent_ReturnsNotFound()
     {
         await EnsureTestUserExistsAsync();
@@ -606,6 +795,111 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         }
     }
 
+    private async Task<(Guid PartKindId, List<Guid> TentIds, List<(Guid Id, string Name)> ModelIds)>
+        SeedUsedPartKindAsync(string kindName)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+
+        var pk = new PartKind
+        {
+            Id = Guid.NewGuid(),
+            Name = kindName,
+            DisplayOrder = 100,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        db.PartKinds.Add(pk);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var modelA = new TentModel
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Modèle A {suffix}",
+            IsActive = true,
+            DisplayOrder = 100,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        var modelB = new TentModel
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Modèle B {suffix}",
+            IsActive = true,
+            DisplayOrder = 101,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        db.TentModels.AddRange(modelA, modelB);
+
+        var tentA = new Tent
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Tente A {suffix}",
+            Size = 4,
+            TentModelId = modelA.Id,
+            OverallState = TentOverallState.Good,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        };
+        var tentB = new Tent
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Tente B {suffix}",
+            Size = 4,
+            TentModelId = modelB.Id,
+            OverallState = TentOverallState.Good,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        };
+        db.Tents.AddRange(tentA, tentB);
+
+        db.Parts.AddRange(
+            new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tentA.Id,
+                PartKindId = pk.Id,
+                State = PartState.Good,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            },
+            new Part
+            {
+                Id = Guid.NewGuid(),
+                TentId = tentB.Id,
+                PartKindId = pk.Id,
+                State = PartState.Good,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedByUserId = CustomApiFactory.TestUserId,
+                UpdatedByUserId = CustomApiFactory.TestUserId
+            });
+
+        db.TentModelComponents.AddRange(
+            new TentModelComponent { Id = Guid.NewGuid(), TentModelId = modelA.Id, PartKindId = pk.Id },
+            new TentModelComponent { Id = Guid.NewGuid(), TentModelId = modelB.Id, PartKindId = pk.Id });
+
+        await db.SaveChangesAsync();
+
+        return (pk.Id, [tentA.Id, tentB.Id], [(modelA.Id, modelA.Name), (modelB.Id, modelB.Name)]);
+    }
+
+    private static int CountDetail(ActivityItemApi item, string label) =>
+        int.Parse(Detail(item, label).Value ?? "0");
+
+    private static ActivityDetailApi Detail(ActivityItemApi item, string label) =>
+        Assert.Single(item.Details, d => d.Label == label);
+
+    private static HistoryDetailApi Detail(HistoryItemApi item, string label) =>
+        Assert.Single(item.Details, d => d.Label == label);
+
     private async Task ResetAuditEventsAsync()
     {
         using var scope = _factory.Services.CreateScope();
@@ -674,6 +968,24 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
     }
 
     private sealed class ActivityDetailApi
+    {
+        public string Label { get; set; } = string.Empty;
+        public string? OldValue { get; set; }
+        public string? NewValue { get; set; }
+        public string? Value { get; set; }
+        public string? ValueType { get; set; }
+    }
+
+    private sealed class HistoryItemApi
+    {
+        public Guid Id { get; set; }
+        public string Action { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string? SubjectName { get; set; }
+        public List<HistoryDetailApi> Details { get; set; } = [];
+    }
+
+    private sealed class HistoryDetailApi
     {
         public string Label { get; set; } = string.Empty;
         public string? OldValue { get; set; }
