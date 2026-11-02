@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using ScoutBoxApi.Data;
 using ScoutBoxApi.Models.Entities;
+using ScoutBoxApi.Services;
 using Xunit;
 
 namespace ScoutBoxApi.Tests.Controllers;
@@ -493,6 +494,126 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task CreatePartKind_RecordsCreatedEventInJournal()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        var name = $"Modèle {Guid.NewGuid().ToString("N")[..8]}";
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync("/api/part-kinds", new { name });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?category=parts&window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("part_kind_created", item.Action);
+        Assert.Equal("parts", item.Category);
+        Assert.Equal(name, item.SubjectName);
+        Assert.Equal("integration_test_user", item.ActorDisplayName);
+        Assert.Null(item.TentId);
+        var detail = Assert.Single(item.Details);
+        Assert.Equal("Modèle de pièce", detail.Label);
+        Assert.Equal(name, detail.Value);
+    }
+
+    [Fact]
+    public async Task RenamePartKind_RecordsRenameEventWithOldAndNewName()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var oldName = $"Ancien {suffix}";
+        var newName = $"Nouveau {suffix}";
+
+        Guid pkId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var pk = new PartKind
+            {
+                Id = Guid.NewGuid(),
+                Name = oldName,
+                DisplayOrder = 1,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            db.PartKinds.Add(pk);
+            await db.SaveChangesAsync();
+            pkId = pk.Id;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/part-kinds/{pkId}", new { name = newName });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?category=parts&window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("part_kind_renamed", item.Action);
+        Assert.Equal("parts", item.Category);
+        Assert.Equal(newName, item.SubjectName);
+        Assert.Equal("integration_test_user", item.ActorDisplayName);
+        Assert.Null(item.TentId);
+        Assert.Null(item.TentName);
+        var detail = Assert.Single(item.Details);
+        Assert.Equal("Modèle de pièce", detail.Label);
+        Assert.Equal(oldName, detail.OldValue);
+        Assert.Equal(newName, detail.NewValue);
+        Assert.Equal("old_new", detail.ValueType);
+    }
+
+    [Fact]
+    public async Task RenamePartKind_WithUnchangedName_RecordsNothingAndKeepsTimestamp()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        var name = $"Inchangé {Guid.NewGuid().ToString("N")[..8]}";
+        var originalUpdatedAt = new DateTime(2026, 1, 15, 8, 30, 0, DateTimeKind.Utc);
+
+        Guid pkId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var pk = new PartKind
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                DisplayOrder = 1,
+                CreatedAt = originalUpdatedAt,
+                UpdatedAt = originalUpdatedAt
+            };
+            db.PartKinds.Add(pk);
+            await db.SaveChangesAsync();
+            pkId = pk.Id;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/part-kinds/{pkId}", new { name });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            Assert.False(await db.AuditEvents.AnyAsync(ae => ae.TargetEntityId == pkId));
+            var stored = await db.PartKinds.FindAsync(pkId);
+            Assert.NotNull(stored);
+            Assert.Equal(originalUpdatedAt, stored.UpdatedAt);
+        }
+    }
+
+    private async Task ResetAuditEventsAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        db.AuditEvents.RemoveRange(db.AuditEvents);
+        await db.SaveChangesAsync();
+    }
+
     private HttpClient CreateAuthenticatedClient()
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -530,6 +651,35 @@ public class PartKindsControllerIntegrationTests : IClassFixture<CustomApiFactor
         public string Name { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
         public int TentCount { get; set; }
+    }
+
+    private sealed class ActivityPageApi
+    {
+        public List<ActivityItemApi> Items { get; set; } = [];
+        public string? NextCursor { get; set; }
+    }
+
+    private sealed class ActivityItemApi
+    {
+        public Guid Id { get; set; }
+        public string Action { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public DateTime OccurredAt { get; set; }
+        public Guid ActorUserId { get; set; }
+        public string ActorDisplayName { get; set; } = string.Empty;
+        public Guid? TentId { get; set; }
+        public string? TentName { get; set; }
+        public string? SubjectName { get; set; }
+        public List<ActivityDetailApi> Details { get; set; } = [];
+    }
+
+    private sealed class ActivityDetailApi
+    {
+        public string Label { get; set; } = string.Empty;
+        public string? OldValue { get; set; }
+        public string? NewValue { get; set; }
+        public string? Value { get; set; }
+        public string? ValueType { get; set; }
     }
 
     private sealed class ErrorPayload

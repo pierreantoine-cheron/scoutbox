@@ -32,7 +32,9 @@ public static class ActivityCategoryMapper
         AuditActions.PartStateChanged,
         AuditActions.PartCommentsChanged,
         AuditActions.PartAdded,
-        AuditActions.PartDeleted
+        AuditActions.PartDeleted,
+        AuditActions.PartKindCreated,
+        AuditActions.PartKindRenamed
     ];
 
     private static readonly string[] TagActions =
@@ -206,6 +208,7 @@ public class ActivityService : IActivityService
     private const string SystemDisplayName = "Système";
     private const string DeletedTentName = "Tente supprimée";
     private const string UnknownPartName = "Pièce inconnue";
+    private const string UnknownPartKindName = "Modèle de pièce inconnu";
     private const string UnknownTagName = "Étiquette inconnue";
     private const string UnknownModelName = "Modèle de tente inconnu";
     private const string UnknownActorName = "Utilisateur inconnu";
@@ -377,6 +380,10 @@ public class ActivityService : IActivityService
             AuditActions.PartCommentsChanged or
             AuditActions.PartAdded or
             AuditActions.PartDeleted => ResolvePartName(ae, partKindNames),
+            AuditActions.PartKindCreated or AuditActions.PartKindRenamed =>
+                TryGetMetadataString(ae.MetadataJson, "name")
+                ?? TryGetMetadataString(ae.MetadataJson, "newName")
+                ?? UnknownPartKindName,
             AuditActions.TagAssigned or AuditActions.TagRemoved =>
                 TryGetMetadataString(ae.MetadataJson, "tagName") ?? UnknownTagName,
             AuditActions.TagCreated or AuditActions.TagRenamed or AuditActions.TagDeleted =>
@@ -414,6 +421,8 @@ public class ActivityService : IActivityService
             AuditActions.TentUpdated => BuildTentUpdatedDetails(ae),
             AuditActions.PartStateChanged => BuildPartStateChangedDetails(ae),
             AuditActions.PartAdded => [new TentHistoryDetailDto("État", null, null, "Bon état", "initial_state")],
+            AuditActions.PartKindCreated or AuditActions.PartKindRenamed =>
+                BuildCatalogueDetails(ae, "Modèle de pièce", "part_kind"),
             AuditActions.TagAssigned or AuditActions.TagRemoved => BuildTagDetails(ae),
             AuditActions.TagCreated or AuditActions.TagRenamed or AuditActions.TagDeleted =>
                 BuildCatalogueDetails(ae, "Étiquette", "tag"),

@@ -11,11 +11,16 @@ public class PartKindService
     private const int MaxNameLength = 60;
 
     private readonly ScoutBoxDbContext _db;
+    private readonly IAuditService _auditService;
     private readonly ILogger<PartKindService> _logger;
 
-    public PartKindService(ScoutBoxDbContext db, ILogger<PartKindService> logger)
+    public PartKindService(
+        ScoutBoxDbContext db,
+        IAuditService auditService,
+        ILogger<PartKindService> logger)
     {
         _db = db;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -27,7 +32,8 @@ public class PartKindService
             .ToListAsync();
     }
 
-    public async Task<(PartKindDto? Response, ErrorResponse? Error)> CreateAsync(CreatePartKindRequest? request)
+    public async Task<(PartKindDto? Response, ErrorResponse? Error)> CreateAsync(
+        Guid userId, CreatePartKindRequest? request)
     {
         var name = request?.Name?.Trim() ?? string.Empty;
 
@@ -52,6 +58,13 @@ public class PartKindService
 
         _db.PartKinds.Add(partKind);
 
+        _auditService.RecordEvent(
+            AuditActions.PartKindCreated,
+            userId,
+            "PartKind",
+            partKind.Id,
+            new Dictionary<string, object?> { ["name"] = partKind.Name });
+
         try
         {
             await _db.SaveChangesAsync();
@@ -66,7 +79,7 @@ public class PartKindService
     }
 
     public async Task<(PartKindDto? Response, ErrorResponse? Error, bool NotFound)> RenameAsync(
-        Guid id, UpdatePartKindRequest? request)
+        Guid userId, Guid id, UpdatePartKindRequest? request)
     {
         var partKind = await _db.PartKinds.FindAsync(id);
         if (partKind == null) return (null, null, true);
@@ -81,8 +94,26 @@ public class PartKindService
             return (null, new ErrorResponse("Part kind name already exists", "PART_KIND_NAME_EXISTS"), false);
         }
 
+        if (string.Equals(partKind.Name, name, StringComparison.Ordinal))
+        {
+            return (new PartKindDto(partKind.Id, partKind.Name, partKind.DisplayOrder,
+                await _db.Parts.CountAsync(p => p.PartKindId == id)), null, false);
+        }
+
+        var oldName = partKind.Name;
         partKind.Name = name;
         partKind.UpdatedAt = DateTime.UtcNow;
+
+        _auditService.RecordEvent(
+            AuditActions.PartKindRenamed,
+            userId,
+            "PartKind",
+            partKind.Id,
+            new Dictionary<string, object?>
+            {
+                ["oldName"] = oldName,
+                ["newName"] = name
+            });
 
         try
         {

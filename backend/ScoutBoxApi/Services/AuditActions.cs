@@ -9,7 +9,6 @@ public static class AuditActions
 {
     // Invite management actions
     public const string InviteCreated = "invite_created";
-    public const string InviteRevoked = "invite_revoked";
 
     // User authentication actions
     public const string UserRegisteredFromInvite = "user_registered_from_invite";
@@ -28,6 +27,10 @@ public static class AuditActions
     public const string PartCommentsChanged = "part_comments_changed";
     public const string PartAdded = "part_added";
     public const string PartDeleted = "part_deleted";
+
+    // PartKind management actions
+    public const string PartKindCreated = "part_kind_created";
+    public const string PartKindRenamed = "part_kind_renamed";
 
     // TentModel management actions
     public const string TentModelCreated = "model_created";
