@@ -12,10 +12,14 @@ namespace ScoutBoxApi.Controllers;
 public class PartKindsController : ControllerBase
 {
     private readonly PartKindService _partKindService;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public PartKindsController(PartKindService partKindService)
+    public PartKindsController(
+        PartKindService partKindService,
+        ICurrentUserAccessor currentUserAccessor)
     {
         _partKindService = partKindService;
+        _currentUserAccessor = currentUserAccessor;
     }
 
     [HttpGet]
@@ -29,7 +33,8 @@ public class PartKindsController : ControllerBase
     [ValidateUser]
     public async Task<IActionResult> Create([FromBody] CreatePartKindRequest? request)
     {
-        var (response, error) = await _partKindService.CreateAsync(request);
+        var userId = _currentUserAccessor.GetValidatedUserId();
+        var (response, error) = await _partKindService.CreateAsync(userId, request);
         if (error != null) return BadRequest(error);
         return Ok(response);
     }
@@ -38,7 +43,8 @@ public class PartKindsController : ControllerBase
     [ValidateUser]
     public async Task<IActionResult> Rename(Guid id, [FromBody] UpdatePartKindRequest? request)
     {
-        var (response, error, notFound) = await _partKindService.RenameAsync(id, request);
+        var userId = _currentUserAccessor.GetValidatedUserId();
+        var (response, error, notFound) = await _partKindService.RenameAsync(userId, id, request);
         if (notFound) return NotFound(new ErrorResponse("Part kind not found", "PART_KIND_NOT_FOUND"));
         if (error != null) return BadRequest(error);
         return Ok(response);

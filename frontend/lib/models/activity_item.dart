@@ -85,6 +85,8 @@ class ActivityItem {
       'part_comments_changed' => Icons.comment_outlined,
       'part_added' => Icons.add_box_outlined,
       'part_deleted' => Icons.remove_circle_outline,
+      'part_kind_created' => Icons.category_outlined,
+      'part_kind_renamed' => Icons.edit_outlined,
       'tag_assigned' => Icons.label_outlined,
       'tag_removed' => Icons.label_off_outlined,
       'tag_created' => Icons.label,
@@ -107,6 +109,7 @@ class ActivityItem {
         colorScheme.error,
       'part_state_changed' || 'part_added' => colorScheme.tertiary,
       'part_comments_changed' => colorScheme.primary,
+      'part_kind_created' || 'part_kind_renamed' => colorScheme.primary,
       'tag_assigned' ||
       'tag_removed' ||
       'tag_created' ||
@@ -141,6 +144,10 @@ class ActivityItem {
         return 'Pièce ajoutée : $subject';
       case 'part_deleted':
         return 'Pièce supprimée : $subject';
+      case 'part_kind_created':
+        return 'Modèle de pièce créé : $subject';
+      case 'part_kind_renamed':
+        return _buildPartKindRenameText(subject);
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
@@ -223,6 +230,10 @@ class ActivityItem {
         return _subjectSpan('Pièce ajoutée : ', subject, normalStyle, boldStyle);
       case 'part_deleted':
         return _subjectSpan('Pièce supprimée : ', subject, normalStyle, boldStyle);
+      case 'part_kind_created':
+        return _subjectSpan('Modèle de pièce créé : ', subject, normalStyle, boldStyle);
+      case 'part_kind_renamed':
+        return _partKindRenameSpan(subject, normalStyle, boldStyle);
       case 'tag_assigned':
         return _subjectSpan('Étiquette ajoutée : ', subject, normalStyle, boldStyle);
       case 'tag_removed':
@@ -261,6 +272,38 @@ class ActivityItem {
     );
   }
 
+  String _buildPartKindRenameText(String subject) {
+    final rename = _renameDetail;
+    if (rename == null) return 'Modèle de pièce renommé : $subject';
+    return 'Modèle de pièce renommé : ${rename.oldValue} → ${rename.newValue}';
+  }
+
+  TextSpan _partKindRenameSpan(
+    String subject,
+    TextStyle normalStyle,
+    TextStyle boldStyle,
+  ) {
+    final rename = _renameDetail;
+    if (rename == null) {
+      return _subjectSpan(
+        'Modèle de pièce renommé : ',
+        subject,
+        normalStyle,
+        boldStyle,
+      );
+    }
+
+    return TextSpan(
+      children: [
+        TextSpan(text: 'Modèle de pièce renommé : ', style: normalStyle),
+        TextSpan(text: rename.oldValue!, style: boldStyle),
+        TextSpan(text: ' → ', style: normalStyle),
+        TextSpan(text: rename.newValue!, style: boldStyle),
+      ],
+      style: normalStyle,
+    );
+  }
+
   String _buildCatalogueRenameText(String prefix, String subject) {
     final rename = _renameDetail;
     if (rename == null) return '$prefix : $subject';
@@ -293,7 +336,9 @@ class ActivityItem {
       .where(
         (detail) =>
             detail.valueType == 'old_new' &&
-            (detail.label == 'Étiquette' || detail.label == 'Modèle de tente'),
+            (detail.label == 'Étiquette' ||
+                detail.label == 'Modèle de tente' ||
+                detail.label == 'Modèle de pièce'),
       )
       .firstOrNull;
 
@@ -303,6 +348,7 @@ class ActivityItem {
       'part_comments_changed' ||
       'part_added' ||
       'part_deleted' => 'Pièce inconnue',
+      'part_kind_created' || 'part_kind_renamed' => 'Modèle de pièce inconnu',
       'model_created' || 'model_renamed' || 'model_deleted' => 'Modèle de tente inconnu',
       'tag_assigned' ||
       'tag_removed' ||
