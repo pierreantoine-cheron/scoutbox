@@ -124,7 +124,7 @@ class TentHistoryItem {
       case 'part_added':
         return 'Pièce ajoutée : $subject';
       case 'part_deleted':
-        return 'Pièce supprimée : $subject';
+        return 'Pièce supprimée : $subject${_reasonParenthetical ?? ''}';
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
@@ -176,10 +176,12 @@ class TentHistoryItem {
           style: normalStyle,
         );
       case 'part_deleted':
+        final reason = _reasonParenthetical;
         return TextSpan(
           children: [
             TextSpan(text: 'Pièce supprimée : ', style: normalStyle),
             TextSpan(text: subject, style: boldStyle),
+            if (reason != null) TextSpan(text: reason, style: normalStyle),
           ],
           style: normalStyle,
         );
@@ -216,6 +218,7 @@ class TentHistoryItem {
 
     final label = switch (reason) {
       'tag_deleted' => 'étiquette supprimée',
+      'part_kind_deleted' => 'modèle de pièce supprimé',
       _ => reason,
     };
     return ' ($label)';

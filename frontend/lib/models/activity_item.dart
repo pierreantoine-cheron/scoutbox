@@ -87,6 +87,7 @@ class ActivityItem {
       'part_deleted' => Icons.remove_circle_outline,
       'part_kind_created' => Icons.category_outlined,
       'part_kind_renamed' => Icons.edit_outlined,
+      'part_kind_deleted' => Icons.delete_outline,
       'tag_assigned' => Icons.label_outlined,
       'tag_removed' => Icons.label_off_outlined,
       'tag_created' => Icons.label,
@@ -106,8 +107,11 @@ class ActivityItem {
   Color actionDotColor(ColorScheme colorScheme) {
     return switch (action) {
       'tent_created' || 'tent_updated' || 'tent_unarchived' => colorScheme.primary,
-      'tent_archived' || 'part_deleted' || 'tag_deleted' || 'model_deleted' =>
-        colorScheme.error,
+      'tent_archived' ||
+      'part_deleted' ||
+      'part_kind_deleted' ||
+      'tag_deleted' ||
+      'model_deleted' => colorScheme.error,
       'part_state_changed' || 'part_added' => colorScheme.tertiary,
       'model_components_changed' => colorScheme.tertiary,
       'part_comments_changed' => colorScheme.primary,
@@ -145,11 +149,13 @@ class ActivityItem {
       case 'part_added':
         return 'Pièce ajoutée : $subject';
       case 'part_deleted':
-        return 'Pièce supprimée : $subject';
+        return 'Pièce supprimée : $subject${_reasonParenthetical ?? ''}';
       case 'part_kind_created':
         return 'Modèle de pièce créé : $subject';
       case 'part_kind_renamed':
         return _buildPartKindRenameText(subject);
+      case 'part_kind_deleted':
+        return 'Modèle de pièce supprimé : $subject${_countsSuffix()}';
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
@@ -233,11 +239,28 @@ class ActivityItem {
       case 'part_added':
         return _subjectSpan('Pièce ajoutée : ', subject, normalStyle, boldStyle);
       case 'part_deleted':
-        return _subjectSpan('Pièce supprimée : ', subject, normalStyle, boldStyle);
+        return _subjectSpan(
+          'Pièce supprimée : ',
+          subject,
+          normalStyle,
+          boldStyle,
+          suffix: _reasonParenthetical,
+        );
       case 'part_kind_created':
         return _subjectSpan('Modèle de pièce créé : ', subject, normalStyle, boldStyle);
       case 'part_kind_renamed':
         return _partKindRenameSpan(subject, normalStyle, boldStyle);
+      case 'part_kind_deleted':
+        final countsSuffix = _countsSuffix();
+        return TextSpan(
+          children: [
+            TextSpan(text: 'Modèle de pièce supprimé : ', style: normalStyle),
+            TextSpan(text: subject, style: boldStyle),
+            if (countsSuffix.isNotEmpty)
+              TextSpan(text: countsSuffix, style: normalStyle),
+          ],
+          style: normalStyle,
+        );
       case 'tag_assigned':
         return _subjectSpan('Étiquette ajoutée : ', subject, normalStyle, boldStyle);
       case 'tag_removed':
@@ -356,6 +379,7 @@ class ActivityItem {
 
     final label = switch (reason) {
       'tag_deleted' => 'étiquette supprimée',
+      'part_kind_deleted' => 'modèle de pièce supprimé',
       _ => reason,
     };
     return ' ($label)';
@@ -374,13 +398,35 @@ class ActivityItem {
   TentHistoryDetail? get _componentChangeDetail =>
       details.where((detail) => detail.valueType == 'components').firstOrNull;
 
+  TentHistoryDetail? get _removedComponentDetail => details
+      .where((detail) => detail.valueType == 'removed_component')
+      .firstOrNull;
+
   String _buildComponentChangeText() {
+    final removed = _removedComponentDetail;
+    if (removed != null) {
+      return 'Modèle de pièce retiré : ${removed.value}${_reasonParenthetical ?? ''}';
+    }
+
     final change = _componentChangeDetail;
     if (change == null) return 'Modèles de pièce du modèle de tente modifiés';
     return 'Modèles de pièce changés de ${_componentSetLabel(change.oldValue)} à ${_componentSetLabel(change.newValue)}';
   }
 
   TextSpan _componentChangeSpan(TextStyle normalStyle, TextStyle boldStyle) {
+    final removed = _removedComponentDetail;
+    if (removed != null) {
+      final reason = _reasonParenthetical;
+      return TextSpan(
+        children: [
+          TextSpan(text: 'Modèle de pièce retiré : ', style: normalStyle),
+          TextSpan(text: removed.value ?? '', style: boldStyle),
+          if (reason != null) TextSpan(text: reason, style: normalStyle),
+        ],
+        style: normalStyle,
+      );
+    }
+
     final change = _componentChangeDetail;
     if (change == null) {
       return TextSpan(
@@ -400,6 +446,26 @@ class ActivityItem {
     );
   }
 
+  String _countsSuffix() {
+    final counts = <String>[];
+    for (final detail in details.where((detail) => detail.valueType == 'count')) {
+      final count = int.tryParse(detail.value ?? '');
+      if (count == null || count <= 0) continue;
+      counts.add(_countLabel(detail.label, count));
+    }
+    return counts.isEmpty ? '' : ' (${counts.join(', ')})';
+  }
+
+  static String _countLabel(String label, int count) {
+    return switch (label) {
+      'Tentes' => count == 1 ? '1 tente' : '$count tentes',
+      'Pièces' => count == 1 ? '1 pièce' : '$count pièces',
+      'Modèles de tente' =>
+        count == 1 ? '1 modèle de tente' : '$count modèles de tente',
+      _ => '$count ${label.toLowerCase()}',
+    };
+  }
+
   static String _componentSetLabel(String? value) {
     if (value == null || value.trim().isEmpty) return 'aucun';
     return value;
@@ -411,7 +477,9 @@ class ActivityItem {
       'part_comments_changed' ||
       'part_added' ||
       'part_deleted' => 'Pièce inconnue',
-      'part_kind_created' || 'part_kind_renamed' => 'Modèle de pièce inconnu',
+      'part_kind_created' ||
+      'part_kind_renamed' ||
+      'part_kind_deleted' => 'Modèle de pièce inconnu',
       'model_created' ||
       'model_renamed' ||
       'model_components_changed' ||

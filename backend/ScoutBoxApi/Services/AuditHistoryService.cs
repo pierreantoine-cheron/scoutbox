@@ -430,10 +430,17 @@ public class AuditHistoryService : IAuditHistoryService
     {
         var partName = ResolvePartName(ae, partKindNames);
 
+        var details = new List<TentHistoryDetailDto>();
+        var reason = TryGetMetadataString(ae.MetadataJson, "reason");
+        if (!string.IsNullOrEmpty(reason))
+        {
+            details.Add(new TentHistoryDetailDto("Raison", null, null, reason, "reason"));
+        }
+
         return new TentHistoryItemDto(
             ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartManagement),
             ae.OccurredAt, ae.ActorUserId, actorName,
-            partName, new List<TentHistoryDetailDto>(),
+            partName, details,
             ae.TargetEntityType, ae.TargetEntityId
         );
     }

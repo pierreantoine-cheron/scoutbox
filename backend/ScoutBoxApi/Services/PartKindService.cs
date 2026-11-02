@@ -129,11 +129,74 @@ public class PartKindService
             await _db.Parts.CountAsync(p => p.PartKindId == id)), null, false);
     }
 
-    public async Task<(bool Success, ErrorResponse? Error, bool NotFound)> DeleteAsync(Guid id)
+    public async Task<(bool Success, ErrorResponse? Error, bool NotFound)> DeleteAsync(Guid userId, Guid id)
     {
-        if (!await _db.PartKinds.AnyAsync(pk => pk.Id == id)) return (false, null, true);
+        var partKind = await _db.PartKinds
+            .AsNoTracking()
+            .FirstOrDefaultAsync(pk => pk.Id == id);
+        if (partKind == null) return (false, null, true);
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        // The bulk deletes below bypass the change tracker, so the affected rows must be
+        // gathered (and their consequences recorded) before they disappear.
+        var affectedParts = await _db.Parts
+            .AsNoTracking()
+            .Where(p => p.PartKindId == id)
+            .Select(p => new { p.Id, p.TentId })
+            .ToListAsync();
+
+        var affectedComponents = await _db.TentModelComponents
+            .AsNoTracking()
+            .Where(c => c.PartKindId == id)
+            .Select(c => new { c.TentModelId, c.TentModel.Name })
+            .ToListAsync();
+
+        foreach (var part in affectedParts)
+        {
+            _auditService.RecordEvent(
+                AuditActions.PartDeleted,
+                userId,
+                "Part",
+                part.Id,
+                new Dictionary<string, object?>
+                {
+                    ["tentId"] = part.TentId,
+                    ["partKindId"] = partKind.Id,
+                    ["partKindName"] = partKind.Name,
+                    ["reason"] = AuditActions.PartKindDeleted
+                });
+        }
+
+        foreach (var component in affectedComponents)
+        {
+            _auditService.RecordEvent(
+                AuditActions.TentModelComponentsChanged,
+                userId,
+                "TentModel",
+                component.TentModelId,
+                new Dictionary<string, object?>
+                {
+                    ["name"] = component.Name,
+                    ["removedPartKindId"] = partKind.Id,
+                    ["removedPartKindName"] = partKind.Name,
+                    ["reason"] = AuditActions.PartKindDeleted
+                });
+        }
+
+        // Written last so the summary leads its consequences in the newest-first Journal.
+        _auditService.RecordEvent(
+            AuditActions.PartKindDeleted,
+            userId,
+            "PartKind",
+            partKind.Id,
+            new Dictionary<string, object?>
+            {
+                ["name"] = partKind.Name,
+                ["tentCount"] = affectedParts.Select(p => p.TentId).Distinct().Count(),
+                ["partsRemoved"] = affectedParts.Count,
+                ["modelsAffected"] = affectedComponents.Select(c => c.TentModelId).Distinct().Count()
+            });
 
         await _db.Parts.Where(p => p.PartKindId == id).ExecuteDeleteAsync();
         await _db.TentModelComponents.Where(c => c.PartKindId == id).ExecuteDeleteAsync();
@@ -141,6 +204,8 @@ public class PartKindService
         var deleted = await _db.PartKinds.Where(pk => pk.Id == id).ExecuteDeleteAsync();
         if (deleted == 0) return (false, null, true);
 
+        // Audit rows are tracked additions; the bulk deletes never reached the tracker.
+        await _db.SaveChangesAsync();
         await transaction.CommitAsync();
 
         return (true, null, false);

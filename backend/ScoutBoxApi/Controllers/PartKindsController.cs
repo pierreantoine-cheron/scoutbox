@@ -54,7 +54,8 @@ public class PartKindsController : ControllerBase
     [ValidateUser]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var (_, error, notFound) = await _partKindService.DeleteAsync(id);
+        var userId = _currentUserAccessor.GetValidatedUserId();
+        var (_, error, notFound) = await _partKindService.DeleteAsync(userId, id);
         if (notFound) return NotFound(new ErrorResponse("Part kind not found", "PART_KIND_NOT_FOUND"));
         if (error != null) return BadRequest(error);
         return NoContent();

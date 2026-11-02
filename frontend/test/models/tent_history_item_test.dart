@@ -592,6 +592,50 @@ void main() {
     );
   });
 
+  testWidgets('a cascade part deletion says the modèle de pièce was deleted', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              final item = TentHistoryItem.fromJson({
+                'id': 'evt-part',
+                'action': 'part_deleted',
+                'category': 'part_management',
+                'occurredAt': '2026-05-19T12:00:00Z',
+                'actorDisplayName': 'Jean',
+                'subjectName': 'Toit',
+                'details': [
+                  {
+                    'label': 'Raison',
+                    'value': 'part_kind_deleted',
+                    'valueType': 'reason',
+                  },
+                ],
+              });
+
+              const expected =
+                  'Pièce supprimée : Toit (modèle de pièce supprimé)';
+              expect(item.buildSummary(), expected);
+
+              final span = item.buildSummarySpan(context);
+              expect(span.toPlainText(), expected);
+
+              final children = (span as TextSpan).children!;
+              expect((children[1] as TextSpan).text, 'Toit');
+              expect((children[1] as TextSpan).style!.fontWeight, FontWeight.w600);
+              expect((children[2] as TextSpan).text, ' (modèle de pièce supprimé)');
+
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
+  });
+
   testWidgets('buildSummarySpan bolds part name for part_comments_changed', (
     tester,
   ) async {
