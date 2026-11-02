@@ -160,6 +160,56 @@ void main() {
       expect(parsed.buildSummary(), 'Modèle de tente renommé : Canadienne');
     });
 
+    test('component changes name the before and after sets', () {
+      final parsed = item(
+        action: 'model_components_changed',
+        tentName: null,
+        subjectName: 'Canadienne',
+        details: [
+          {
+            'label': 'Modèles de pièce',
+            'oldValue': 'Toit, Double toit',
+            'newValue': 'Toit, Tapis de sol',
+            'value': null,
+            'valueType': 'components',
+          },
+        ],
+      );
+
+      expect(
+        parsed.buildSummary(),
+        'Modèles de pièce changés de Toit, Double toit à Toit, Tapis de sol',
+      );
+    });
+
+    test('component changes read an empty set as aucun', () {
+      final parsed = item(
+        action: 'model_components_changed',
+        tentName: null,
+        subjectName: 'Canadienne',
+        details: [
+          {
+            'label': 'Modèles de pièce',
+            'oldValue': '',
+            'newValue': 'Toit',
+            'value': null,
+            'valueType': 'components',
+          },
+        ],
+      );
+
+      expect(parsed.buildSummary(), 'Modèles de pièce changés de aucun à Toit');
+    });
+
+    test('component changes without a detail still speak the vocabulary', () {
+      final parsed = item(action: 'model_components_changed', tentName: null);
+
+      expect(
+        parsed.buildSummary(),
+        'Modèles de pièce du modèle de tente modifiés',
+      );
+    });
+
     test('a part with no resolved name names the part as unknown', () {
       final parsed = item(action: 'part_added', tentName: null);
 
@@ -219,6 +269,7 @@ void main() {
                   'part_deleted',
                   'model_created',
                   'model_renamed',
+                  'model_components_changed',
                   'tag_created',
                 ]) {
                   final parsed = item(
@@ -232,6 +283,29 @@ void main() {
                     reason: action,
                   );
                 }
+
+                final componentChange = item(
+                  action: 'model_components_changed',
+                  tentName: null,
+                  subjectName: 'Canadienne',
+                  details: [
+                    {
+                      'label': 'Modèles de pièce',
+                      'oldValue': 'Toit, Double toit',
+                      'newValue': 'Toit, Tapis de sol',
+                      'value': null,
+                      'valueType': 'components',
+                    },
+                  ],
+                );
+                expect(
+                  componentChange.buildSummarySpan(normal, bold).toPlainText(),
+                  componentChange.buildSummary(),
+                );
+                expect(
+                  componentChange.actionDotColor(theme.colorScheme),
+                  theme.colorScheme.tertiary,
+                );
 
                 final unresolved = item(action: 'part_added', tentName: null);
                 expect(
@@ -280,6 +354,7 @@ void main() {
         'tag_assigned': Icons.label_outlined,
         'tag_color_changed': Icons.palette_outlined,
         'model_created': Icons.grid_view_outlined,
+        'model_components_changed': Icons.dashboard_customize_outlined,
         'invite_created': Icons.mail_outline,
       };
 

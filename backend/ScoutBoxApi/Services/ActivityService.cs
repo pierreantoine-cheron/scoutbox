@@ -49,6 +49,7 @@ public static class ActivityCategoryMapper
     [
         AuditActions.TentModelCreated,
         AuditActions.TentModelRenamed,
+        AuditActions.TentModelComponentsChanged,
         AuditActions.TentModelDeleted
     ];
 
@@ -385,6 +386,7 @@ public class ActivityService : IActivityService
                 TryGetMetadataString(ae.MetadataJson, "name") ?? UnknownTagName,
             AuditActions.TentModelCreated or
             AuditActions.TentModelRenamed or
+            AuditActions.TentModelComponentsChanged or
             AuditActions.TentModelDeleted =>
                 TryGetMetadataString(ae.MetadataJson, "name") ?? UnknownModelName,
             AuditActions.InviteCreated =>
@@ -422,6 +424,7 @@ public class ActivityService : IActivityService
             AuditActions.TentModelRenamed or
             AuditActions.TentModelDeleted =>
                 BuildCatalogueDetails(ae, "Modèle de tente", "model"),
+            AuditActions.TentModelComponentsChanged => BuildModelComponentsChangedDetails(ae),
             _ => []
         };
     }
@@ -500,6 +503,27 @@ public class ActivityService : IActivityService
             : [new TentHistoryDetailDto(label, null, null, name, valueType)];
     }
 
+    private static List<TentHistoryDetailDto> BuildModelComponentsChangedDetails(AuditEvent ae)
+    {
+        var oldNames = TryGetMetadataStringList(ae.MetadataJson, "oldComponentNames");
+        var newNames = TryGetMetadataStringList(ae.MetadataJson, "newComponentNames");
+
+        if (oldNames == null && newNames == null)
+        {
+            return [];
+        }
+
+        return
+        [
+            new TentHistoryDetailDto(
+                "Modèles de pièce",
+                string.Join(", ", oldNames ?? []),
+                string.Join(", ", newNames ?? []),
+                null,
+                "components")
+        ];
+    }
+
     private static List<TentHistoryDetailDto> BuildTagColorDetails(AuditEvent ae)
     {
         var oldColor = TryGetMetadataString(ae.MetadataJson, "oldColor");
@@ -558,6 +582,30 @@ public class ActivityService : IActivityService
                    property.ValueKind == JsonValueKind.String
                 ? property.GetString()
                 : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static List<string>? TryGetMetadataStringList(string? metadataJson, string propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(metadataJson)) return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(metadataJson);
+            if (!doc.RootElement.TryGetProperty(propertyName, out var property) ||
+                property.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            return property.EnumerateArray()
+                .Where(item => item.ValueKind == JsonValueKind.String)
+                .Select(item => item.GetString()!)
+                .ToList();
         }
         catch
         {
