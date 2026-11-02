@@ -220,6 +220,72 @@ void main() {
     expect(openedModels, 1);
   });
 
+  testWidgets('tapping a part kind row opens the part kinds page', (
+    tester,
+  ) async {
+    final repository = FakeActivityRepository();
+    repository.handler = (category, window, cursor, limit) async {
+      return ActivityPage(
+        items: [
+          _item(
+            id: 'part-kind',
+            action: 'part_kind_created',
+            category: 'parts',
+            tentId: null,
+            tentName: null,
+            subjectName: 'Toit',
+          ),
+        ],
+      );
+    };
+    var openedPartKinds = 0;
+
+    await tester.pumpWidget(
+      _buildApp(repository, onOpenPartKinds: () => openedPartKinds++),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('Toit : Modèle de pièce créé'));
+    await tester.pumpAndSettle();
+
+    expect(openedPartKinds, 1);
+  });
+
+  testWidgets('tapping a part row still opens its tent', (tester) async {
+    final repository = FakeActivityRepository();
+    repository.handler = (category, window, cursor, limit) async {
+      return ActivityPage(
+        items: [
+          _item(
+            id: 'part',
+            action: 'part_added',
+            category: 'parts',
+            tentId: 'tent-42',
+            tentName: 'Tente Atlas',
+            subjectName: 'Toit',
+          ),
+        ],
+      );
+    };
+    String? openedTentId;
+    var openedPartKinds = 0;
+
+    await tester.pumpWidget(
+      _buildApp(
+        repository,
+        onOpenTentDetail: (tentId) => openedTentId = tentId,
+        onOpenPartKinds: () => openedPartKinds++,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('Tente Atlas : Pièce ajoutée : Toit'));
+    await tester.pumpAndSettle();
+
+    expect(openedTentId, 'tent-42');
+    expect(openedPartKinds, 0);
+  });
+
   testWidgets('account rows are not interactive', (tester) async {
     final repository = FakeActivityRepository();
     repository.handler = (category, window, cursor, limit) async {
@@ -281,6 +347,7 @@ void main() {
 Widget _buildApp(
   ActivityRepository repository, {
   ValueChanged<String>? onOpenTentDetail,
+  VoidCallback? onOpenPartKinds,
   VoidCallback? onOpenModels,
   VoidCallback? onOpenTags,
 }) {
@@ -296,6 +363,7 @@ Widget _buildApp(
       home: Scaffold(
         body: JournalScreen(
           onOpenTentDetail: onOpenTentDetail ?? (_) {},
+          onOpenPartKinds: onOpenPartKinds ?? () {},
           onOpenModels: onOpenModels ?? () {},
           onOpenTags: onOpenTags ?? () {},
         ),
