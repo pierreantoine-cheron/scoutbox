@@ -89,12 +89,33 @@ public class TagService
         var nameChanged = !string.Equals(oldName, name, StringComparison.Ordinal);
         var colorChanged = !string.Equals(oldColor, color, StringComparison.OrdinalIgnoreCase);
 
+        if (!nameChanged && !colorChanged)
+        {
+            return (TagDto.FromTag(tag), null, false);
+        }
+
         tag.Name = name;
         tag.Color = color;
         tag.UpdatedAt = DateTime.UtcNow;
         tag.UpdatedByUserId = userId;
 
-        if (!nameChanged && colorChanged)
+        if (nameChanged)
+        {
+            _auditService.RecordEvent(
+                AuditActions.TagRenamed,
+                userId,
+                targetEntityType: "Tag",
+                targetEntityId: tag.Id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["name"] = name,
+                    ["color"] = color,
+                    ["oldName"] = oldName,
+                    ["newName"] = name
+                });
+        }
+
+        if (colorChanged)
         {
             _auditService.RecordEvent(
                 AuditActions.TagColorChanged,
@@ -107,26 +128,6 @@ public class TagService
                     ["oldColor"] = oldColor,
                     ["newColor"] = color
                 });
-        }
-        else
-        {
-            var metadata = new Dictionary<string, object?>
-            {
-                ["name"] = name,
-                ["color"] = color
-            };
-            if (nameChanged)
-            {
-                metadata["oldName"] = oldName;
-                metadata["newName"] = name;
-            }
-
-            _auditService.RecordEvent(
-                AuditActions.TagRenamed,
-                userId,
-                targetEntityType: "Tag",
-                targetEntityId: tag.Id,
-                metadata: metadata);
         }
 
         try
@@ -148,6 +149,22 @@ public class TagService
         if (tag == null) return (false, null, true);
 
         var tentCount = tag.TentTags.Count;
+
+        foreach (var tentTag in tag.TentTags)
+        {
+            _auditService.RecordEvent(
+                AuditActions.TagRemoved,
+                userId,
+                targetEntityType: "TentTag",
+                targetEntityId: tentTag.TentId,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["tagId"] = tag.Id,
+                    ["tagName"] = tag.Name,
+                    ["tentId"] = tentTag.TentId,
+                    ["reason"] = AuditActions.TagDeleted
+                });
+        }
 
         _auditService.RecordEvent(
             AuditActions.TagDeleted,

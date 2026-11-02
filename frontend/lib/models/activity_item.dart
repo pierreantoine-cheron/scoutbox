@@ -144,7 +144,7 @@ class ActivityItem {
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
-        return 'Étiquette retirée : $subject';
+        return 'Étiquette retirée : $subject${_reasonParenthetical ?? ''}';
       case 'tag_created':
         return 'Étiquette créée : $subject';
       case 'tag_renamed':
@@ -226,7 +226,13 @@ class ActivityItem {
       case 'tag_assigned':
         return _subjectSpan('Étiquette ajoutée : ', subject, normalStyle, boldStyle);
       case 'tag_removed':
-        return _subjectSpan('Étiquette retirée : ', subject, normalStyle, boldStyle);
+        return _subjectSpan(
+          'Étiquette retirée : ',
+          subject,
+          normalStyle,
+          boldStyle,
+          suffix: _reasonParenthetical,
+        );
       case 'tag_created':
         return _subjectSpan('Étiquette créée : ', subject, normalStyle, boldStyle);
       case 'tag_renamed':
@@ -250,12 +256,14 @@ class ActivityItem {
     String prefix,
     String subject,
     TextStyle normalStyle,
-    TextStyle boldStyle,
-  ) {
+    TextStyle boldStyle, {
+    String? suffix,
+  }) {
     return TextSpan(
       children: [
         TextSpan(text: prefix, style: normalStyle),
         TextSpan(text: subject, style: boldStyle),
+        if (suffix != null) TextSpan(text: suffix, style: normalStyle),
       ],
       style: normalStyle,
     );
@@ -287,6 +295,21 @@ class ActivityItem {
       ],
       style: normalStyle,
     );
+  }
+
+  String? get _reasonParenthetical {
+    final reason = details
+        .where((detail) => detail.valueType == 'reason')
+        .map((detail) => detail.value)
+        .whereType<String>()
+        .firstOrNull;
+    if (reason == null || reason.isEmpty) return null;
+
+    final label = switch (reason) {
+      'tag_deleted' => 'étiquette supprimée',
+      _ => reason,
+    };
+    return ' ($label)';
   }
 
   TentHistoryDetail? get _renameDetail => details

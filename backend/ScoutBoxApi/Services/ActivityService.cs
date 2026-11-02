@@ -479,7 +479,18 @@ public class ActivityService : IActivityService
     private static List<TentHistoryDetailDto> BuildTagDetails(AuditEvent ae)
     {
         var tagName = TryGetMetadataString(ae.MetadataJson, "tagName") ?? UnknownTagName;
-        return [new TentHistoryDetailDto("Étiquette", null, null, tagName, "tag")];
+        var details = new List<TentHistoryDetailDto>
+        {
+            new("Étiquette", null, null, tagName, "tag")
+        };
+
+        var reason = TryGetMetadataString(ae.MetadataJson, "reason");
+        if (!string.IsNullOrEmpty(reason))
+        {
+            details.Add(new TentHistoryDetailDto("Raison", null, null, reason, "reason"));
+        }
+
+        return details;
     }
 
     private static List<TentHistoryDetailDto> BuildCatalogueDetails(

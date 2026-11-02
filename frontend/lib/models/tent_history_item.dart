@@ -128,7 +128,7 @@ class TentHistoryItem {
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
-        return 'Étiquette retirée : $subject';
+        return 'Étiquette retirée : $subject${_reasonParenthetical ?? ''}';
       default:
         return 'Action $action';
     }
@@ -192,16 +192,33 @@ class TentHistoryItem {
           style: normalStyle,
         );
       case 'tag_removed':
+        final reason = _reasonParenthetical;
         return TextSpan(
           children: [
             TextSpan(text: 'Étiquette retirée : ', style: normalStyle),
             TextSpan(text: subject, style: boldStyle),
+            if (reason != null) TextSpan(text: reason, style: normalStyle),
           ],
           style: normalStyle,
         );
       default:
         return TextSpan(text: buildSummary(), style: normalStyle);
     }
+  }
+
+  String? get _reasonParenthetical {
+    final reason = details
+        .where((detail) => detail.valueType == 'reason')
+        .map((detail) => detail.value)
+        .whereType<String>()
+        .firstOrNull;
+    if (reason == null || reason.isEmpty) return null;
+
+    final label = switch (reason) {
+      'tag_deleted' => 'étiquette supprimée',
+      _ => reason,
+    };
+    return ' ($label)';
   }
 
   String _buildUpdateText() {

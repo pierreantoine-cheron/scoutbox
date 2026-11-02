@@ -197,26 +197,75 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         using (var verifyScope = _factory.Services.CreateScope())
         {
             var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var audit = await db.AuditEvents.FirstOrDefaultAsync(a =>
-                a.TargetEntityId == tag.Id && a.Action == "tag_renamed");
-            Assert.NotNull(audit);
-            Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
-            using var metadata = JsonDocument.Parse(audit.MetadataJson!);
-            Assert.Equal(originalName, metadata.RootElement.GetProperty("oldName").GetString());
-            Assert.Equal(newName, metadata.RootElement.GetProperty("newName").GetString());
+            var audits = await db.AuditEvents
+                .Where(a => a.TargetEntityId == tag.Id)
+                .ToListAsync();
+            Assert.Equal(2, audits.Count);
+            var renameAudit = Assert.Single(audits.Where(a => a.Action == "tag_renamed").ToList());
+            Assert.Equal(CustomApiFactory.TestUserId, renameAudit.ActorUserId);
+            using (var metadata = JsonDocument.Parse(renameAudit.MetadataJson!))
+            {
+                Assert.Equal(originalName, metadata.RootElement.GetProperty("oldName").GetString());
+                Assert.Equal(newName, metadata.RootElement.GetProperty("newName").GetString());
+            }
+
+            var colorAudit = Assert.Single(audits.Where(a => a.Action == "tag_color_changed").ToList());
+            using (var metadata = JsonDocument.Parse(colorAudit.MetadataJson!))
+            {
+                Assert.Equal("#2196F3", metadata.RootElement.GetProperty("oldColor").GetString());
+                Assert.Equal("#4CAF50", metadata.RootElement.GetProperty("newColor").GetString());
+            }
         }
     }
 
     [Fact]
-    public async Task UpdateTag_SameNameSameColor_ReturnsSuccessWithAudit()
+    public async Task UpdateTag_RenameOnly_RecordsOnlyTheRename()
     {
         await EnsureTestUserExistsAsync();
-        var name = $"Unchanged {Guid.NewGuid():N}"[..24];
+        var originalName = $"RenameOnly {Guid.NewGuid():N}"[..24];
+        var newName = $"RenamedOnly {Guid.NewGuid():N}"[..24];
 
         using (var setupScope = _factory.Services.CreateScope())
         {
             var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            db.Tags.Add(CreateTag(name, "#2196F3"));
+            db.Tags.Add(CreateTag(originalName, "#2196F3"));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var getResponse = await client.GetAsync("/api/tags");
+        var getPayload = await getResponse.Content.ReadFromJsonAsync<List<TagApiDto>>();
+        var tag = getPayload!.First(t => t.Name == originalName);
+
+        var response = await client.PutAsJsonAsync($"/api/tags/{tag.Id}", new { name = newName, color = "#2196F3" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var auditDb = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var audit = Assert.Single(await auditDb.AuditEvents
+            .Where(a => a.TargetEntityId == tag.Id)
+            .ToListAsync());
+        Assert.Equal("tag_renamed", audit.Action);
+        using var metadata = JsonDocument.Parse(audit.MetadataJson!);
+        Assert.Equal(originalName, metadata.RootElement.GetProperty("oldName").GetString());
+        Assert.Equal(newName, metadata.RootElement.GetProperty("newName").GetString());
+    }
+
+    [Fact]
+    public async Task UpdateTag_SameNameSameColor_RecordsNothingAndKeepsUpdatedAt()
+    {
+        await EnsureTestUserExistsAsync();
+        var name = $"Unchanged {Guid.NewGuid():N}"[..24];
+        DateTime originalUpdatedAt;
+
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var createdTag = CreateTag(name, "#2196F3");
+            createdTag.UpdatedAt = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+            originalUpdatedAt = createdTag.UpdatedAt;
+            db.Tags.Add(createdTag);
             await db.SaveChangesAsync();
         }
 
@@ -235,9 +284,14 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         using (var verifyScope = _factory.Services.CreateScope())
         {
             var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var audit = await db.AuditEvents.FirstOrDefaultAsync(a =>
-                a.TargetEntityId == tag.Id && a.Action == "tag_renamed");
-            Assert.NotNull(audit);
+            var tagEntity = await db.Tags.AsNoTracking().FirstAsync(t => t.Id == tag.Id);
+            Assert.Equal(originalUpdatedAt, tagEntity.UpdatedAt);
+            Assert.Equal(CustomApiFactory.TestUserId, tagEntity.UpdatedByUserId);
+
+            var audits = await db.AuditEvents
+                .Where(a => a.TargetEntityId == tag.Id)
+                .ToListAsync();
+            Assert.Empty(audits);
         }
     }
 
@@ -265,11 +319,10 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
 
         using var verifyScope = _factory.Services.CreateScope();
         var auditDb = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-        var audit = await auditDb.AuditEvents.FirstOrDefaultAsync(a =>
-            a.TargetEntityId == tag.Id && a.Action == "tag_color_changed");
-        Assert.NotNull(audit);
-        Assert.Null(await auditDb.AuditEvents.FirstOrDefaultAsync(a =>
-            a.TargetEntityId == tag.Id && a.Action == "tag_renamed"));
+        var audit = Assert.Single(await auditDb.AuditEvents
+            .Where(a => a.TargetEntityId == tag.Id)
+            .ToListAsync());
+        Assert.Equal("tag_color_changed", audit.Action);
         Assert.Contains("\"oldColor\":\"#2196F3\"", audit.MetadataJson);
         Assert.Contains("\"newColor\":\"#F44336\"", audit.MetadataJson);
     }
@@ -342,7 +395,7 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     }
 
     [Fact]
-    public async Task DeleteTag_WithNoTentAssociations_ReturnsNoContent()
+    public async Task DeleteTag_WithNoTentAssociations_RecordsOnlyTheSummary()
     {
         await EnsureTestUserExistsAsync();
         var name = $"DeleteMe {Guid.NewGuid():N}"[..24];
@@ -370,38 +423,62 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         using (var verifyScope = _factory.Services.CreateScope())
         {
             var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var audit = await db.AuditEvents.FirstOrDefaultAsync(a =>
-                a.TargetEntityId == tag.Id && a.Action == "tag_deleted");
-            Assert.NotNull(audit);
+            var audit = Assert.Single(await db.AuditEvents
+                .Where(a => a.TargetEntityId == tag.Id)
+                .ToListAsync());
+            Assert.Equal("tag_deleted", audit.Action);
+            using var metadata = JsonDocument.Parse(audit.MetadataJson!);
+            Assert.Equal(name, metadata.RootElement.GetProperty("name").GetString());
+            Assert.Equal(0, metadata.RootElement.GetProperty("tentCount").GetInt32());
+
+            var removals = await db.AuditEvents
+                .Where(a => a.Action == "tag_removed" && a.MetadataJson != null &&
+                            a.MetadataJson.Contains(tag.Id.ToString()))
+                .ToListAsync();
+            Assert.Empty(removals);
         }
     }
 
     [Fact]
-    public async Task DeleteTag_WithTentAssociations_ReturnsNoContentAndCascades()
+    public async Task DeleteTag_WithSeveralTents_RecordsOneRemovalPerTentThenTheSummary()
     {
         await EnsureTestUserExistsAsync();
         var prefix = Guid.NewGuid().ToString("N")[..8];
+        var name = $"Cascade {prefix}";
+        Guid firstTentId;
+        Guid secondTentId;
 
         using (var setupScope = _factory.Services.CreateScope())
         {
             var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var tent = await CreateTentAsync(db, $"Tag Cascade Tent {prefix}");
-            var createdTag = CreateTag($"Cascade {prefix}", "#F44336");
+            var firstTent = await CreateTentAsync(db, $"Tag Cascade Tent A {prefix}");
+            var secondTent = await CreateTentAsync(db, $"Tag Cascade Tent B {prefix}");
+            firstTentId = firstTent.Id;
+            secondTentId = secondTent.Id;
+            var createdTag = CreateTag(name, "#F44336");
             db.Tags.Add(createdTag);
-            db.TentTags.Add(new TentTag
-            {
-                TentId = tent.Id,
-                TagId = createdTag.Id,
-                CreatedAt = DateTime.UtcNow,
-                CreatedByUserId = CustomApiFactory.TestUserId
-            });
+            db.TentTags.AddRange(
+                new TentTag
+                {
+                    TentId = firstTent.Id,
+                    TagId = createdTag.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = CustomApiFactory.TestUserId
+                },
+                new TentTag
+                {
+                    TentId = secondTent.Id,
+                    TagId = createdTag.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = CustomApiFactory.TestUserId
+                });
             await db.SaveChangesAsync();
         }
 
         using var client = CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/api/tags");
         var getPayload = await getResponse.Content.ReadFromJsonAsync<List<TagApiDto>>();
-        var tag = getPayload!.First(t => t.Name == $"Cascade {prefix}");
+        var tag = getPayload!.First(t => t.Name == name);
 
         var response = await client.DeleteAsync($"/api/tags/{tag.Id}");
 
@@ -414,7 +491,61 @@ public class TagsControllerIntegrationTests : IClassFixture<CustomApiFactory>
             Assert.Null(tagEntity);
             var tentTag = await db.TentTags.FirstOrDefaultAsync(tt => tt.TagId == tag.Id);
             Assert.Null(tentTag);
+
+            var removals = await db.AuditEvents
+                .Where(a => a.Action == "tag_removed" && a.MetadataJson != null &&
+                            a.MetadataJson.Contains(tag.Id.ToString()))
+                .ToListAsync();
+            Assert.Equal(2, removals.Count);
+            Assert.Equal(
+                new[] { firstTentId, secondTentId }.OrderBy(id => id),
+                removals.Select(a => a.TargetEntityId!.Value).OrderBy(id => id));
+            foreach (var removal in removals)
+            {
+                Assert.Equal("TentTag", removal.TargetEntityType);
+                using var metadata = JsonDocument.Parse(removal.MetadataJson!);
+                var tentId = metadata.RootElement.GetProperty("tentId").GetGuid();
+                Assert.Equal(removal.TargetEntityId, tentId);
+                Assert.Equal(tag.Id, metadata.RootElement.GetProperty("tagId").GetGuid());
+                Assert.Equal(name, metadata.RootElement.GetProperty("tagName").GetString());
+                Assert.Equal("tag_deleted", metadata.RootElement.GetProperty("reason").GetString());
+            }
+
+            var summary = await db.AuditEvents.SingleAsync(a =>
+                a.TargetEntityId == tag.Id && a.Action == "tag_deleted");
+            using var summaryMetadata = JsonDocument.Parse(summary.MetadataJson!);
+            Assert.Equal(name, summaryMetadata.RootElement.GetProperty("name").GetString());
+            Assert.Equal(2, summaryMetadata.RootElement.GetProperty("tentCount").GetInt32());
+            Assert.All(removals, removal => Assert.True(summary.OccurredAt >= removal.OccurredAt));
         }
+
+        var activity = await client.GetFromJsonAsync<JsonElement>(
+            "/api/activity?category=tags&window=all");
+        var journalActions = activity.GetProperty("items").EnumerateArray()
+            .Where(item =>
+                item.TryGetProperty("subjectName", out var subject) &&
+                subject.ValueKind == JsonValueKind.String &&
+                subject.GetString() == name)
+            .Select(item => item.GetProperty("action").GetString())
+            .ToList();
+        Assert.Equal(3, journalActions.Count);
+        Assert.Equal("tag_deleted", journalActions[0]);
+        Assert.All(journalActions.Skip(1), action => Assert.Equal("tag_removed", action));
+
+        var history = await client.GetFromJsonAsync<List<JsonElement>>(
+            $"/api/tents/{firstTentId}/history?category=tags");
+        Assert.NotNull(history);
+        var historyRemoval = Assert.Single(history);
+        Assert.Equal("tag_removed", historyRemoval.GetProperty("action").GetString());
+        Assert.Equal(name, historyRemoval.GetProperty("subjectName").GetString());
+        var reasonDetail = Assert.Single(
+            historyRemoval.GetProperty("details").EnumerateArray()
+                .Where(detail =>
+                    detail.TryGetProperty("valueType", out var valueType) &&
+                    valueType.ValueKind == JsonValueKind.String &&
+                    valueType.GetString() == "reason")
+                .ToList());
+        Assert.Equal("tag_deleted", reasonDetail.GetProperty("value").GetString());
     }
 
     [Fact]

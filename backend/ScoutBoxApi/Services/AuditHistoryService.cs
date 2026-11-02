@@ -457,6 +457,12 @@ public class AuditHistoryService : IAuditHistoryService
             new TentHistoryDetailDto("Étiquette", null, null, tagName, "tag")
         };
 
+        var reason = TryGetMetadataString(ae.MetadataJson, "reason");
+        if (!string.IsNullOrEmpty(reason))
+        {
+            details.Add(new TentHistoryDetailDto("Raison", null, null, reason, "reason"));
+        }
+
         return new TentHistoryItemDto(
             ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.Tags),
             ae.OccurredAt, ae.ActorUserId, actorName,
