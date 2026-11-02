@@ -294,11 +294,160 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
             using var metadata = JsonDocument.Parse(audit.MetadataJson!);
             Assert.Equal(originalName, metadata.RootElement.GetProperty("oldName").GetString());
             Assert.Equal(newName, metadata.RootElement.GetProperty("newName").GetString());
+
+            var componentChanges = await db.AuditEvents.CountAsync(a =>
+                a.TargetEntityId == modelId && a.Action == "model_components_changed");
+            Assert.Equal(0, componentChanges);
         }
     }
 
     [Fact]
-    public async Task UpdateTentModel_ComponentsOnly_ReturnsUpdatedModel()
+    public async Task UpdateTentModel_NameAndComponents_RecordsBothChanges()
+    {
+        await EnsureTestUserExistsAsync();
+        var originalName = $"Both Old {Guid.NewGuid():N}"[..20];
+        var newName = $"Both New {Guid.NewGuid():N}"[..20];
+
+        Guid modelId;
+        List<string> initialComponentNames;
+        List<string> newComponentNames;
+        List<Guid> newComponentIds;
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var partKinds = await db.PartKinds.Select(pk => new { pk.Id, pk.Name }).ToListAsync();
+            initialComponentNames = partKinds.Take(2).Select(pk => pk.Name).ToList();
+            newComponentIds = partKinds.Skip(2).Take(2).Select(pk => pk.Id).ToList();
+            newComponentNames = partKinds.Skip(2).Take(2).Select(pk => pk.Name).ToList();
+
+            var model = new TentModel
+            {
+                Id = Guid.NewGuid(),
+                Name = originalName,
+                DisplayOrder = 999,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                TentModelComponents = partKinds.Take(2).Select(pk => new TentModelComponent
+                {
+                    Id = Guid.NewGuid(),
+                    PartKindId = pk.Id
+                }).ToList()
+            };
+            db.TentModels.Add(model);
+            await db.SaveChangesAsync();
+            modelId = model.Id;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tent-models/{modelId}", new
+        {
+            name = newName,
+            componentIds = newComponentIds
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using (var verifyScope = _factory.Services.CreateScope())
+        {
+            var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var audits = await db.AuditEvents
+                .Where(a => a.TargetEntityId == modelId)
+                .ToListAsync();
+
+            var rename = Assert.Single(audits, a => a.Action == "model_renamed");
+            using (var metadata = JsonDocument.Parse(rename.MetadataJson!))
+            {
+                Assert.Equal(originalName, metadata.RootElement.GetProperty("oldName").GetString());
+                Assert.Equal(newName, metadata.RootElement.GetProperty("newName").GetString());
+            }
+
+            var componentChange = Assert.Single(audits, a => a.Action == "model_components_changed");
+            using (var metadata = JsonDocument.Parse(componentChange.MetadataJson!))
+            {
+                Assert.Equal(newName, metadata.RootElement.GetProperty("name").GetString());
+                Assert.Equal(
+                    initialComponentNames.OrderBy(n => n, StringComparer.Ordinal),
+                    metadata.RootElement.GetProperty("oldComponentNames").EnumerateArray()
+                        .Select(e => e.GetString()!).OrderBy(n => n, StringComparer.Ordinal));
+                Assert.Equal(
+                    newComponentNames.OrderBy(n => n, StringComparer.Ordinal),
+                    metadata.RootElement.GetProperty("newComponentNames").EnumerateArray()
+                        .Select(e => e.GetString()!).OrderBy(n => n, StringComparer.Ordinal));
+            }
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTentModel_UnchangedNameAndSameComponentSetInAnotherOrder_RecordsNothing()
+    {
+        await EnsureTestUserExistsAsync();
+        var name = $"NoOp {Guid.NewGuid():N}"[..20];
+
+        Guid modelId;
+        List<Guid> componentIds;
+        List<Guid> componentRowIds;
+        DateTime updatedAt;
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            componentIds = await db.PartKinds.Take(2).Select(pk => pk.Id).ToListAsync();
+
+            var model = new TentModel
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                DisplayOrder = 999,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                UpdatedAt = DateTime.UtcNow.AddDays(-1),
+                TentModelComponents = componentIds.Select(pkId => new TentModelComponent
+                {
+                    Id = Guid.NewGuid(),
+                    PartKindId = pkId
+                }).ToList()
+            };
+            db.TentModels.Add(model);
+            await db.SaveChangesAsync();
+            modelId = model.Id;
+            componentRowIds = model.TentModelComponents.Select(mc => mc.Id).ToList();
+            updatedAt = model.UpdatedAt;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tent-models/{modelId}", new
+        {
+            name,
+            componentIds = Enumerable.Reverse(componentIds).ToList()
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<TentModelApiDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(name, payload.Name);
+        Assert.Equal(2, payload.ComponentCount);
+
+        using (var verifyScope = _factory.Services.CreateScope())
+        {
+            var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var auditCount = await db.AuditEvents.CountAsync(a => a.TargetEntityId == modelId);
+            Assert.Equal(0, auditCount);
+
+            var model = await db.TentModels.AsNoTracking().FirstAsync(m => m.Id == modelId);
+            Assert.Equal(updatedAt, model.UpdatedAt);
+
+            var currentRowIds = await db.TentModelComponents
+                .Where(mc => mc.TentModelId == modelId)
+                .Select(mc => mc.Id)
+                .ToListAsync();
+            Assert.Equal(
+                componentRowIds.OrderBy(id => id),
+                currentRowIds.OrderBy(id => id));
+        }
+    }
+
+    [Fact]
+    public async Task UpdateTentModel_ComponentsOnly_RecordsComponentChangeAndNoRename()
     {
         await EnsureTestUserExistsAsync();
         var name = $"Components {Guid.NewGuid():N}"[..20];
@@ -306,12 +455,16 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
         Guid modelId;
         List<Guid> initialComponentIds;
         List<Guid> newComponentIds;
+        List<string> initialComponentNames;
+        List<string> newComponentNames;
         using (var setupScope = _factory.Services.CreateScope())
         {
             var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
-            var allPartKindIds = await db.PartKinds.Select(pk => pk.Id).ToListAsync();
-            initialComponentIds = allPartKindIds.Take(2).ToList();
-            newComponentIds = allPartKindIds.Skip(2).Take(2).ToList();
+            var partKinds = await db.PartKinds.Select(pk => new { pk.Id, pk.Name }).ToListAsync();
+            initialComponentIds = partKinds.Take(2).Select(pk => pk.Id).ToList();
+            newComponentIds = partKinds.Skip(2).Take(2).Select(pk => pk.Id).ToList();
+            initialComponentNames = partKinds.Take(2).Select(pk => pk.Name).ToList();
+            newComponentNames = partKinds.Skip(2).Take(2).Select(pk => pk.Name).ToList();
 
             var model = new TentModel
             {
@@ -349,9 +502,23 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
         {
             var db = verifyScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
             var audit = await db.AuditEvents.FirstOrDefaultAsync(a =>
-                a.TargetEntityId == modelId && a.Action == "model_renamed");
+                a.TargetEntityId == modelId && a.Action == "model_components_changed");
             Assert.NotNull(audit);
             Assert.Equal(CustomApiFactory.TestUserId, audit.ActorUserId);
+            using var metadata = JsonDocument.Parse(audit.MetadataJson!);
+            Assert.Equal(name, metadata.RootElement.GetProperty("name").GetString());
+            Assert.Equal(
+                initialComponentNames.OrderBy(n => n, StringComparer.Ordinal),
+                metadata.RootElement.GetProperty("oldComponentNames").EnumerateArray()
+                    .Select(e => e.GetString()!).OrderBy(n => n, StringComparer.Ordinal));
+            Assert.Equal(
+                newComponentNames.OrderBy(n => n, StringComparer.Ordinal),
+                metadata.RootElement.GetProperty("newComponentNames").EnumerateArray()
+                    .Select(e => e.GetString()!).OrderBy(n => n, StringComparer.Ordinal));
+
+            var renames = await db.AuditEvents.CountAsync(a =>
+                a.TargetEntityId == modelId && a.Action == "model_renamed");
+            Assert.Equal(0, renames);
         }
     }
 

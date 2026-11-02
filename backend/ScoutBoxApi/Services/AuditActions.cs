@@ -35,6 +35,7 @@ public static class AuditActions
     // TentModel management actions
     public const string TentModelCreated = "model_created";
     public const string TentModelRenamed = "model_renamed";
+    public const string TentModelComponentsChanged = "model_components_changed";
     public const string TentModelDeleted = "model_deleted";
 
     // Tag management actions (for future stories)

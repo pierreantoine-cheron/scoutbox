@@ -378,6 +378,49 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
     }
 
     [Fact]
+    public async Task GetActivity_ShowsModelComponentChangesAsBeforeAndAfter()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        await InsertAuditEventsAsync(
+            Event(AuditActions.TentModelComponentsChanged, DateTime.UtcNow.AddHours(-1), "TentModel", Guid.NewGuid(),
+                """{"name":"Canadienne","oldComponentNames":["Toit","Double toit"],"newComponentNames":["Toit","Tapis de sol"]}"""));
+
+        using var client = CreateAuthenticatedClient();
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("models", item.Category);
+        Assert.Equal("Canadienne", item.SubjectName);
+        var detail = Assert.Single(item.Details);
+        Assert.Equal("Modèles de pièce", detail.Label);
+        Assert.Equal("Toit, Double toit", detail.OldValue);
+        Assert.Equal("Toit, Tapis de sol", detail.NewValue);
+        Assert.Equal("components", detail.ValueType);
+    }
+
+    [Fact]
+    public async Task GetActivity_ModelComponentChangesBelongToTheModelsCategory()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        await InsertAuditEventsAsync(
+            Event(AuditActions.TentModelComponentsChanged, DateTime.UtcNow.AddHours(-1), "TentModel", Guid.NewGuid(),
+                """{"name":"Canadienne","oldComponentNames":[],"newComponentNames":["Toit"]}"""));
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync("/api/activity?category=models&window=all");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = await response.Content.ReadFromJsonAsync<ActivityPageApi>();
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal(AuditActions.TentModelComponentsChanged, item.Action);
+        Assert.Equal("models", item.Category);
+    }
+
+    [Fact]
     public async Task GetActivity_UnknownPartKind_NamesThePartAsUnknown()
     {
         await EnsureTestUserExistsAsync();

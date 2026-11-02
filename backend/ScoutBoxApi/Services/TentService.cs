@@ -448,16 +448,26 @@ public class TentService
         if (model == null)
             return (null, null, true);
 
-        var nameChanged = request.Name != null;
-        var componentsChanged = request.ComponentIds != null;
+        var requestedName = request.Name?.Trim();
+        var requestedIds = request.ComponentIds?.Distinct().ToList();
+
+        if (requestedName == null && requestedIds == null)
+            return (null, new ErrorResponse("At least one of Name or ComponentIds must be provided", "MODEL_UPDATE_NO_CHANGES"), false);
+
         var oldName = model.Name;
+        var oldIds = model.TentModelComponents.Select(mc => mc.PartKindId).ToHashSet();
+        var newIds = requestedIds?.ToHashSet();
+
+        var nameChanged = requestedName != null
+            && !string.Equals(requestedName, oldName, StringComparison.Ordinal);
+        var componentsChanged = newIds != null && !oldIds.SetEquals(newIds);
 
         if (!nameChanged && !componentsChanged)
-            return (null, new ErrorResponse("At least one of Name or ComponentIds must be provided", "MODEL_UPDATE_NO_CHANGES"), false);
+            return (TentModelDto.FromTentModel(model), null, false);
 
         if (nameChanged)
         {
-            var name = request.Name!.Trim();
+            var name = requestedName!;
             if (name.Length < 2)
                 return (null, new ErrorResponse("Model name is required (min 2 characters)", "MODEL_NAME_REQUIRED"), false);
             if (name.Length > 100)
@@ -465,33 +475,32 @@ public class TentService
 
             if (await _repo.HasDuplicateModelNameAsync(name, id))
                 return (null, new ErrorResponse("Model name already exists", "MODEL_NAME_EXISTS"), false);
-
-            model.Name = name;
         }
+
+        var partKindNames = new Dictionary<Guid, string>();
+        if (componentsChanged)
+        {
+            var idsToResolve = oldIds.Union(newIds!).ToList();
+            var partKinds = await _db.PartKinds
+                .Where(pk => idsToResolve.Contains(pk.Id))
+                .Select(pk => new { pk.Id, pk.Name })
+                .ToListAsync();
+
+            if (newIds!.Any(componentId => partKinds.All(pk => pk.Id != componentId)))
+                return (null, new ErrorResponse("One or more component IDs are invalid", "INVALID_COMPONENT_IDS"), false);
+
+            partKindNames = partKinds.ToDictionary(pk => pk.Id, pk => pk.Name);
+        }
+
+        if (nameChanged)
+            model.Name = requestedName!;
 
         if (componentsChanged)
         {
-            var componentIds = request.ComponentIds!;
-
-            if (componentIds.Count > 0)
-            {
-                var existingPartKindIds = await _db.PartKinds
-                    .Where(pk => componentIds.Contains(pk.Id))
-                    .Select(pk => pk.Id)
-                    .ToListAsync();
-                if (existingPartKindIds.Count != componentIds.Count)
-                    return (null, new ErrorResponse("One or more component IDs are invalid", "INVALID_COMPONENT_IDS"), false);
-            }
-
             _db.TentModelComponents.RemoveRange(
                 _db.TentModelComponents.Where(mc => mc.TentModelId == id));
-        }
 
-        model.UpdatedAt = DateTime.UtcNow;
-
-        if (componentsChanged)
-        {
-            foreach (var pkId in request.ComponentIds!)
+            foreach (var pkId in requestedIds!)
             {
                 _db.TentModelComponents.Add(new TentModelComponent
                 {
@@ -502,18 +511,37 @@ public class TentService
             }
         }
 
-        _auditService.RecordEvent(
-            AuditActions.TentModelRenamed,
-            userId,
-            targetEntityType: "TentModel",
-            targetEntityId: id,
-            metadata: new Dictionary<string, object?>
-            {
-                ["name"] = model.Name,
-                ["oldName"] = oldName,
-                ["newName"] = model.Name,
-                ["componentCount"] = request.ComponentIds?.Count ?? model.TentModelComponents.Count
-            });
+        model.UpdatedAt = DateTime.UtcNow;
+
+        if (nameChanged)
+        {
+            _auditService.RecordEvent(
+                AuditActions.TentModelRenamed,
+                userId,
+                targetEntityType: "TentModel",
+                targetEntityId: id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["name"] = model.Name,
+                    ["oldName"] = oldName,
+                    ["newName"] = model.Name
+                });
+        }
+
+        if (componentsChanged)
+        {
+            _auditService.RecordEvent(
+                AuditActions.TentModelComponentsChanged,
+                userId,
+                targetEntityType: "TentModel",
+                targetEntityId: id,
+                metadata: new Dictionary<string, object?>
+                {
+                    ["name"] = model.Name,
+                    ["oldComponentNames"] = ResolveComponentNames(oldIds, partKindNames),
+                    ["newComponentNames"] = ResolveComponentNames(newIds!, partKindNames)
+                });
+        }
 
         await _repo.SaveChangesAsync();
 
@@ -523,6 +551,17 @@ public class TentService
             .Include(m => m.Tents)
             .FirstAsync(m => m.Id == id);
         return (TentModelDto.FromTentModel(updated), null, false);
+    }
+
+    private static List<string> ResolveComponentNames(
+        IEnumerable<Guid> componentIds,
+        Dictionary<Guid, string> partKindNames)
+    {
+        return componentIds
+            .Where(partKindNames.ContainsKey)
+            .Select(componentId => partKindNames[componentId])
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
     }
 
     public async Task<(bool Success, ErrorResponse? Error, bool NotFound)> DeleteModelAsync(Guid userId, Guid id)

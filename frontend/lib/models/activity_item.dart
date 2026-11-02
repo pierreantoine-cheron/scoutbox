@@ -95,6 +95,7 @@ class ActivityItem {
       'tag_deleted' => Icons.delete_outline,
       'model_created' => Icons.grid_view_outlined,
       'model_renamed' => Icons.edit_outlined,
+      'model_components_changed' => Icons.dashboard_customize_outlined,
       'model_deleted' => Icons.delete_outline,
       'invite_created' => Icons.mail_outline,
       'user_registered_from_invite' => Icons.person_add_alt_1_outlined,
@@ -108,6 +109,7 @@ class ActivityItem {
       'tent_archived' || 'part_deleted' || 'tag_deleted' || 'model_deleted' =>
         colorScheme.error,
       'part_state_changed' || 'part_added' => colorScheme.tertiary,
+      'model_components_changed' => colorScheme.tertiary,
       'part_comments_changed' => colorScheme.primary,
       'part_kind_created' || 'part_kind_renamed' => colorScheme.primary,
       'tag_assigned' ||
@@ -164,6 +166,8 @@ class ActivityItem {
         return 'Modèle de tente créé : $subject';
       case 'model_renamed':
         return _buildCatalogueRenameText('Modèle de tente renommé', subject);
+      case 'model_components_changed':
+        return _buildComponentChangeText();
       case 'model_deleted':
         return 'Modèle de tente supprimé : $subject';
       case 'invite_created':
@@ -250,6 +254,8 @@ class ActivityItem {
         return _subjectSpan('Modèle de tente créé : ', subject, normalStyle, boldStyle);
       case 'model_renamed':
         return _catalogueRenameSpan('Modèle de tente renommé', subject, normalStyle, boldStyle);
+      case 'model_components_changed':
+        return _componentChangeSpan(normalStyle, boldStyle);
       case 'model_deleted':
         return _subjectSpan('Modèle de tente supprimé : ', subject, normalStyle, boldStyle);
       default:
@@ -342,6 +348,40 @@ class ActivityItem {
       )
       .firstOrNull;
 
+  TentHistoryDetail? get _componentChangeDetail =>
+      details.where((detail) => detail.valueType == 'components').firstOrNull;
+
+  String _buildComponentChangeText() {
+    final change = _componentChangeDetail;
+    if (change == null) return 'Modèles de pièce du modèle de tente modifiés';
+    return 'Modèles de pièce changés de ${_componentSetLabel(change.oldValue)} à ${_componentSetLabel(change.newValue)}';
+  }
+
+  TextSpan _componentChangeSpan(TextStyle normalStyle, TextStyle boldStyle) {
+    final change = _componentChangeDetail;
+    if (change == null) {
+      return TextSpan(
+        text: 'Modèles de pièce du modèle de tente modifiés',
+        style: normalStyle,
+      );
+    }
+
+    return TextSpan(
+      children: [
+        TextSpan(text: 'Modèles de pièce changés de ', style: normalStyle),
+        TextSpan(text: _componentSetLabel(change.oldValue), style: boldStyle),
+        TextSpan(text: ' à ', style: normalStyle),
+        TextSpan(text: _componentSetLabel(change.newValue), style: boldStyle),
+      ],
+      style: normalStyle,
+    );
+  }
+
+  static String _componentSetLabel(String? value) {
+    if (value == null || value.trim().isEmpty) return 'aucun';
+    return value;
+  }
+
   String get _unknownSubject {
     return switch (action) {
       'part_state_changed' ||
@@ -349,7 +389,10 @@ class ActivityItem {
       'part_added' ||
       'part_deleted' => 'Pièce inconnue',
       'part_kind_created' || 'part_kind_renamed' => 'Modèle de pièce inconnu',
-      'model_created' || 'model_renamed' || 'model_deleted' => 'Modèle de tente inconnu',
+      'model_created' ||
+      'model_renamed' ||
+      'model_components_changed' ||
+      'model_deleted' => 'Modèle de tente inconnu',
       'tag_assigned' ||
       'tag_removed' ||
       'tag_created' ||
