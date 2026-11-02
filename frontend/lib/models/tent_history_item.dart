@@ -124,11 +124,11 @@ class TentHistoryItem {
       case 'part_added':
         return 'Pièce ajoutée : $subject';
       case 'part_deleted':
-        return 'Pièce supprimée : $subject${_reasonSuffix()}';
+        return 'Pièce supprimée : $subject${_reasonParenthetical ?? ''}';
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
-        return 'Étiquette retirée : $subject';
+        return 'Étiquette retirée : $subject${_reasonParenthetical ?? ''}';
       default:
         return 'Action $action';
     }
@@ -176,13 +176,12 @@ class TentHistoryItem {
           style: normalStyle,
         );
       case 'part_deleted':
-        final reasonSuffix = _reasonSuffix();
+        final reason = _reasonParenthetical;
         return TextSpan(
           children: [
             TextSpan(text: 'Pièce supprimée : ', style: normalStyle),
             TextSpan(text: subject, style: boldStyle),
-            if (reasonSuffix.isNotEmpty)
-              TextSpan(text: reasonSuffix, style: normalStyle),
+            if (reason != null) TextSpan(text: reason, style: normalStyle),
           ],
           style: normalStyle,
         );
@@ -195,10 +194,12 @@ class TentHistoryItem {
           style: normalStyle,
         );
       case 'tag_removed':
+        final reason = _reasonParenthetical;
         return TextSpan(
           children: [
             TextSpan(text: 'Étiquette retirée : ', style: normalStyle),
             TextSpan(text: subject, style: boldStyle),
+            if (reason != null) TextSpan(text: reason, style: normalStyle),
           ],
           style: normalStyle,
         );
@@ -207,13 +208,20 @@ class TentHistoryItem {
     }
   }
 
-  String _reasonSuffix() {
+  String? get _reasonParenthetical {
     final reason = details
         .where((detail) => detail.valueType == 'reason')
-        .firstOrNull
-        ?.value;
-    if (reason == 'part_kind_deleted') return ' (modèle de pièce supprimé)';
-    return '';
+        .map((detail) => detail.value)
+        .whereType<String>()
+        .firstOrNull;
+    if (reason == null || reason.isEmpty) return null;
+
+    final label = switch (reason) {
+      'tag_deleted' => 'étiquette supprimée',
+      'part_kind_deleted' => 'modèle de pièce supprimé',
+      _ => reason,
+    };
+    return ' ($label)';
   }
 
   String _buildUpdateText() {

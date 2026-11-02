@@ -149,7 +149,7 @@ class ActivityItem {
       case 'part_added':
         return 'Pièce ajoutée : $subject';
       case 'part_deleted':
-        return 'Pièce supprimée : $subject${_reasonSuffix()}';
+        return 'Pièce supprimée : $subject${_reasonParenthetical ?? ''}';
       case 'part_kind_created':
         return 'Modèle de pièce créé : $subject';
       case 'part_kind_renamed':
@@ -159,7 +159,7 @@ class ActivityItem {
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
-        return 'Étiquette retirée : $subject';
+        return 'Étiquette retirée : $subject${_reasonParenthetical ?? ''}';
       case 'tag_created':
         return 'Étiquette créée : $subject';
       case 'tag_renamed':
@@ -239,15 +239,12 @@ class ActivityItem {
       case 'part_added':
         return _subjectSpan('Pièce ajoutée : ', subject, normalStyle, boldStyle);
       case 'part_deleted':
-        final reasonSuffix = _reasonSuffix();
-        return TextSpan(
-          children: [
-            TextSpan(text: 'Pièce supprimée : ', style: normalStyle),
-            TextSpan(text: subject, style: boldStyle),
-            if (reasonSuffix.isNotEmpty)
-              TextSpan(text: reasonSuffix, style: normalStyle),
-          ],
-          style: normalStyle,
+        return _subjectSpan(
+          'Pièce supprimée : ',
+          subject,
+          normalStyle,
+          boldStyle,
+          suffix: _reasonParenthetical,
         );
       case 'part_kind_created':
         return _subjectSpan('Modèle de pièce créé : ', subject, normalStyle, boldStyle);
@@ -267,7 +264,13 @@ class ActivityItem {
       case 'tag_assigned':
         return _subjectSpan('Étiquette ajoutée : ', subject, normalStyle, boldStyle);
       case 'tag_removed':
-        return _subjectSpan('Étiquette retirée : ', subject, normalStyle, boldStyle);
+        return _subjectSpan(
+          'Étiquette retirée : ',
+          subject,
+          normalStyle,
+          boldStyle,
+          suffix: _reasonParenthetical,
+        );
       case 'tag_created':
         return _subjectSpan('Étiquette créée : ', subject, normalStyle, boldStyle);
       case 'tag_renamed':
@@ -293,12 +296,14 @@ class ActivityItem {
     String prefix,
     String subject,
     TextStyle normalStyle,
-    TextStyle boldStyle,
-  ) {
+    TextStyle boldStyle, {
+    String? suffix,
+  }) {
     return TextSpan(
       children: [
         TextSpan(text: prefix, style: normalStyle),
         TextSpan(text: subject, style: boldStyle),
+        if (suffix != null) TextSpan(text: suffix, style: normalStyle),
       ],
       style: normalStyle,
     );
@@ -364,6 +369,22 @@ class ActivityItem {
     );
   }
 
+  String? get _reasonParenthetical {
+    final reason = details
+        .where((detail) => detail.valueType == 'reason')
+        .map((detail) => detail.value)
+        .whereType<String>()
+        .firstOrNull;
+    if (reason == null || reason.isEmpty) return null;
+
+    final label = switch (reason) {
+      'tag_deleted' => 'étiquette supprimée',
+      'part_kind_deleted' => 'modèle de pièce supprimé',
+      _ => reason,
+    };
+    return ' ($label)';
+  }
+
   TentHistoryDetail? get _renameDetail => details
       .where(
         (detail) =>
@@ -384,7 +405,7 @@ class ActivityItem {
   String _buildComponentChangeText() {
     final removed = _removedComponentDetail;
     if (removed != null) {
-      return 'Modèle de pièce retiré : ${removed.value}${_reasonSuffix()}';
+      return 'Modèle de pièce retiré : ${removed.value}${_reasonParenthetical ?? ''}';
     }
 
     final change = _componentChangeDetail;
@@ -395,11 +416,12 @@ class ActivityItem {
   TextSpan _componentChangeSpan(TextStyle normalStyle, TextStyle boldStyle) {
     final removed = _removedComponentDetail;
     if (removed != null) {
+      final reason = _reasonParenthetical;
       return TextSpan(
         children: [
           TextSpan(text: 'Modèle de pièce retiré : ', style: normalStyle),
           TextSpan(text: removed.value ?? '', style: boldStyle),
-          TextSpan(text: _reasonSuffix(), style: normalStyle),
+          if (reason != null) TextSpan(text: reason, style: normalStyle),
         ],
         style: normalStyle,
       );
@@ -422,15 +444,6 @@ class ActivityItem {
       ],
       style: normalStyle,
     );
-  }
-
-  String _reasonSuffix() {
-    final reason = details
-        .where((detail) => detail.valueType == 'reason')
-        .firstOrNull
-        ?.value;
-    if (reason == 'part_kind_deleted') return ' (modèle de pièce supprimé)';
-    return '';
   }
 
   String _countsSuffix() {

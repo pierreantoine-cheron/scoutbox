@@ -153,6 +153,31 @@ void main() {
       expect(parsed.buildSummary(), 'Étiquette renommée de Groupe A à Groupe B');
     });
 
+    test('a tag removed by tag deletion says the tag was deleted', () {
+      final parsed = item(
+        action: 'tag_removed',
+        tentName: 'Tente Atlas',
+        subjectName: 'Groupe A',
+        details: [
+          {
+            'label': 'Étiquette',
+            'value': 'Groupe A',
+            'valueType': 'tag',
+          },
+          {
+            'label': 'Raison',
+            'value': 'tag_deleted',
+            'valueType': 'reason',
+          },
+        ],
+      );
+
+      expect(
+        parsed.buildSummary(),
+        'Étiquette retirée : Groupe A (étiquette supprimée)',
+      );
+    });
+
     test('part kind rename shows the old name before the new one', () {
       final parsed = item(
         action: 'part_kind_renamed',
@@ -264,6 +289,45 @@ void main() {
       expect(
         parsed.buildSummary(),
         'Modèle de pièce retiré : Toit (modèle de pièce supprimé)',
+      );
+    });
+
+    testWidgets('tag removal reason appears in the summary span', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                final theme = Theme.of(context);
+                final normal = theme.textTheme.bodyMedium ?? const TextStyle();
+                final bold = normal.copyWith(fontWeight: FontWeight.w600);
+                final parsed = item(
+                  action: 'tag_removed',
+                  tentName: 'Tente Atlas',
+                  subjectName: 'Groupe A',
+                  details: [
+                    {
+                      'label': 'Raison',
+                      'value': 'tag_deleted',
+                      'valueType': 'reason',
+                    },
+                  ],
+                );
+
+                final span = parsed.buildSummarySpan(normal, bold);
+                expect(
+                  span.toPlainText(),
+                  'Étiquette retirée : Groupe A (étiquette supprimée)',
+                );
+                final children = (span as TextSpan).children!;
+                expect(children.length, 3);
+                expect((children[2] as TextSpan).text, ' (étiquette supprimée)');
+
+                return const SizedBox();
+              },
+            ),
+          ),
+        ),
       );
     });
 

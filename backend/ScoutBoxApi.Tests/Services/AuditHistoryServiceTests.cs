@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -50,6 +51,43 @@ public class AuditHistoryServiceTests : TestBase
         Assert.Equal("Patrouille", item.SubjectName);
         Assert.Equal("Étiquette", Assert.Single(item.Details).Label);
         Assert.Equal("Patrouille", item.Details[0].Value);
+    }
+
+    [Fact]
+    public async Task GetTentHistory_TagRemovedByTagDeletion_CarriesTheReasonAsADetail()
+    {
+        var user = Builder.CreateUser("taguser");
+        var tentId = Guid.NewGuid();
+
+        Builder.CreateAuditEvent(
+            AuditActions.TagRemoved,
+            user.Id,
+            "TentTag",
+            tentId,
+            DateTime.UtcNow.AddMinutes(-2),
+            new Dictionary<string, object?>
+            {
+                ["tagId"] = Guid.NewGuid(),
+                ["tagName"] = "Rouge",
+                ["tentId"] = tentId,
+                ["reason"] = AuditActions.TagDeleted
+            });
+
+        await Builder.SaveChangesAsync();
+
+        var history = await _service.GetTentHistoryAsync(tentId);
+
+        var item = Assert.Single(history);
+        Assert.Equal(AuditActions.TagRemoved, item.Action);
+        Assert.Equal("Rouge", item.SubjectName);
+
+        var tagDetail = Assert.Single(item.Details.Where(d => d.ValueType == "tag").ToList());
+        Assert.Equal("Étiquette", tagDetail.Label);
+        Assert.Equal("Rouge", tagDetail.Value);
+
+        var reasonDetail = Assert.Single(item.Details.Where(d => d.ValueType == "reason").ToList());
+        Assert.Equal("Raison", reasonDetail.Label);
+        Assert.Equal("tag_deleted", reasonDetail.Value);
     }
 
     [Fact]
