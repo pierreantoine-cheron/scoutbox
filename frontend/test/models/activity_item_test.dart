@@ -209,17 +209,17 @@ void main() {
           {
             'label': 'Tentes',
             'value': '2',
-            'valueType': 'count',
+            'valueType': 'tent_count',
           },
           {
             'label': 'Pièces',
             'value': '1',
-            'valueType': 'count',
+            'valueType': 'part_count',
           },
           {
             'label': 'Modèles de tente',
             'value': '0',
-            'valueType': 'count',
+            'valueType': 'model_count',
           },
         ],
       );
@@ -227,6 +227,36 @@ void main() {
       expect(
         parsed.buildSummary(),
         'Modèle de pièce supprimé : Toit (2 tentes, 1 pièce)',
+      );
+    });
+
+    test('part kind deletion reads its counts from the value type', () {
+      final parsed = item(
+        action: 'part_kind_deleted',
+        tentName: null,
+        subjectName: 'Toit',
+        details: [
+          {
+            'label': 'Tentes (libellé libre)',
+            'value': '2',
+            'valueType': 'tent_count',
+          },
+          {
+            'label': 'Pièces (libellé libre)',
+            'value': '1',
+            'valueType': 'part_count',
+          },
+          {
+            'label': 'Modèles de tente (libellé libre)',
+            'value': '1',
+            'valueType': 'model_count',
+          },
+        ],
+      );
+
+      expect(
+        parsed.buildSummary(),
+        'Modèle de pièce supprimé : Toit (2 tentes, 1 pièce, 1 modèle de tente)',
       );
     });
 
@@ -239,7 +269,7 @@ void main() {
           {
             'label': 'Tentes',
             'value': '0',
-            'valueType': 'count',
+            'valueType': 'tent_count',
           },
         ],
       );
@@ -527,7 +557,7 @@ void main() {
                     {
                       'label': 'Tentes',
                       'value': '3',
-                      'valueType': 'count',
+                      'valueType': 'tent_count',
                     },
                   ],
                 );

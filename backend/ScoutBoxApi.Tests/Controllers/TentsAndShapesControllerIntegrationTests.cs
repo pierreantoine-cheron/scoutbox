@@ -2670,6 +2670,48 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
     }
 
     [Fact]
+    public async Task GetTentHistory_TagRemovedByTagDeletion_CarriesTheReasonAsADetail()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            tentId = await CreateTentForTagsAsync(db);
+            db.AuditEvents.Add(new AuditEvent
+            {
+                Id = Guid.NewGuid(),
+                Action = AuditActions.TagRemoved,
+                ActorUserId = CustomApiFactory.TestUserId,
+                OccurredAt = DateTime.UtcNow.AddMinutes(-2),
+                TargetEntityType = "TentTag",
+                TargetEntityId = tentId,
+                MetadataJson = $$"""{"tagId":"{{Guid.NewGuid()}}","tagName":"Rouge","tentId":"{{tentId}}","reason":"tag_deleted"}"""
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var historyClient = CreateAuthenticatedClient();
+        var response = await historyClient.GetAsync($"/api/tents/{tentId}/history");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<List<TentHistoryApiItem>>();
+        Assert.NotNull(payload);
+        var item = Assert.Single(payload);
+        Assert.Equal(AuditActions.TagRemoved, item.Action);
+        Assert.Equal("Rouge", item.SubjectName);
+
+        var tagDetail = Assert.Single(item.Details.Where(d => d.ValueType == "tag").ToList());
+        Assert.Equal("Étiquette", tagDetail.Label);
+        Assert.Equal("Rouge", tagDetail.Value);
+
+        var reasonDetail = Assert.Single(item.Details.Where(d => d.ValueType == "reason").ToList());
+        Assert.Equal("Raison", reasonDetail.Label);
+        Assert.Equal("tag_deleted", reasonDetail.Value);
+    }
+
+    [Fact]
     public async Task UpdateTent_ModelChange_RecordsHistoryDetail()
     {
         await EnsureTestUserExistsAsync();

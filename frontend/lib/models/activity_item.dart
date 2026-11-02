@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../utils/date_time_parser.dart';
+import 'audit_reason.dart';
 import 'part.dart';
 import 'tent.dart';
 import 'tent_history_item.dart';
@@ -149,7 +150,7 @@ class ActivityItem {
       case 'part_added':
         return 'Pièce ajoutée : $subject';
       case 'part_deleted':
-        return 'Pièce supprimée : $subject${_reasonParenthetical ?? ''}';
+        return 'Pièce supprimée : $subject${reasonParenthetical(details) ?? ''}';
       case 'part_kind_created':
         return 'Modèle de pièce créé : $subject';
       case 'part_kind_renamed':
@@ -159,7 +160,7 @@ class ActivityItem {
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
-        return 'Étiquette retirée : $subject${_reasonParenthetical ?? ''}';
+        return 'Étiquette retirée : $subject${reasonParenthetical(details) ?? ''}';
       case 'tag_created':
         return 'Étiquette créée : $subject';
       case 'tag_renamed':
@@ -244,7 +245,7 @@ class ActivityItem {
           subject,
           normalStyle,
           boldStyle,
-          suffix: _reasonParenthetical,
+          suffix: reasonParenthetical(details),
         );
       case 'part_kind_created':
         return _subjectSpan('Modèle de pièce créé : ', subject, normalStyle, boldStyle);
@@ -269,7 +270,7 @@ class ActivityItem {
           subject,
           normalStyle,
           boldStyle,
-          suffix: _reasonParenthetical,
+          suffix: reasonParenthetical(details),
         );
       case 'tag_created':
         return _subjectSpan('Étiquette créée : ', subject, normalStyle, boldStyle);
@@ -369,22 +370,6 @@ class ActivityItem {
     );
   }
 
-  String? get _reasonParenthetical {
-    final reason = details
-        .where((detail) => detail.valueType == 'reason')
-        .map((detail) => detail.value)
-        .whereType<String>()
-        .firstOrNull;
-    if (reason == null || reason.isEmpty) return null;
-
-    final label = switch (reason) {
-      'tag_deleted' => 'étiquette supprimée',
-      'part_kind_deleted' => 'modèle de pièce supprimé',
-      _ => reason,
-    };
-    return ' ($label)';
-  }
-
   TentHistoryDetail? get _renameDetail => details
       .where(
         (detail) =>
@@ -405,7 +390,7 @@ class ActivityItem {
   String _buildComponentChangeText() {
     final removed = _removedComponentDetail;
     if (removed != null) {
-      return 'Modèle de pièce retiré : ${removed.value}${_reasonParenthetical ?? ''}';
+      return 'Modèle de pièce retiré : ${removed.value}${reasonParenthetical(details) ?? ''}';
     }
 
     final change = _componentChangeDetail;
@@ -416,7 +401,7 @@ class ActivityItem {
   TextSpan _componentChangeSpan(TextStyle normalStyle, TextStyle boldStyle) {
     final removed = _removedComponentDetail;
     if (removed != null) {
-      final reason = _reasonParenthetical;
+      final reason = reasonParenthetical(details);
       return TextSpan(
         children: [
           TextSpan(text: 'Modèle de pièce retiré : ', style: normalStyle),
@@ -448,21 +433,21 @@ class ActivityItem {
 
   String _countsSuffix() {
     final counts = <String>[];
-    for (final detail in details.where((detail) => detail.valueType == 'count')) {
+    for (final detail in details) {
       final count = int.tryParse(detail.value ?? '');
       if (count == null || count <= 0) continue;
-      counts.add(_countLabel(detail.label, count));
+      final label = _countLabel(detail.valueType, count);
+      if (label != null) counts.add(label);
     }
     return counts.isEmpty ? '' : ' (${counts.join(', ')})';
   }
 
-  static String _countLabel(String label, int count) {
-    return switch (label) {
-      'Tentes' => count == 1 ? '1 tente' : '$count tentes',
-      'Pièces' => count == 1 ? '1 pièce' : '$count pièces',
-      'Modèles de tente' =>
-        count == 1 ? '1 modèle de tente' : '$count modèles de tente',
-      _ => '$count ${label.toLowerCase()}',
+  static String? _countLabel(String? valueType, int count) {
+    return switch (valueType) {
+      'tent_count' => count == 1 ? '1 tente' : '$count tentes',
+      'part_count' => count == 1 ? '1 pièce' : '$count pièces',
+      'model_count' => count == 1 ? '1 modèle de tente' : '$count modèles de tente',
+      _ => null,
     };
   }
 

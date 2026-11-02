@@ -220,6 +220,109 @@ void main() {
     expect(openedModels, 1);
   });
 
+  testWidgets('tapping a model components row opens the models page', (
+    tester,
+  ) async {
+    final repository = FakeActivityRepository();
+    repository.handler = (category, window, cursor, limit) async {
+      return ActivityPage(
+        items: [
+          _item(
+            id: 'model-components',
+            action: 'model_components_changed',
+            category: 'models',
+            tentId: null,
+            tentName: null,
+            subjectName: 'Canadienne',
+          ),
+        ],
+      );
+    };
+    var openedModels = 0;
+
+    await tester.pumpWidget(
+      _buildApp(repository, onOpenModels: () => openedModels++),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('Canadienne'));
+    await tester.pumpAndSettle();
+
+    expect(openedModels, 1);
+  });
+
+  testWidgets('tapping a cascade part deletion opens its tent', (tester) async {
+    final repository = FakeActivityRepository();
+    repository.handler = (category, window, cursor, limit) async {
+      return ActivityPage(
+        items: [
+          _item(
+            id: 'cascade-part',
+            action: 'part_deleted',
+            category: 'parts',
+            tentId: 'tent-42',
+            tentName: 'Tente Atlas',
+            subjectName: 'Toit',
+          ),
+        ],
+      );
+    };
+    String? openedTentId;
+    var openedPartKinds = 0;
+
+    await tester.pumpWidget(
+      _buildApp(
+        repository,
+        onOpenTentDetail: (tentId) => openedTentId = tentId,
+        onOpenPartKinds: () => openedPartKinds++,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('Tente Atlas'));
+    await tester.pumpAndSettle();
+
+    expect(openedTentId, 'tent-42');
+    expect(openedPartKinds, 0);
+  });
+
+  testWidgets('tapping a cascade model components row opens its tent', (
+    tester,
+  ) async {
+    final repository = FakeActivityRepository();
+    repository.handler = (category, window, cursor, limit) async {
+      return ActivityPage(
+        items: [
+          _item(
+            id: 'cascade-model-components',
+            action: 'model_components_changed',
+            category: 'models',
+            tentId: 'tent-42',
+            tentName: 'Tente Atlas',
+            subjectName: 'Canadienne',
+          ),
+        ],
+      );
+    };
+    String? openedTentId;
+    var openedModels = 0;
+
+    await tester.pumpWidget(
+      _buildApp(
+        repository,
+        onOpenTentDetail: (tentId) => openedTentId = tentId,
+        onOpenModels: () => openedModels++,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('Tente Atlas'));
+    await tester.pumpAndSettle();
+
+    expect(openedTentId, 'tent-42');
+    expect(openedModels, 0);
+  });
+
   testWidgets('tapping a part kind row opens the part kinds page', (
     tester,
   ) async {

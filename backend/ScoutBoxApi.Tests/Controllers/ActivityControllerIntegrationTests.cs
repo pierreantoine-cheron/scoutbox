@@ -57,23 +57,35 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
     [Theory]
     [InlineData("tents", AuditActions.TentArchived)]
     [InlineData("parts", AuditActions.PartStateChanged)]
+    [InlineData("parts", AuditActions.PartKindCreated)]
+    [InlineData("parts", AuditActions.PartKindRenamed)]
+    [InlineData("parts", AuditActions.PartKindDeleted)]
     [InlineData("tags", AuditActions.TagAssigned)]
     [InlineData("models", AuditActions.TentModelCreated)]
+    [InlineData("models", AuditActions.TentModelComponentsChanged)]
     [InlineData("accounts", AuditActions.InviteCreated)]
     public async Task GetActivity_FiltersByCategory(string category, string expectedAction)
     {
         await EnsureTestUserExistsAsync();
-        var tentId = await CreateTentAsync($"Catégorie {category}");
+        var tentId = await CreateTentAsync($"Catégorie {category} {expectedAction}");
         var partKindId = await GetFirstPartKindIdAsync();
         await ResetAuditEventsAsync();
         await InsertAuditEventsAsync(
             Event(AuditActions.TentArchived, DateTime.UtcNow.AddDays(-1), "Tent", tentId),
             Event(AuditActions.PartStateChanged, DateTime.UtcNow.AddDays(-1), "Part", Guid.NewGuid(),
                 $$"""{"tentId":"{{tentId}}","partKindId":"{{partKindId}}","oldState":"Good","newState":"Good"}"""),
+            Event(AuditActions.PartKindCreated, DateTime.UtcNow.AddDays(-1), "PartKind", Guid.NewGuid(),
+                """{"name":"Toit"}"""),
+            Event(AuditActions.PartKindRenamed, DateTime.UtcNow.AddDays(-1), "PartKind", Guid.NewGuid(),
+                """{"name":"Toit","oldName":"Toile","newName":"Toit"}"""),
+            Event(AuditActions.PartKindDeleted, DateTime.UtcNow.AddDays(-1), "PartKind", Guid.NewGuid(),
+                """{"name":"Toit","tentCount":0,"partsRemoved":0,"modelsAffected":0}"""),
             Event(AuditActions.TagAssigned, DateTime.UtcNow.AddDays(-1), "TentTag", tentId,
                 """{"tagName":"Groupe A"}"""),
             Event(AuditActions.TentModelCreated, DateTime.UtcNow.AddDays(-1), "TentModel", Guid.NewGuid(),
                 """{"name":"Canadienne"}"""),
+            Event(AuditActions.TentModelComponentsChanged, DateTime.UtcNow.AddDays(-1), "TentModel", Guid.NewGuid(),
+                """{"name":"Canadienne","oldComponentNames":[],"newComponentNames":["Toit"]}"""),
             Event(AuditActions.InviteCreated, DateTime.UtcNow.AddDays(-1), "Invite", Guid.NewGuid(),
                 """{"code":"ABC123"}"""));
 
@@ -83,9 +95,8 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var page = await response.Content.ReadFromJsonAsync<ActivityPageApi>();
         Assert.NotNull(page);
-        var item = Assert.Single(page.Items);
-        Assert.Equal(expectedAction, item.Action);
-        Assert.Equal(category, item.Category);
+        Assert.Contains(page.Items, item => item.Action == expectedAction);
+        Assert.All(page.Items, item => Assert.Equal(category, item.Category));
     }
 
     [Theory]

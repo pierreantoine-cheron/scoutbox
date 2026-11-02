@@ -34,6 +34,11 @@ public class AuditService : IAuditService
 {
     private readonly ScoutBoxDbContext _db;
     private readonly ILogger<AuditService> _logger;
+    private readonly TimeProvider _timeProvider;
+
+    // Audit events written by one operation must keep their write order even when the
+    // clock returns the same tick for several calls.
+    private DateTime _lastOccurredAt = DateTime.MinValue;
 
     // Simple top-level denylist for obvious secret keys
     // This is a lightweight approach - we trust callers to pass safe metadata
@@ -45,10 +50,14 @@ public class AuditService : IAuditService
     // Maximum serialized metadata size (16KB) - operational limit, not security
     private const int MaxMetadataSizeBytes = 16 * 1024;
 
-    public AuditService(ScoutBoxDbContext db, ILogger<AuditService> logger)
+    public AuditService(
+        ScoutBoxDbContext db,
+        ILogger<AuditService> logger,
+        TimeProvider? timeProvider = null)
     {
         _db = db;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public AuditEvent RecordEvent(
@@ -61,12 +70,19 @@ public class AuditService : IAuditService
         var filteredMetadata = FilterMetadata(metadata);
         var metadataJson = SerializeMetadata(filteredMetadata);
 
+        var occurredAt = _timeProvider.GetUtcNow().UtcDateTime;
+        if (occurredAt <= _lastOccurredAt)
+        {
+            occurredAt = _lastOccurredAt.AddTicks(1);
+        }
+        _lastOccurredAt = occurredAt;
+
         var auditEvent = new AuditEvent
         {
             Id = Guid.NewGuid(),
             Action = action,
             ActorUserId = actorUserId,
-            OccurredAt = DateTime.UtcNow,
+            OccurredAt = occurredAt,
             TargetEntityType = targetEntityType,
             TargetEntityId = targetEntityId,
             MetadataJson = metadataJson

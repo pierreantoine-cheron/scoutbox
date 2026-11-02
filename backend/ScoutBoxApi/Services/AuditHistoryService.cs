@@ -76,7 +76,6 @@ public class AuditHistoryService : IAuditHistoryService
 
     private static readonly Guid SystemUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
     private const string SystemDisplayName = "Système";
-    private const string UnknownPartName = "Pièce inconnue";
 
     public AuditHistoryService(ScoutBoxDbContext db, ILogger<AuditHistoryService> logger)
     {
@@ -364,21 +363,10 @@ public class AuditHistoryService : IAuditHistoryService
         );
     }
 
-    private static string ResolvePartName(AuditEvent ae, Dictionary<Guid, string> partKindNames)
-    {
-        var frozenName = TryGetMetadataString(ae.MetadataJson, "partKindName");
-        if (!string.IsNullOrEmpty(frozenName)) return frozenName;
-
-        var partKindId = TryGetMetadataPartKindId(ae.MetadataJson);
-        return partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
-            ? name
-            : UnknownPartName;
-    }
-
     private TentHistoryItemDto BuildPartStateChangedItem(
         AuditEvent ae, string actorName, Dictionary<Guid, string> partKindNames)
     {
-        var partName = ResolvePartName(ae, partKindNames);
+        var partName = AuditDetailFactory.ResolvePartName(ae.MetadataJson, partKindNames);
 
         var details = new List<TentHistoryDetailDto>();
         TryParsePartStateMetadata(ae.MetadataJson, out var oldState, out var newState);
@@ -398,7 +386,7 @@ public class AuditHistoryService : IAuditHistoryService
     private TentHistoryItemDto BuildPartCommentsChangedItem(
         AuditEvent ae, string actorName, Dictionary<Guid, string> partKindNames)
     {
-        var partName = ResolvePartName(ae, partKindNames);
+        var partName = AuditDetailFactory.ResolvePartName(ae.MetadataJson, partKindNames);
 
         return new TentHistoryItemDto(
             ae.Id, ae.Action, TentHistoryCategoryMapper.ToApiValue(TentHistoryCategory.PartState),
@@ -411,7 +399,7 @@ public class AuditHistoryService : IAuditHistoryService
     private TentHistoryItemDto BuildPartAddedItem(
         AuditEvent ae, string actorName, Dictionary<Guid, string> partKindNames)
     {
-        var partName = ResolvePartName(ae, partKindNames);
+        var partName = AuditDetailFactory.ResolvePartName(ae.MetadataJson, partKindNames);
 
         var details = new List<TentHistoryDetailDto>
         {
@@ -428,13 +416,14 @@ public class AuditHistoryService : IAuditHistoryService
     private TentHistoryItemDto BuildPartDeletedItem(
         AuditEvent ae, string actorName, Dictionary<Guid, string> partKindNames)
     {
-        var partName = ResolvePartName(ae, partKindNames);
+        var partName = AuditDetailFactory.ResolvePartName(ae.MetadataJson, partKindNames);
 
         var details = new List<TentHistoryDetailDto>();
-        var reason = TryGetMetadataString(ae.MetadataJson, "reason");
-        if (!string.IsNullOrEmpty(reason))
+        var reasonDetail = AuditDetailFactory.Reason(
+            TryGetMetadataString(ae.MetadataJson, "reason"));
+        if (reasonDetail != null)
         {
-            details.Add(new TentHistoryDetailDto("Raison", null, null, reason, "reason"));
+            details.Add(reasonDetail);
         }
 
         return new TentHistoryItemDto(
@@ -463,10 +452,11 @@ public class AuditHistoryService : IAuditHistoryService
             new TentHistoryDetailDto("Étiquette", null, null, tagName, "tag")
         };
 
-        var reason = TryGetMetadataString(ae.MetadataJson, "reason");
-        if (!string.IsNullOrEmpty(reason))
+        var reasonDetail = AuditDetailFactory.Reason(
+            TryGetMetadataString(ae.MetadataJson, "reason"));
+        if (reasonDetail != null)
         {
-            details.Add(new TentHistoryDetailDto("Raison", null, null, reason, "reason"));
+            details.Add(reasonDetail);
         }
 
         return new TentHistoryItemDto(

@@ -449,7 +449,7 @@ public class TentService
             return (null, null, true);
 
         var requestedName = request.Name?.Trim();
-        var requestedIds = request.ComponentIds?.Distinct().ToList();
+        var requestedIds = request.ComponentIds;
 
         if (requestedName == null && requestedIds == null)
             return (null, new ErrorResponse("At least one of Name or ComponentIds must be provided", "MODEL_UPDATE_NO_CHANGES"), false);
@@ -457,6 +457,9 @@ public class TentService
         var oldName = model.Name;
         var oldIds = model.TentModelComponents.Select(mc => mc.PartKindId).ToHashSet();
         var newIds = requestedIds?.ToHashSet();
+
+        if (requestedIds != null && requestedIds.Count != newIds!.Count)
+            return (null, new ErrorResponse("One or more component IDs are invalid", "INVALID_COMPONENT_IDS"), false);
 
         var nameChanged = requestedName != null
             && !string.Equals(requestedName, oldName, StringComparison.Ordinal);

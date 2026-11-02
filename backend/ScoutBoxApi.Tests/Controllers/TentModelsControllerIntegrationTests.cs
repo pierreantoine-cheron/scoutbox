@@ -447,6 +447,45 @@ public class TentModelsControllerIntegrationTests : IClassFixture<CustomApiFacto
     }
 
     [Fact]
+    public async Task UpdateTentModel_DuplicateComponentIds_ReturnsBadRequest()
+    {
+        await EnsureTestUserExistsAsync();
+        var name = $"Duplicate Components {Guid.NewGuid():N}"[..30];
+
+        Guid modelId;
+        Guid partKindId;
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var db = setupScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            partKindId = await db.PartKinds.Select(pk => pk.Id).FirstAsync();
+
+            var model = new TentModel
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                DisplayOrder = 999,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            db.TentModels.Add(model);
+            await db.SaveChangesAsync();
+            modelId = model.Id;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/tent-models/{modelId}", new
+        {
+            componentIds = new[] { partKindId, partKindId }
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
+        Assert.NotNull(payload);
+        Assert.Equal("INVALID_COMPONENT_IDS", payload.Code);
+    }
+
+    [Fact]
     public async Task UpdateTentModel_ComponentsOnly_RecordsComponentChangeAndNoRename()
     {
         await EnsureTestUserExistsAsync();

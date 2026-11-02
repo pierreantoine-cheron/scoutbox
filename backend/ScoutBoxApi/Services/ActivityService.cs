@@ -209,7 +209,6 @@ public class ActivityService : IActivityService
 {
     private const string SystemDisplayName = "Système";
     private const string DeletedTentName = "Tente supprimée";
-    private const string UnknownPartName = "Pièce inconnue";
     private const string UnknownPartKindName = "Modèle de pièce inconnu";
     private const string UnknownTagName = "Étiquette inconnue";
     private const string UnknownModelName = "Modèle de tente inconnu";
@@ -381,7 +380,7 @@ public class ActivityService : IActivityService
             AuditActions.PartStateChanged or
             AuditActions.PartCommentsChanged or
             AuditActions.PartAdded or
-            AuditActions.PartDeleted => ResolvePartName(ae, partKindNames),
+            AuditActions.PartDeleted => AuditDetailFactory.ResolvePartName(ae.MetadataJson, partKindNames),
             AuditActions.PartKindCreated or
             AuditActions.PartKindRenamed or
             AuditActions.PartKindDeleted =>
@@ -405,19 +404,6 @@ public class ActivityService : IActivityService
                 TryGetMetadataString(ae.MetadataJson, "username") ?? "Compte",
             _ => null
         };
-    }
-
-    private static string ResolvePartName(
-        AuditEvent ae,
-        Dictionary<Guid, string> partKindNames)
-    {
-        var frozenName = TryGetMetadataString(ae.MetadataJson, "partKindName");
-        if (!string.IsNullOrEmpty(frozenName)) return frozenName;
-
-        var partKindId = TryGetMetadataGuid(ae.MetadataJson, "partKindId");
-        return partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
-            ? name
-            : UnknownPartName;
     }
 
     private static List<TentHistoryDetailDto> BuildDetails(
@@ -504,10 +490,11 @@ public class ActivityService : IActivityService
             new("Étiquette", null, null, tagName, "tag")
         };
 
-        var reason = TryGetMetadataString(ae.MetadataJson, "reason");
-        if (!string.IsNullOrEmpty(reason))
+        var reasonDetail = AuditDetailFactory.Reason(
+            TryGetMetadataString(ae.MetadataJson, "reason"));
+        if (reasonDetail != null)
         {
-            details.Add(new TentHistoryDetailDto("Raison", null, null, reason, "reason"));
+            details.Add(reasonDetail);
         }
 
         return details;
@@ -533,10 +520,9 @@ public class ActivityService : IActivityService
 
     private static List<TentHistoryDetailDto> BuildPartDeletedDetails(AuditEvent ae)
     {
-        var reason = TryGetMetadataString(ae.MetadataJson, "reason");
-        return string.IsNullOrEmpty(reason)
-            ? []
-            : [new TentHistoryDetailDto("Raison", null, null, reason, "reason")];
+        var reasonDetail = AuditDetailFactory.Reason(
+            TryGetMetadataString(ae.MetadataJson, "reason"));
+        return reasonDetail == null ? [] : [reasonDetail];
     }
 
     private static List<TentHistoryDetailDto> BuildPartKindDeletedDetails(AuditEvent ae)
@@ -544,11 +530,11 @@ public class ActivityService : IActivityService
         return
         [
             new TentHistoryDetailDto("Tentes", null, null,
-                (TryGetMetadataInt(ae.MetadataJson, "tentCount") ?? 0).ToString(), "count"),
+                (TryGetMetadataInt(ae.MetadataJson, "tentCount") ?? 0).ToString(), "tent_count"),
             new TentHistoryDetailDto("Pièces", null, null,
-                (TryGetMetadataInt(ae.MetadataJson, "partsRemoved") ?? 0).ToString(), "count"),
+                (TryGetMetadataInt(ae.MetadataJson, "partsRemoved") ?? 0).ToString(), "part_count"),
             new TentHistoryDetailDto("Modèles de tente", null, null,
-                (TryGetMetadataInt(ae.MetadataJson, "modelsAffected") ?? 0).ToString(), "count")
+                (TryGetMetadataInt(ae.MetadataJson, "modelsAffected") ?? 0).ToString(), "model_count")
         ];
     }
 
@@ -562,9 +548,10 @@ public class ActivityService : IActivityService
             {
                 new TentHistoryDetailDto("Modèle de pièce retiré", null, null, removedName, "removed_component")
             };
-            if (!string.IsNullOrEmpty(reason))
+            var reasonDetail = AuditDetailFactory.Reason(reason);
+            if (reasonDetail != null)
             {
-                removedDetails.Add(new TentHistoryDetailDto("Raison", null, null, reason, "reason"));
+                removedDetails.Add(reasonDetail);
             }
             return removedDetails;
         }

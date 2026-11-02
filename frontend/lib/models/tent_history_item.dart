@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../utils/date_time_parser.dart';
+import 'audit_reason.dart';
 import 'part.dart';
 import 'tent.dart';
 
@@ -124,11 +125,11 @@ class TentHistoryItem {
       case 'part_added':
         return 'Pièce ajoutée : $subject';
       case 'part_deleted':
-        return 'Pièce supprimée : $subject${_reasonParenthetical ?? ''}';
+        return 'Pièce supprimée : $subject${reasonParenthetical(details) ?? ''}';
       case 'tag_assigned':
         return 'Étiquette ajoutée : $subject';
       case 'tag_removed':
-        return 'Étiquette retirée : $subject${_reasonParenthetical ?? ''}';
+        return 'Étiquette retirée : $subject${reasonParenthetical(details) ?? ''}';
       default:
         return 'Action $action';
     }
@@ -176,7 +177,7 @@ class TentHistoryItem {
           style: normalStyle,
         );
       case 'part_deleted':
-        final reason = _reasonParenthetical;
+        final reason = reasonParenthetical(details);
         return TextSpan(
           children: [
             TextSpan(text: 'Pièce supprimée : ', style: normalStyle),
@@ -194,7 +195,7 @@ class TentHistoryItem {
           style: normalStyle,
         );
       case 'tag_removed':
-        final reason = _reasonParenthetical;
+        final reason = reasonParenthetical(details);
         return TextSpan(
           children: [
             TextSpan(text: 'Étiquette retirée : ', style: normalStyle),
@@ -206,22 +207,6 @@ class TentHistoryItem {
       default:
         return TextSpan(text: buildSummary(), style: normalStyle);
     }
-  }
-
-  String? get _reasonParenthetical {
-    final reason = details
-        .where((detail) => detail.valueType == 'reason')
-        .map((detail) => detail.value)
-        .whereType<String>()
-        .firstOrNull;
-    if (reason == null || reason.isEmpty) return null;
-
-    final label = switch (reason) {
-      'tag_deleted' => 'étiquette supprimée',
-      'part_kind_deleted' => 'modèle de pièce supprimé',
-      _ => reason,
-    };
-    return ' ($label)';
   }
 
   String _buildUpdateText() {

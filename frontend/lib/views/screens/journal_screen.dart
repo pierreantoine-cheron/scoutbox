@@ -141,10 +141,13 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
     }
 
     return switch (item.action) {
-      'part_kind_created' || 'part_kind_renamed' || 'part_kind_deleted' =>
-        widget.onOpenPartKinds,
-      'model_created' || 'model_renamed' || 'model_deleted' =>
-        widget.onOpenModels,
+      'part_kind_created' ||
+      'part_kind_renamed' ||
+      'part_kind_deleted' => widget.onOpenPartKinds,
+      'model_created' ||
+      'model_renamed' ||
+      'model_components_changed' ||
+      'model_deleted' => widget.onOpenModels,
       'tag_created' ||
       'tag_renamed' ||
       'tag_color_changed' ||

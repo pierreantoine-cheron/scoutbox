@@ -185,6 +185,32 @@ public class AuditServiceTests : IDisposable
     }
 
     [Fact]
+    public void RecordEvent_WrittenInTheSameTick_KeepsWriteOrderNewestFirst()
+    {
+        var frozen = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        var service = new AuditService(
+            _db,
+            _loggerMock.Object,
+            new FixedTimeProvider(frozen));
+
+        var events = Enumerable.Range(0, 5)
+            .Select(_ => service.RecordEvent(AuditActions.TentUpdated, Guid.NewGuid()))
+            .ToList();
+
+        for (var i = 1; i < events.Count; i++)
+        {
+            Assert.True(events[i].OccurredAt > events[i - 1].OccurredAt);
+        }
+
+        var newestFirst = events
+            .OrderByDescending(e => e.OccurredAt)
+            .ThenByDescending(e => e.Id)
+            .ToList();
+
+        Assert.Equal(events.AsEnumerable().Reverse(), newestFirst);
+    }
+
+    [Fact]
     public async Task AuditEvent_WithActorUser_PreservesRelationship()
     {
         var user = new User
@@ -280,6 +306,10 @@ public class AuditServiceTests : IDisposable
         Assert.Null(auditEvent.MetadataJson);
     }
 
+    private sealed class FixedTimeProvider(DateTime utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(utcNow, TimeSpan.Zero);
+    }
 }
 
 public class CurrentUserAccessorTests
