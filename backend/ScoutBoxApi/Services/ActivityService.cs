@@ -399,6 +399,9 @@ public class ActivityService : IActivityService
         AuditEvent ae,
         Dictionary<Guid, string> partKindNames)
     {
+        var frozenName = TryGetMetadataString(ae.MetadataJson, "partKindName");
+        if (!string.IsNullOrEmpty(frozenName)) return frozenName;
+
         var partKindId = TryGetMetadataGuid(ae.MetadataJson, "partKindId");
         return partKindId.HasValue && partKindNames.TryGetValue(partKindId.Value, out var name)
             ? name

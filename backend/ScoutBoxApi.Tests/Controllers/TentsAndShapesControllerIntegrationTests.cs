@@ -1037,6 +1037,12 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         public int TentCount { get; set; }
     }
 
+    private sealed class PartKindApi
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
     private sealed class PartApiDto
     {
         public Guid Id { get; set; }
@@ -2298,6 +2304,180 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
     }
 
     [Fact]
+    public async Task GetTentHistory_PrefersFrozenPartKindNameOverLiveLookup()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        Guid partKindId;
+        string liveName;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            tentId = await CreateTentForTagsAsync(db);
+            var partKind = await db.PartKinds.OrderBy(pk => pk.DisplayOrder).FirstAsync();
+            partKindId = partKind.Id;
+            liveName = partKind.Name;
+
+            db.AuditEvents.Add(new AuditEvent
+            {
+                Id = Guid.NewGuid(),
+                Action = AuditActions.PartStateChanged,
+                ActorUserId = CustomApiFactory.TestUserId,
+                OccurredAt = DateTime.UtcNow,
+                TargetEntityType = "Part",
+                TargetEntityId = Guid.NewGuid(),
+                MetadataJson = $$"""{"tentId":"{{tentId}}","partKindId":"{{partKindId}}","partKindName":"{{liveName}} (nom gelé)","oldState":"Good","newState":"NeedsRepair"}"""
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var historyClient = CreateAuthenticatedClient();
+        var payload = await historyClient.GetFromJsonAsync<List<TentHistoryApiItem>>($"/api/tents/{tentId}/history");
+
+        Assert.NotNull(payload);
+        var partEvent = payload.Single(e => e.Action == AuditActions.PartStateChanged);
+        Assert.Equal($"{liveName} (nom gelé)", partEvent.SubjectName);
+        Assert.NotEqual(liveName, partEvent.SubjectName);
+    }
+
+    [Fact]
+    public async Task GetTentHistory_ResolvesLegacyPartEventsThroughLiveLookup()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid tentId;
+        Guid partKindId;
+        string liveName;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            tentId = await CreateTentForTagsAsync(db);
+            var partKind = await db.PartKinds.OrderBy(pk => pk.DisplayOrder).FirstAsync();
+            partKindId = partKind.Id;
+            liveName = partKind.Name;
+
+            db.AuditEvents.Add(new AuditEvent
+            {
+                Id = Guid.NewGuid(),
+                Action = AuditActions.PartStateChanged,
+                ActorUserId = CustomApiFactory.TestUserId,
+                OccurredAt = DateTime.UtcNow,
+                TargetEntityType = "Part",
+                TargetEntityId = Guid.NewGuid(),
+                MetadataJson = $$"""{"tentId":"{{tentId}}","partKindId":"{{partKindId}}","oldState":"Good","newState":"NeedsRepair"}"""
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var historyClient = CreateAuthenticatedClient();
+        var payload = await historyClient.GetFromJsonAsync<List<TentHistoryApiItem>>($"/api/tents/{tentId}/history");
+
+        Assert.NotNull(payload);
+        var partEvent = payload.Single(e => e.Action == AuditActions.PartStateChanged);
+        Assert.Equal(liveName, partEvent.SubjectName);
+    }
+
+    [Fact]
+    public async Task GetTentHistory_KeepsFrozenPartKindNameAfterKindRename()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        }
+
+        var oldName = $"Kind-{Guid.NewGuid():N}";
+        var newName = $"{oldName}-renommé";
+        Guid tentId;
+        Guid partKindId;
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            var create = await client.PostAsJsonAsync("/api/tents", new
+            {
+                name = $"History-Rename-{Guid.NewGuid():N}",
+                size = 4,
+                tentModelId = shapeId,
+                overallState = "Good"
+            });
+            create.EnsureSuccessStatusCode();
+            var created = await create.Content.ReadFromJsonAsync<TentApiDto>();
+            tentId = created!.Id;
+
+            partKindId = await CreatePartKindAsync(client, oldName);
+            var partId = await AddPartToTentAsync(client, tentId, partKindId);
+            var update = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "NeedsRepair" });
+            update.EnsureSuccessStatusCode();
+        }
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            var rename = await client.PutAsJsonAsync($"/api/part-kinds/{partKindId}", new { name = newName });
+            rename.EnsureSuccessStatusCode();
+        }
+
+        using var historyClient = CreateAuthenticatedClient();
+        var payload = await historyClient.GetFromJsonAsync<List<TentHistoryApiItem>>($"/api/tents/{tentId}/history");
+
+        Assert.NotNull(payload);
+        var partEvent = payload.Single(e => e.Action == AuditActions.PartStateChanged);
+        Assert.Equal(oldName, partEvent.SubjectName);
+    }
+
+    [Fact]
+    public async Task GetTentHistory_KeepsFrozenPartKindNameAfterKindDelete()
+    {
+        await EnsureTestUserExistsAsync();
+
+        Guid shapeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        }
+
+        var kindName = $"Kind-{Guid.NewGuid():N}";
+        Guid tentId;
+        Guid partKindId;
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            var create = await client.PostAsJsonAsync("/api/tents", new
+            {
+                name = $"History-Delete-{Guid.NewGuid():N}",
+                size = 4,
+                tentModelId = shapeId,
+                overallState = "Good"
+            });
+            create.EnsureSuccessStatusCode();
+            var created = await create.Content.ReadFromJsonAsync<TentApiDto>();
+            tentId = created!.Id;
+
+            partKindId = await CreatePartKindAsync(client, kindName);
+            var partId = await AddPartToTentAsync(client, tentId, partKindId);
+            var update = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "NeedsRepair" });
+            update.EnsureSuccessStatusCode();
+        }
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            var delete = await client.DeleteAsync($"/api/part-kinds/{partKindId}");
+            delete.EnsureSuccessStatusCode();
+        }
+
+        using var historyClient = CreateAuthenticatedClient();
+        var payload = await historyClient.GetFromJsonAsync<List<TentHistoryApiItem>>($"/api/tents/{tentId}/history");
+
+        Assert.NotNull(payload);
+        var partEvent = payload.Single(e => e.Action == AuditActions.PartStateChanged);
+        Assert.Equal(kindName, partEvent.SubjectName);
+    }
+
+    [Fact]
     public async Task GetTentHistory_UnknownPartKind_NamesThePartAsUnknown()
     {
         await EnsureTestUserExistsAsync();
@@ -2751,6 +2931,24 @@ public class TentsAndShapesControllerIntegrationTests : IClassFixture<CustomApiF
         });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private static async Task<Guid> CreatePartKindAsync(HttpClient client, string name)
+    {
+        var response = await client.PostAsJsonAsync("/api/part-kinds", new { name });
+        response.EnsureSuccessStatusCode();
+        var created = await response.Content.ReadFromJsonAsync<PartKindApi>();
+        Assert.NotNull(created);
+        return created.Id;
+    }
+
+    private static async Task<Guid> AddPartToTentAsync(HttpClient client, Guid tentId, Guid partKindId)
+    {
+        var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { partKindId } });
+        response.EnsureSuccessStatusCode();
+        var parts = await response.Content.ReadFromJsonAsync<List<PartApiDto>>();
+        Assert.NotNull(parts);
+        return Assert.Single(parts).Id;
     }
 
     private async Task<Guid> CreateTentForTagsAsync(ScoutBoxDbContext db)

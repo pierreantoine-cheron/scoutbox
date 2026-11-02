@@ -283,6 +283,101 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
     }
 
     [Fact]
+    public async Task GetActivity_PrefersFrozenPartKindNameOverLiveLookup()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+
+        Guid partKindId;
+        string liveName;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var partKind = await db.PartKinds.OrderBy(pk => pk.DisplayOrder).FirstAsync();
+            partKindId = partKind.Id;
+            liveName = partKind.Name;
+        }
+
+        var frozenName = $"{liveName} (nom gelé)";
+        await InsertAuditEventsAsync(
+            Event(AuditActions.PartStateChanged, DateTime.UtcNow.AddHours(-1), "Part", Guid.NewGuid(),
+                $$"""{"tentId":"{{Guid.NewGuid()}}","partKindId":"{{partKindId}}","partKindName":"{{frozenName}}","oldState":"Good","newState":"NeedsRepair"}"""));
+
+        using var client = CreateAuthenticatedClient();
+        var page = await client.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = Assert.Single(page.Items);
+        Assert.Equal(frozenName, item.SubjectName);
+        Assert.NotEqual(liveName, item.SubjectName);
+    }
+
+    [Fact]
+    public async Task GetActivity_KeepsFrozenPartKindNameAfterKindRename()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        var tentId = await CreateTentAsync("Tente renommage pièce");
+
+        var oldName = $"Kind-{Guid.NewGuid():N}";
+        var newName = $"{oldName}-renommé";
+        Guid partKindId;
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            partKindId = await CreatePartKindAsync(client, oldName);
+            var partId = await AddPartToTentAsync(client, tentId, partKindId);
+            var update = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "NeedsRepair" });
+            update.EnsureSuccessStatusCode();
+        }
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            var rename = await client.PutAsJsonAsync($"/api/part-kinds/{partKindId}", new { name = newName });
+            rename.EnsureSuccessStatusCode();
+        }
+
+        using var readClient = CreateAuthenticatedClient();
+        var page = await readClient.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = page.Items.Single(i => i.Action == AuditActions.PartStateChanged);
+        Assert.Equal(oldName, item.SubjectName);
+    }
+
+    [Fact]
+    public async Task GetActivity_KeepsFrozenPartKindNameAfterKindDelete()
+    {
+        await EnsureTestUserExistsAsync();
+        await ResetAuditEventsAsync();
+        var tentId = await CreateTentAsync("Tente suppression pièce");
+
+        var kindName = $"Kind-{Guid.NewGuid():N}";
+        Guid partKindId;
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            partKindId = await CreatePartKindAsync(client, kindName);
+            var partId = await AddPartToTentAsync(client, tentId, partKindId);
+            var update = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "NeedsRepair" });
+            update.EnsureSuccessStatusCode();
+        }
+
+        using (var client = CreateAuthenticatedClient())
+        {
+            var delete = await client.DeleteAsync($"/api/part-kinds/{partKindId}");
+            delete.EnsureSuccessStatusCode();
+        }
+
+        using var readClient = CreateAuthenticatedClient();
+        var page = await readClient.GetFromJsonAsync<ActivityPageApi>("/api/activity?window=all");
+
+        Assert.NotNull(page);
+        var item = page.Items.Single(i => i.Action == AuditActions.PartStateChanged);
+        Assert.Equal(kindName, item.SubjectName);
+    }
+
+    [Fact]
     public async Task GetActivity_UnknownPartKind_NamesThePartAsUnknown()
     {
         await EnsureTestUserExistsAsync();
@@ -468,6 +563,24 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
         await db.SaveChangesAsync();
     }
 
+    private static async Task<Guid> CreatePartKindAsync(HttpClient client, string name)
+    {
+        var response = await client.PostAsJsonAsync("/api/part-kinds", new { name });
+        response.EnsureSuccessStatusCode();
+        var created = await response.Content.ReadFromJsonAsync<PartKindApi>();
+        Assert.NotNull(created);
+        return created.Id;
+    }
+
+    private static async Task<Guid> AddPartToTentAsync(HttpClient client, Guid tentId, Guid partKindId)
+    {
+        var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { partKindId } });
+        response.EnsureSuccessStatusCode();
+        var parts = await response.Content.ReadFromJsonAsync<List<PartApi>>();
+        Assert.NotNull(parts);
+        return Assert.Single(parts).Id;
+    }
+
     private async Task<Guid> CreateTentAsync(string name)
     {
         using var scope = _factory.Services.CreateScope();
@@ -557,6 +670,18 @@ public class ActivityControllerIntegrationTests : IClassFixture<CustomApiFactory
         public string? NewValue { get; set; }
         public string? Value { get; set; }
         public string? ValueType { get; set; }
+    }
+
+    private sealed class PartKindApi
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private sealed class PartApi
+    {
+        public Guid Id { get; set; }
+        public Guid PartKindId { get; set; }
     }
 
     private sealed class ErrorPayload

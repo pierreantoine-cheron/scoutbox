@@ -79,6 +79,7 @@ public class PartService
                 {
                     ["tentId"] = part.TentId,
                     ["partKindId"] = part.PartKindId,
+                    ["partKindName"] = part.PartKind.Name,
                     ["oldState"] = oldState.ToString(),
                     ["newState"] = part.State.ToString()
                 });
@@ -94,7 +95,8 @@ public class PartService
                 metadata: new Dictionary<string, object?>
                 {
                     ["tentId"] = part.TentId,
-                    ["partKindId"] = part.PartKindId
+                    ["partKindId"] = part.PartKindId,
+                    ["partKindName"] = part.PartKind.Name
                 });
         }
 
@@ -153,6 +155,7 @@ public class PartService
         }
 
         var allPartKinds = await _repo.GetAllPartKindsAsync();
+        var partKindNames = allPartKinds.ToDictionary(pk => pk.Id, pk => pk.Name);
         var existingPartKindIds = tent.Parts.Select(p => p.PartKindId).ToHashSet();
         var allPartKindIds = allPartKinds.Select(pk => pk.Id).ToHashSet();
 
@@ -191,7 +194,8 @@ public class PartService
                 metadata: new Dictionary<string, object?>
                 {
                     ["tentId"] = tentId,
-                    ["partKindId"] = partKindId
+                    ["partKindId"] = partKindId,
+                    ["partKindName"] = partKindNames[partKindId]
                 });
         }
 
@@ -235,7 +239,8 @@ public class PartService
             metadata: new Dictionary<string, object?>
             {
                 ["tentId"] = tentId,
-                ["partKindId"] = partKindId
+                ["partKindId"] = partKindId,
+                ["partKindName"] = part.PartKind.Name
             });
 
         _repo.RemovePart(part);

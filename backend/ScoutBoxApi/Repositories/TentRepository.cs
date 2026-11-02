@@ -151,6 +151,7 @@ public class TentRepository : ITentRepository
     {
         return await _db.Parts
             .Include(p => p.Tent)
+            .Include(p => p.PartKind)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 

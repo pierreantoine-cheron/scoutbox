@@ -61,6 +61,32 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     }
 
     [Fact]
+    public async Task UpdatePartState_RecordsFrozenPartKindNameInAuditMetadata()
+    {
+        var (partId, tentId, partKindId, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
+
+        string partKindName;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            partKindName = await db.PartKinds.Where(pk => pk.Id == partKindId).Select(pk => pk.Name).FirstAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "NeedsRepair" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var assertScope = _factory.Services.CreateScope();
+        var assertDb = assertScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var audit = await assertDb.AuditEvents.SingleAsync(a =>
+            a.Action == "part_state_changed" && a.TargetEntityId == partId);
+
+        using var metadata = JsonDocument.Parse(audit.MetadataJson!);
+        Assert.Equal(partKindName, metadata.RootElement.GetProperty("partKindName").GetString());
+        Assert.Equal(tentId, metadata.RootElement.GetProperty("tentId").GetGuid());
+    }
+
+    [Fact]
     public async Task UpdatePartState_WithSameState_DoesNotMutateTimestampOrCreateAudit()
     {
         var (partId, _, _, oldUpdatedAt) = await SeedPartAsync(isArchived: false, state: PartState.Missing, comments: null);
@@ -103,6 +129,31 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var part = await db.Parts.FirstAsync(p => p.Id == partId);
         Assert.Equal("nouveau commentaire", part.Comments);
         Assert.True(part.UpdatedAt > oldUpdatedAt);
+    }
+
+    [Fact]
+    public async Task UpdatePartComments_RecordsFrozenPartKindNameInAuditMetadata()
+    {
+        var (partId, _, partKindId, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: "old");
+
+        string partKindName;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            partKindName = await db.PartKinds.Where(pk => pk.Id == partKindId).Select(pk => pk.Name).FirstAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PutAsJsonAsync($"/api/parts/{partId}", new { state = "Good", comments = "nouveau" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var assertScope = _factory.Services.CreateScope();
+        var assertDb = assertScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var audit = await assertDb.AuditEvents.SingleAsync(a =>
+            a.Action == "part_comments_changed" && a.TargetEntityId == partId);
+
+        using var metadata = JsonDocument.Parse(audit.MetadataJson!);
+        Assert.Equal(partKindName, metadata.RootElement.GetProperty("partKindName").GetString());
     }
 
     [Fact]
@@ -266,6 +317,34 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
     }
 
     [Fact]
+    public async Task AddPartsToTent_RecordsFrozenPartKindNameInAuditMetadata()
+    {
+        var tentId = await SeedEmptyTentAsync();
+
+        Guid partKindId;
+        string partKindName;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            var partKind = await db.PartKinds.OrderBy(pk => pk.DisplayOrder).FirstAsync();
+            partKindId = partKind.Id;
+            partKindName = partKind.Name;
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.PostAsJsonAsync($"/api/tents/{tentId}/parts", new { partKindIds = new[] { partKindId } });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var assertScope = _factory.Services.CreateScope();
+        var assertDb = assertScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var audit = await assertDb.AuditEvents.SingleAsync(a =>
+            a.Action == "part_added" && a.MetadataJson != null && a.MetadataJson.Contains(tentId.ToString()));
+
+        using var metadata = JsonDocument.Parse(audit.MetadataJson!);
+        Assert.Equal(partKindName, metadata.RootElement.GetProperty("partKindName").GetString());
+    }
+
+    [Fact]
     public async Task AddPartsToTent_WithDuplicatePartKind_ReturnsDuplicatePart()
     {
         var (partId, tentId, partKindId, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
@@ -408,6 +487,32 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         var payload = await response.Content.ReadFromJsonAsync<ErrorPayload>();
         Assert.NotNull(payload);
         Assert.Equal("INVALID_REQUEST", payload.Code);
+    }
+
+    [Fact]
+    public async Task DeletePart_RecordsFrozenPartKindNameInAuditMetadata()
+    {
+        var (partId, tentId, partKindId, _) = await SeedPartAsync(isArchived: false, state: PartState.Good, comments: null);
+
+        string partKindName;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+            partKindName = await db.PartKinds.Where(pk => pk.Id == partKindId).Select(pk => pk.Name).FirstAsync();
+        }
+
+        using var client = CreateAuthenticatedClient();
+        var response = await client.DeleteAsync($"/api/parts/{partId}");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var assertScope = _factory.Services.CreateScope();
+        var assertDb = assertScope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+        var audit = await assertDb.AuditEvents.SingleAsync(a =>
+            a.Action == "part_deleted" && a.TargetEntityId == partId);
+
+        using var metadata = JsonDocument.Parse(audit.MetadataJson!);
+        Assert.Equal(partKindName, metadata.RootElement.GetProperty("partKindName").GetString());
+        Assert.Equal(tentId, metadata.RootElement.GetProperty("tentId").GetGuid());
     }
 
     [Fact]
@@ -633,6 +738,46 @@ public class PartsControllerIntegrationTests : IClassFixture<CustomApiFactory>
         });
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(TestAuthHandler.SchemeName, "test-token");
         return client;
+    }
+
+    private async Task<Guid> SeedEmptyTentAsync(bool isArchived = false)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ScoutBoxDbContext>();
+
+        var existingUser = await db.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == CustomApiFactory.TestUserId);
+        if (existingUser == null)
+        {
+            db.Users.Add(new User
+            {
+                Id = CustomApiFactory.TestUserId,
+                Username = "parts_test_user",
+                PasswordHash = "hash",
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var shapeId = await db.TentModels.Where(x => x.IsActive).Select(x => x.Id).FirstAsync();
+        var tentId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        db.Tents.Add(new Tent
+        {
+            Id = tentId,
+            Name = $"Tent-{Guid.NewGuid():N}",
+            Size = 4,
+            TentModelId = shapeId,
+            OverallState = TentOverallState.Good,
+            IsArchived = isArchived,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedByUserId = CustomApiFactory.TestUserId,
+            UpdatedByUserId = CustomApiFactory.TestUserId
+        });
+
+        await db.SaveChangesAsync();
+        return tentId;
     }
 
     private async Task<(Guid PartId, Guid TentId, Guid PartKindId, DateTime UpdatedAt)> SeedPartAsync(bool isArchived, PartState state, string? comments)
